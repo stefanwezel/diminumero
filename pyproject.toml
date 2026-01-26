@@ -1,0 +1,7 @@
+[project]
+name = "spanish-numbers-quiz"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
