@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Spanish Numbers Quiz - Home{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero">
+        <h1 class="title">🔢 Spanish Numbers Quiz</h1>
+        <p class="subtitle">Test your Spanish number knowledge!</p>
+        <p class="description">
+            Practice translating numbers from digits to Spanish words.
+            Answer 10 questions and track your progress.
+        </p>
+        
+        <form action="{{ url_for('start_quiz') }}" method="POST">
+            <button type="submit" class="btn btn-primary btn-large">
+                Start Quiz
+            </button>
+        </form>
+        
+        <div class="info">
+            <div class="info-item">
+                <span class="info-number">{{ questions_per_quiz }}</span>
+                <span class="info-label">Questions</span>
+            </div>
+            <div class="info-item">
+                <span class="info-number">{{ total_numbers }}</span>
+                <span class="info-label">Numbers</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

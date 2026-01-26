@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results{% endblock %}
+
+{% block content %}
+<div class="results-page">
+    <div class="results-container">
+        <h1 class="results-title">Quiz Complete! 🎊</h1>
+        
+        <div class="score-card">
+            <div class="final-score">
+                <span class="score-number">{{ score }}</span>
+                <span class="score-divider">/</span>
+                <span class="score-total">{{ total }}</span>
+            </div>
+            <div class="score-label">Correct Answers</div>
+            <div class="percentage">{{ "%.0f"|format(percentage) }}%</div>
+        </div>
+        
+        <!-- Performance message -->
+        <div class="performance-message">
+            {% if percentage == 100 %}
+                <p class="message-perfect">🌟 Perfect score! You're a Spanish numbers master!</p>
+            {% elif percentage >= 80 %}
+                <p class="message-great">🎉 Great job! You really know your Spanish numbers!</p>
+            {% elif percentage >= 60 %}
+                <p class="message-good">👍 Good work! Keep practicing to improve!</p>
+            {% else %}
+                <p class="message-practice">📚 Keep practicing! You'll get better with time!</p>
+            {% endif %}
+        </div>
+        
+        <!-- Action buttons -->
+        <div class="results-actions">
+            <form action="{{ url_for('start_quiz') }}" method="POST">
+                <button type="submit" class="btn btn-primary btn-large">
+                    Try Again
+                </button>
+            </form>
+            <form action="{{ url_for('index') }}" method="GET">
+                <button type="submit" class="btn btn-secondary">
+                    Back to Home
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
