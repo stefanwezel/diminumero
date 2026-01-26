@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <!-- Language switcher -->
+    <div class="language-switcher">
+        <a href="{{ url_for('set_language', lang='en') }}" class="lang-flag {% if session.get('language', 'de') == 'en' %}active{% endif %}" title="English">🇬🇧</a>
+        <a href="{{ url_for('set_language', lang='de') }}" class="lang-flag {% if session.get('language', 'de') == 'de' %}active{% endif %}" title="Deutsch">🇩🇪</a>
+    </div>
+    
     <div class="container">
         {% block content %}{% endblock %}
     </div>

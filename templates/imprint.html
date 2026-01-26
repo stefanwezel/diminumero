@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('imprint_title') }}{% endblock %}
+
+{% block content %}
+<div class="imprint-page">
+    <div class="imprint-container">
+        <h1 class="imprint-title">{{ get_text('imprint_heading') }}</h1>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('imprint_legal_info') }}</h2>
+            <p>
+                Stefan Wezel<br>
+                Wennfelder Garten 11<br>
+                72072 Tübingen<br>
+                Deutschland
+            </p>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('imprint_contact') }}</h2>
+            <p>
+                {{ get_text('imprint_email') }}: <a href="mailto:wezelstefan@gmail.com">wezelstefan@gmail.com</a>
+            </p>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('imprint_disclaimer') }}</h2>
+            
+            <h3>{{ get_text('imprint_content_heading') }}</h3>
+            <p>
+                {{ get_text('imprint_content_text') }}
+            </p>
+            
+            <h3>{{ get_text('imprint_links_heading') }}</h3>
+            <p>
+                {{ get_text('imprint_links_text') }}
+            </p>
+            
+            <h3>{{ get_text('imprint_copyright_heading') }}</h3>
+            <p>
+                {{ get_text('imprint_copyright_text') }}
+            </p>
+        </div>
+        
+        <div class="imprint-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">{{ get_text('imprint_back_home') }}</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

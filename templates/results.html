@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Quiz Results{% endblock %}
+{% block title %}{{ get_text('results_title') }}{% endblock %}
 
 {% block content %}
 <div class="results-page">
     <div class="results-container">
-        <h1 class="results-title">Quiz Complete! 🎊</h1>
+        <h1 class="results-title">{{ get_text('results_complete') }}</h1>
         
         <div class="score-card">
             <div class="final-score">
@@ -13,36 +13,47 @@
                 <span class="score-divider">/</span>
                 <span class="score-total">{{ total }}</span>
             </div>
-            <div class="score-label">Correct Answers</div>
+            <div class="score-label">{{ get_text('results_correct') }}</div>
             <div class="percentage">{{ "%.0f"|format(percentage) }}%</div>
         </div>
         
         <!-- Performance message -->
         <div class="performance-message">
             {% if percentage == 100 %}
-                <p class="message-perfect">🌟 Perfect score! You're a Spanish numbers master!</p>
+                <p class="message-perfect">{{ get_text('results_perfect') }}</p>
             {% elif percentage >= 80 %}
-                <p class="message-great">🎉 Great job! You really know your Spanish numbers!</p>
+                <p class="message-great">{{ get_text('results_great') }}</p>
             {% elif percentage >= 60 %}
-                <p class="message-good">👍 Good work! Keep practicing to improve!</p>
+                <p class="message-good">{{ get_text('results_good') }}</p>
             {% else %}
-                <p class="message-practice">📚 Keep practicing! You'll get better with time!</p>
+                <p class="message-practice">{{ get_text('results_keep_practicing') }}</p>
             {% endif %}
         </div>
         
         <!-- Action buttons -->
         <div class="results-actions">
             <form action="{{ url_for('start_quiz') }}" method="POST">
+                <input type="hidden" name="mode" value="{{ session.get('mode', 'easy') }}">
                 <button type="submit" class="btn btn-primary btn-large">
-                    Try Again
+                    {{ get_text('results_try_again') }}
                 </button>
             </form>
             <form action="{{ url_for('index') }}" method="GET">
                 <button type="submit" class="btn btn-secondary">
-                    Back to Home
+                    {{ get_text('results_back_home') }}
                 </button>
             </form>
         </div>
+        
+        <div class="feedback-section">
+            <a href="mailto:wezelstefan@gmail.com?subject={{ get_text('feedback_subject') }}" class="btn btn-feedback">
+                📧 {{ get_text('footer_feedback') }}
+            </a>
+        </div>
+        
+        <footer class="page-footer">
+            <a href="{{ url_for('imprint') }}" class="footer-link">{{ get_text('footer_imprint') }}</a>
+        </footer>
     </div>
 </div>
 {% endblock %}

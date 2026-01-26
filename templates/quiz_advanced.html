@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('mode_advanced') }} - {{ get_text('quiz_question') }} {{ total + 1 }}{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+    <!-- Header with score and exit button -->
+    <div class="quiz-header">
+        <div class="progress-info">
+            {{ get_text('quiz_question') }} {{ total + 1 }} / {{ max_questions }}
+        </div>
+        <div class="score-display">
+            {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
+        </div>
+        <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
+            <button type="submit" class="btn btn-exit">{{ get_text('quiz_exit') }}</button>
+        </form>
+    </div>
+    
+    <!-- Progress bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (total / max_questions * 100) }}%"></div>
+    </div>
+    
+    <!-- Question -->
+    <div class="question-container">
+        <h2 class="question-label">{{ get_text('quiz_advanced_prompt') }}</h2>
+        <div class="number-display">{{ number }}</div>
+    </div>
+    
+    <!-- Text input for answer -->
+    <form action="{{ url_for('quiz_advanced') }}" method="POST" class="answer-form" id="answerForm">
+        <div class="text-input-container">
+            <input 
+                type="text" 
+                name="answer" 
+                id="answerInput" 
+                class="answer-input" 
+                placeholder="{{ get_text('quiz_advanced_placeholder') }}"
+                autocomplete="off"
+                autofocus
+            >
+            <div id="validationFeedback" class="validation-feedback"></div>
+        </div>
+        
+        <div class="button-group">
+            <button type="submit" name="give_up" value="1" class="btn btn-secondary">
+                {{ get_text('quiz_give_up') }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/quiz_advanced.js') }}"></script>
+{% endblock %}

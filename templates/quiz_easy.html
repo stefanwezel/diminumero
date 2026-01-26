@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Quiz - Question {{ total + 1 }}{% endblock %}
+{% block title %}{{ get_text('quiz_question') }} {{ total + 1 }}{% endblock %}
 
 {% block content %}
 <div class="quiz-page">
     <!-- Header with score and exit button -->
     <div class="quiz-header">
         <div class="progress-info">
-            Question {{ total + 1 }} / {{ max_questions }}
+            {{ get_text('quiz_question') }} {{ total + 1 }} / {{ max_questions }}
         </div>
         <div class="score-display">
-            Score: {{ score }} / {{ total }}
+            {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
         </div>
         <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
-            <button type="submit" class="btn btn-exit">Exit Quiz</button>
+            <button type="submit" class="btn btn-exit">{{ get_text('quiz_exit') }}</button>
         </form>
     </div>
     
@@ -24,12 +24,12 @@
     
     <!-- Question -->
     <div class="question-container">
-        <h2 class="question-label">What is this number in Spanish?</h2>
+        <h2 class="question-label">{{ get_text('quiz_easy_prompt') }}</h2>
         <div class="number-display">{{ number }}</div>
     </div>
     
     <!-- Answer options -->
-    <form action="{{ url_for('quiz') }}" method="POST" class="options-form">
+    <form action="{{ url_for('quiz_easy') }}" method="POST" class="options-form">
         <div class="options-grid">
             {% for option in options %}
                 <button type="submit" name="answer" value="{{ option }}" class="option-btn">

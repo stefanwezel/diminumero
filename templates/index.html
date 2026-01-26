@@ -1,33 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}Spanish Numbers Quiz - Home{% endblock %}
+{% block title %}{{ get_text('home_title') }}{% endblock %}
 
 {% block content %}
 <div class="landing-page">
     <div class="hero">
-        <h1 class="title">🔢 Spanish Numbers Quiz</h1>
-        <p class="subtitle">Test your Spanish number knowledge!</p>
+        <h1 class="title">🔢 {{ get_text('home_hero_title') }}</h1>
+        <p class="subtitle">{{ get_text('home_hero_subtitle') }}</p>
         <p class="description">
-            Practice translating numbers from digits to Spanish words.
-            Answer 10 questions and track your progress.
+            {{ get_text('home_hero_description') }}
         </p>
         
-        <form action="{{ url_for('start_quiz') }}" method="POST">
-            <button type="submit" class="btn btn-primary btn-large">
-                Start Quiz
-            </button>
-        </form>
+        <div class="mode-selection">
+            <div class="mode-card">
+                <h3 class="mode-title">{{ get_text('mode_easy') }}</h3>
+                <p class="mode-description">{{ get_text('mode_easy_desc') }}</p>
+                <form action="{{ url_for('start_quiz') }}" method="POST">
+                    <input type="hidden" name="mode" value="easy">
+                    <button type="submit" class="btn btn-primary">
+                        {{ get_text('mode_easy_btn') }}
+                    </button>
+                </form>
+            </div>
+            
+            <div class="mode-card">
+                <h3 class="mode-title">{{ get_text('mode_advanced') }}</h3>
+                <p class="mode-description">{{ get_text('mode_advanced_desc') }}</p>
+                <form action="{{ url_for('start_quiz') }}" method="POST">
+                    <input type="hidden" name="mode" value="advanced">
+                    <button type="submit" class="btn btn-primary">
+                        {{ get_text('mode_advanced_btn') }}
+                    </button>
+                </form>
+            </div>
+            
+            <div class="mode-card mode-disabled">
+                <h3 class="mode-title">{{ get_text('mode_hardcore') }}</h3>
+                <p class="mode-description">{{ get_text('mode_hardcore_desc') }}</p>
+                <button type="button" class="btn btn-disabled" disabled>
+                    {{ get_text('mode_hardcore_btn') }}
+                </button>
+            </div>
+        </div>
         
         <div class="info">
             <div class="info-item">
                 <span class="info-number">{{ questions_per_quiz }}</span>
-                <span class="info-label">Questions</span>
+                <span class="info-label">{{ get_text('info_questions') }}</span>
             </div>
             <div class="info-item">
                 <span class="info-number">{{ total_numbers }}</span>
-                <span class="info-label">Numbers</span>
+                <span class="info-label">{{ get_text('info_numbers') }}</span>
             </div>
         </div>
+        
+        <div class="feedback-section">
+            <a href="mailto:wezelstefan@gmail.com?subject={{ get_text('feedback_subject') }}" class="btn btn-feedback">
+                📧 {{ get_text('footer_feedback') }}
+            </a>
+        </div>
+        
+        <footer class="page-footer">
+            <a href="{{ url_for('imprint') }}" class="footer-link">{{ get_text('footer_imprint') }}</a>
+        </footer>
     </div>
 </div>
 {% endblock %}

@@ -17,9 +17,40 @@ body {
     color: #333;
 }
 
+/* Language Switcher */
+.language-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.lang-flag {
+    font-size: 2rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
+    filter: grayscale(50%);
+}
+
+.lang-flag:hover {
+    transform: scale(1.15);
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+.lang-flag.active {
+    opacity: 1;
+    filter: grayscale(0%);
+    transform: scale(1.1);
+}
+
 .container {
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
     padding: 20px;
 }
 
@@ -53,6 +84,69 @@ body {
     color: #888;
     margin-bottom: 40px;
     line-height: 1.6;
+}
+
+/* Mode Selection */
+.mode-selection {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin: 40px 0;
+}
+
+.mode-card {
+    background: #f8f9fa;
+    border: 3px solid #e0e0e0;
+    border-radius: 15px;
+    padding: 30px 20px;
+    transition: all 0.3s ease;
+}
+
+.mode-card:not(.mode-disabled):hover {
+    background: #F8DDA4;
+    border-color: #813405;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(129, 52, 5, 0.3);
+}
+
+.mode-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.mode-title {
+    font-size: 1.5rem;
+    color: #813405;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.mode-description {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    min-height: 48px;
+}
+
+.mode-card form {
+    margin: 0;
+}
+
+.mode-card .btn {
+    width: 100%;
+}
+
+.btn-disabled {
+    background: #d0d0d0;
+    color: #888;
+    cursor: not-allowed;
+    border: 3px solid #b0b0b0;
+}
+
+.btn-disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 .info {
@@ -233,6 +327,110 @@ body {
     transform: translateY(-1px);
 }
 
+/* Advanced Mode - Text Input */
+.answer-form {
+    margin-top: 30px;
+}
+
+.text-input-container {
+    margin-bottom: 30px;
+}
+
+.answer-input {
+    width: 100%;
+    font-size: 1.5rem;
+    padding: 20px;
+    border: 3px solid #e0e0e0;
+    border-radius: 12px;
+    background: #f8f9fa;
+    color: #333;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.answer-input:focus {
+    outline: none;
+    border-color: #813405;
+    background: white;
+    box-shadow: 0 4px 15px rgba(129, 52, 5, 0.2);
+}
+
+.answer-input::placeholder {
+    color: #aaa;
+}
+
+/* Validation Feedback */
+.validation-feedback {
+    margin-top: 15px;
+    min-height: 40px;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.validation-feedback:empty {
+    padding: 0;
+    min-height: 0;
+}
+
+.validation-feedback span {
+    padding: 5px 8px;
+    margin: 0 3px;
+    border-radius: 5px;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+/* Word validation states */
+.word-correct {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #28a745;
+}
+
+.word-incorrect {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #dc3545;
+}
+
+.word-incomplete {
+    background: #fff3cd;
+    color: #856404;
+    border: 2px solid #ffc107;
+}
+
+/* Overall feedback states */
+.feedback-complete {
+    background: #d4edda;
+    border: 2px solid #28a745;
+}
+
+.feedback-error {
+    background: #f8d7da;
+    border: 2px solid #dc3545;
+}
+
+.feedback-progress {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+}
+
+/* Button group for advanced mode */
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.button-group .btn {
+    padding: 15px 40px;
+    font-size: 1.1rem;
+}
+
 /* Results Page */
 .results-page {
     text-align: center;
@@ -367,10 +565,119 @@ body {
     }
 }
 
+/* Feedback Section */
+.feedback-section {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.btn-feedback {
+    background: #F9A03F;
+    color: #813405;
+    border: 2px solid #813405;
+    padding: 12px 30px;
+    font-size: 1rem;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-feedback:hover {
+    background: #D45113;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 81, 19, 0.3);
+}
+
+/* Footer */
+.page-footer {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #e0e0e0;
+    text-align: center;
+}
+
+.footer-link {
+    color: #813405;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.footer-link:hover {
+    color: #D45113;
+    text-decoration: underline;
+}
+
+/* Imprint Page */
+.imprint-page {
+    text-align: left;
+}
+
+.imprint-container {
+    background: white;
+    border-radius: 20px;
+    padding: 60px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.imprint-title {
+    font-size: 2.5rem;
+    color: #813405;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.imprint-section {
+    margin-bottom: 30px;
+}
+
+.imprint-section h2 {
+    font-size: 1.5rem;
+    color: #813405;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #F8DDA4;
+    padding-bottom: 10px;
+}
+
+.imprint-section h3 {
+    font-size: 1.2rem;
+    color: #D45113;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.imprint-section p {
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.imprint-section a {
+    color: #D45113;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.imprint-section a:hover {
+    text-decoration: underline;
+}
+
+.imprint-actions {
+    margin-top: 40px;
+    text-align: center;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .title {
         font-size: 2rem;
+    }
+    
+    .mode-selection {
+        grid-template-columns: 1fr;
     }
     
     .number-display {
@@ -389,6 +696,10 @@ body {
         padding: 40px 25px;
     }
     
+    .imprint-container {
+        padding: 40px 25px;
+    }
+    
     .quiz-header {
         font-size: 0.9rem;
     }
@@ -397,6 +708,24 @@ body {
         right: 10px;
         left: 10px;
         font-size: 1rem;
+    }
+    
+    .language-switcher {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .lang-flag {
+        font-size: 1.5rem;
+    }
+    
+    .answer-input {
+        font-size: 1.2rem;
+        padding: 15px;
+    }
+    
+    .validation-feedback {
+        font-size: 1.1rem;
     }
 }
 
