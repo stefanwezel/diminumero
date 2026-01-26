@@ -1,4 +1,4 @@
-// Spanish Numbers Quiz - JavaScript
+// diminumero - JavaScript
 
 // Auto-hide toast notifications after animation
 document.addEventListener('DOMContentLoaded', function() {

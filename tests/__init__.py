@@ -1,1 +1,1 @@
-"""Test suite for Spanish Numbers Quiz."""
+"""Test suite for diminumero."""

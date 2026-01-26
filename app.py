@@ -1,4 +1,4 @@
-"""Flask application for Spanish Numbers Quiz."""
+"""Flask application for diminumero."""
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from dotenv import load_dotenv
@@ -18,13 +18,13 @@ QUESTIONS_PER_QUIZ = 25
 TRANSLATIONS = {
     'en': {
         # General
-        'app_title': 'Spanish Numbers Quiz',
+        'app_title': 'diminumero',
         'language_en': 'English',
         'language_de': 'German',
         
         # Home page
-        'home_title': 'Spanish Numbers Quiz - Home',
-        'home_hero_title': 'Spanish Numbers Quiz',
+        'home_title': 'diminumero - Home',
+        'home_hero_title': 'diminumero',
         'home_hero_subtitle': 'Test your Spanish number knowledge!',
         'home_hero_description': 'Practice translating numbers from digits to Spanish words. Choose your difficulty mode and start learning!',
         
@@ -60,8 +60,8 @@ TRANSLATIONS = {
         'results_title': 'Quiz Results',
         'results_complete': 'Quiz Complete! 🎊',
         'results_correct': 'Correct Answers',
-        'results_perfect': '🌟 Perfect score! You\'re a Spanish numbers master!',
-        'results_great': '🎉 Great job! You really know your Spanish numbers!',
+        'results_perfect': '🌟 Perfect score! You\'re a numbers master!',
+        'results_great': '🎉 Great job! You really know your numbers!',
         'results_good': '👍 Good work! Keep practicing to improve!',
         'results_keep_practicing': '📚 Keep practicing! You\'ll get better with time!',
         'results_try_again': 'Try Again',
@@ -75,7 +75,7 @@ TRANSLATIONS = {
         'flash_gave_up': 'The answer was: {}',
         
         # Imprint page
-        'imprint_title': 'Imprint - Spanish Numbers Quiz',
+        'imprint_title': 'Imprint - diminumero',
         'imprint_heading': 'Imprint',
         'imprint_legal_info': 'Information according to § 5 TMG',
         'imprint_contact': 'Contact',
@@ -90,17 +90,17 @@ TRANSLATIONS = {
         'imprint_back_home': 'Back to Home',
         
         # Email subject
-        'feedback_subject': 'Spanish Numbers Quiz Feedback',
+        'feedback_subject': 'diminumero Feedback',
     },
     'de': {
         # General
-        'app_title': 'Spanische Zahlen Quiz',
+        'app_title': 'diminumero',
         'language_en': 'Englisch',
         'language_de': 'Deutsch',
         
         # Home page
-        'home_title': 'Spanische Zahlen Quiz - Startseite',
-        'home_hero_title': 'Spanische Zahlen Quiz',
+        'home_title': 'diminumero - Startseite',
+        'home_hero_title': 'diminumero',
         'home_hero_subtitle': 'Teste dein Wissen über spanische Zahlen!',
         'home_hero_description': 'Übe die Übersetzung von Zahlen in spanische Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!',
         
@@ -136,8 +136,8 @@ TRANSLATIONS = {
         'results_title': 'Quiz Ergebnisse',
         'results_complete': 'Quiz abgeschlossen! 🎊',
         'results_correct': 'Richtige Antworten',
-        'results_perfect': '🌟 Perfekte Punktzahl! Du bist ein Meister der spanischen Zahlen!',
-        'results_great': '🎉 Großartig! Du kennst deine spanischen Zahlen wirklich gut!',
+        'results_perfect': '🌟 Perfekte Punktzahl! Du bist ein Meister der Zahlen!',
+        'results_great': '🎉 Großartig! Du kennst deine Zahlen wirklich gut!',
         'results_good': '👍 Gute Arbeit! Übe weiter, um dich zu verbessern!',
         'results_keep_practicing': '📚 Weiter üben! Mit der Zeit wirst du besser!',
         'results_try_again': 'Nochmal versuchen',
@@ -151,7 +151,7 @@ TRANSLATIONS = {
         'flash_gave_up': 'Die Antwort war: {}',
         
         # Imprint page
-        'imprint_title': 'Impressum - Spanische Zahlen Quiz',
+        'imprint_title': 'Impressum - diminumero',
         'imprint_heading': 'Impressum',
         'imprint_legal_info': 'Angaben gemäß § 5 TMG',
         'imprint_contact': 'Kontakt',
@@ -166,7 +166,7 @@ TRANSLATIONS = {
         'imprint_back_home': 'Zurück zur Startseite',
         
         # Email subject
-        'feedback_subject': 'Spanische Zahlen Quiz Feedback',
+        'feedback_subject': 'diminumero Feedback',
     }
 }
 

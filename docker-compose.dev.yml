@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   web:
+    container_name: diminumero-dev
     build:
       context: .
       args:

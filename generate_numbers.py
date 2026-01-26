@@ -1,4 +1,4 @@
-"""Generate Spanish numbers programmatically."""
+"""Generate Spanish numbers programmatically for diminumero."""
 
 def number_to_spanish(n):
     """Convert a number to Spanish."""

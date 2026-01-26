@@ -1,7 +1,7 @@
 [project]
-name = "spanish-numbers-quiz"
+name = "diminumero"
 version = "0.1.0"
-description = "Add your description here"
+description = "Interactive web app to practice Spanish number translations - say my number!"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

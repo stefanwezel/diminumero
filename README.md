@@ -1,10 +1,10 @@
-# 🔢 Spanish Numbers Quiz
+# 🔢 diminumero
 
 ![Tests](https://github.com/stefanwezel/spanish_numbers_quiz/workflows/Tests/badge.svg)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Code Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](https://github.com/stefanwezel/spanish_numbers_quiz)
 
-An interactive web application to practice Spanish number translations. Built with Flask, featuring 1,000 numbers from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
+An interactive web application to practice Spanish number translations. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
 
 ## ✨ Features
 

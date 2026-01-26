@@ -1,4 +1,4 @@
-"""Spanish numbers data for the quiz application."""
+"""Spanish numbers data for diminumero."""
 
 NUMBERS = {
     1: "uno",
