@@ -8,7 +8,7 @@ services:
       args:
         MODE: production
     ports:
-      - "5000:5000"
+      - "5005:5005"
     environment:
       - FLASK_ENV=production
     env_file:
