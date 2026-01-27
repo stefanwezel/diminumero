@@ -108,11 +108,11 @@ TRANSLATIONS = {
         'mode_easy': 'Einfach',
         'mode_easy_desc': 'Multiple Choice mit 4 Optionen. Perfekt für Anfänger!',
         'mode_easy_btn': 'Einfachen Modus starten',
-        'mode_advanced': 'Fortgeschritten',
+        'mode_advanced': 'Schwierig',
         'mode_advanced_desc': 'Tippe die Antwort mit Live-Feedback Wort für Wort.',
-        'mode_advanced_btn': 'Fortgeschrittenen Modus starten',
+        'mode_advanced_btn': 'Schwierigen Modus starten',
         'mode_hardcore': 'Hardcore',
-        'mode_hardcore_desc': 'Ultimativer Herausforderungsmodus.',
+        'mode_hardcore_desc': 'Ultimativer Modus.',
         'mode_hardcore_btn': 'Kommt bald',
         
         # Info section

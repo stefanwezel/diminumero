@@ -689,7 +689,8 @@ body {
     }
     
     .info {
-        gap: 30px;
+        flex-direction: column;
+        gap: 20px;
     }
     
     .hero, .results-container, .quiz-page {
@@ -726,6 +727,22 @@ body {
     
     .validation-feedback {
         font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+    .mode-selection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+    }
+
+    .mode-card {
+        width: 100%;
+        max-width: 360px;
+        padding: 50px 30px;
+        min-height: 260px;
     }
 }
 
