@@ -9,13 +9,10 @@ An interactive web application to practice Spanish number translations. "diminum
 ## ✨ Features
 
 - **1,000 Spanish Numbers**: From 1 to millions with correct Spanish grammar
-- **Smart Weighting**: Numbers ≤5,000 appear 4× more often than larger numbers
-- **Multiple Choice Quiz**: 4 options per question with randomized order
-- **25 Questions per Session**: Complete quiz with score tracking
-- **Toast Notifications**: Instant feedback on correct/incorrect answers
+- **Smart Weighting**: Numbers ≤100 appear 100× more often than larger numbers
+- **Different Modes**: Begginer and advanced
 - **Responsive Design**: Works seamlessly on desktop and mobile
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
-- **Beautiful UI**: Warm color scheme with smooth animations
 
 ## 🚀 Quick Start
 
@@ -27,27 +24,39 @@ An interactive web application to practice Spanish number translations. "diminum
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd spanish_numbers_quiz
-
-# Install dependencies
+git clone git@github.com:stefanwezel/diminumero.git && cd diminumero
+```
+```bash
 uv sync
 ```
 
 ### Run the Application
-
+Start the Flask development server with:
 ```bash
-# Start the Flask development server
 uv run flask --app app run --debug
 ```
 
 Visit **http://127.0.0.1:5000** in your browser to start learning!
 
+### Run with Docker
+
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Access the application at:
+- **Development**: http://localhost:5001
+- **Production**: http://localhost:5005
+
+For detailed Docker configuration and commands, see [DOCKER.md](DOCKER.md).
+
 ## 📁 Project Structure
 
 ```
-spanish_numbers_quiz/
+diminumero/
 ├── app.py                  # Flask application & routes
 ├── quiz_logic.py          # Quiz generation & weighting logic
 ├── numbers_data.py        # 1,000 Spanish number translations
@@ -66,9 +75,17 @@ spanish_numbers_quiz/
 
 ## 🎯 How It Works
 
-1. **Start Quiz**: Click to begin a 25-question session
+### Easy Mode (Multiple Choice)
+1. **Start Quiz**: Click to begin a session
 2. **Answer Questions**: Select the correct Spanish translation from 4 options
 3. **Get Instant Feedback**: Toast notifications confirm correctness
+4. **Track Progress**: See your score and progress bar throughout
+5. **Review Results**: View final score with performance feedback
+
+### Advanced Mode (Text Input)
+1. **Start Quiz**: Click to begin a session
+2. **Type Your Answer**: Enter the Spanish translation manually
+3. **Live Validation**: Get real-time word-by-word feedback as you type
 4. **Track Progress**: See your score and progress bar throughout
 5. **Review Results**: View final score with performance feedback
 

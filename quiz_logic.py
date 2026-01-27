@@ -12,7 +12,7 @@ random.seed(secrets.randbits(128) ^ int(time.time() * 1000000))
 def get_random_question(exclude_numbers=None):
     """
     Get a random number from the available numbers with weighted probability.
-    Lower numbers have higher probability; numbers > 5000 are picked ~1/4 as often.
+    Lower numbers have higher probability; numbers > 100 are picked ~1/100 as often.
     
     Args:
         exclude_numbers: List of numbers to exclude (already asked in this session)
@@ -30,21 +30,21 @@ def get_random_question(exclude_numbers=None):
         available_numbers = list(NUMBERS.keys())
     
     # Calculate weights with linear decrease based on number value
-    # Numbers <= 5000 get full weight, numbers > 5000 get reduced weight
+    # Numbers <= 100 get full weight, numbers > 100 get reduced weight
     max_number = max(available_numbers)
     weights = []
     
     for num in available_numbers:
-        if num <= 5000:
-            # Full weight for numbers <= 5000
+        if num <= 100:
+            # Full weight for numbers <= 100
             weight = 1.0
         else:
-            # Linear decrease for numbers > 5000
-            # At 5000: weight = 1.0
-            # At max_number: weight = 0.25
-            # Linear interpolation between 5000 and max
-            if max_number > 5000:
-                weight = 1.0 - (0.75 * (num - 5000) / (max_number - 5000))
+            # Linear decrease for numbers > 100
+            # At 100: weight = 1.0
+            # At max_number: weight = 0.01
+            # Linear interpolation between 100 and max
+            if max_number > 100:
+                weight = 1.0 - (0.99 * (num - 100) / (max_number - 100))
             else:
                 weight = 1.0
         weights.append(weight)
