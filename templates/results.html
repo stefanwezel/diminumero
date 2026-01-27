@@ -7,14 +7,14 @@
     <div class="results-container">
         <h1 class="results-title">{{ get_text('results_complete') }}</h1>
         
-        <div class="score-card">
+        <div class="score-card" title="{{ attempted }} / {{ max_questions }} {{ get_text('info_questions') }}">
             <div class="final-score">
                 <span class="score-number">{{ score }}</span>
                 <span class="score-divider">/</span>
-                <span class="score-total">{{ total }}</span>
+                <span class="score-total">{{ max_questions }}</span>
             </div>
             <div class="score-label">{{ get_text('results_correct') }}</div>
-            <div class="percentage">{{ "%.0f"|format(percentage) }}%</div>
+            <div class="percentage">{{ "%.0f"|format(percentage) }} %</div>
         </div>
         
         <!-- Performance message -->

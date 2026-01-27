@@ -204,8 +204,8 @@ class TestResultsPage:
         """Test that results page displays score."""
         # Set up a completed quiz session
         with client.session_transaction() as sess:
-            sess['score'] = 20
-            sess['total_questions'] = 25
+            sess['score'] = 7
+            sess['total_questions'] = 7
             sess['mode'] = 'easy'
         
         response = client.get('/results')
@@ -213,21 +213,22 @@ class TestResultsPage:
         data = response.data.decode('utf-8')
         
         # Should show score
-        assert '20' in data
-        assert '25' in data
+        assert '7' in data
+        assert '10' in data
+        assert '70 %' in data
     
     def test_results_percentage_calculation(self, client):
         """Test that results page calculates percentage correctly."""
         with client.session_transaction() as sess:
-            sess['score'] = 25
-            sess['total_questions'] = 25
+            sess['score'] = 10
+            sess['total_questions'] = 10
         
         response = client.get('/results')
         assert response.status_code == 200
         data = response.data.decode('utf-8')
         
         # Should show 100%
-        assert '100' in data
+        assert '100 %' in data
 
 
 class TestRestartQuiz:

@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Configuration
-QUESTIONS_PER_QUIZ = 25
+QUESTIONS_PER_QUIZ = 10
 
 # Translations
 TRANSLATIONS = {
@@ -389,14 +389,17 @@ def validate_answer():
 def results():
     """Display final quiz results."""
     score = session.get('score', 0)
-    total = session.get('total_questions', 0)
-    
-    # Calculate percentage
-    percentage = (score / total * 100) if total > 0 else 0
+    attempted = session.get('total_questions', 0)
+    max_questions = QUESTIONS_PER_QUIZ
+
+    score_ratio = (score / max_questions) if max_questions > 0 else 0
+    percentage = score_ratio * 100
     
     return render_template('results.html', 
-                         score=score, 
-                         total=total,
+                         score=score,
+                         attempted=attempted,
+                         max_questions=max_questions,
+                         score_ratio=score_ratio,
                          percentage=percentage,
                          get_text=get_text)
 

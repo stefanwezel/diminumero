@@ -108,7 +108,7 @@ This creates a fresh `numbers_data.py` with different random numbers while maint
 
 ## 🎨 Customization
 
-- **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `app.py`
+- **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `app.py` (default 10 questions)
 - **Number Weighting**: Adjust threshold and weights in `quiz_logic.py`
 - **Colors**: Update color variables in `static/css/style.css`
 
