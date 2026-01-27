@@ -572,20 +572,21 @@ body {
 }
 
 .btn-feedback {
-    background: #F9A03F;
+    background: #fbe8c7;
     color: #813405;
-    border: 2px solid #813405;
+    border: 2px solid #d9a168;
     padding: 12px 30px;
     font-size: 1rem;
     text-decoration: none;
     display: inline-block;
+    transition: all 0.3s ease;
 }
 
 .btn-feedback:hover {
-    background: #D45113;
-    color: white;
+    background: #f3d5a6;
+    color: #813405;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(212, 81, 19, 0.3);
+    box-shadow: 0 6px 16px rgba(129, 52, 5, 0.25);
 }
 
 /* Footer */
