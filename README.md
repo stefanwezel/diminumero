@@ -36,10 +36,10 @@ Start the Flask development server with:
 ```bash
 uv run flask --app app run --debug
 ```
-
-Visit **http://127.0.0.1:5000** in your browser.
+Access the application at http://127.0.0.1:5000
 
 ### Run with Docker
+Before you start with a docker setup, make sure to setup a `.env` file. Have a look at the `.env.example` for reference.
 For development mode, run
 ```bash
 docker-compose -f docker-compose.dev.yml up --build
@@ -51,8 +51,8 @@ To start the production container, run
 docker-compose -f docker-compose.prod.yml up d
 ```
 
-Access the application at:
-- http://localhost:5005
+Access the application at http://127.0.0.1:5000
+
 
 For detailed Docker configuration and commands, see [DOCKER.md](DOCKER.md).
 
