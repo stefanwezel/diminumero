@@ -10,8 +10,8 @@
 <body>
     <!-- Language switcher -->
     <div class="language-switcher">
-        <a href="{{ url_for('set_language', lang='en') }}" class="lang-flag {% if session.get('language', 'de') == 'en' %}active{% endif %}" title="English">🇬🇧</a>
-        <a href="{{ url_for('set_language', lang='de') }}" class="lang-flag {% if session.get('language', 'de') == 'de' %}active{% endif %}" title="Deutsch">🇩🇪</a>
+        <a href="{{ url_for('set_language', lang='en') }}" class="lang-flag {% if session.get('language', 'de') == 'en' %}active{% endif %}" title="English">EN</a>
+        <a href="{{ url_for('set_language', lang='de') }}" class="lang-flag {% if session.get('language', 'de') == 'de' %}active{% endif %}" title="Deutsch">DE</a>
     </div>
     
     <div class="container">
