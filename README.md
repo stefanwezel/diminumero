@@ -43,11 +43,7 @@ Before you start with a docker setup, make sure to setup a `.env` file. Have a l
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
-
 Access the application at http://0.0.0.0:5005.
-
-
-For detailed Docker configuration and commands, see [DOCKER.md](DOCKER.md).
 
 ## 📁 Project Structure
 
