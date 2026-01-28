@@ -480,6 +480,14 @@ body {
     box-shadow: 0 20px 60px rgba(2, 1, 34, 0.15), 0 0 40px rgba(252, 158, 79, 0.1);
 }
 
+.results-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    display: block;
+    filter: drop-shadow(0 4px 15px rgba(252, 158, 79, 0.3));
+}
+
 .results-title {
     font-size: 2.5rem;
     color: #020122;
@@ -578,6 +586,15 @@ body {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.5s ease, slideOut 0.5s ease 2.5s;
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
 }
 
 .toast-success {

@@ -5,6 +5,7 @@
 {% block content %}
 <div class="results-page">
     <div class="results-container">
+        <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="results-logo">
         <h1 class="results-title">{{ get_text('results_complete') }}</h1>
         
         <div class="score-card" title="{{ attempted }} / {{ max_questions }} {{ get_text('info_questions') }}">

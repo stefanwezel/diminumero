@@ -1,4 +1,8 @@
-# 🔢 diminumero
+# diminumero
+
+<p align="center">
+  <img src="static/logo-512.png" alt="diminumero logo" width="150" />
+</p>
 
 ![Tests](https://github.com/stefanwezel/diminumero/workflows/Tests/badge.svg)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
@@ -22,12 +26,9 @@ An interactive web application to practice Spanish number translations. "diminum
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
 ### Installation
-
+Clone and setup the repository:
 ```bash
-git clone git@github.com:stefanwezel/diminumero.git && cd diminumero
-```
-```bash
-uv sync
+git clone git@github.com:stefanwezel/diminumero.git && cd diminumero && uv sync
 ```
 
 ### Run the Application
@@ -36,20 +37,22 @@ Start the Flask development server with:
 uv run flask --app app run --debug
 ```
 
-Visit **http://127.0.0.1:5000** in your browser to start learning!
+Visit **http://127.0.0.1:5000** in your browser.
 
 ### Run with Docker
-
+For development mode, run
 ```bash
 docker-compose -f docker-compose.dev.yml up --build
 ```
+This container will run in debug mode, applying changes on the fly.
+
+To start the production container, run
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml up d
 ```
 
 Access the application at:
-- **Development**: http://localhost:5001
-- **Production**: http://localhost:5005
+- http://localhost:5005
 
 For detailed Docker configuration and commands, see [DOCKER.md](DOCKER.md).
 

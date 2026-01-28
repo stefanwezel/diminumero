@@ -33,7 +33,8 @@
         {% if messages %}
             {% for category, message in messages %}
                 <div class="toast toast-{{ category }}">
-                    {{ message }}
+                    <img src="{{ url_for('static', filename='favicon-32x32.png') }}" alt="" class="toast-icon">
+                    <span>{{ message }}</span>
                 </div>
             {% endfor %}
         {% endif %}
