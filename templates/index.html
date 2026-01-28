@@ -5,7 +5,8 @@
 {% block content %}
 <div class="landing-page">
     <div class="hero">
-        <h1 class="title">🔢 {{ get_text('home_hero_title') }}</h1>
+        <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="hero-logo">
+        <h1 class="title">{{ get_text('home_hero_title') }}</h1>
         <p class="subtitle">{{ get_text('home_hero_subtitle') }}</p>
         <p class="description">
             {{ get_text('home_hero_description') }}
