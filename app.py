@@ -90,6 +90,62 @@ TRANSLATIONS = {
         'imprint_back_home': 'Back to Home',
         
         # Email subject
+        # Privacy policy
+        'footer_privacy': 'Privacy Policy',
+        'privacy_title': 'Privacy Policy - diminumero',
+        'privacy_heading': 'Privacy Policy',
+        'privacy_intro_heading': 'Introduction',
+        'privacy_intro_text': 'We take the protection of your personal data seriously. This privacy policy explains what data we collect and how we use it.',
+        'privacy_cookies_heading': 'Cookies and Similar Technologies',
+        'privacy_cookies_text': 'This website uses cookies to ensure proper functionality:',
+        'privacy_session_cookies': 'Session Cookies',
+        'privacy_session_cookies_desc': 'We use strictly necessary session cookies to make the quiz work. These cookies store your quiz progress, score, and language preference temporarily. They are essential for the website to function and are automatically deleted when you close your browser.',
+        'privacy_data_collection_heading': 'Data Collection and Storage',
+        'privacy_data_collection_text': 'We do NOT collect, store, or process any personal data. We do not track users, create profiles, or share any information with third parties (except as required for Google AdSense, see below). Your quiz answers and progress are stored only temporarily in your browser session and are not saved to any server.',
+        'privacy_adsense_heading': 'Google AdSense',
+        'privacy_adsense_text': 'This website displays advertisements through Google AdSense. Google may use cookies and similar technologies to show personalized ads based on your browsing activity.',
+        'privacy_adsense_info': 'For more information about how Google uses data, please visit: https://policies.google.com/technologies/partner-sites',
+        'privacy_your_rights_heading': 'Your Rights',
+        'privacy_your_rights_text': 'Since we do not collect or store personal data, there is no data to access, correct, or delete. You can clear your browser cookies at any time through your browser settings.',
+        'privacy_contact_heading': 'Contact',
+        'privacy_contact_text': 'If you have any questions about this privacy policy, please contact us:',
+        'privacy_email': 'Email',
+        'privacy_back_home': 'Back to Home',
+        
+        # Cookie banner
+        'cookie_banner_text': 'This website uses only essential session cookies to make the quiz work. We don\'t store, track, or share any personal data.',
+        'cookie_banner_adsense': 'Google AdSense may display personalized ads.',
+        'cookie_banner_learn_more': 'Learn more',
+        'cookie_banner_accept': 'Got it',
+        # Privacy policy
+        'footer_privacy': 'Privacy Policy',
+        'privacy_title': 'Privacy Policy - diminumero',
+        'privacy_heading': 'Privacy Policy',
+        'privacy_intro_heading': 'Introduction',
+        'privacy_intro_text': 'We take the protection of your personal data seriously. This privacy policy explains what data we collect and how we use it.',
+        'privacy_cookies_heading': 'Cookies and Similar Technologies',
+        'privacy_cookies_text': 'This website uses cookies to ensure proper functionality:',
+        'privacy_session_cookies': 'Session Cookies',
+        'privacy_session_cookies_desc': 'We use strictly necessary session cookies to make the quiz work. These cookies store your quiz progress, score, and language preference temporarily. They are essential for the website to function and are automatically deleted when you close your browser.',
+        'privacy_data_collection_heading': 'Data Collection and Storage',
+        'privacy_data_collection_text': 'We do NOT collect, store, or process any personal data. We do not track users, create profiles, or share any information with third parties (except as required for Google AdSense, see below). Your quiz answers and progress are stored only temporarily in your browser session and are not saved to any server.',
+        'privacy_adsense_heading': 'Google AdSense',
+        'privacy_adsense_text': 'This website displays advertisements through Google AdSense. Google may use cookies and similar technologies to show personalized ads based on your browsing activity.',
+        'privacy_adsense_info': 'For more information about how Google uses data, please visit: https://policies.google.com/technologies/partner-sites',
+        'privacy_your_rights_heading': 'Your Rights',
+        'privacy_your_rights_text': 'Since we do not collect or store personal data, there is no data to access, correct, or delete. You can clear your browser cookies at any time through your browser settings.',
+        'privacy_contact_heading': 'Contact',
+        'privacy_contact_text': 'If you have any questions about this privacy policy, please contact us:',
+        'privacy_email': 'Email',
+        'privacy_back_home': 'Back to Home',
+        
+        # Cookie banner
+        'cookie_banner_text': 'This website uses only essential session cookies to make the quiz work. We don\'t store, track, or share any personal data.',
+        'cookie_banner_adsense': 'Google AdSense may display personalized ads.',
+        'cookie_banner_learn_more': 'Learn more',
+        'cookie_banner_accept': 'Got it',
+
+
         'feedback_subject': 'diminumero Feedback',
     },
     'de': {
@@ -166,6 +222,62 @@ TRANSLATIONS = {
         'imprint_back_home': 'Zurück zur Startseite',
         
         # Email subject
+        # Privacy policy
+        'footer_privacy': 'Datenschutz',
+        'privacy_title': 'Datenschutzerklärung - diminumero',
+        'privacy_heading': 'Datenschutzerklärung',
+        'privacy_intro_heading': 'Einleitung',
+        'privacy_intro_text': 'Wir nehmen den Schutz Ihrer persönlichen Daten ernst. Diese Datenschutzerklärung erklärt, welche Daten wir sammeln und wie wir sie verwenden.',
+        'privacy_cookies_heading': 'Cookies und ähnliche Technologien',
+        'privacy_cookies_text': 'Diese Website verwendet Cookies, um ordnungsgemäß zu funktionieren:',
+        'privacy_session_cookies': 'Sitzungs-Cookies',
+        'privacy_session_cookies_desc': 'Wir verwenden ausschließlich notwendige Sitzungs-Cookies, damit das Quiz funktioniert. Diese Cookies speichern temporär Ihren Quizfortschritt, Punktestand und Spracheinstellung. Sie sind für die Funktionalität der Website unerlässlich und werden automatisch gelöscht, wenn Sie Ihren Browser schließen.',
+        'privacy_data_collection_heading': 'Datenerfassung und -speicherung',
+        'privacy_data_collection_text': 'Wir sammeln, speichern oder verarbeiten KEINE personenbezogenen Daten. Wir tracken keine Nutzer, erstellen keine Profile und teilen keine Informationen mit Dritten (außer wie für Google AdSense erforderlich, siehe unten). Ihre Quizantworten und Ihr Fortschritt werden nur temporär in Ihrer Browser-Sitzung gespeichert und nicht auf einem Server gesichert.',
+        'privacy_adsense_heading': 'Google AdSense',
+        'privacy_adsense_text': 'Diese Website zeigt Werbung über Google AdSense an. Google kann Cookies und ähnliche Technologien verwenden, um personalisierte Anzeigen basierend auf Ihrer Browsing-Aktivität zu schalten.',
+        'privacy_adsense_info': 'Für mehr Informationen darüber, wie Google Daten verwendet, besuchen Sie bitte: https://policies.google.com/technologies/partner-sites',
+        'privacy_your_rights_heading': 'Ihre Rechte',
+        'privacy_your_rights_text': 'Da wir keine personenbezogenen Daten sammeln oder speichern, gibt es keine Daten, auf die zugegriffen, die korrigiert oder gelöscht werden könnten. Sie können Ihre Browser-Cookies jederzeit über Ihre Browsereinstellungen löschen.',
+        'privacy_contact_heading': 'Kontakt',
+        'privacy_contact_text': 'Wenn Sie Fragen zu dieser Datenschutzerklärung haben, kontaktieren Sie uns bitte:',
+        'privacy_email': 'E-Mail',
+        'privacy_back_home': 'Zurück zur Startseite',
+        
+        # Cookie banner
+        'cookie_banner_text': 'Diese Website verwendet nur essentielle Sitzungs-Cookies, damit das Quiz funktioniert. Wir speichern, tracken oder teilen keine persönlichen Daten.',
+        'cookie_banner_adsense': 'Google AdSense kann personalisierte Werbung anzeigen.',
+        'cookie_banner_learn_more': 'Mehr erfahren',
+        'cookie_banner_accept': 'Verstanden',
+        # Privacy policy
+        'footer_privacy': 'Datenschutz',
+        'privacy_title': 'Datenschutzerklärung - diminumero',
+        'privacy_heading': 'Datenschutzerklärung',
+        'privacy_intro_heading': 'Einleitung',
+        'privacy_intro_text': 'Wir nehmen den Schutz Ihrer persönlichen Daten ernst. Diese Datenschutzerklärung erklärt, welche Daten wir sammeln und wie wir sie verwenden.',
+        'privacy_cookies_heading': 'Cookies und ähnliche Technologien',
+        'privacy_cookies_text': 'Diese Website verwendet Cookies, um ordnungsgemäß zu funktionieren:',
+        'privacy_session_cookies': 'Sitzungs-Cookies',
+        'privacy_session_cookies_desc': 'Wir verwenden ausschließlich notwendige Sitzungs-Cookies, damit das Quiz funktioniert. Diese Cookies speichern temporär Ihren Quizfortschritt, Punktestand und Spracheinstellung. Sie sind für die Funktionalität der Website unerlässlich und werden automatisch gelöscht, wenn Sie Ihren Browser schließen.',
+        'privacy_data_collection_heading': 'Datenerfassung und -speicherung',
+        'privacy_data_collection_text': 'Wir sammeln, speichern oder verarbeiten KEINE personenbezogenen Daten. Wir tracken keine Nutzer, erstellen keine Profile und teilen keine Informationen mit Dritten (außer wie für Google AdSense erforderlich, siehe unten). Ihre Quizantworten und Ihr Fortschritt werden nur temporär in Ihrer Browser-Sitzung gespeichert und nicht auf einem Server gesichert.',
+        'privacy_adsense_heading': 'Google AdSense',
+        'privacy_adsense_text': 'Diese Website zeigt Werbung über Google AdSense an. Google kann Cookies und ähnliche Technologien verwenden, um personalisierte Anzeigen basierend auf Ihrer Browsing-Aktivität zu schalten.',
+        'privacy_adsense_info': 'Für mehr Informationen darüber, wie Google Daten verwendet, besuchen Sie bitte: https://policies.google.com/technologies/partner-sites',
+        'privacy_your_rights_heading': 'Ihre Rechte',
+        'privacy_your_rights_text': 'Da wir keine personenbezogenen Daten sammeln oder speichern, gibt es keine Daten, auf die zugegriffen, die korrigiert oder gelöscht werden könnten. Sie können Ihre Browser-Cookies jederzeit über Ihre Browsereinstellungen löschen.',
+        'privacy_contact_heading': 'Kontakt',
+        'privacy_contact_text': 'Wenn Sie Fragen zu dieser Datenschutzerklärung haben, kontaktieren Sie uns bitte:',
+        'privacy_email': 'E-Mail',
+        'privacy_back_home': 'Zurück zur Startseite',
+        
+        # Cookie banner
+        'cookie_banner_text': 'Diese Website verwendet nur essentielle Sitzungs-Cookies, damit das Quiz funktioniert. Wir speichern, tracken oder teilen keine persönlichen Daten.',
+        'cookie_banner_adsense': 'Google AdSense kann personalisierte Werbung anzeigen.',
+        'cookie_banner_learn_more': 'Mehr erfahren',
+        'cookie_banner_accept': 'Verstanden',
+
+
         'feedback_subject': 'diminumero Feedback',
     }
 }
@@ -409,6 +521,12 @@ def restart():
     """Restart the quiz."""
     session.clear()
     return redirect(url_for('index'))
+
+
+@app.route('/privacy')
+def privacy():
+    """Display privacy policy page."""
+    return render_template('privacy.html', get_text=get_text)
 
 
 @app.route('/imprint')

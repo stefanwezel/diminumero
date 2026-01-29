@@ -43,5 +43,19 @@
     {% endwith %}
     
     <script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+    <!-- Cookie Banner -->
+    <div id="cookie-banner" class="cookie-banner">
+        <div class="cookie-banner-content">
+            <div class="cookie-banner-text">
+                <p><strong>🍪 {{ get_text('cookie_banner_text') }}</strong></p>
+                <p><small>{{ get_text('cookie_banner_adsense') }} <a href="{{ url_for('privacy') }}">{{ get_text('cookie_banner_learn_more') }}</a></small></p>
+            </div>
+            <div class="cookie-banner-actions">
+                <button id="cookie-accept" class="cookie-accept-btn">{{ get_text('cookie_banner_accept') }}</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/cookie-banner.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('privacy_title') }}{% endblock %}
+
+{% block content %}
+<div class="imprint-page">
+    <div class="imprint-container">
+        <h1 class="imprint-title">{{ get_text('privacy_heading') }}</h1>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_intro_heading') }}</h2>
+            <p>{{ get_text('privacy_intro_text') }}</p>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_cookies_heading') }}</h2>
+            <p>{{ get_text('privacy_cookies_text') }}</p>
+            <ul>
+                <li><strong>{{ get_text('privacy_session_cookies') }}:</strong> {{ get_text('privacy_session_cookies_desc') }}</li>
+            </ul>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_data_collection_heading') }}</h2>
+            <p>{{ get_text('privacy_data_collection_text') }}</p>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_adsense_heading') }}</h2>
+            <p>{{ get_text('privacy_adsense_text') }}</p>
+            <p>{{ get_text('privacy_adsense_info') }}</p>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_your_rights_heading') }}</h2>
+            <p>{{ get_text('privacy_your_rights_text') }}</p>
+        </div>
+        
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_contact_heading') }}</h2>
+            <p>{{ get_text('privacy_contact_text') }}</p>
+            <p>{{ get_text('privacy_email') }}: <a href="mailto:wezelstefan@gmail.com">wezelstefan@gmail.com</a></p>
+        </div>
+        
+        <div class="imprint-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">{{ get_text('privacy_back_home') }}</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
