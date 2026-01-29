@@ -23,4 +23,4 @@ ENV FLASK_APP=app.py
 EXPOSE 5005
 
 # Production-only: run gunicorn on 5005
-CMD gunicorn --bind 0.0.0.0:5005 --workers 1 app:app
+CMD gunicorn --bind 0.0.0.0:5005 --workers 2 app:app
