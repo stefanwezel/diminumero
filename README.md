@@ -13,7 +13,7 @@ An interactive web application to practice Spanish number translations. "diminum
 ## ✨ Features
 
 - **1,000 Spanish Numbers**: From 1 to millions with correct Spanish grammar
-- **Smart Weighting**: Numbers ≤100 appear 100× more often than larger numbers
+- **Smart Weighting**: Step-wise probability by order of magnitude - numbers <100 have baseline probability, 100-999 are 10× less likely, 1000-9999 are 100× less likely, etc.
 - **Different Modes**: Begginer and advanced
 - **Responsive Design**: Works seamlessly on desktop and mobile
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
@@ -43,7 +43,7 @@ Before you start with a docker setup, make sure to setup a `.env` file. Have a l
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
-Access the application at http://0.0.0.0:5005.
+Access the application at http://127.0.0.1:5000.
 
 ## 📁 Project Structure
 
@@ -101,7 +101,7 @@ This creates a fresh `numbers_data.py` with different random numbers while maint
 ## 🎨 Customization
 
 - **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `app.py` (default 10 questions)
-- **Number Weighting**: Adjust threshold and weights in `quiz_logic.py`
+- **Number Weighting**: Adjust order-of-magnitude thresholds and weights in `quiz_logic.py` (currently 10x reduction per magnitude)
 - **Colors**: Update color variables in `static/css/style.css`
 
 ## 📄 License

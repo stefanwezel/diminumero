@@ -12,7 +12,14 @@ random.seed(secrets.randbits(128) ^ int(time.time() * 1000000))
 def get_random_question(exclude_numbers=None):
     """
     Get a random number from the available numbers with weighted probability.
-    Lower numbers have higher probability; numbers > 100 are picked ~1/100 as often.
+    Lower numbers have higher probability; probability drops by 10x per order of magnitude above 100.
+    
+    Probability weights:
+    - Numbers < 100: weight = 1.0 (baseline)
+    - Numbers 100-999: weight = 0.1 (10x less likely)
+    - Numbers 1000-9999: weight = 0.01 (100x less likely)
+    - Numbers 10000-99999: weight = 0.001 (1000x less likely)
+    - Numbers 100000+: weight = 0.0001 (10000x less likely)
     
     Args:
         exclude_numbers: List of numbers to exclude (already asked in this session)
@@ -29,24 +36,26 @@ def get_random_question(exclude_numbers=None):
     if not available_numbers:
         available_numbers = list(NUMBERS.keys())
     
-    # Calculate weights with linear decrease based on number value
-    # Numbers <= 100 get full weight, numbers > 100 get reduced weight
-    max_number = max(available_numbers)
+    # Calculate weights with step-wise decrease based on order of magnitude
+    # Each order of magnitude above 100 reduces probability by 10x
     weights = []
     
     for num in available_numbers:
-        if num <= 100:
-            # Full weight for numbers <= 100
+        if num < 100:
+            # Full weight for numbers < 100
             weight = 1.0
+        elif num < 1000:
+            # 100-999: 10x less likely
+            weight = 0.1
+        elif num < 10000:
+            # 1000-9999: 100x less likely
+            weight = 0.01
+        elif num < 100000:
+            # 10000-99999: 1000x less likely
+            weight = 0.001
         else:
-            # Linear decrease for numbers > 100
-            # At 100: weight = 1.0
-            # At max_number: weight = 0.01
-            # Linear interpolation between 100 and max
-            if max_number > 100:
-                weight = 1.0 - (0.99 * (num - 100) / (max_number - 100))
-            else:
-                weight = 1.0
+            # 100000+: 10000x less likely
+            weight = 0.0001
         weights.append(weight)
     
     # Re-seed random with fresh entropy for each call
