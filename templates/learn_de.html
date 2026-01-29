@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Spanische Zahlen lernen - diminumero{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <button onclick="history.back()" class="btn-back">← Zurück</button>
+    
+    <header class="learn-hero">
+      <h1>Spanische Zahlen lernen</h1>
+      <p>
+        Diese Seite erklärt die wichtigsten Muster für <strong>spanische Zahlwörter</strong> – mit vielen Beispielen
+        (und typischen Stolperfallen wie <em>cien vs. ciento</em>, Akzente, <em>veintiún</em>, <em>un millón</em>).
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Inhalt</strong>
+      <ul>
+        <li><a href="#basics">0–29: Grundbausteine</a></li>
+        <li><a href="#tens">30–99: Zehner + „y" + Einer</a></li>
+        <li><a href="#hundreds">100–999: cien/ciento & Hunderter</a></li>
+        <li><a href="#thousands">Tausender</a></li>
+        <li><a href="#millions">Millionen & große Zahlen</a></li>
+        <li><a href="#spelling">Schreibweise & Akzente</a></li>
+        <li><a href="#mistakes">Typische Fehler</a></li>
+
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0–29: Grundbausteine</h2>
+      <p>
+        <strong>0–15</strong> sind am besten einfach auswendig: cero, uno, dos, tres, …, quince.
+        Ab <strong>16–19</strong> wird es systematisch:
+      </p>
+      <ul>
+        <li><strong>dieci-</strong> + Zahl: dieciséis, diecisiete, dieciocho, diecinueve</li>
+        <li><strong>20</strong> = veinte</li>
+        <li><strong>21–29</strong> = <strong>veinti-</strong> + Zahl: veintiuno, veintidós, veintitrés, …</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>Mini-Check</strong>: Wie sagt man 18, 22, 29?</summary>
+        <p><strong>18</strong> dieciocho · <strong>22</strong> veintidós · <strong>29</strong> veintinueve</p>
+      </details>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>30–99: Zehner + „y" + Einer</h2>
+      <p>
+        Ab <strong>30</strong> ist das Muster fast immer:
+        <strong>treinta/cuarenta/…</strong> + (<strong>y</strong> + Einer), wenn der Einer ≠ 0 ist.
+      </p>
+      <ul>
+        <li>30 = treinta</li>
+        <li>31 = treinta y uno</li>
+        <li>42 = cuarenta y dos</li>
+        <li>90 = noventa</li>
+        <li>98 = noventa y ocho</li>
+      </ul>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>100–999: <em>cien</em> vs. <em>ciento</em> & Hunderter</h2>
+      <ul>
+        <li><strong>100</strong> = cien</li>
+        <li><strong>101–199</strong> = ciento + … (z. B. 101 = ciento uno)</li>
+        <li><strong>200–900</strong>: doscientos, trescientos, cuatrocientos, …</li>
+      </ul>
+      <p>
+        Einige Hunderter sind "unregelmäßig" und werden oft falsch geschrieben:
+        <strong>quinientos</strong> (500), <strong>setecientos</strong> (700), <strong>novecientos</strong> (900).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>Mini-Check</strong>: 100, 115, 500, 742?</summary>
+        <p><strong>100</strong> cien · <strong>115</strong> ciento quince · <strong>500</strong> quinientos · <strong>742</strong> setecientos cuarenta y dos</p>
+      </details>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Tausender</h2>
+      <ul>
+        <li><strong>1000</strong> = mil (nicht "un mil")</li>
+        <li><strong>2000</strong> = dos mil</li>
+        <li><strong>4321</strong> = cuatro mil trescientos veintiuno</li>
+      </ul>
+      <p>
+        Wichtig: Vor <strong>mil</strong> wird <strong>uno → un</strong> (Apokope), z. B.
+        <strong>21 000</strong> = <strong>veintiún mil</strong>, <strong>31 000</strong> = <strong>treinta y un mil</strong>.
+        (Bei femininen Nomen sind auch Formen wie "veintiuna mil <em>personas</em>" möglich – im "Zahl-allein"-Kontext ist "veintiún mil" der Standard.)
+      </p>
+    </section>
+
+    <section id="millions" class="learn-section">
+      <h2>Millionen & große Zahlen</h2>
+      <ul>
+        <li><strong>1 000 000</strong> = <strong>un millón</strong></li>
+        <li><strong>2 000 000</strong> = dos millones</li>
+        <li><strong>1 234 567</strong> = un millón doscientos treinta y cuatro mil quinientos sesenta y siete</li>
+        <li><strong>1 000 000 000</strong> = <strong>mil millones</strong> (auch: "un millardo")</li>
+        <li><strong>1 000 000 000 000</strong> = un billón (spanische Langskala)</li>
+      </ul>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Schreibweise & Akzente</h2>
+      <p>
+        Orthografie-„Merksatz":
+        <strong>16–19</strong>, <strong>21–29</strong> und <strong>alle Hunderter</strong> werden heute üblicherweise
+        <strong>in einem Wort</strong> geschrieben (z. B. dieciséis, veintidós, doscientos).
+        Schreibungen wie "veinte y uno" gelten als veraltet.
+      </p>
+      <p>
+        Akzente, die fast jeder vergisst:
+        <strong>dieciséis</strong>, <strong>veintidós</strong>, <strong>veintitrés</strong>, <strong>veintiséis</strong>.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Typische Fehler (und wie du sie vermeidest)</h2>
+      <ol>
+        <li><strong>cien vs. ciento</strong>: 100 = cien, aber 101 = ciento uno.</li>
+        <li><strong>21 000</strong>: nicht "veintiuno mil", sondern <strong>veintiún mil</strong>.</li>
+        <li><strong>1 000 000</strong>: nicht "uno millón", sondern <strong>un millón</strong>.</li>
+        <li><strong>Akzente</strong>: v. a. 16, 22, 23, 26.</li>
+        <li><strong>Irreguläre Hunderter</strong>: quinientos / setecientos / novecientos.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('index') }}" class="btn btn-primary">
+        Zum Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

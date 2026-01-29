@@ -43,9 +43,15 @@ TRANSLATIONS = {
         'info_questions': 'Questions',
         'info_numbers': 'Numbers',
         
+        # Learn section
+        'learn_nav_text': 'Learn Spanish Numbers',
+        'learn_nav_button': 'Learn First',
+        'learn_nav_desc': 'Understand the patterns before you practice!',
+        
         # Footer
         'footer_feedback': 'Send Feedback',
         'footer_imprint': 'Imprint',
+        'footer_learn': 'Learn',
         
         # Quiz interface
         'quiz_question': 'Question',
@@ -175,9 +181,15 @@ TRANSLATIONS = {
         'info_questions': 'Fragen',
         'info_numbers': 'Zahlen',
         
+        # Learn section
+        'learn_nav_text': 'Spanische Zahlen lernen',
+        'learn_nav_button': 'Zuerst lernen',
+        'learn_nav_desc': 'Verstehe die Muster, bevor du übst!',
+        
         # Footer
         'footer_feedback': 'Feedback senden',
         'footer_imprint': 'Impressum',
+        'footer_learn': 'Lernen',
         
         # Quiz interface
         'quiz_question': 'Frage',
@@ -533,6 +545,14 @@ def privacy():
 def imprint():
     """Display imprint/impressum page."""
     return render_template('imprint.html', get_text=get_text)
+
+
+@app.route('/learn')
+def learn():
+    """Display learn/tutorial page."""
+    lang = session.get('language', 'de')
+    template = 'learn_de.html' if lang == 'de' else 'learn_en.html'
+    return render_template(template, get_text=get_text)
 
 
 if __name__ == '__main__':

@@ -951,3 +951,765 @@ body {
         width: 100%;
     }
 }
+
+/* Learn Section */
+html {
+    scroll-behavior: smooth;
+}
+
+.learn {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.learn-content {
+    background: white;
+    border-radius: 20px;
+    padding: 50px 40px;
+    box-shadow: 0 20px 60px rgba(2, 1, 34, 0.15), 0 0 40px rgba(252, 158, 79, 0.1);
+    position: relative;
+}
+
+.btn-back {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: linear-gradient(135deg, #654F6F 0%, #FC9E4F 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(101, 79, 111, 0.3);
+}
+
+.btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(101, 79, 111, 0.4);
+    background: linear-gradient(135deg, #FC9E4F 0%, #EDD382 100%);
+}
+
+.learn-hero {
+    margin-top: 30px;
+    margin-bottom: 40px;
+    text-align: center;
+    padding-bottom: 30px;
+    border-bottom: 3px solid #EDD382;
+}
+
+.learn-hero h1 {
+    font-size: 2.5rem;
+    color: #020122;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.learn-hero p {
+    font-size: 1.1rem;
+    color: #6B7280;
+    line-height: 1.8;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.learn-toc {
+    background: linear-gradient(135deg, #F2F3AE 0%, #EDD382 50%);
+    border: 3px solid #FC9E4F;
+    border-radius: 15px;
+    padding: 25px 30px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 15px rgba(252, 158, 79, 0.2);
+}
+
+.learn-toc strong {
+    display: block;
+    font-size: 1.3rem;
+    color: #020122;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.learn-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.learn-toc li {
+    margin: 0;
+}
+
+.learn-toc a {
+    color: #020122;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 6px;
+}
+
+.learn-toc a:hover {
+    color: #FC9E4F;
+    background: rgba(255, 255, 255, 0.7);
+    transform: translateX(5px);
+}
+
+.learn-section {
+    margin-bottom: 50px;
+    padding: 30px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #F2F3AE 100%);
+    border-radius: 15px;
+    border-left: 5px solid #FC9E4F;
+    box-shadow: 0 4px 15px rgba(2, 1, 34, 0.08);
+    transition: all 0.3s ease;
+}
+
+.learn-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(252, 158, 79, 0.2);
+}
+
+.learn-section h2 {
+    font-size: 2rem;
+    color: #020122;
+    margin-bottom: 20px;
+    font-weight: bold;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #EDD382;
+}
+
+.learn-section p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #020122;
+    margin-bottom: 20px;
+}
+
+.learn-section ul,
+.learn-section ol {
+    margin-left: 25px;
+    margin-bottom: 20px;
+}
+
+.learn-section li {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #020122;
+    margin-bottom: 12px;
+}
+
+.learn-section strong {
+    color: #FC9E4F;
+    font-weight: 700;
+}
+
+.learn-section em {
+    color: #654F6F;
+    font-style: italic;
+}
+
+.learn-check {
+    background: white;
+    border: 2px solid #EDD382;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-top: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.learn-check:hover {
+    border-color: #FC9E4F;
+    box-shadow: 0 4px 15px rgba(252, 158, 79, 0.15);
+}
+
+.learn-check summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #020122;
+    cursor: pointer;
+    user-select: none;
+}
+
+.learn-check[open] summary {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #EDD382;
+}
+
+.learn-check p {
+    font-size: 1rem;
+    margin: 0;
+    color: #654F6F;
+}
+
+.learn-code {
+    background: #020122;
+    color: #F2F3AE;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 25px 0;
+    overflow-x: auto;
+    box-shadow: 0 4px 15px rgba(2, 1, 34, 0.3);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.learn-code code {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    display: block;
+    white-space: pre;
+}
+
+.learn-footer {
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 3px solid #EDD382;
+    text-align: center;
+}
+
+.learn-footer .btn {
+    min-width: 200px;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+}
+
+/* Learn CTA on Index Page */
+.learn-cta {
+    margin: 30px 0;
+}
+
+.learn-card {
+    display: block;
+    background: linear-gradient(135deg, #654F6F 0%, #FC9E4F 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-decoration: none;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(101, 79, 111, 0.3);
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.learn-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(101, 79, 111, 0.5);
+    background: linear-gradient(135deg, #FC9E4F 0%, #EDD382 100%);
+}
+
+.learn-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.learn-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.learn-card p {
+    font-size: 1rem;
+    margin: 0;
+    opacity: 0.95;
+}
+
+/* Results page - adjust actions for 3 buttons */
+.results-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.results-actions .btn-large {
+    flex: 1;
+    min-width: 180px;
+    max-width: 250px;
+}
+
+/* Mobile Responsive for Learn Section */
+@media (max-width: 768px) {
+    .learn-content {
+        padding: 40px 25px;
+    }
+
+    .btn-back {
+        position: static;
+        display: block;
+        margin-bottom: 20px;
+        width: fit-content;
+    }
+
+    .learn-hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .learn-hero p {
+        font-size: 1rem;
+    }
+
+    .learn-toc {
+        padding: 20px;
+    }
+
+    .learn-toc strong {
+        font-size: 1.1rem;
+    }
+
+    .learn-toc a {
+        font-size: 0.95rem;
+    }
+
+    .learn-section {
+        padding: 20px;
+    }
+
+    .learn-section h2 {
+        font-size: 1.5rem;
+    }
+
+    .learn-section p,
+    .learn-section li {
+        font-size: 1rem;
+    }
+
+    .learn-code code {
+        font-size: 0.85rem;
+    }
+
+    .learn-card {
+        padding: 25px;
+    }
+
+    .learn-icon {
+        font-size: 2.5rem;
+    }
+
+    .learn-card h3 {
+        font-size: 1.3rem;
+    }
+
+    .results-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .results-actions .btn-large {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+    .learn-content {
+        padding: 30px 20px;
+        border-radius: 15px;
+    }
+
+    .learn-section {
+        padding: 15px;
+        margin-bottom: 30px;
+    }
+
+    .learn-toc {
+        padding: 15px;
+    }
+
+    .learn-code {
+        padding: 15px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .learn-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .learn-section h2 {
+        font-size: 1.3rem;
+    }
+
+    .learn-footer .btn {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .btn-back {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Learn Section Styles */
+html {
+    scroll-behavior: smooth;
+}
+
+.learn {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.learn-content {
+    background: white;
+    border-radius: 20px;
+    padding: 50px 60px;
+    box-shadow: 0 20px 60px rgba(2, 1, 34, 0.15), 0 0 40px rgba(252, 158, 79, 0.1);
+    position: relative;
+}
+
+.btn-back {
+    background: linear-gradient(135deg, #654F6F 0%, #FC9E4F 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 30px;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(101, 79, 111, 0.3);
+}
+
+.btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(101, 79, 111, 0.4);
+}
+
+.learn-hero {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 3px solid #EDD382;
+}
+
+.learn-hero h1 {
+    font-size: 2.5rem;
+    color: #020122;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-shadow: 0 2px 10px rgba(2, 1, 34, 0.1);
+}
+
+.learn-hero p {
+    font-size: 1.1rem;
+    color: #6B7280;
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.learn-hero strong {
+    color: #FC9E4F;
+    font-weight: 700;
+}
+
+.learn-hero em {
+    color: #654F6F;
+    font-style: italic;
+}
+
+.learn-toc {
+    background: linear-gradient(135deg, #F2F3AE 0%, #EDD382 50%, #FC9E4F 100%);
+    padding: 25px 30px;
+    border-radius: 15px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 15px rgba(252, 158, 79, 0.2);
+}
+
+.learn-toc strong {
+    display: block;
+    font-size: 1.3rem;
+    color: #020122;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.learn-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.learn-toc li {
+    margin: 0;
+}
+
+.learn-toc a {
+    color: #020122;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: block;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+}
+
+.learn-toc a:hover {
+    background: white;
+    transform: translateX(5px);
+    box-shadow: 0 2px 10px rgba(2, 1, 34, 0.1);
+    color: #FC9E4F;
+}
+
+.learn-section {
+    margin-bottom: 50px;
+    scroll-margin-top: 20px;
+}
+
+.learn-section h2 {
+    font-size: 1.8rem;
+    color: #020122;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #EDD382;
+    font-weight: 700;
+}
+
+.learn-section p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.learn-section strong {
+    color: #FC9E4F;
+    font-weight: 700;
+}
+
+.learn-section em {
+    color: #654F6F;
+    font-style: italic;
+}
+
+.learn-section ul,
+.learn-section ol {
+    margin: 20px 0;
+    padding-left: 30px;
+}
+
+.learn-section li {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.learn-check {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F2F3AE 100%);
+    border: 2px solid #EDD382;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin: 20px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.learn-check:hover {
+    background: linear-gradient(135deg, #F2F3AE 0%, #EDD382 100%);
+    box-shadow: 0 4px 15px rgba(252, 158, 79, 0.2);
+}
+
+.learn-check summary {
+    font-weight: 600;
+    color: #020122;
+    cursor: pointer;
+    font-size: 1.05rem;
+    user-select: none;
+}
+
+.learn-check summary strong {
+    color: #FC9E4F;
+}
+
+.learn-check p {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #EDD382;
+    font-size: 1rem;
+}
+
+.learn-code {
+    background: #020122;
+    color: #F2F3AE;
+    padding: 20px 25px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(2, 1, 34, 0.2);
+    border: 2px solid #654F6F;
+}
+
+.learn-code code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    display: block;
+}
+
+.learn-footer {
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 3px solid #EDD382;
+    text-align: center;
+}
+
+.learn-footer .btn {
+    font-size: 1.1rem;
+    padding: 15px 40px;
+}
+
+/* Learn CTA Card on Index Page */
+.learn-cta {
+    margin: 30px 0;
+}
+
+.learn-card {
+    display: block;
+    background: linear-gradient(135deg, #654F6F 0%, #FC9E4F 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 15px;
+    padding: 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(101, 79, 111, 0.3);
+    text-align: center;
+}
+
+.learn-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(101, 79, 111, 0.5);
+}
+
+.learn-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.learn-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.learn-card p {
+    font-size: 1rem;
+    margin: 0;
+    opacity: 0.95;
+}
+
+/* Mobile Responsiveness for Learn Section */
+@media (max-width: 768px) {
+    .learn-content {
+        padding: 30px 25px;
+    }
+    
+    .learn-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .learn-hero p {
+        font-size: 1rem;
+    }
+    
+    .learn-toc {
+        padding: 20px;
+    }
+    
+    .learn-toc ul {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .learn-section h2 {
+        font-size: 1.5rem;
+    }
+    
+    .learn-section p,
+    .learn-section li {
+        font-size: 1rem;
+    }
+    
+    .learn-code {
+        padding: 15px;
+        font-size: 0.85rem;
+    }
+    
+    .learn-code code {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+    .learn-content {
+        padding: 25px 20px;
+        border-radius: 15px;
+    }
+    
+    .learn-toc ul {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .learn-section {
+        margin-bottom: 35px;
+    }
+    
+    .btn-back {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .learn-hero h1 {
+        font-size: 1.75rem;
+    }
+    
+    .learn-hero p {
+        font-size: 0.95rem;
+    }
+    
+    .learn-section h2 {
+        font-size: 1.3rem;
+    }
+    
+    .learn-section p,
+    .learn-section li {
+        font-size: 0.95rem;
+    }
+    
+    .learn-card {
+        padding: 25px 20px;
+    }
+    
+    .learn-icon {
+        font-size: 2.5rem;
+    }
+    
+    .learn-card h3 {
+        font-size: 1.3rem;
+    }
+}
+

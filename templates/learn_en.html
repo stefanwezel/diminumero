@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Learn Spanish Numbers - diminumero{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <button onclick="history.back()" class="btn-back">← Back</button>
+    
+    <header class="learn-hero">
+      <h1>Learn Spanish Numbers</h1>
+      <p>
+        This page teaches the key patterns for <strong>Spanish number words</strong> — with lots of examples
+        (and the common traps: <em>cien vs. ciento</em>, accents, <em>veintiún</em>, <em>un millón</em>).
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Contents</strong>
+      <ul>
+        <li><a href="#basics">0–29: building blocks</a></li>
+        <li><a href="#tens">30–99: tens + "y" + ones</a></li>
+        <li><a href="#hundreds">100–999: cien/ciento & hundreds</a></li>
+        <li><a href="#thousands">Thousands</a></li>
+        <li><a href="#millions">Millions & large numbers</a></li>
+        <li><a href="#spelling">Spelling & accents</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0–29: building blocks</h2>
+      <p>
+        It's best to memorize <strong>0–15</strong> (cero … quince). Then the patterns kick in:
+      </p>
+      <ul>
+        <li><strong>16–19</strong>: <strong>dieci-</strong> + number → dieciséis, diecisiete, dieciocho, diecinueve</li>
+        <li><strong>20</strong>: veinte</li>
+        <li><strong>21–29</strong>: <strong>veinti-</strong> + number → veintiuno, veintidós, veintitrés, …</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>Quick check</strong>: 18, 22, 29?</summary>
+        <p><strong>18</strong> dieciocho · <strong>22</strong> veintidós · <strong>29</strong> veintinueve</p>
+      </details>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>30–99: tens + "y" + ones</h2>
+      <p>
+        From <strong>30</strong> onward the standard pattern is:
+        <strong>tens</strong> + (<strong>y</strong> + ones) when the ones digit is not zero.
+      </p>
+      <ul>
+        <li>30 = treinta</li>
+        <li>31 = treinta y uno</li>
+        <li>42 = cuarenta y dos</li>
+        <li>98 = noventa y ocho</li>
+      </ul>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>100–999: <em>cien</em> vs. <em>ciento</em> & hundreds</h2>
+      <ul>
+        <li><strong>100</strong> = cien</li>
+        <li><strong>101–199</strong> = ciento + … (e.g. 115 = ciento quince)</li>
+        <li><strong>200–900</strong>: doscientos, trescientos, cuatrocientos, …</li>
+      </ul>
+      <p>
+        Frequently-missed irregular hundreds:
+        <strong>quinientos</strong> (500), <strong>setecientos</strong> (700), <strong>novecientos</strong> (900).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>Quick check</strong>: 100, 115, 500, 742?</summary>
+        <p><strong>100</strong> cien · <strong>115</strong> ciento quince · <strong>500</strong> quinientos · <strong>742</strong> setecientos cuarenta y dos</p>
+      </details>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Thousands</h2>
+      <ul>
+        <li><strong>1000</strong> = mil (not "un mil")</li>
+        <li><strong>2000</strong> = dos mil</li>
+        <li><strong>4321</strong> = cuatro mil trescientos veintiuno</li>
+      </ul>
+      <p>
+        Before <strong>mil</strong>, <strong>uno → un</strong> (apocope):
+        <strong>21,000</strong> = <strong>veintiún mil</strong>,
+        <strong>31,000</strong> = <strong>treinta y un mil</strong>.
+        (With a feminine noun you may also see "treinta y una mil <em>personas</em>", but for "numbers alone", "treinta y un mil" is the default.)
+      </p>
+    </section>
+
+    <section id="millions" class="learn-section">
+      <h2>Millions & large numbers</h2>
+      <ul>
+        <li><strong>1,000,000</strong> = <strong>un millón</strong></li>
+        <li><strong>2,000,000</strong> = dos millones</li>
+        <li><strong>1,234,567</strong> = un millón doscientos treinta y cuatro mil quinientos sesenta y siete</li>
+        <li><strong>1,000,000,000</strong> = <strong>mil millones</strong> (also: "un millardo")</li>
+        <li><strong>1,000,000,000,000</strong> = un billón (Spanish long scale)</li>
+      </ul>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Spelling & accents</h2>
+      <p>
+        Orthography rule of thumb:
+        <strong>16–19</strong>, <strong>21–29</strong>, and <strong>all hundreds</strong> are commonly written as
+        <strong>one word</strong> (dieciséis, veintidós, doscientos). Forms like "veinte y uno" are considered outdated.
+      </p>
+      <p>
+        Accents that matter a lot:
+        <strong>dieciséis</strong>, <strong>veintidós</strong>, <strong>veintitrés</strong>, <strong>veintiséis</strong>.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>cien vs. ciento</strong>: 100 = cien, but 101 = ciento uno.</li>
+        <li><strong>21,000</strong>: not "veintiuno mil" → <strong>veintiún mil</strong>.</li>
+        <li><strong>1,000,000</strong>: not "uno millón" → <strong>un millón</strong>.</li>
+        <li><strong>Missing accents</strong>: especially 16/22/23/26.</li>
+        <li><strong>Irregular hundreds</strong>: quinientos / setecientos / novecientos.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('index') }}" class="btn btn-primary">
+        Start Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

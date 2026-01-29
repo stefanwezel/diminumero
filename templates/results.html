@@ -39,6 +39,9 @@
                     {{ get_text('results_try_again') }}
                 </button>
             </form>
+            <a href="{{ url_for('learn') }}" class="btn btn-primary btn-large">
+                📚 {{ get_text('footer_learn') }}
+            </a>
             <form action="{{ url_for('index') }}" method="GET">
                 <button type="submit" class="btn btn-primary btn-large">
                     {{ get_text('results_back_home') }}
