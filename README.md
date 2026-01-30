@@ -37,6 +37,12 @@ uv run flask --app app run --debug
 ```
 Access the application at http://127.0.0.1:5000.
 
+### Testing Code
+You can trigger local tests with:
+```bash
+uv run pytest
+```
+
 ### Run Production Setup with Docker
 Before you start with a docker setup, make sure to setup a `.env` file. Have a look at the `.env.example` for reference. To start the production container, run
 ```bash
@@ -48,7 +54,7 @@ Access the application at http://127.0.0.1:5000.
 
 ```
 diminumero/
-├── app.py                  # Flask application & routes
+├── app.py                 # Flask application & routes
 ├── quiz_logic.py          # Quiz generation & weighting logic
 ├── numbers_data.py        # 1,000 Spanish number translations
 ├── generate_numbers.py    # Script to regenerate numbers
