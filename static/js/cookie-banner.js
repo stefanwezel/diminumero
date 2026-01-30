@@ -17,17 +17,27 @@
         }, 1000);
     }
     
+    // Function to accept and hide banner
+    function acceptCookies() {
+        localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
+        banner.classList.remove('show');
+        
+        // Remove banner from DOM after animation
+        setTimeout(() => {
+            banner.remove();
+        }, 300);
+    }
+    
     // Handle accept button click
     const acceptBtn = document.getElementById('cookie-accept');
     if (acceptBtn) {
-        acceptBtn.addEventListener('click', function() {
-            localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
-            banner.classList.remove('show');
-            
-            // Remove banner from DOM after animation
-            setTimeout(() => {
-                banner.remove();
-            }, 300);
-        });
+        acceptBtn.addEventListener('click', acceptCookies);
     }
+    
+    // Handle ESC key press
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && banner.classList.contains('show')) {
+            acceptCookies();
+        }
+    });
 })();
