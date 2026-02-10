@@ -12,9 +12,16 @@
         <div class="score-display">
             {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
         </div>
-        <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
-            <button type="submit" class="btn btn-exit">{{ get_text('quiz_exit') }}</button>
-        </form>
+        <div style="display: flex; gap: 0.5rem;">
+            <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
+                <button type="submit" class="btn btn-exit" style="width: 120px !important; padding: 0.5rem 0.75rem !important; border: none !important; font-size: 0.9rem; box-sizing: border-box;">{{ get_text('quiz_exit') }}</button>
+            </form>
+            <form action="{{ url_for('quiz_advanced') }}" method="POST" style="display: inline;">
+                <button type="submit" name="give_up" value="1" class="btn btn-secondary" style="width: 120px !important; padding: 0.5rem 0.75rem !important; border: none !important; font-size: 0.9rem; box-sizing: border-box; margin-left: 0 !important;" title="{{ get_text('quiz_skip_tooltip') }}">
+                    {{ get_text('quiz_skip') }}
+                </button>
+            </form>
+        </div>
     </div>
     
     <!-- Progress bar -->
@@ -41,12 +48,6 @@
                 autofocus
             >
             <div id="validationFeedback" class="validation-feedback"></div>
-        </div>
-        
-        <div class="button-group">
-            <button type="submit" name="give_up" value="1" class="btn btn-secondary">
-                {{ get_text('quiz_give_up') }}
-            </button>
         </div>
     </form>
 </div>
