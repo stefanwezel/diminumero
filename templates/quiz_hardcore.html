@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('mode_hardcore') }} - {{ get_text('quiz_question') }} {{ total + 1 }}{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+    <!-- Header with score and exit button -->
+    <div class="quiz-header">
+        <div class="progress-info">
+            {{ get_text('quiz_question') }} {{ total + 1 }} / {{ max_questions }}
+        </div>
+        <div class="score-display">
+            {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
+                <button type="submit" class="btn btn-exit" style="width: 120px !important; padding: 0.5rem 0.75rem !important; border: none !important; font-size: 0.9rem; box-sizing: border-box;">{{ get_text('quiz_exit') }}</button>
+            </form>
+            <form action="{{ url_for('quiz_hardcore') }}" method="POST" style="display: inline;">
+                <button type="submit" name="give_up" value="1" class="btn btn-secondary" style="width: 120px !important; padding: 0.5rem 0.75rem !important; border: none !important; font-size: 0.9rem; box-sizing: border-box; margin-left: 0 !important;" title="{{ get_text('quiz_skip_tooltip') }}">
+                    {{ get_text('quiz_skip') }}
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Progress bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (total / max_questions * 100) }}%"></div>
+    </div>
+    
+    <!-- Question -->
+    <div class="question-container">
+        <h2 class="question-label">{{ get_text('quiz_advanced_prompt') }}</h2>
+        <div class="number-display">{{ number }}</div>
+    </div>
+    
+    <!-- Text input for answer -->
+    <form action="{{ url_for('quiz_hardcore') }}" method="POST" class="answer-form" id="answerForm">
+        <div class="text-input-container">
+            <input 
+                type="text" 
+                name="answer" 
+                id="answerInput" 
+                class="answer-input" 
+                placeholder="{{ get_text('quiz_advanced_placeholder') }}"
+                autocomplete="off"
+                autofocus
+                data-correct-answer="{{ correct_answer }}"
+            >
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/quiz_hardcore.js') }}"></script>
+{% endblock %}

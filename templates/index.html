@@ -35,12 +35,15 @@
                 </form>
             </div>
             
-            <div class="mode-card mode-disabled">
+            <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_hardcore') }}</h3>
                 <p class="mode-description">{{ get_text('mode_hardcore_desc') }}</p>
-                <button type="button" class="btn btn-disabled" disabled>
-                    {{ get_text('mode_hardcore_btn') }}
-                </button>
+                <form action="{{ url_for('start_quiz') }}" method="POST">
+                    <input type="hidden" name="mode" value="hardcore">
+                    <button type="submit" class="btn btn-primary">
+                        {{ get_text('mode_hardcore_btn') }}
+                    </button>
+                </form>
             </div>
         </div>
         
