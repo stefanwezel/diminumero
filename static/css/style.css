@@ -393,6 +393,14 @@ body {
     color: #aaa;
 }
 
+/* Hardcore mode - complete answer correct */
+.answer-input.input-correct {
+    background: linear-gradient(135deg, #D1F4E0 0%, #B8F0D1 100%);
+    color: #0D6E3C;
+    border: 3px solid #10B981;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3), 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
 /* Validation Feedback */
 .validation-feedback {
     margin-top: 15px;

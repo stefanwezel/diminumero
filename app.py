@@ -37,7 +37,7 @@ TRANSLATIONS = {
         'mode_advanced_btn': 'Start Advanced Mode',
         'mode_hardcore': 'Hardcore',
         'mode_hardcore_desc': 'Ultimate challenge mode.',
-        'mode_hardcore_btn': 'Coming Soon',
+        'mode_hardcore_btn': 'Start Hardcore Mode',
         
         # Info section
         'info_questions': 'Questions',
@@ -177,7 +177,7 @@ TRANSLATIONS = {
         'mode_advanced_btn': 'Schwierigen Modus starten',
         'mode_hardcore': 'Hardcore',
         'mode_hardcore_desc': 'Ultimativer Modus.',
-        'mode_hardcore_btn': 'Kommt bald',
+        'mode_hardcore_btn': 'Hardcore-Modus starten',
         
         # Info section
         'info_questions': 'Fragen',
@@ -338,11 +338,6 @@ def start_quiz():
         flash(get_text('flash_invalid_mode'), 'error')
         return redirect(url_for('index'))
     
-    # Hardcore mode not yet implemented
-    if mode == 'hardcore':
-        flash(get_text('flash_hardcore_soon'), 'info')
-        return redirect(url_for('index'))
-    
     # Initialize session
     session.clear()
     session['score'] = 0
@@ -355,6 +350,8 @@ def start_quiz():
         return redirect(url_for('quiz_easy'))
     elif mode == 'advanced':
         return redirect(url_for('quiz_advanced'))
+    elif mode == 'hardcore':
+        return redirect(url_for('quiz_hardcore'))
 
 
 
@@ -511,6 +508,81 @@ def validate_answer():
     validation = quiz_logic.validate_partial_answer(user_input, correct_answer)
     
     return jsonify(validation)
+
+
+@app.route('/quiz/hardcore', methods=['GET', 'POST'])
+def quiz_hardcore():
+    """Hardcore mode quiz page - text input without intermediate feedback."""
+    
+    # Ensure user is in hardcore mode
+    if session.get('mode') != 'hardcore':
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        # Check if user gave up
+        if 'give_up' in request.form:
+            correct_answer = session.get('correct_answer')
+            flash(get_text('flash_gave_up').format(correct_answer), 'info')
+            session['total_questions'] = session.get('total_questions', 0) + 1
+            
+            # Check if quiz is complete
+            if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
+                return redirect(url_for('results'))
+            
+            return redirect(url_for('quiz_hardcore'))
+        
+        # Process the submitted answer
+        user_answer = request.form.get('answer', '').strip()
+        correct_answer = session.get('correct_answer')
+        
+        if user_answer and correct_answer:
+            # Use advanced validation for final check
+            is_correct = quiz_logic.check_answer_advanced(user_answer, correct_answer)
+            
+            if is_correct:
+                session['score'] = session.get('score', 0) + 1
+                flash(get_text('flash_correct'), 'success')
+            else:
+                flash(get_text('flash_incorrect').format(correct_answer), 'error')
+            
+            session['total_questions'] = session.get('total_questions', 0) + 1
+        
+        # Check if quiz is complete
+        if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
+            return redirect(url_for('results'))
+        
+        # Continue to next question
+        return redirect(url_for('quiz_hardcore'))
+    
+    # GET request - display new question
+    # Check if quiz should end
+    if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
+        return redirect(url_for('results'))
+    
+    # Generate new question
+    asked_numbers = session.get('asked_numbers', [])
+    number, correct_answer = quiz_logic.get_random_question(asked_numbers)
+    
+    # Store in session
+    session['current_number'] = number
+    session['correct_answer'] = correct_answer
+    
+    # Update asked numbers
+    if 'asked_numbers' not in session:
+        session['asked_numbers'] = []
+    session['asked_numbers'].append(number)
+    
+    # Get current progress
+    score = session.get('score', 0)
+    total = session.get('total_questions', 0)
+    
+    return render_template('quiz_hardcore.html', 
+                         number=number, 
+                         correct_answer=correct_answer,
+                         score=score,
+                         total=total,
+                         max_questions=QUESTIONS_PER_QUIZ,
+                         get_text=get_text)
 
 
 @app.route('/results')
