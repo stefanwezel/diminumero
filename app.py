@@ -60,6 +60,8 @@ TRANSLATIONS = {
         'quiz_easy_prompt': 'What is this number in Spanish?',
         'quiz_advanced_prompt': 'Type this number in Spanish:',
         'quiz_advanced_placeholder': 'Type your answer here...',
+        'quiz_skip': 'Skip',
+        'quiz_skip_tooltip': 'Skip this question (no points awarded)',
         'quiz_give_up': 'Give Up',
         
         # Results page
@@ -194,10 +196,12 @@ TRANSLATIONS = {
         # Quiz interface
         'quiz_question': 'Frage',
         'quiz_score': 'Punktzahl',
-        'quiz_exit': 'Quiz beenden',
+        'quiz_exit': 'Beenden',
         'quiz_easy_prompt': 'Wie lautet diese Zahl auf Spanisch?',
         'quiz_advanced_prompt': 'Schreibe diese Zahl auf Spanisch:',
         'quiz_advanced_placeholder': 'Gib deine Antwort hier ein...',
+        'quiz_skip': 'Skippen',
+        'quiz_skip_tooltip': 'Diese Frage überspringen (keine Punkte)',
         'quiz_give_up': 'Aufgeben',
         
         # Results page
