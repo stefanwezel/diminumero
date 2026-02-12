@@ -1,20 +1,72 @@
 """Generate Spanish numbers programmatically for diminumero."""
 
+
 def number_to_spanish(n):
     """Convert a number to Spanish."""
     if n == 0:
         return "cero"
-    
-    ones = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"]
-    teens = ["diez", "once", "doce", "trece", "catorce", "quince", "dieciséis", 
-             "diecisiete", "dieciocho", "diecinueve"]
-    twenties = ["veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro", 
-                "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve"]
-    tens = ["", "", "veinte", "treinta", "cuarenta", "cincuenta", 
-            "sesenta", "setenta", "ochenta", "noventa"]
-    hundreds = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", 
-                "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"]
-    
+
+    ones = [
+        "",
+        "uno",
+        "dos",
+        "tres",
+        "cuatro",
+        "cinco",
+        "seis",
+        "siete",
+        "ocho",
+        "nueve",
+    ]
+    teens = [
+        "diez",
+        "once",
+        "doce",
+        "trece",
+        "catorce",
+        "quince",
+        "dieciséis",
+        "diecisiete",
+        "dieciocho",
+        "diecinueve",
+    ]
+    twenties = [
+        "veinte",
+        "veintiuno",
+        "veintidós",
+        "veintitrés",
+        "veinticuatro",
+        "veinticinco",
+        "veintiséis",
+        "veintisiete",
+        "veintiocho",
+        "veintinueve",
+    ]
+    tens = [
+        "",
+        "",
+        "veinte",
+        "treinta",
+        "cuarenta",
+        "cincuenta",
+        "sesenta",
+        "setenta",
+        "ochenta",
+        "noventa",
+    ]
+    hundreds = [
+        "",
+        "ciento",
+        "doscientos",
+        "trescientos",
+        "cuatrocientos",
+        "quinientos",
+        "seiscientos",
+        "setecientos",
+        "ochocientos",
+        "novecientos",
+    ]
+
     if n < 10:
         return ones[n]
     elif n < 20:
@@ -44,7 +96,9 @@ def number_to_spanish(n):
         if n == 1000000:
             return "un millón"
         millions, rest = divmod(n, 1000000)
-        result = number_to_spanish(millions) + (" millones" if millions > 1 else " millón")
+        result = number_to_spanish(millions) + (
+            " millones" if millions > 1 else " millón"
+        )
         if rest:
             result += " " + number_to_spanish(rest)
         return result
@@ -55,8 +109,10 @@ def number_to_spanish(n):
             result += " " + number_to_spanish(rest)
         return result
 
+
 # Generate 1000 unique numbers
 import random
+
 random.seed(42)  # For reproducibility
 numbers_set = set()
 
@@ -83,12 +139,12 @@ numbers_set.update(random.sample(range(1000001, 10000001), 100))
 NUMBERS = {n: number_to_spanish(n) for n in sorted(numbers_set)}
 
 # Write to numbers_data.py
-with open('numbers_data.py', 'w', encoding='utf-8') as f:
+with open("numbers_data.py", "w", encoding="utf-8") as f:
     f.write('"""Spanish numbers data for the quiz application."""\n\n')
-    f.write('NUMBERS = {\n')
+    f.write("NUMBERS = {\n")
     for num, spanish in NUMBERS.items():
         f.write(f'    {num}: "{spanish}",\n')
-    f.write('}\n')
+    f.write("}\n")
 
 print(f"Generated {len(NUMBERS)} Spanish numbers and wrote to numbers_data.py")
 print("\nFirst 10 numbers:")

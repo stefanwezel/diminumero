@@ -2,4 +2,4 @@
 
 from .numbers import NUMBERS
 
-__all__ = ['NUMBERS']
+__all__ = ["NUMBERS"]

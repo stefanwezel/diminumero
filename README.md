@@ -120,13 +120,15 @@ Contributions are welcome! Please follow these steps:
 
 ### 1. Create a Branch from an Issue
 
-Before implementing a feature, create a branch from the corresponding GitHub issue:
+Before implementing a feature, create a branch from the corresponding GitHub issue.
 
+Pull latest changes:
 ```bash
-# Pull latest changes
 git pull origin main
+```
 
-# Create a feature branch (use issue number and short description)
+Create a feature branch (use issue number and short description)
+```bash
 git switch -c 6-your-issue-name
 ```
 
@@ -135,15 +137,19 @@ git switch -c 6-your-issue-name
 Make your changes and ensure everything works:
 
 ```bash
-# Install dependencies (if needed)
-uv sync
-
-# Run local tests
 uv run pytest
+```
 
-# Run the development server to manually test
+Run the development server to manually test
+```bash
 uv run flask --app app run --debug
-# Access at http://127.0.0.1:5000
+```
+Access at http://127.0.0.1:5000.
+
+Before committing, format your code with the project formatter:
+
+```bash
+uv run ruff format .
 ```
 
 **Important**: Add or update tests if you're introducing new functionality. Ensure all tests pass before proceeding.
