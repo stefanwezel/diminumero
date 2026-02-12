@@ -5,7 +5,7 @@
 {% block content %}
 <main class="container learn">
   <div class="learn-content">
-    <button onclick="history.back()" class="btn-back">← Back</button>
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">← Back</a>
     
     <header class="learn-hero">
       <h1>Learn Spanish Numbers</h1>
@@ -129,7 +129,7 @@
     </section>
 
     <div class="learn-footer">
-      <a href="{{ url_for('index') }}" class="btn btn-primary">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
         Start Quiz
       </a>
     </div>

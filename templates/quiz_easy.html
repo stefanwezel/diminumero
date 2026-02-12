@@ -12,7 +12,7 @@
         <div class="score-display">
             {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
         </div>
-        <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
+        <form action="{{ url_for('results', lang_code=lang_code) }}" method="GET" style="display: inline;">
             <button type="submit" class="btn btn-exit">{{ get_text('quiz_exit') }}</button>
         </form>
     </div>
@@ -29,7 +29,7 @@
     </div>
     
     <!-- Answer options -->
-    <form action="{{ url_for('quiz_easy') }}" method="POST" class="options-form">
+    <form action="{{ url_for('quiz_easy', lang_code=lang_code) }}" method="POST" class="options-form">
         <div class="options-grid">
             {% for option in options %}
                 <button type="submit" name="answer" value="{{ option }}" class="option-btn">

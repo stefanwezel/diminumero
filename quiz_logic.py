@@ -3,13 +3,12 @@
 import random
 import secrets
 import time
-from numbers_data import NUMBERS
 
 # Seed random with high-resolution time and secrets
 random.seed(secrets.randbits(128) ^ int(time.time() * 1000000))
 
 
-def get_random_question(exclude_numbers=None):
+def get_random_question(numbers_dict, exclude_numbers=None):
     """
     Get a random number from the available numbers with weighted probability.
     Lower numbers have higher probability; probability drops by 10x per order of magnitude above 100.
@@ -22,6 +21,7 @@ def get_random_question(exclude_numbers=None):
     - Numbers 100000+: weight = 0.0001 (10000x less likely)
     
     Args:
+        numbers_dict: Dictionary mapping numbers to their translations
         exclude_numbers: List of numbers to exclude (already asked in this session)
     
     Returns:
@@ -30,11 +30,11 @@ def get_random_question(exclude_numbers=None):
     if exclude_numbers is None:
         exclude_numbers = []
     
-    available_numbers = [num for num in NUMBERS.keys() if num not in exclude_numbers]
+    available_numbers = [num for num in numbers_dict.keys() if num not in exclude_numbers]
     
     # If all numbers have been used, reset
     if not available_numbers:
-        available_numbers = list(NUMBERS.keys())
+        available_numbers = list(numbers_dict.keys())
     
     # Calculate weights with step-wise decrease based on order of magnitude
     # Each order of magnitude above 100 reduces probability by 10x
@@ -63,23 +63,24 @@ def get_random_question(exclude_numbers=None):
     
     # Use random.choices for weighted selection
     number = random.choices(available_numbers, weights=weights, k=1)[0]
-    return number, NUMBERS[number]
+    return number, numbers_dict[number]
 
 
-def generate_multiple_choice(correct_number, correct_answer):
+def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
     """
     Generate 4 multiple choice options with one correct answer.
     Uses secrets module for cryptographically secure randomization.
     
     Args:
+        numbers_dict: Dictionary mapping numbers to their translations
         correct_number: The number being tested
-        correct_answer: The correct Spanish translation
+        correct_answer: The correct translation
     
     Returns:
         List of 4 options (strings) in truly random order
     """
     # Get all possible wrong answers (exclude the correct one)
-    wrong_answers = [answer for num, answer in NUMBERS.items() if num != correct_number]
+    wrong_answers = [answer for num, answer in numbers_dict.items() if num != correct_number]
     
     # Use secrets for cryptographically secure random selection
     selected_wrong = []

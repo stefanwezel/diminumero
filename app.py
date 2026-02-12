@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from dotenv import load_dotenv
 import quiz_logic
 import os
+from languages import AVAILABLE_LANGUAGES, get_language_numbers, is_language_ready
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,7 +23,15 @@ TRANSLATIONS = {
         'language_en': 'English',
         'language_de': 'German',
         
-        # Home page
+        # Language selection page
+        'language_selection_title': 'diminumero - Choose Your Language',
+        'language_selection_subtitle': 'Choose which language you want to learn!',
+        'language_selection_description': 'Select a language below to start practicing numbers. More languages coming soon!',
+        'language_selection_start_btn': 'Start Learning',
+        'language_selection_coming_soon': 'Coming Soon',
+        'language_selection_back': 'Change Language',
+        
+        # Home page (mode selection)
         'home_title': 'diminumero - Home',
         'home_hero_title': 'diminumero',
         'home_hero_subtitle': 'Test your Spanish number knowledge!',
@@ -77,6 +86,9 @@ TRANSLATIONS = {
         
         # Flash messages
         'flash_invalid_mode': 'Invalid mode selected.',
+        'flash_invalid_language': 'Invalid language selected.',
+        'flash_language_load_error': 'Failed to load language data.',
+        'flash_learn_not_available': 'Learning materials not yet available for this language.',
         'flash_hardcore_soon': 'Hardcore mode is coming soon! Try Easy or Advanced mode.',
         'flash_correct': '¡Correcto! 🎉',
         'flash_incorrect': 'Incorrect. The answer was: {}',
@@ -162,7 +174,15 @@ TRANSLATIONS = {
         'language_en': 'Englisch',
         'language_de': 'Deutsch',
         
-        # Home page
+        # Language selection page
+        'language_selection_title': 'diminumero - Wähle deine Sprache',
+        'language_selection_subtitle': 'Wähle die Sprache, die du lernen möchtest!',
+        'language_selection_description': 'Wähle unten eine Sprache aus, um mit dem Üben von Zahlen zu beginnen. Weitere Sprachen folgen bald!',
+        'language_selection_start_btn': 'Lernen beginnen',
+        'language_selection_coming_soon': 'Demnächst',
+        'language_selection_back': 'Sprache wechseln',
+        
+        # Home page (mode selection)
         'home_title': 'diminumero - Startseite',
         'home_hero_title': 'diminumero',
         'home_hero_subtitle': 'Teste dein Wissen über spanische Zahlen!',
@@ -217,6 +237,9 @@ TRANSLATIONS = {
         
         # Flash messages
         'flash_invalid_mode': 'Ungültiger Modus ausgewählt.',
+        'flash_invalid_language': 'Ungültige Sprache ausgewählt.',
+        'flash_language_load_error': 'Laden der Sprachdaten fehlgeschlagen.',
+        'flash_learn_not_available': 'Lernmaterialien für diese Sprache sind noch nicht verfügbar.',
         'flash_hardcore_soon': 'Hardcore-Modus kommt bald! Probiere den einfachen oder fortgeschrittenen Modus.',
         'flash_correct': '¡Correcto! 🎉',
         'flash_incorrect': 'Falsch. Die Antwort war: {}',
@@ -306,40 +329,76 @@ def get_text(key):
 
 @app.route('/')
 def index():
-    """Landing page with Start Quiz button."""
-    # Initialize language if not set
+    """Language selection landing page."""
+    # Initialize UI language if not set
     if 'language' not in session:
         session['language'] = 'de'  # Default to German
     
-    from numbers_data import NUMBERS
+    return render_template('language_selection.html', 
+                         languages=AVAILABLE_LANGUAGES,
+                         get_text=get_text)
+
+
+@app.route('/<lang_code>')
+def mode_selection(lang_code):
+    """Mode selection page for a specific learning language."""
+    # Initialize UI language if not set
+    if 'language' not in session:
+        session['language'] = 'de'
+    
+    # Validate language code
+    if not is_language_ready(lang_code):
+        flash(get_text('flash_invalid_language'), 'error')
+        return redirect(url_for('index'))
+    
+    # Store learning language in session
+    session['learn_language'] = lang_code
+    
+    # Load numbers for this language
+    try:
+        numbers = get_language_numbers(lang_code)
+        total_numbers = len(numbers)
+    except ValueError:
+        flash(get_text('flash_language_load_error'), 'error')
+        return redirect(url_for('index'))
+    
     return render_template('index.html', 
-                         total_numbers=len(NUMBERS),
+                         total_numbers=total_numbers,
                          questions_per_quiz=QUESTIONS_PER_QUIZ,
+                         lang_code=lang_code,
                          get_text=get_text)
 
 
 @app.route('/set_language/<lang>')
 def set_language(lang):
-    """Set the language preference."""
+    """Set the UI language preference (not learning language)."""
     if lang in ['en', 'de']:
         session['language'] = lang
     # Redirect back to the referring page or index
     return redirect(request.referrer or url_for('index'))
 
 
-@app.route('/start', methods=['POST'])
-def start_quiz():
+@app.route('/<lang_code>/start', methods=['POST'])
+def start_quiz(lang_code):
     """Initialize a new quiz session."""
+    # Validate language code
+    if not is_language_ready(lang_code):
+        flash(get_text('flash_invalid_language'), 'error')
+        return redirect(url_for('index'))
+    
     # Get mode from form (default to easy if not specified)
     mode = request.form.get('mode', 'easy')
     
     # Validate mode
     if mode not in ['easy', 'advanced', 'hardcore']:
         flash(get_text('flash_invalid_mode'), 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('mode_selection', lang_code=lang_code))
     
-    # Initialize session
+    # Clear quiz-related session data but keep UI language
+    ui_language = session.get('language', 'de')
     session.clear()
+    session['language'] = ui_language
+    session['learn_language'] = lang_code
     session['score'] = 0
     session['total_questions'] = 0
     session['asked_numbers'] = []
@@ -347,21 +406,32 @@ def start_quiz():
     
     # Redirect to appropriate quiz
     if mode == 'easy':
-        return redirect(url_for('quiz_easy'))
+        return redirect(url_for('quiz_easy', lang_code=lang_code))
     elif mode == 'advanced':
-        return redirect(url_for('quiz_advanced'))
+        return redirect(url_for('quiz_advanced', lang_code=lang_code))
     elif mode == 'hardcore':
-        return redirect(url_for('quiz_hardcore'))
+        return redirect(url_for('quiz_hardcore', lang_code=lang_code))
 
 
 
-@app.route('/quiz/easy', methods=['GET', 'POST'])
-def quiz_easy():
+@app.route('/<lang_code>/quiz/easy', methods=['GET', 'POST'])
+def quiz_easy(lang_code):
     """Easy mode quiz page - multiple choice with 4 options."""
+    
+    # Validate language and session
+    if not is_language_ready(lang_code) or session.get('learn_language') != lang_code:
+        return redirect(url_for('index'))
     
     # Ensure user is in easy mode
     if session.get('mode') != 'easy':
-        return redirect(url_for('index'))
+        return redirect(url_for('mode_selection', lang_code=lang_code))
+    
+    # Load numbers for this language
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text('flash_language_load_error'), 'error')
+        return redirect(url_for('mode_selection', lang_code=lang_code))
     
     if request.method == 'POST':
         # Process the submitted answer
@@ -382,19 +452,19 @@ def quiz_easy():
         
         # Check if quiz is complete
         if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-            return redirect(url_for('results'))
+            return redirect(url_for('results', lang_code=lang_code))
         
         # Continue to next question
-        return redirect(url_for('quiz_easy'))
+        return redirect(url_for('quiz_easy', lang_code=lang_code))
     
     # GET request - display new question
     # Check if quiz should end
     if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-        return redirect(url_for('results'))
+        return redirect(url_for('results', lang_code=lang_code))
     
     # Generate new question
     asked_numbers = session.get('asked_numbers', [])
-    number, correct_answer = quiz_logic.get_random_question(asked_numbers)
+    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
     
     # Store in session
     session['current_number'] = number
@@ -406,7 +476,7 @@ def quiz_easy():
     session['asked_numbers'].append(number)
     
     # Generate multiple choice options
-    options = quiz_logic.generate_multiple_choice(number, correct_answer)
+    options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
     
     # Get current progress
     score = session.get('score', 0)
@@ -418,16 +488,28 @@ def quiz_easy():
                          score=score,
                          total=total,
                          max_questions=QUESTIONS_PER_QUIZ,
+                         lang_code=lang_code,
                          get_text=get_text)
 
 
-@app.route('/quiz/advanced', methods=['GET', 'POST'])
-def quiz_advanced():
+@app.route('/<lang_code>/quiz/advanced', methods=['GET', 'POST'])
+def quiz_advanced(lang_code):
     """Advanced mode quiz page - text input with live validation."""
+    
+    # Validate language and session
+    if not is_language_ready(lang_code) or session.get('learn_language') != lang_code:
+        return redirect(url_for('index'))
     
     # Ensure user is in advanced mode
     if session.get('mode') != 'advanced':
-        return redirect(url_for('index'))
+        return redirect(url_for('mode_selection', lang_code=lang_code))
+    
+    # Load numbers for this language
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text('flash_language_load_error'), 'error')
+        return redirect(url_for('mode_selection', lang_code=lang_code))
     
     if request.method == 'POST':
         # Check if user gave up
@@ -438,9 +520,9 @@ def quiz_advanced():
             
             # Check if quiz is complete
             if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-                return redirect(url_for('results'))
+                return redirect(url_for('results', lang_code=lang_code))
             
-            return redirect(url_for('quiz_advanced'))
+            return redirect(url_for('quiz_advanced', lang_code=lang_code))
         
         # Process the submitted answer
         user_answer = request.form.get('answer', '').strip()
@@ -460,19 +542,19 @@ def quiz_advanced():
         
         # Check if quiz is complete
         if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-            return redirect(url_for('results'))
+            return redirect(url_for('results', lang_code=lang_code))
         
         # Continue to next question
-        return redirect(url_for('quiz_advanced'))
+        return redirect(url_for('quiz_advanced', lang_code=lang_code))
     
     # GET request - display new question
     # Check if quiz should end
     if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-        return redirect(url_for('results'))
+        return redirect(url_for('results', lang_code=lang_code))
     
     # Generate new question
     asked_numbers = session.get('asked_numbers', [])
-    number, correct_answer = quiz_logic.get_random_question(asked_numbers)
+    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
     
     # Store in session
     session['current_number'] = number
@@ -493,6 +575,7 @@ def quiz_advanced():
                          score=score,
                          total=total,
                          max_questions=QUESTIONS_PER_QUIZ,
+                         lang_code=lang_code,
                          get_text=get_text)
 
 
@@ -510,13 +593,24 @@ def validate_answer():
     return jsonify(validation)
 
 
-@app.route('/quiz/hardcore', methods=['GET', 'POST'])
-def quiz_hardcore():
+@app.route('/<lang_code>/quiz/hardcore', methods=['GET', 'POST'])
+def quiz_hardcore(lang_code):
     """Hardcore mode quiz page - text input without intermediate feedback."""
+    
+    # Validate language and session
+    if not is_language_ready(lang_code) or session.get('learn_language') != lang_code:
+        return redirect(url_for('index'))
     
     # Ensure user is in hardcore mode
     if session.get('mode') != 'hardcore':
-        return redirect(url_for('index'))
+        return redirect(url_for('mode_selection', lang_code=lang_code))
+    
+    # Load numbers for this language
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text('flash_language_load_error'), 'error')
+        return redirect(url_for('mode_selection', lang_code=lang_code))
     
     if request.method == 'POST':
         # Check if user gave up
@@ -527,9 +621,9 @@ def quiz_hardcore():
             
             # Check if quiz is complete
             if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-                return redirect(url_for('results'))
+                return redirect(url_for('results', lang_code=lang_code))
             
-            return redirect(url_for('quiz_hardcore'))
+            return redirect(url_for('quiz_hardcore', lang_code=lang_code))
         
         # Process the submitted answer
         user_answer = request.form.get('answer', '').strip()
@@ -549,19 +643,19 @@ def quiz_hardcore():
         
         # Check if quiz is complete
         if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-            return redirect(url_for('results'))
+            return redirect(url_for('results', lang_code=lang_code))
         
         # Continue to next question
-        return redirect(url_for('quiz_hardcore'))
+        return redirect(url_for('quiz_hardcore', lang_code=lang_code))
     
     # GET request - display new question
     # Check if quiz should end
     if session.get('total_questions', 0) >= QUESTIONS_PER_QUIZ:
-        return redirect(url_for('results'))
+        return redirect(url_for('results', lang_code=lang_code))
     
     # Generate new question
     asked_numbers = session.get('asked_numbers', [])
-    number, correct_answer = quiz_logic.get_random_question(asked_numbers)
+    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
     
     # Store in session
     session['current_number'] = number
@@ -582,12 +676,17 @@ def quiz_hardcore():
                          score=score,
                          total=total,
                          max_questions=QUESTIONS_PER_QUIZ,
+                         lang_code=lang_code,
                          get_text=get_text)
 
 
-@app.route('/results')
-def results():
+@app.route('/<lang_code>/results')
+def results(lang_code):
     """Display final quiz results."""
+    # Validate language
+    if not is_language_ready(lang_code) or session.get('learn_language') != lang_code:
+        return redirect(url_for('index'))
+    
     score = session.get('score', 0)
     attempted = session.get('total_questions', 0)
     max_questions = QUESTIONS_PER_QUIZ
@@ -601,6 +700,7 @@ def results():
                          max_questions=max_questions,
                          score_ratio=score_ratio,
                          percentage=percentage,
+                         lang_code=lang_code,
                          get_text=get_text)
 
 
@@ -623,12 +723,27 @@ def imprint():
     return render_template('imprint.html', get_text=get_text)
 
 
-@app.route('/learn')
-def learn():
-    """Display learn/tutorial page."""
-    lang = session.get('language', 'de')
-    template = 'learn_de.html' if lang == 'de' else 'learn_en.html'
-    return render_template(template, get_text=get_text)
+@app.route('/<lang_code>/learn')
+def learn(lang_code):
+    """Display learn/tutorial page for a specific language."""
+    # Validate language
+    if not is_language_ready(lang_code):
+        return redirect(url_for('index'))
+    
+    # Currently only Spanish has learn pages
+    if lang_code != 'es':
+        flash(get_text('flash_learn_not_available'), 'info')
+        return redirect(url_for('mode_selection', lang_code=lang_code))
+    
+    ui_lang = session.get('language', 'de')
+    template = f'learn_{lang_code}_{ui_lang}.html'
+    
+    # Fallback to English if template doesn't exist
+    try:
+        return render_template(template, lang_code=lang_code, get_text=get_text)
+    except:
+        template = f'learn_{lang_code}_en.html'
+        return render_template(template, lang_code=lang_code, get_text=get_text)
 
 
 if __name__ == '__main__':

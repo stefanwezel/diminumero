@@ -13,10 +13,10 @@
             {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <form action="{{ url_for('results') }}" method="GET" style="display: inline;">
+            <form action="{{ url_for('results', lang_code=lang_code) }}" method="GET" style="display: inline;">
                 <button type="submit" class="btn btn-exit" style="width: 120px !important; padding: 0.5rem 0.75rem !important; border: none !important; font-size: 0.9rem; box-sizing: border-box;">{{ get_text('quiz_exit') }}</button>
             </form>
-            <form action="{{ url_for('quiz_hardcore') }}" method="POST" style="display: inline;">
+            <form action="{{ url_for('quiz_hardcore', lang_code=lang_code) }}" method="POST" style="display: inline;">
                 <button type="submit" name="give_up" value="1" class="btn btn-secondary" style="width: 120px !important; padding: 0.5rem 0.75rem !important; border: none !important; font-size: 0.9rem; box-sizing: border-box; margin-left: 0 !important;" title="{{ get_text('quiz_skip_tooltip') }}">
                     {{ get_text('quiz_skip') }}
                 </button>
@@ -36,7 +36,7 @@
     </div>
     
     <!-- Text input for answer -->
-    <form action="{{ url_for('quiz_hardcore') }}" method="POST" class="answer-form" id="answerForm">
+    <form action="{{ url_for('quiz_hardcore', lang_code=lang_code) }}" method="POST" class="answer-form" id="answerForm">
         <div class="text-input-container">
             <input 
                 type="text" 

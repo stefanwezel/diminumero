@@ -2,7 +2,10 @@
 
 import pytest
 import quiz_logic
-from numbers_data import NUMBERS
+from languages import get_language_numbers
+
+# Load Spanish numbers for testing
+NUMBERS = get_language_numbers('es')
 
 
 class TestGetRandomQuestion:
@@ -10,7 +13,7 @@ class TestGetRandomQuestion:
     
     def test_returns_valid_number(self):
         """Test that get_random_question returns a valid number from NUMBERS."""
-        number, answer = quiz_logic.get_random_question()
+        number, answer = quiz_logic.get_random_question(NUMBERS)
         assert number in NUMBERS
         assert NUMBERS[number] == answer
     
@@ -18,13 +21,13 @@ class TestGetRandomQuestion:
         """Test that excluded numbers are not returned."""
         exclude = [1, 2, 3, 4, 5]
         for _ in range(20):  # Test multiple times due to randomness
-            number, _ = quiz_logic.get_random_question(exclude_numbers=exclude)
+            number, _ = quiz_logic.get_random_question(NUMBERS, exclude_numbers=exclude)
             assert number not in exclude
     
     def test_resets_when_all_excluded(self):
         """Test that all numbers can be excluded and then reset."""
         all_numbers = list(NUMBERS.keys())
-        number, answer = quiz_logic.get_random_question(exclude_numbers=all_numbers)
+        number, answer = quiz_logic.get_random_question(NUMBERS, exclude_numbers=all_numbers)
         # Should still return a valid number (reset behavior)
         assert number in NUMBERS
         assert NUMBERS[number] == answer
@@ -38,7 +41,7 @@ class TestGetRandomQuestion:
         # Generate many numbers and check basic distribution
         numbers = []
         for _ in range(1000):
-            number, _ = quiz_logic.get_random_question()
+            number, _ = quiz_logic.get_random_question(NUMBERS)
             numbers.append(number)
         
         # Just verify we get a mix of numbers from different ranges
@@ -59,28 +62,28 @@ class TestGenerateMultipleChoice:
         """Test that generate_multiple_choice returns exactly 4 options."""
         correct_number = 42
         correct_answer = NUMBERS[correct_number]
-        options = quiz_logic.generate_multiple_choice(correct_number, correct_answer)
+        options = quiz_logic.generate_multiple_choice(NUMBERS, correct_number, correct_answer)
         assert len(options) == 4
     
     def test_includes_correct_answer(self):
         """Test that the correct answer is in the options."""
         correct_number = 100
         correct_answer = NUMBERS[correct_number]
-        options = quiz_logic.generate_multiple_choice(correct_number, correct_answer)
+        options = quiz_logic.generate_multiple_choice(NUMBERS, correct_number, correct_answer)
         assert correct_answer in options
     
     def test_all_options_unique(self):
         """Test that all options are unique."""
         correct_number = 50
         correct_answer = NUMBERS[correct_number]
-        options = quiz_logic.generate_multiple_choice(correct_number, correct_answer)
+        options = quiz_logic.generate_multiple_choice(NUMBERS, correct_number, correct_answer)
         assert len(options) == len(set(options))
     
     def test_options_are_valid_spanish_numbers(self):
         """Test that all options are valid Spanish numbers from NUMBERS."""
         correct_number = 75
         correct_answer = NUMBERS[correct_number]
-        options = quiz_logic.generate_multiple_choice(correct_number, correct_answer)
+        options = quiz_logic.generate_multiple_choice(NUMBERS, correct_number, correct_answer)
         
         all_spanish_numbers = set(NUMBERS.values())
         for option in options:
@@ -93,7 +96,7 @@ class TestGenerateMultipleChoice:
         
         positions = []
         for _ in range(20):
-            options = quiz_logic.generate_multiple_choice(correct_number, correct_answer)
+            options = quiz_logic.generate_multiple_choice(NUMBERS, correct_number, correct_answer)
             positions.append(options.index(correct_answer))
         
         # Correct answer should appear in different positions

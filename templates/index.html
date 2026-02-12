@@ -5,6 +5,13 @@
 {% block content %}
 <div class="landing-page">
     <div class="hero">
+        <!-- Back to language selection -->
+        <div style="text-align: left; margin-bottom: 1rem;">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary" style="display: inline-block; padding: 0.5rem 1rem;">
+                ← {{ get_text('language_selection_back') }}
+            </a>
+        </div>
+        
         <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="hero-logo">
         <h1 class="title">{{ get_text('home_hero_title') }}</h1>
         <p class="subtitle">{{ get_text('home_hero_subtitle') }}</p>
@@ -16,7 +23,7 @@
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_easy') }}</h3>
                 <p class="mode-description">{{ get_text('mode_easy_desc') }}</p>
-                <form action="{{ url_for('start_quiz') }}" method="POST">
+                <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="easy">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_easy_btn') }}
@@ -27,7 +34,7 @@
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_advanced') }}</h3>
                 <p class="mode-description">{{ get_text('mode_advanced_desc') }}</p>
-                <form action="{{ url_for('start_quiz') }}" method="POST">
+                <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="advanced">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_advanced_btn') }}
@@ -38,7 +45,7 @@
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_hardcore') }}</h3>
                 <p class="mode-description">{{ get_text('mode_hardcore_desc') }}</p>
-                <form action="{{ url_for('start_quiz') }}" method="POST">
+                <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="hardcore">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_hardcore_btn') }}
@@ -59,7 +66,7 @@
         </div>
         
         <div class="learn-cta">
-            <a href="{{ url_for('learn') }}" class="learn-card">
+            <a href="{{ url_for('learn', lang_code=lang_code) }}" class="learn-card">
                 <div class="learn-icon">📚</div>
                 <h3>{{ get_text('learn_nav_button') }}</h3>
                 <p>{{ get_text('learn_nav_desc') }}</p>

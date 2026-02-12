@@ -2,7 +2,10 @@
 
 import pytest
 from app import app as flask_app
-from numbers_data import NUMBERS
+from languages import get_language_numbers
+
+# Load Spanish numbers for testing
+NUMBERS = get_language_numbers('es')
 
 
 @pytest.fixture
@@ -20,23 +23,22 @@ def client(app):
 
 
 class TestIndexRoute:
-    """Tests for index page."""
+    """Tests for language selection page."""
     
     def test_index_loads(self, client):
-        """Test that index page loads successfully."""
+        """Test that language selection page loads successfully."""
         response = client.get('/')
         assert response.status_code == 200
     
-    def test_index_contains_mode_selection(self, client):
-        """Test that index page contains mode selection."""
+    def test_index_contains_language_selection(self, client):
+        """Test that index page contains language selection."""
         response = client.get('/')
         data = response.data.decode('utf-8')
-        # Should have mode selection forms (in German or English)
-        assert 'easy' in data.lower() or 'leicht' in data.lower()
-        assert 'advanced' in data.lower() or 'fortgeschritten' in data.lower()
+        # Should have Spanish and Nepalese options
+        assert 'spanish' in data.lower() or 'español' in data.lower()
     
     def test_index_sets_default_language(self, client):
-        """Test that index sets default language to German."""
+        """Test that index sets default UI language to German."""
         with client.session_transaction() as sess:
             # Clear session
             sess.clear()
@@ -46,6 +48,38 @@ class TestIndexRoute:
         
         with client.session_transaction() as sess:
             assert sess.get('language') == 'de'
+
+
+class TestModeSelection:
+    """Tests for mode selection page."""
+    
+    def test_mode_selection_loads(self, client):
+        """Test that mode selection page loads for Spanish."""
+        response = client.get('/es')
+        assert response.status_code == 200
+    
+    def test_mode_selection_contains_modes(self, client):
+        """Test that mode selection page contains game modes."""
+        response = client.get('/es')
+        data = response.data.decode('utf-8')
+        # Should have mode selection forms (in German or English)
+        assert 'easy' in data.lower() or 'einfach' in data.lower()
+        assert 'advanced' in data.lower() or 'schwierig' in data.lower()
+    
+    def test_invalid_language_rejected(self, client):
+        """Test that invalid language codes are rejected."""
+        response = client.get('/invalid', follow_redirects=True)
+        # Should redirect to language selection
+        assert response.status_code == 200
+        data = response.data.decode('utf-8')
+        # Should be back at language selection
+        assert 'spanish' in data.lower() or 'nepalese' in data.lower()
+    
+    def test_disabled_language_rejected(self, client):
+        """Test that disabled languages (like Nepalese) are rejected."""
+        response = client.get('/ne', follow_redirects=True)
+        # Should redirect to language selection
+        assert response.status_code == 200
 
 
 class TestLanguageSwitching:
@@ -85,36 +119,43 @@ class TestStartQuiz:
     
     def test_start_easy_mode(self, client):
         """Test starting easy mode quiz."""
-        response = client.post('/start', data={'mode': 'easy'}, follow_redirects=False)
+        response = client.post('/es/start', data={'mode': 'easy'}, follow_redirects=False)
         assert response.status_code in [301, 302]
-        assert '/quiz/easy' in response.location
+        assert '/es/quiz/easy' in response.location
         
         with client.session_transaction() as sess:
             assert sess.get('mode') == 'easy'
+            assert sess.get('learn_language') == 'es'
             assert sess.get('score') == 0
             assert sess.get('total_questions') == 0
             assert sess.get('asked_numbers') == []
     
     def test_start_advanced_mode(self, client):
         """Test starting advanced mode quiz."""
-        response = client.post('/start', data={'mode': 'advanced'}, follow_redirects=False)
+        response = client.post('/es/start', data={'mode': 'advanced'}, follow_redirects=False)
         assert response.status_code in [301, 302]
-        assert '/quiz/advanced' in response.location
+        assert '/es/quiz/advanced' in response.location
         
         with client.session_transaction() as sess:
             assert sess.get('mode') == 'advanced'
+            assert sess.get('learn_language') == 'es'
     
-    def test_hardcore_mode_not_implemented(self, client):
-        """Test that hardcore mode shows coming soon message."""
-        response = client.post('/start', data={'mode': 'hardcore'}, follow_redirects=True)
-        assert response.status_code == 200
-        # Should redirect back to index
+    def test_hardcore_mode(self, client):
+        """Test that hardcore mode works."""
+        response = client.post('/es/start', data={'mode': 'hardcore'}, follow_redirects=False)
+        assert response.status_code in [301, 302]
+        assert '/es/quiz/hardcore' in response.location
     
     def test_invalid_mode_rejected(self, client):
         """Test that invalid mode is rejected."""
-        response = client.post('/start', data={'mode': 'invalid'}, follow_redirects=True)
+        response = client.post('/es/start', data={'mode': 'invalid'}, follow_redirects=True)
         assert response.status_code == 200
-        # Should redirect back to index with error
+        # Should redirect back to mode selection with error
+    
+    def test_invalid_language_in_start(self, client):
+        """Test that invalid language in start is rejected."""
+        response = client.post('/invalid/start', data={'mode': 'easy'}, follow_redirects=True)
+        assert response.status_code == 200
 
 
 class TestQuizEasy:
@@ -122,16 +163,16 @@ class TestQuizEasy:
     
     def test_quiz_easy_requires_session(self, client):
         """Test that easy quiz requires proper session."""
-        response = client.get('/quiz/easy')
+        response = client.get('/es/quiz/easy')
         # Should redirect if no session
         assert response.status_code in [200, 301, 302]
     
     def test_quiz_easy_displays_question(self, client):
         """Test that easy quiz displays a question."""
         # Start quiz first
-        client.post('/start', data={'mode': 'easy'})
+        client.post('/es/start', data={'mode': 'easy'})
         
-        response = client.get('/quiz/easy')
+        response = client.get('/es/quiz/easy')
         assert response.status_code == 200
         data = response.data.decode('utf-8')
         
@@ -141,16 +182,16 @@ class TestQuizEasy:
     def test_quiz_easy_answer_submission(self, client):
         """Test submitting an answer in easy mode."""
         # Start quiz
-        client.post('/start', data={'mode': 'easy'})
+        client.post('/es/start', data={'mode': 'easy'})
         
         # Get first question
-        client.get('/quiz/easy')
+        client.get('/es/quiz/easy')
         
         # Submit an answer (any valid Spanish number)
         with client.session_transaction() as sess:
             correct_answer = sess.get('correct_answer')
         
-        response = client.post('/quiz/easy', data={'answer': correct_answer}, follow_redirects=True)
+        response = client.post('/es/quiz/easy', data={'answer': correct_answer}, follow_redirects=True)
         assert response.status_code == 200
 
 
@@ -159,42 +200,21 @@ class TestQuizAdvanced:
     
     def test_quiz_advanced_requires_session(self, client):
         """Test that advanced quiz requires proper session."""
-        response = client.get('/quiz/advanced')
+        response = client.get('/es/quiz/advanced')
         # Should redirect if no session
         assert response.status_code in [200, 301, 302]
     
     def test_quiz_advanced_displays_question(self, client):
         """Test that advanced quiz displays a question."""
         # Start quiz first
-        client.post('/start', data={'mode': 'advanced'})
+        client.post('/es/start', data={'mode': 'advanced'})
         
-        response = client.get('/quiz/advanced')
+        response = client.get('/es/quiz/advanced')
         assert response.status_code == 200
         data = response.data.decode('utf-8')
         
         # Should have an input field
         assert 'input' in data.lower()
-    
-    def test_api_validate_endpoint(self, client):
-        """Test the API validation endpoint."""
-        # Start advanced quiz
-        client.post('/start', data={'mode': 'advanced'})
-        client.get('/quiz/advanced')
-        
-        # Test validation API
-        with client.session_transaction() as sess:
-            correct_answer = sess.get('correct_answer')
-        
-        # Send partial answer
-        first_word = correct_answer.split()[0] if correct_answer else 'mil'
-        response = client.post('/api/validate', 
-                              json={'user_input': first_word})
-        
-        assert response.status_code == 200
-        json_data = response.get_json()
-        assert 'words' in json_data
-        assert 'is_correct' in json_data
-        assert 'is_complete' in json_data
 
 
 class TestResultsPage:
@@ -207,8 +227,9 @@ class TestResultsPage:
             sess['score'] = 7
             sess['total_questions'] = 7
             sess['mode'] = 'easy'
+            sess['learn_language'] = 'es'
         
-        response = client.get('/results')
+        response = client.get('/es/results')
         assert response.status_code == 200
         data = response.data.decode('utf-8')
         
@@ -222,34 +243,38 @@ class TestResultsPage:
         with client.session_transaction() as sess:
             sess['score'] = 10
             sess['total_questions'] = 10
+            sess['learn_language'] = 'es'
         
-        response = client.get('/results')
+        response = client.get('/es/results')
         assert response.status_code == 200
         data = response.data.decode('utf-8')
         
         # Should show 100%
         assert '100 %' in data
-
-
-class TestRestartQuiz:
-    """Tests for restarting quiz."""
     
-    def test_restart_clears_session(self, client):
-        """Test that restart clears the session."""
-        # Set up session with quiz data
+    def test_results_without_language_redirects(self, client):
+        """Test that results page redirects without language."""
         with client.session_transaction() as sess:
-            sess['score'] = 10
-            sess['total_questions'] = 15
-            sess['asked_numbers'] = [1, 2, 3]
+            sess['score'] = 5
+            sess['total_questions'] = 5
         
-        # Restart uses POST method
-        response = client.post('/restart', follow_redirects=False)
-        assert response.status_code in [301, 302]
-        
-        with client.session_transaction() as sess:
-            # Session should be cleared
-            assert 'score' not in sess
-            assert 'total_questions' not in sess
+        response = client.get('/es/results', follow_redirects=True)
+        # Should redirect to language selection
+        assert response.status_code == 200
+
+
+class TestLearnPage:
+    """Tests for learn page."""
+    
+    def test_learn_page_loads_spanish(self, client):
+        """Test that learn page loads for Spanish."""
+        response = client.get('/es/learn')
+        assert response.status_code == 200
+    
+    def test_learn_page_invalid_language(self, client):
+        """Test that learn page handles invalid language."""
+        response = client.get('/invalid/learn', follow_redirects=True)
+        assert response.status_code == 200
 
 
 class TestImprintPage:

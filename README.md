@@ -48,7 +48,7 @@ Before you start with a docker setup, make sure to setup a `.env` file. Have a l
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
-Access the application at http://127.0.0.1:5000.
+Access the application at http://127.0.0.1:5005.
 
 ## 📁 Project Structure
 
