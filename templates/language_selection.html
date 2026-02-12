@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('language_selection_title') }}{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero">
+        <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="hero-logo">
+        <h1 class="title">{{ get_text('home_hero_title') }}</h1>
+        <p class="subtitle">{{ get_text('language_selection_subtitle') }}</p>
+        <p class="description">
+            {{ get_text('language_selection_description') }}
+        </p>
+        
+        <div class="mode-selection">
+            {% for lang_code, lang_info in languages.items() %}
+            <div class="mode-card {% if not lang_info.ready %}mode-disabled{% endif %}">
+                <div class="language-flag">{{ lang_info.flag }}</div>
+                <h3 class="mode-title">{{ lang_info.name }}</h3>
+                <p class="language-native-name">{{ lang_info.native_name }}</p>
+                <p class="mode-description">{{ lang_info.description }}</p>
+                
+                {% if lang_info.ready %}
+                    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+                        {{ get_text('language_selection_start_btn') }}
+                    </a>
+                {% else %}
+                    <button class="btn btn-disabled" disabled>
+                        {{ get_text('language_selection_coming_soon') }}
+                    </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="feedback-section">
+            <a href="mailto:wezelstefan@gmail.com?subject={{ get_text('feedback_subject') }}" class="btn btn-feedback">
+                📧 {{ get_text('footer_feedback') }}
+            </a>
+        </div>
+        
+        <footer class="page-footer">
+            <a href="{{ url_for('privacy') }}" class="footer-link">{{ get_text('footer_privacy') }}</a> | 
+            <a href="{{ url_for('imprint') }}" class="footer-link">{{ get_text('footer_imprint') }}</a>
+        </footer>
+    </div>
+</div>
+
+<style>
+.language-flag {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    line-height: 1;
+}
+
+.language-native-name {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0.25rem 0 0.75rem 0;
+    font-weight: 500;
+}
+</style>
+{% endblock %}

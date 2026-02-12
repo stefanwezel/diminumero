@@ -46,9 +46,9 @@ uv run pytest
 ### Run Production Setup with Docker
 Before you start with a docker setup, make sure to setup a `.env` file. Have a look at the `.env.example` for reference. To start the production container, run
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml up --build
 ```
-Access the application at http://127.0.0.1:5000.
+Access the application at http://127.0.0.1:5005.
 
 ## 📁 Project Structure
 
@@ -112,3 +112,68 @@ This creates a fresh `numbers_data.py` with different random numbers while maint
 ## 📄 License
 
 This project is open source and available for educational purposes.
+
+
+## 🤝 Contribution
+
+Contributions are welcome! Please follow these steps:
+
+### 1. Create a Branch from an Issue
+
+Before implementing a feature, create a branch from the corresponding GitHub issue.
+
+Pull latest changes:
+```bash
+git pull origin main
+```
+
+Create a feature branch (use issue number and short description)
+```bash
+git switch -c 6-your-issue-name
+```
+
+### 2. Implement and Test Your Changes
+
+Make your changes and ensure everything works:
+
+```bash
+uv run pytest
+```
+
+Run the development server to manually test
+```bash
+uv run flask --app app run --debug
+```
+Access at http://127.0.0.1:5000.
+
+Before committing, format your code with the project formatter:
+
+```bash
+uv run ruff format .
+```
+
+**Important**: Add or update tests if you're introducing new functionality. Ensure all tests pass before proceeding.
+
+### 3. Commit and Create a Pull Request
+
+Write descriptive commit messages and reference issue numbers for automatic closing:
+
+```bash
+git commit -m "Fix: description of what you changed (Closes #6)"
+git push origin 6-your-issue-name
+```
+
+Go to GitHub and create a pull request. Update the README if adding new features.
+
+### 4. Test with Production Setup
+
+Before merge, verify your changes work in production:
+
+```bash
+# Build and start the production container
+docker-compose -f docker-compose.prod.yml up --build
+
+# Access at http://127.0.0.1:5005
+```
+
+Ensure everything works correctly in the production environment before requesting final review.

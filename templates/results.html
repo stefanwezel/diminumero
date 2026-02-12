@@ -33,20 +33,18 @@
         
         <!-- Action buttons -->
         <div class="results-actions">
-            <form action="{{ url_for('start_quiz') }}" method="POST">
+            <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                 <input type="hidden" name="mode" value="{{ session.get('mode', 'easy') }}">
                 <button type="submit" class="btn btn-primary btn-large">
                     {{ get_text('results_try_again') }}
                 </button>
             </form>
-            <a href="{{ url_for('learn') }}" class="btn btn-primary btn-large">
+            <a href="{{ url_for('learn', lang_code=lang_code) }}" class="btn btn-primary btn-large">
                 📚 {{ get_text('footer_learn') }}
             </a>
-            <form action="{{ url_for('index') }}" method="GET">
-                <button type="submit" class="btn btn-primary btn-large">
-                    {{ get_text('results_back_home') }}
-                </button>
-            </form>
+            <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary btn-large">
+                {{ get_text('results_back_home') }}
+            </a>
         </div>
         
         <div class="feedback-section">

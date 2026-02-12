@@ -158,6 +158,9 @@ body {
 
 .mode-card .btn {
     width: 100%;
+    display: block;
+    text-align: center;
+    text-decoration: none;
 }
 
 .btn-disabled {

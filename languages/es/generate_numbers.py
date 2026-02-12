@@ -1,4 +1,12 @@
-"""Generate Spanish numbers programmatically for diminumero."""
+"""Generate Spanish numbers programmatically for diminumero.
+
+This script generates Spanish number translations and saves them to numbers.py.
+To use this as a template for other languages:
+1. Copy this file to languages/<lang_code>/generate_numbers.py
+2. Update the number_to_<language>() function with the target language rules
+3. Update the output path
+4. Run the script to generate the numbers.py file
+"""
 
 
 def number_to_spanish(n):
@@ -138,15 +146,15 @@ numbers_set.update(random.sample(range(1000001, 10000001), 100))
 # Generate the dictionary
 NUMBERS = {n: number_to_spanish(n) for n in sorted(numbers_set)}
 
-# Write to numbers_data.py
-with open("numbers_data.py", "w", encoding="utf-8") as f:
+# Write to numbers.py in the same directory
+with open("languages/es/numbers.py", "w", encoding="utf-8") as f:
     f.write('"""Spanish numbers data for the quiz application."""\n\n')
     f.write("NUMBERS = {\n")
     for num, spanish in NUMBERS.items():
         f.write(f'    {num}: "{spanish}",\n')
     f.write("}\n")
 
-print(f"Generated {len(NUMBERS)} Spanish numbers and wrote to numbers_data.py")
+print(f"Generated {len(NUMBERS)} Spanish numbers and wrote to languages/es/numbers.py")
 print("\nFirst 10 numbers:")
 for num in list(NUMBERS.keys())[:10]:
     print(f"  {num}: {NUMBERS[num]}")
