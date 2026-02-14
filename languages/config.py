@@ -13,7 +13,7 @@ AVAILABLE_LANGUAGES = {
         "name": "Nepalese",
         "native_name": "नेपाली",
         "flag": "🇳🇵",
-        "ready": False,  # Placeholder - coming soon
+        "ready": True,  # Placeholder - coming soon
         "description": "Learn Nepalese numbers (Coming Soon)",
     },
 }
