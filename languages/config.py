@@ -16,6 +16,13 @@ AVAILABLE_LANGUAGES = {
         "ready": False,  # Placeholder - coming soon
         "description": "Learn Nepalese numbers (Coming Soon)",
     },
+    "de": {
+        "name": "German",
+        "native_name": "Deutsch",
+        "flag": "🇩🇪",
+        "ready": False,  # Placeholder - coming soon
+        "description": "Learn German numbers (Coming Soon)",
+    },
 }
 
 
@@ -40,6 +47,8 @@ def get_language_numbers(lang_code):
             from .es import NUMBERS
         elif lang_code == "ne":
             from .ne import NUMBERS
+        elif lang_code == "de":
+            from .de import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
