@@ -27,8 +27,10 @@ class TestIndexRoute:
 
     def test_index_loads(self, client):
         """Test that language selection page loads successfully."""
-        response = client.get("/")
-        assert response.status_code == 200
+        with client.session_transaction() as sess:
+            sess["learn_language"] = "es"
+            response = client.get("/")
+            assert response.status_code == 200
 
     def test_index_contains_language_selection(self, client):
         """Test that index page contains language selection."""
