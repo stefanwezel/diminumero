@@ -20,7 +20,7 @@ AVAILABLE_LANGUAGES = {
         "name": "German",
         "native_name": "Deutsch",
         "flag": "🇩🇪",
-        "ready": False,  # Placeholder - coming soon
+        "ready": True,
         "description": "Learn German numbers (Coming Soon)",
     },
 }
