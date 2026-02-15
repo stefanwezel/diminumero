@@ -32,6 +32,8 @@ LANGUAGE_NAME_PLACEHOLDERS = {
     "de": {"en": "German", "de": "Deutsch"},
 }
 
+FEEDBACK_EXPRESSIONS = {"es": "¡Correcto", "ne": "सहि!", "de": "Korrekt"}
+
 
 # Translations
 TRANSLATIONS = {
@@ -99,7 +101,7 @@ TRANSLATIONS = {
         "flash_language_load_error": "Failed to load language data.",
         "flash_learn_not_available": "Learning materials not yet available for this language.",
         "flash_hardcore_soon": "Hardcore mode is coming soon! Try Easy or Advanced mode.",
-        "flash_correct": "¡Correcto! 🎉",
+        "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorrect. The answer was: {}",
         "flash_gave_up": "The answer was: {}",
         # Imprint page
@@ -235,7 +237,7 @@ TRANSLATIONS = {
         "flash_language_load_error": "Laden der Sprachdaten fehlgeschlagen.",
         "flash_learn_not_available": "Lernmaterialien für diese Sprache sind noch nicht verfügbar.",
         "flash_hardcore_soon": "Hardcore-Modus kommt bald! Probiere den einfachen oder fortgeschrittenen Modus.",
-        "flash_correct": "¡Correcto! 🎉",
+        "flash_correct": "{}! 🎉",
         "flash_incorrect": "Falsch. Die Antwort war: {}",
         "flash_gave_up": "Die Antwort war: {}",
         # Imprint page
@@ -439,7 +441,12 @@ def quiz_easy(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
