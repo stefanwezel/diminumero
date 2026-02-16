@@ -127,6 +127,7 @@ def normalize_text(text):
     Normalize text for comparison by:
     - Converting to lowercase
     - Removing extra spaces
+    - Handling German umlauts and ß (ü→ue, ö→oe, ä→ae, ß→ss)
     - Optionally handling accent variations
 
     Args:
@@ -140,6 +141,17 @@ def normalize_text(text):
     # Convert to lowercase
     text = text.lower().strip()
 
+    # Replace German umlauts and ß with ASCII equivalents
+    # This allows users to type "fuenf" for "fünf", "oe" for "ö", etc.
+    german_replacements = {
+        "ü": "ue",
+        "ö": "oe",
+        "ä": "ae",
+        "ß": "ss",
+    }
+    for umlaut, replacement in german_replacements.items():
+        text = text.replace(umlaut, replacement)
+
     # Remove extra spaces between words
     text = " ".join(text.split())
 
@@ -150,14 +162,15 @@ def normalize_text(text):
     return text
 
 
-def validate_partial_answer(user_input, correct_answer):
+def validate_partial_answer(user_input, correct_answer, lang_code="es"):
     """
-    Validate user input word-by-word against the correct answer.
+    Validate user input against the correct answer with language-aware strategy.
     Returns detailed validation information for live feedback.
 
     Args:
         user_input: Current user input
         correct_answer: The correct answer
+        lang_code: Language code to determine validation strategy
 
     Returns:
         Dictionary with validation details:
@@ -167,10 +180,119 @@ def validate_partial_answer(user_input, correct_answer):
             'words': [{'text': str, 'status': 'correct'|'incorrect'|'incomplete'}]
         }
     """
+    from languages.config import get_validation_strategy, get_component_decomposer
+
     # Normalize both inputs
     normalized_input = normalize_text(user_input)
     normalized_correct = normalize_text(correct_answer)
 
+    # Get validation strategy for this language
+    strategy = get_validation_strategy(lang_code)
+
+    if strategy == "component_based":
+        # Component-based validation (e.g., German compound words)
+        decomposer = get_component_decomposer(lang_code)
+
+        if not decomposer:
+            # Fallback to word-based if decomposer not available
+            strategy = "word_based"
+        else:
+            # Decompose the correct answer into components
+            components = decomposer(correct_answer)
+
+            # Normalize components for matching
+            normalized_components = [normalize_text(c) for c in components]
+
+            # Build the full normalized answer by concatenating components
+            full_normalized = "".join(normalized_components)
+
+            # Track position in user input and component list
+            word_validations = []
+            input_pos = 0
+
+            for i, (component, norm_component) in enumerate(
+                zip(components, normalized_components)
+            ):
+                comp_len = len(norm_component)
+
+                if input_pos >= len(normalized_input):
+                    # User hasn't typed this component yet
+                    break
+
+                # Check if user input matches this component (fully or partially)
+                remaining_input = normalized_input[input_pos:]
+
+                if remaining_input.startswith(norm_component):
+                    # Component fully matched
+                    word_validations.append({"text": component, "status": "correct"})
+                    input_pos += comp_len
+                elif norm_component.startswith(remaining_input):
+                    # Component partially matched (incomplete)
+                    # Show what user has typed so far for this component
+                    typed_length = len(remaining_input)
+                    partial_text = component[:typed_length]  # Preserve original casing
+                    word_validations.append(
+                        {"text": partial_text, "status": "incomplete"}
+                    )
+                    input_pos += typed_length
+                    break  # Stop here as user is still typing this component
+                else:
+                    # Check for partial match at start of component
+                    match_len = 0
+                    for j in range(min(len(remaining_input), comp_len)):
+                        if remaining_input[j] == norm_component[j]:
+                            match_len = j + 1
+                        else:
+                            break
+
+                    if match_len > 0:
+                        # Partial match - show correct part
+                        word_validations.append(
+                            {"text": component[:match_len], "status": "correct"}
+                        )
+                        input_pos += match_len
+
+                        # Then show incorrect part
+                        incorrect_len = min(
+                            len(remaining_input) - match_len, comp_len - match_len
+                        )
+                        if incorrect_len > 0:
+                            incorrect_text = user_input[
+                                len(user_input)
+                                - len(remaining_input)
+                                + match_len : len(user_input)
+                                - len(remaining_input)
+                                + match_len
+                                + incorrect_len
+                            ]
+                            word_validations.append(
+                                {"text": incorrect_text, "status": "incorrect"}
+                            )
+                            input_pos += incorrect_len
+                    else:
+                        # No match at all - mark as incorrect
+                        incorrect_text = user_input[
+                            len(user_input) - len(remaining_input) :
+                        ]
+                        word_validations.append(
+                            {"text": incorrect_text, "status": "incorrect"}
+                        )
+                        input_pos = len(normalized_input)
+                    break
+
+            # Check if answer is complete and correct
+            is_complete = normalized_input == full_normalized
+            is_correct = is_complete
+
+            return {
+                "is_complete": is_complete,
+                "is_correct": is_correct,
+                "words": word_validations,
+                "expected_word_count": len(components),
+                "current_word_count": len(word_validations),
+            }
+
+    # Word-based validation (default, e.g., Spanish)
     # Split into words
     input_words = normalized_input.split() if normalized_input else []
     correct_words = normalized_correct.split()

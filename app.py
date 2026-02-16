@@ -538,7 +538,12 @@ def quiz_advanced(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
@@ -590,11 +595,17 @@ def validate_answer():
     """API endpoint for live validation of user input."""
     user_input = request.json.get("input", "")
     correct_answer = session.get("correct_answer", "")
+    lang_code = session.get("learn_language", "")
 
     if not correct_answer:
         return jsonify({"error": "No active question"}), 400
 
-    validation = quiz_logic.validate_partial_answer(user_input, correct_answer)
+    if not lang_code:
+        return jsonify({"error": "No active language"}), 400
+
+    validation = quiz_logic.validate_partial_answer(
+        user_input, correct_answer, lang_code
+    )
 
     return jsonify(validation)
 
@@ -641,7 +652,12 @@ def quiz_hardcore(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
