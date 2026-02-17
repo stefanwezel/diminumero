@@ -23,7 +23,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Deutsch",
         "flag": "🇩🇪",
         "ready": True,
-        "description": "Learn German numbers (Coming Soon)",
+        "description": "Learn German numbers from 1 to 10 million",
         "validation_strategy": "component_based",  # Compound words
     },
 }
