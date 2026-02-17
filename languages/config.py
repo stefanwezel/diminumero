@@ -8,6 +8,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇪🇸",
         "ready": True,
         "description": "Learn Spanish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",  # Numbers separated by spaces
     },
     "ne": {
         "name": "Nepalese",
@@ -15,6 +16,15 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇳🇵",
         "ready": False,  # Placeholder - coming soon
         "description": "Learn Nepalese numbers (Coming Soon)",
+        "validation_strategy": "word_based",  # Numbers separated by spaces
+    },
+    "de": {
+        "name": "German",
+        "native_name": "Deutsch",
+        "flag": "🇩🇪",
+        "ready": True,
+        "description": "Learn German numbers (Coming Soon)",
+        "validation_strategy": "component_based",  # Compound words
     },
 }
 
@@ -40,6 +50,8 @@ def get_language_numbers(lang_code):
             from .es import NUMBERS
         elif lang_code == "ne":
             from .ne import NUMBERS
+        elif lang_code == "de":
+            from .de import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
@@ -87,3 +99,36 @@ def get_language_info(lang_code):
         Dictionary with language metadata, or None if not found
     """
     return AVAILABLE_LANGUAGES.get(lang_code)
+
+
+def get_validation_strategy(lang_code):
+    """
+    Get the validation strategy for a specific language.
+
+    Args:
+        lang_code: Language code
+
+    Returns:
+        String indicating validation strategy: 'word_based' or 'component_based'
+        Defaults to 'word_based' if not specified
+    """
+    lang_info = AVAILABLE_LANGUAGES.get(lang_code, {})
+    return lang_info.get("validation_strategy", "word_based")
+
+
+def get_component_decomposer(lang_code):
+    """
+    Get the component decomposer function for a specific language.
+
+    Args:
+        lang_code: Language code
+
+    Returns:
+        Decomposer function for component-based languages, or None for word-based
+    """
+    if get_validation_strategy(lang_code) == "component_based":
+        if lang_code == "de":
+            from .de import decompose_german_number
+
+            return decompose_german_number
+    return None

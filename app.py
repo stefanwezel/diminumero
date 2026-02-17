@@ -26,6 +26,15 @@ app.secret_key = os.environ.get(
 # Configuration
 QUESTIONS_PER_QUIZ = 10
 
+LANGUAGE_NAME_PLACEHOLDERS = {
+    "es": {"en": "Spanish", "de": "Spanisch"},
+    "ne": {"en": "Nepalese", "de": "Nepalesisch"},
+    "de": {"en": "German", "de": "Deutsch"},
+}
+
+FEEDBACK_EXPRESSIONS = {"es": "¡Correcto", "ne": "सहि!", "de": "Korrekt"}
+
+
 # Translations
 TRANSLATIONS = {
     "en": {
@@ -43,8 +52,8 @@ TRANSLATIONS = {
         # Home page (mode selection)
         "home_title": "diminumero - Home",
         "home_hero_title": "diminumero",
-        "home_hero_subtitle": "Test your Spanish number knowledge!",
-        "home_hero_description": "Practice translating numbers from digits to Spanish words. Choose your difficulty mode and start learning!",
+        "home_hero_subtitle": "Test your LANGUAGE_NAME_PLACEHOLDER number knowledge!",
+        "home_hero_description": "Practice translating numbers from digits to LANGUAGE_NAME_PLACEHOLDER words. Choose your difficulty mode and start learning!",
         # Mode selection
         "mode_easy": "Easy",
         "mode_easy_desc": "Multiple choice with 4 options. Perfect for beginners!",
@@ -59,7 +68,7 @@ TRANSLATIONS = {
         "info_questions": "Questions",
         "info_numbers": "Numbers",
         # Learn section
-        "learn_nav_text": "Learn Spanish Numbers",
+        "learn_nav_text": "Learn LANGUAGE_NAME_PLACEHOLDER Numbers",
         "learn_nav_button": "Learn First",
         "learn_nav_desc": "Understand the patterns before you practice!",
         # Footer
@@ -70,8 +79,8 @@ TRANSLATIONS = {
         "quiz_question": "Question",
         "quiz_score": "Score",
         "quiz_exit": "Exit Quiz",
-        "quiz_easy_prompt": "What is this number in Spanish?",
-        "quiz_advanced_prompt": "Type this number in Spanish:",
+        "quiz_easy_prompt": "What is this number in LANGUAGE_NAME_PLACEHOLDER?",
+        "quiz_advanced_prompt": "Type this number in LANGUAGE_NAME_PLACEHOLDER:",
         "quiz_advanced_placeholder": "Type your answer here...",
         "quiz_skip": "Skip",
         "quiz_skip_tooltip": "Skip this question (no points awarded)",
@@ -92,7 +101,7 @@ TRANSLATIONS = {
         "flash_language_load_error": "Failed to load language data.",
         "flash_learn_not_available": "Learning materials not yet available for this language.",
         "flash_hardcore_soon": "Hardcore mode is coming soon! Try Easy or Advanced mode.",
-        "flash_correct": "¡Correcto! 🎉",
+        "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorrect. The answer was: {}",
         "flash_gave_up": "The answer was: {}",
         # Imprint page
@@ -179,8 +188,8 @@ TRANSLATIONS = {
         # Home page (mode selection)
         "home_title": "diminumero - Startseite",
         "home_hero_title": "diminumero",
-        "home_hero_subtitle": "Teste dein Wissen über spanische Zahlen!",
-        "home_hero_description": "Übe die Übersetzung von Zahlen in spanische Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!",
+        "home_hero_subtitle": "Teste dein Wissen über LANGUAGE_NAME_PLACEHOLDERe Zahlen!",
+        "home_hero_description": "Übe die Übersetzung von Zahlen in LANGUAGE_NAME_PLACEHOLDERe Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!",
         # Mode selection
         "mode_easy": "Einfach",
         "mode_easy_desc": "Multiple Choice mit 4 Optionen. Perfekt für Anfänger!",
@@ -195,7 +204,7 @@ TRANSLATIONS = {
         "info_questions": "Fragen",
         "info_numbers": "Zahlen",
         # Learn section
-        "learn_nav_text": "Spanische Zahlen lernen",
+        "learn_nav_text": "LANGUAGE_NAME_PLACEHOLDER Zahlen lernen",
         "learn_nav_button": "Zuerst lernen",
         "learn_nav_desc": "Verstehe die Muster, bevor du übst!",
         # Footer
@@ -206,8 +215,8 @@ TRANSLATIONS = {
         "quiz_question": "Frage",
         "quiz_score": "Punktzahl",
         "quiz_exit": "Beenden",
-        "quiz_easy_prompt": "Wie lautet diese Zahl auf Spanisch?",
-        "quiz_advanced_prompt": "Schreibe diese Zahl auf Spanisch:",
+        "quiz_easy_prompt": "Wie lautet diese Zahl auf LANGUAGE_NAME_PLACEHOLDER?",
+        "quiz_advanced_prompt": "Schreibe diese Zahl auf LANGUAGE_NAME_PLACEHOLDER:",
         "quiz_advanced_placeholder": "Gib deine Antwort hier ein...",
         "quiz_skip": "Skippen",
         "quiz_skip_tooltip": "Diese Frage überspringen (keine Punkte)",
@@ -228,7 +237,7 @@ TRANSLATIONS = {
         "flash_language_load_error": "Laden der Sprachdaten fehlgeschlagen.",
         "flash_learn_not_available": "Lernmaterialien für diese Sprache sind noch nicht verfügbar.",
         "flash_hardcore_soon": "Hardcore-Modus kommt bald! Probiere den einfachen oder fortgeschrittenen Modus.",
-        "flash_correct": "¡Correcto! 🎉",
+        "flash_correct": "{}! 🎉",
         "flash_incorrect": "Falsch. Die Antwort war: {}",
         "flash_gave_up": "Die Antwort war: {}",
         # Imprint page
@@ -305,8 +314,13 @@ TRANSLATIONS = {
 
 def get_text(key):
     """Get translated text for the current language."""
-    lang = session.get("language", "de")  # Default to German
-    return TRANSLATIONS.get(lang, {}).get(key, key)
+    ui_language = session.get("language", "de")  # Default to German
+    name = TRANSLATIONS.get(ui_language, {}).get(key, key)
+    name = name.replace(
+        "LANGUAGE_NAME_PLACEHOLDER",
+        LANGUAGE_NAME_PLACEHOLDERS[session.get("learn_language", "es")][ui_language],
+    )
+    return name
 
 
 @app.route("/")
@@ -427,7 +441,12 @@ def quiz_easy(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
@@ -519,7 +538,12 @@ def quiz_advanced(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
@@ -571,11 +595,17 @@ def validate_answer():
     """API endpoint for live validation of user input."""
     user_input = request.json.get("input", "")
     correct_answer = session.get("correct_answer", "")
+    lang_code = session.get("learn_language", "")
 
     if not correct_answer:
         return jsonify({"error": "No active question"}), 400
 
-    validation = quiz_logic.validate_partial_answer(user_input, correct_answer)
+    if not lang_code:
+        return jsonify({"error": "No active language"}), 400
+
+    validation = quiz_logic.validate_partial_answer(
+        user_input, correct_answer, lang_code
+    )
 
     return jsonify(validation)
 
@@ -622,7 +652,12 @@ def quiz_hardcore(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
