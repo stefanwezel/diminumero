@@ -49,6 +49,13 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Start Learning",
         "language_selection_coming_soon": "Coming Soon",
         "language_selection_back": "Change Language",
+        # Language names and descriptions
+        "lang_es_name": "Spanish",
+        "lang_es_description": "Learn Spanish numbers from 1 to 10 million",
+        "lang_ne_name": "Nepalese",
+        "lang_ne_description": "Learn Nepalese numbers (Coming Soon)",
+        "lang_de_name": "German",
+        "lang_de_description": "Learn German numbers from 1 to 10 million",
         # Home page (mode selection)
         "home_title": "diminumero - Home",
         "home_hero_title": "diminumero",
@@ -185,6 +192,13 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Lernen beginnen",
         "language_selection_coming_soon": "Demnächst",
         "language_selection_back": "Sprache wechseln",
+        # Language names and descriptions
+        "lang_es_name": "Spanisch",
+        "lang_es_description": "Lerne Spanische Zahlen von 1 bis 10 Millionen",
+        "lang_ne_name": "Nepalesisch",
+        "lang_ne_description": "Lerne Nepalesische Zahlen (Demnächst)",
+        "lang_de_name": "Deutsch",
+        "lang_de_description": "Lerne Deutsche Zahlen von 1 bis 10 Millionen",
         # Home page (mode selection)
         "home_title": "diminumero - Startseite",
         "home_hero_title": "diminumero",
@@ -330,8 +344,17 @@ def index():
     if "language" not in session:
         session["language"] = "de"  # Default to German
 
+    # Create translated copy of language metadata
+    translated_languages = {}
+    for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
+        translated_languages[lang_code] = {
+            **lang_info,  # Copy all properties
+            "name": get_text(f"lang_{lang_code}_name"),
+            "description": get_text(f"lang_{lang_code}_description"),
+        }
+
     return render_template(
-        "language_selection.html", languages=AVAILABLE_LANGUAGES, get_text=get_text
+        "language_selection.html", languages=translated_languages, get_text=get_text
     )
 
 
@@ -452,6 +475,11 @@ def quiz_easy(lang_code):
 
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+        # Clear current question so next GET generates a new one
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
+        session.pop("current_options", None)  # Clear options too
+
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
             return redirect(url_for("results", lang_code=lang_code))
@@ -459,26 +487,37 @@ def quiz_easy(lang_code):
         # Continue to next question
         return redirect(url_for("quiz_easy", lang_code=lang_code))
 
-    # GET request - display new question
+    # GET request - display question
     # Check if quiz should end
     if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
         return redirect(url_for("results", lang_code=lang_code))
 
-    # Generate new question
-    asked_numbers = session.get("asked_numbers", [])
-    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+    # Check if we already have a current question (page refresh)
+    if (
+        "current_number" in session
+        and "correct_answer" in session
+        and "current_options" in session
+    ):
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+        options = session["current_options"]
+    else:
+        # Generate new question
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
 
-    # Store in session
-    session["current_number"] = number
-    session["correct_answer"] = correct_answer
+        # Generate multiple choice options
+        options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
 
-    # Update asked numbers
-    if "asked_numbers" not in session:
-        session["asked_numbers"] = []
-    session["asked_numbers"].append(number)
+        # Store in session
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
+        session["current_options"] = options
 
-    # Generate multiple choice options
-    options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
+        # Update asked numbers
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
 
     # Get current progress
     score = session.get("score", 0)
@@ -522,6 +561,10 @@ def quiz_advanced(lang_code):
             flash(get_text("flash_gave_up").format(correct_answer), "info")
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+            # Clear current question so next GET generates a new one
+            session.pop("current_number", None)
+            session.pop("correct_answer", None)
+
             # Check if quiz is complete
             if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
                 return redirect(url_for("results", lang_code=lang_code))
@@ -549,6 +592,10 @@ def quiz_advanced(lang_code):
 
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+        # Clear current question so next GET generates a new one
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
+
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
             return redirect(url_for("results", lang_code=lang_code))
@@ -556,23 +603,28 @@ def quiz_advanced(lang_code):
         # Continue to next question
         return redirect(url_for("quiz_advanced", lang_code=lang_code))
 
-    # GET request - display new question
+    # GET request - display question
     # Check if quiz should end
     if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
         return redirect(url_for("results", lang_code=lang_code))
 
-    # Generate new question
-    asked_numbers = session.get("asked_numbers", [])
-    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+    # Check if we already have a current question (page refresh)
+    if "current_number" in session and "correct_answer" in session:
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+    else:
+        # Generate new question
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
 
-    # Store in session
-    session["current_number"] = number
-    session["correct_answer"] = correct_answer
+        # Store in session
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
 
-    # Update asked numbers
-    if "asked_numbers" not in session:
-        session["asked_numbers"] = []
-    session["asked_numbers"].append(number)
+        # Update asked numbers
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
 
     # Get current progress
     score = session.get("score", 0)
@@ -636,6 +688,10 @@ def quiz_hardcore(lang_code):
             flash(get_text("flash_gave_up").format(correct_answer), "info")
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+            # Clear current question so next GET generates a new one
+            session.pop("current_number", None)
+            session.pop("correct_answer", None)
+
             # Check if quiz is complete
             if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
                 return redirect(url_for("results", lang_code=lang_code))
@@ -663,6 +719,10 @@ def quiz_hardcore(lang_code):
 
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+        # Clear current question so next GET generates a new one
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
+
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
             return redirect(url_for("results", lang_code=lang_code))
@@ -670,23 +730,28 @@ def quiz_hardcore(lang_code):
         # Continue to next question
         return redirect(url_for("quiz_hardcore", lang_code=lang_code))
 
-    # GET request - display new question
+    # GET request - display question
     # Check if quiz should end
     if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
         return redirect(url_for("results", lang_code=lang_code))
 
-    # Generate new question
-    asked_numbers = session.get("asked_numbers", [])
-    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+    # Check if we already have a current question (page refresh)
+    if "current_number" in session and "correct_answer" in session:
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+    else:
+        # Generate new question
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
 
-    # Store in session
-    session["current_number"] = number
-    session["correct_answer"] = correct_answer
+        # Store in session
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
 
-    # Update asked numbers
-    if "asked_numbers" not in session:
-        session["asked_numbers"] = []
-    session["asked_numbers"].append(number)
+        # Update asked numbers
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
 
     # Get current progress
     score = session.get("score", 0)
