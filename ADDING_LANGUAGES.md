@@ -8,27 +8,6 @@ diminumero is designed to support multiple languages for number learning. Curren
 - **Spanish (es)**: Fully implemented
 - **Nepalese (ne)**: Placeholder (coming soon)
 
-## Architecture
-
-The multi-language system consists of:
-
-1. **languages/** directory - Contains language-specific data
-   - `config.py` - Language registry and metadata
-   - `<lang_code>/` - Individual language directories
-     - `numbers.py` - Number translations
-     - `generate_numbers.py` - Script to generate numbers
-     - `__init__.py` - Package initialization
-
-2. **Route structure** - URL pattern: `/<lang_code>/...`
-   - `/` - Language selection page
-   - `/<lang_code>` - Mode selection page
-   - `/<lang_code>/quiz/<mode>` - Quiz pages
-   - `/<lang_code>/results` - Results page
-   - `/<lang_code>/learn` - Learn page
-
-3. **Session management**
-   - `language` - UI language (German/English)
-   - `learn_language` - Learning language (Spanish/Nepalese/etc)
 
 ## Steps to Add a New Language
 
@@ -198,6 +177,30 @@ Before marking a language as `ready: True`:
 - [ ] (Optional) Learn pages are created and work
 - [ ] Edge cases tested (very small/large numbers)
 - [ ] Native speaker review completed
+
+
+## Architecture
+
+The multi-language system consists of:
+
+1. **languages/** directory - Contains language-specific data
+   - `config.py` - Language registry and metadata
+   - `<lang_code>/` - Individual language directories
+     - `numbers.py` - Number translations
+     - `generate_numbers.py` - Script to generate numbers
+     - `__init__.py` - Package initialization
+
+2. **Route structure** - URL pattern: `/<lang_code>/...`
+   - `/` - Language selection page
+   - `/<lang_code>` - Mode selection page
+   - `/<lang_code>/quiz/<mode>` - Quiz pages
+   - `/<lang_code>/results` - Results page
+   - `/<lang_code>/learn` - Learn page
+
+3. **Session management**
+   - `language` - UI language (German/English)
+   - `learn_language` - Learning language (Spanish/Nepalese/etc)
+
 
 ## Questions?
 
