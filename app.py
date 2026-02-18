@@ -49,6 +49,13 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Start Learning",
         "language_selection_coming_soon": "Coming Soon",
         "language_selection_back": "Change Language",
+        # Language names and descriptions
+        "lang_es_name": "Spanish",
+        "lang_es_description": "Learn Spanish numbers from 1 to 10 million",
+        "lang_ne_name": "Nepalese",
+        "lang_ne_description": "Learn Nepalese numbers (Coming Soon)",
+        "lang_de_name": "German",
+        "lang_de_description": "Learn German numbers from 1 to 10 million",
         # Home page (mode selection)
         "home_title": "diminumero - Home",
         "home_hero_title": "diminumero",
@@ -185,6 +192,13 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Lernen beginnen",
         "language_selection_coming_soon": "Demnächst",
         "language_selection_back": "Sprache wechseln",
+        # Language names and descriptions
+        "lang_es_name": "Spanisch",
+        "lang_es_description": "Lerne Spanische Zahlen von 1 bis 10 Millionen",
+        "lang_ne_name": "Nepalesisch",
+        "lang_ne_description": "Lerne Nepalesische Zahlen (Demnächst)",
+        "lang_de_name": "Deutsch",
+        "lang_de_description": "Lerne Deutsche Zahlen von 1 bis 10 Millionen",
         # Home page (mode selection)
         "home_title": "diminumero - Startseite",
         "home_hero_title": "diminumero",
@@ -330,8 +344,17 @@ def index():
     if "language" not in session:
         session["language"] = "de"  # Default to German
 
+    # Create translated copy of language metadata
+    translated_languages = {}
+    for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
+        translated_languages[lang_code] = {
+            **lang_info,  # Copy all properties
+            "name": get_text(f"lang_{lang_code}_name"),
+            "description": get_text(f"lang_{lang_code}_description"),
+        }
+
     return render_template(
-        "language_selection.html", languages=AVAILABLE_LANGUAGES, get_text=get_text
+        "language_selection.html", languages=translated_languages, get_text=get_text
     )
 
 

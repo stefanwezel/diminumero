@@ -34,8 +34,8 @@ class TestIndexRoute:
         """Test that index page contains language selection."""
         response = client.get("/")
         data = response.data.decode("utf-8")
-        # Should have Spanish and Nepalese options
-        assert "spanish" in data.lower() or "español" in data.lower()
+        # Should have Spanish and Nepalese options - check for native names
+        assert "español" in data.lower() or "नेपाली" in data
 
     def test_index_sets_default_language(self, client):
         """Test that index sets default UI language to German."""
@@ -72,8 +72,8 @@ class TestModeSelection:
         # Should redirect to language selection
         assert response.status_code == 200
         data = response.data.decode("utf-8")
-        # Should be back at language selection
-        assert "spanish" in data.lower() or "nepalese" in data.lower()
+        # Should be back at language selection - check for native names which are always present
+        assert "español" in data.lower() or "नेपाली" in data
 
     def test_disabled_language_rejected(self, client):
         """Test that disabled languages (like Nepalese) are rejected."""
