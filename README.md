@@ -7,13 +7,17 @@
 ![Tests](https://github.com/stefanwezel/diminumero/workflows/Tests/badge.svg)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
-An interactive web application to practice Spanish number translations. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
+An interactive web application to practice number translations in multiple languages. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers per language from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
+
+**Currently supported languages:** Spanish, German (Nepalese in progress)
 
 ## ✨ Features
 
-- **1,000 Spanish Numbers**: From 1 to millions with correct Spanish grammar
+- **Multi-Language Support**: Practice numbers in Spanish, German, and more (see [Adding Languages](ADDING_LANGUAGES.md))
+- **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Step-wise probability by order of magnitude - numbers <100 have baseline probability, 100-999 are 10× less likely, 1000-9999 are 100× less likely, etc.
-- **Different Modes**: Begginer and advanced
+- **Three Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), and Hardcore
+- **Bilingual UI**: Interface available in English and German
 - **Responsive Design**: Works seamlessly on desktop and mobile
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
 
@@ -56,58 +60,73 @@ Access the application at http://127.0.0.1:5005.
 diminumero/
 ├── app.py                 # Flask application & routes
 ├── quiz_logic.py          # Quiz generation & weighting logic
-├── numbers_data.py        # 1,000 Spanish number translations
-├── generate_numbers.py    # Script to regenerate numbers
+├── languages/             # Multi-language support
+│   ├── config.py          # Language registry & metadata
+│   ├── es/                # Spanish (numbers.py, generate_numbers.py)
+│   ├── de/                # German (numbers.py, generate_numbers.py)
+│   └── ne/                # Nepalese (in progress)
 ├── templates/             # HTML templates
 │   ├── base.html
 │   ├── index.html
-│   ├── quiz.html
+│   ├── quiz_easy.html
+│   ├── quiz_advanced.html
+│   ├── quiz_hardcore.html
 │   └── results.html
 └── static/
     ├── css/
     │   └── style.css      # Styling & animations
     └── js/
-        └── quiz.js        # Interactive features
+        ├── quiz.js        # Easy mode interactions
+        ├── quiz_advanced.js   # Live validation logic
+        └── quiz_hardcore.js   # Hardcore mode logic
 ```
 
 ## 🎯 How It Works
 
 ### Easy Mode (Multiple Choice)
-1. **Start Quiz**: Click to begin a session
-2. **Answer Questions**: Select the correct Spanish translation from 4 options
+1. **Start Quiz**: Select a language and click to begin
+2. **Answer Questions**: Select the correct translation from 4 options
 3. **Get Instant Feedback**: Toast notifications confirm correctness
 4. **Track Progress**: See your score and progress bar throughout
 5. **Review Results**: View final score with performance feedback
 
 ### Advanced Mode (Text Input)
-1. **Start Quiz**: Click to begin a session
-2. **Type Your Answer**: Enter the Spanish translation manually
+1. **Start Quiz**: Select a language and click to begin
+2. **Type Your Answer**: Enter the translation manually
 3. **Live Validation**: Get real-time word-by-word feedback as you type
 4. **Track Progress**: See your score and progress bar throughout
 5. **Review Results**: View final score with performance feedback
+
+### Hardcore Mode
+Same as Advanced mode but with stricter validation requirements for an extra challenge.
 
 ## 🛠️ Technologies
 
 - **Backend**: Flask 3.1+
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
 - **Styling**: Custom CSS with responsive design
-- **Number Generation**: Algorithmic Spanish grammar rules
+- **Number Generation**: Algorithmic grammar rules per language
 
 ## 📝 Regenerating Numbers
 
-To generate a new set of 1,000 numbers:
+Each language has its own number generator. To regenerate numbers for a specific language:
 
 ```bash
-python generate_numbers.py
+python languages/es/generate_numbers.py  # Spanish
+python languages/de/generate_numbers.py  # German
 ```
 
-This creates a fresh `numbers_data.py` with different random numbers while maintaining proper Spanish translations.
+This creates a fresh `numbers.py` in the respective language directory with proper translations.
 
 ## 🎨 Customization
 
 - **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `app.py` (default 10 questions)
 - **Number Weighting**: Adjust order-of-magnitude thresholds and weights in `quiz_logic.py` (currently 10x reduction per magnitude)
 - **Colors**: Update color variables in `static/css/style.css`
+
+## 🌍 Adding New Languages
+
+Want to add support for a new language? See [ADDING_LANGUAGES.md](ADDING_LANGUAGES.md) for a complete guide on how to extend the application with new languages.
 
 ## 📄 License
 
@@ -163,7 +182,7 @@ git commit -m "Fix: description of what you changed (Closes #6)"
 git push origin 6-your-issue-name
 ```
 
-Go to GitHub and create a pull request. Update the README if adding new features.
+Go to GitHub and create a pull request. Update the README and CLAUDE.md if adding new features.
 
 ### 4. Test with Production Setup
 
