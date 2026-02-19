@@ -9,7 +9,7 @@
 
 An interactive web application to practice number translations in multiple languages. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers per language from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
 
-**Currently supported languages:** Spanish, German (Nepalese in progress)
+**Currently supported languages:** Spanish, German, French (Nepalese in progress)
 
 ## ✨ Features
 
@@ -63,8 +63,7 @@ diminumero/
 ├── languages/             # Multi-language support
 │   ├── config.py          # Language registry & metadata
 │   ├── es/                # Spanish (numbers.py, generate_numbers.py)
-│   ├── de/                # German (numbers.py, generate_numbers.py)
-│   └── ne/                # Nepalese (in progress)
+│   └── ...                # Additional languages
 ├── templates/             # HTML templates
 │   ├── base.html
 │   ├── index.html
@@ -112,8 +111,7 @@ Same as Advanced mode but with stricter validation requirements for an extra cha
 Each language has its own number generator. To regenerate numbers for a specific language:
 
 ```bash
-python languages/es/generate_numbers.py  # Spanish
-python languages/de/generate_numbers.py  # German
+python languages/<lang_code>/generate_numbers.py  # e.g., es, de, fr
 ```
 
 This creates a fresh `numbers.py` in the respective language directory with proper translations.
