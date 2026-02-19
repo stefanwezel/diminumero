@@ -26,6 +26,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn German numbers from 1 to 10 million",
         "validation_strategy": "component_based",  # Compound words
     },
+    "fr": {
+        "name": "French",
+        "native_name": "Français",
+        "flag": "🇫🇷",
+        "ready": True,
+        "description": "Learn French numbers from 1 to 10 million",
+        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
+    },
 }
 
 
@@ -52,6 +60,8 @@ def get_language_numbers(lang_code):
             from .ne import NUMBERS
         elif lang_code == "de":
             from .de import NUMBERS
+        elif lang_code == "fr":
+            from .fr import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
