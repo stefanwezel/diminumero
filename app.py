@@ -30,9 +30,10 @@ LANGUAGE_NAME_PLACEHOLDERS = {
     "es": {"en": "Spanish", "de": "Spanisch"},
     "ne": {"en": "Nepalese", "de": "Nepalesisch"},
     "de": {"en": "German", "de": "Deutsch"},
+    "fr": {"en": "French", "de": "Französisch"},
 }
 
-FEEDBACK_EXPRESSIONS = {"es": "¡Correcto", "ne": "सहि!", "de": "Korrekt"}
+FEEDBACK_EXPRESSIONS = {"es": "¡Correcto", "ne": "सहि!", "de": "Korrekt", "fr": "Correct"}
 
 
 # Translations
@@ -56,6 +57,8 @@ TRANSLATIONS = {
         "lang_ne_description": "Learn Nepalese numbers (Coming Soon)",
         "lang_de_name": "German",
         "lang_de_description": "Learn German numbers from 1 to 10 million",
+        "lang_fr_name": "French",
+        "lang_fr_description": "Learn French numbers from 1 to 10 million",
         # Home page (mode selection)
         "home_title": "diminumero - Home",
         "home_hero_title": "diminumero",
@@ -199,6 +202,8 @@ TRANSLATIONS = {
         "lang_ne_description": "Lerne Nepalesische Zahlen (Demnächst)",
         "lang_de_name": "Deutsch",
         "lang_de_description": "Lerne Deutsche Zahlen von 1 bis 10 Millionen",
+        "lang_fr_name": "Französisch",
+        "lang_fr_description": "Lerne Französische Zahlen von 1 bis 10 Millionen",
         # Home page (mode selection)
         "home_title": "diminumero - Startseite",
         "home_hero_title": "diminumero",
@@ -381,12 +386,16 @@ def mode_selection(lang_code):
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
 
+    # Currently only Spanish has learning materials
+    has_learn_materials = lang_code == "es"
+
     return render_template(
         "index.html",
         total_numbers=total_numbers,
         questions_per_quiz=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
+        has_learn_materials=has_learn_materials,
     )
 
 
