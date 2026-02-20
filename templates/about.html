@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('about_title') }}{% endblock %}
+
+{% block content %}
+<div class="imprint-page">
+    <div class="imprint-container">
+        <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero mascot" class="hero-logo">
+        <h1 class="imprint-title">{{ get_text('about_heading') }}</h1>
+
+        <div class="imprint-section">
+            <h2>{{ get_text('about_mission_heading') }}</h2>
+            <p>{{ get_text('about_mission_text') }}</p>
+        </div>
+
+        <div class="imprint-section">
+            <h2>{{ get_text('about_how_heading') }}</h2>
+            <p>{{ get_text('about_how_text') }}</p>
+        </div>
+
+        <div class="imprint-section">
+            <h2>{{ get_text('about_open_source_heading') }}</h2>
+            <p>{{ get_text('about_open_source_text') }}</p>
+            <p>
+                <a href="https://github.com/stefanwezel/diminumero/" target="_blank" rel="noopener noreferrer">
+                    {{ get_text('about_github_link') }} →
+                </a>
+            </p>
+        </div>
+
+        <div class="imprint-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">{{ get_text('about_back_home') }}</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
