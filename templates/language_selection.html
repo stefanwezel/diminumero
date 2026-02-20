@@ -31,6 +31,15 @@
                 {% endif %}
             </div>
             {% endfor %}
+            <div class="mode-card">
+                <div class="language-flag">❓</div>
+                <h3 class="mode-title">{{ get_text('language_selection_contribute_title') }}</h3>
+                <p class="language-native-name">&nbsp;</p>
+                <p class="mode-description">{{ get_text('language_selection_contribute_description') }}</p>
+                <a href="https://github.com/stefanwezel/diminumero/" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                    {{ get_text('language_selection_contribute_btn') }}
+                </a>
+            </div>
         </div>
         
         <div class="feedback-section">
@@ -59,5 +68,6 @@
     margin: 0.25rem 0 0.75rem 0;
     font-weight: 500;
 }
+
 </style>
 {% endblock %}

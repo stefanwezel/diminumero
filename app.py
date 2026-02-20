@@ -33,7 +33,12 @@ LANGUAGE_NAME_PLACEHOLDERS = {
     "fr": {"en": "French", "de": "Französisch"},
 }
 
-FEEDBACK_EXPRESSIONS = {"es": "¡Correcto", "ne": "सहि!", "de": "Korrekt", "fr": "Correct"}
+FEEDBACK_EXPRESSIONS = {
+    "es": "¡Correcto",
+    "ne": "सहि!",
+    "de": "Korrekt",
+    "fr": "Correct",
+}
 
 
 # Translations
@@ -50,6 +55,9 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Start Learning",
         "language_selection_coming_soon": "Coming Soon",
         "language_selection_back": "Change Language",
+        "language_selection_contribute_title": "Language Missing?",
+        "language_selection_contribute_description": "Help us add more languages!",
+        "language_selection_contribute_btn": "Contribute on GitHub",
         # Language names and descriptions
         "lang_es_name": "Spanish",
         "lang_es_description": "Learn Spanish numbers from 1 to 10 million",
@@ -195,6 +203,9 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Lernen beginnen",
         "language_selection_coming_soon": "Demnächst",
         "language_selection_back": "Sprache wechseln",
+        "language_selection_contribute_title": "Sprache fehlt?",
+        "language_selection_contribute_description": "Hilf uns, weitere Sprachen hinzuzufügen!",
+        "language_selection_contribute_btn": "Auf GitHub beitragen",
         # Language names and descriptions
         "lang_es_name": "Spanisch",
         "lang_es_description": "Lerne Spanische Zahlen von 1 bis 10 Millionen",
