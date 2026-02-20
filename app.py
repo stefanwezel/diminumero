@@ -368,7 +368,7 @@ TRANSLATIONS = {
 
 def get_text(key):
     """Get translated text for the current language."""
-    ui_language = session.get("language", "de")  # Default to German
+    ui_language = session.get("language", "en")  # Default to English
     name = TRANSLATIONS.get(ui_language, {}).get(key, key)
     name = name.replace(
         "LANGUAGE_NAME_PLACEHOLDER",
