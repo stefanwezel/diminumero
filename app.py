@@ -92,6 +92,7 @@ TRANSLATIONS = {
         # Footer
         "footer_feedback": "Send Feedback",
         "footer_imprint": "Imprint",
+        "footer_about": "About",
         "footer_learn": "Learn",
         # Quiz interface
         "quiz_question": "Question",
@@ -136,6 +137,17 @@ TRANSLATIONS = {
         "imprint_copyright_heading": "Copyright",
         "imprint_copyright_text": "The content and works created by the site operators on these pages are subject to German copyright law. Reproduction, editing, distribution, and any kind of use outside the limits of copyright law require the written consent of the respective author or creator. Downloads and copies of this site are only permitted for private, non-commercial use. Insofar as the content on this site was not created by the operator, the copyrights of third parties are respected. In particular, third-party content is marked as such. Should you nevertheless become aware of a copyright infringement, please inform us accordingly. Upon becoming aware of legal violations, we will remove such content immediately.",
         "imprint_back_home": "Back to Home",
+        # About page
+        "about_title": "About - diminumero",
+        "about_heading": "About diminumero",
+        "about_mission_heading": "Our Mission",
+        "about_mission_text": "diminumero is a free, open-source app for practicing numbers in foreign languages. Numbers are often neglected in language learning, yet they come up constantly in everyday life — prices, dates, times, phone numbers. diminumero makes it fun to build that skill.",
+        "about_how_heading": "How It Works",
+        "about_how_text": "Choose a language, pick a difficulty mode, and translate numbers into words. The quiz engine uses weighted randomization to focus on the numbers you're most likely to encounter, while progressively challenging you with larger ones. Live feedback and multiple modes help you learn at your own pace.",
+        "about_open_source_heading": "Open Source",
+        "about_open_source_text": "diminumero is open source and community-driven. Contributions are welcome — whether that's adding a new language, fixing a bug, or improving the learning experience.",
+        "about_github_link": "View on GitHub",
+        "about_back_home": "Back to Home",
         # Email subject
         # Privacy policy
         "footer_privacy": "Privacy Policy",
@@ -240,6 +252,7 @@ TRANSLATIONS = {
         # Footer
         "footer_feedback": "Feedback senden",
         "footer_imprint": "Impressum",
+        "footer_about": "Über uns",
         "footer_learn": "Lernen",
         # Quiz interface
         "quiz_question": "Frage",
@@ -284,6 +297,17 @@ TRANSLATIONS = {
         "imprint_copyright_heading": "Urheberrecht",
         "imprint_copyright_text": "Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet. Soweit die Inhalte auf dieser Seite nicht vom Betreiber erstellt wurden, werden die Urheberrechte Dritter beachtet. Insbesondere werden Inhalte Dritter als solche gekennzeichnet. Sollten Sie trotzdem auf eine Urheberrechtsverletzung aufmerksam werden, bitten wir um einen entsprechenden Hinweis. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Inhalte umgehend entfernen.",
         "imprint_back_home": "Zurück zur Startseite",
+        # About page
+        "about_title": "Über uns - diminumero",
+        "about_heading": "Über diminumero",
+        "about_mission_heading": "Unsere Mission",
+        "about_mission_text": "diminumero ist eine kostenloses, open-source App zum Üben von Zahlen in Fremdsprachen. Zahlen werden beim Sprachenlernen oft vernachlässigt, kommen aber ständig im Alltag vor – bei Preisen, Daten, Uhrzeiten, Telefonnummern. Mit diminumero macht es Spaß, diese Fähigkeit aufzubauen.",
+        "about_how_heading": "So funktioniert es",
+        "about_how_text": "Wähle eine Sprache, einen Schwierigkeitsgrad und übersetze Zahlen in Wörter. Der Quiz-Mechanismus verwendet gewichtete Zufallsauswahl, um auf die Zahlen zu fokussieren, denen man am häufigsten begegnet, und fordert dich schrittweise mit größeren Zahlen heraus. Live-Feedback und verschiedene Modi helfen dir, in deinem eigenen Tempo zu lernen.",
+        "about_open_source_heading": "Open Source",
+        "about_open_source_text": "diminumero ist Open Source und community-getrieben. Beiträge sind willkommen – ob das Hinzufügen einer neuen Sprache, das Beheben eines Fehlers oder die Verbesserung des Lernerlebnisses.",
+        "about_github_link": "Auf GitHub ansehen",
+        "about_back_home": "Zurück zur Startseite",
         # Email subject
         # Privacy policy
         "footer_privacy": "Datenschutz",
@@ -832,6 +856,12 @@ def privacy():
 def imprint():
     """Display imprint/impressum page."""
     return render_template("imprint.html", get_text=get_text)
+
+
+@app.route("/about")
+def about():
+    """Display about page."""
+    return render_template("about.html", get_text=get_text)
 
 
 @app.route("/<lang_code>/learn")
