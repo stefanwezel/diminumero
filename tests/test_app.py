@@ -34,11 +34,11 @@ class TestIndexRoute:
         """Test that index page contains language selection."""
         response = client.get("/")
         data = response.data.decode("utf-8")
-        # Should have Spanish and Nepalese options
-        assert "spanish" in data.lower() or "español" in data.lower()
+        # Should have Spanish and Nepalese options - check for native names
+        assert "español" in data.lower() or "नेपाली" in data
 
     def test_index_sets_default_language(self, client):
-        """Test that index sets default UI language to German."""
+        """Test that index sets default UI language to English."""
         with client.session_transaction() as sess:
             # Clear session
             sess.clear()
@@ -47,7 +47,7 @@ class TestIndexRoute:
         assert response.status_code == 200
 
         with client.session_transaction() as sess:
-            assert sess.get("language") == "de"
+            assert sess.get("language") == "en"
 
 
 class TestModeSelection:
@@ -72,8 +72,8 @@ class TestModeSelection:
         # Should redirect to language selection
         assert response.status_code == 200
         data = response.data.decode("utf-8")
-        # Should be back at language selection
-        assert "spanish" in data.lower() or "nepalese" in data.lower()
+        # Should be back at language selection - check for native names which are always present
+        assert "español" in data.lower() or "नेपाली" in data
 
     def test_disabled_language_rejected(self, client):
         """Test that disabled languages (like Nepalese) are rejected."""
@@ -206,6 +206,35 @@ class TestQuizEasy:
         )
         assert response.status_code == 200
 
+    def test_quiz_easy_refresh_same_question(self, client):
+        """Test that refreshing the page keeps the same question and options."""
+        # Start quiz
+        client.post("/es/start", data={"mode": "easy"})
+
+        # Get first question
+        response1 = client.get("/es/quiz/easy")
+        assert response1.status_code == 200
+
+        # Get the question and options from session
+        with client.session_transaction() as sess:
+            question1 = sess.get("current_number")
+            answer1 = sess.get("correct_answer")
+            options1 = sess.get("current_options")
+
+        # Refresh the page (GET again without submitting)
+        response2 = client.get("/es/quiz/easy")
+        assert response2.status_code == 200
+
+        # Question and options should be the same
+        with client.session_transaction() as sess:
+            question2 = sess.get("current_number")
+            answer2 = sess.get("correct_answer")
+            options2 = sess.get("current_options")
+
+        assert question1 == question2
+        assert answer1 == answer2
+        assert options1 == options2  # Options must be identical
+
 
 class TestQuizAdvanced:
     """Tests for advanced mode quiz."""
@@ -227,6 +256,32 @@ class TestQuizAdvanced:
 
         # Should have an input field
         assert "input" in data.lower()
+
+    def test_quiz_advanced_refresh_same_question(self, client):
+        """Test that refreshing the page keeps the same question in advanced mode."""
+        # Start quiz
+        client.post("/es/start", data={"mode": "advanced"})
+
+        # Get first question
+        response1 = client.get("/es/quiz/advanced")
+        assert response1.status_code == 200
+
+        # Get the question from session
+        with client.session_transaction() as sess:
+            question1 = sess.get("current_number")
+            answer1 = sess.get("correct_answer")
+
+        # Refresh the page (GET again without submitting)
+        response2 = client.get("/es/quiz/advanced")
+        assert response2.status_code == 200
+
+        # Question should be the same
+        with client.session_transaction() as sess:
+            question2 = sess.get("current_number")
+            answer2 = sess.get("correct_answer")
+
+        assert question1 == question2
+        assert answer1 == answer2
 
 
 class TestResultsPage:

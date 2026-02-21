@@ -66,11 +66,19 @@
         </div>
         
         <div class="learn-cta">
+            {% if has_learn_materials %}
             <a href="{{ url_for('learn', lang_code=lang_code) }}" class="learn-card">
                 <div class="learn-icon">📚</div>
                 <h3>{{ get_text('learn_nav_button') }}</h3>
                 <p>{{ get_text('learn_nav_desc') }}</p>
             </a>
+            {% else %}
+            <div class="learn-card learn-unavailable">
+                <div class="learn-icon">📚</div>
+                <h3>{{ get_text('learn_nav_button') }}</h3>
+                <p>{{ get_text('language_selection_coming_soon') }}</p>
+            </div>
+            {% endif %}
         </div>
         
         <div class="feedback-section">
@@ -80,7 +88,8 @@
         </div>
         
         <footer class="page-footer">
-            <a href="{{ url_for('privacy') }}" class="footer-link">{{ get_text('footer_privacy') }}</a> | 
+            <a href="{{ url_for('about') }}" class="footer-link">{{ get_text('footer_about') }}</a> |
+            <a href="{{ url_for('privacy') }}" class="footer-link">{{ get_text('footer_privacy') }}</a> |
             <a href="{{ url_for('imprint') }}" class="footer-link">{{ get_text('footer_imprint') }}</a>
         </footer>
     </div>

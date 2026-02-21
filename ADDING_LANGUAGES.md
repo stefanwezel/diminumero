@@ -6,29 +6,10 @@ This guide explains how to add support for a new learning language to diminumero
 
 diminumero is designed to support multiple languages for number learning. Currently supported:
 - **Spanish (es)**: Fully implemented
+- **German (de)**: Fully implemented
+- **French (fr)**: Fully implemented
 - **Nepalese (ne)**: Placeholder (coming soon)
 
-## Architecture
-
-The multi-language system consists of:
-
-1. **languages/** directory - Contains language-specific data
-   - `config.py` - Language registry and metadata
-   - `<lang_code>/` - Individual language directories
-     - `numbers.py` - Number translations
-     - `generate_numbers.py` - Script to generate numbers
-     - `__init__.py` - Package initialization
-
-2. **Route structure** - URL pattern: `/<lang_code>/...`
-   - `/` - Language selection page
-   - `/<lang_code>` - Mode selection page
-   - `/<lang_code>/quiz/<mode>` - Quiz pages
-   - `/<lang_code>/results` - Results page
-   - `/<lang_code>/learn` - Learn page
-
-3. **Session management**
-   - `language` - UI language (German/English)
-   - `learn_language` - Learning language (Spanish/Nepalese/etc)
 
 ## Steps to Add a New Language
 
@@ -112,7 +93,38 @@ from .numbers import NUMBERS
 __all__ = ['NUMBERS']
 ```
 
-### 6. Create Learn Pages (Optional)
+### 6. Update app.py Translations
+
+Add your language to the following dictionaries in `app.py`:
+
+**LANGUAGE_NAME_PLACEHOLDERS** (used for dynamic text replacement):
+```python
+LANGUAGE_NAME_PLACEHOLDERS = {
+    # ... existing languages ...
+    "xx": {"en": "LanguageName", "de": "Sprachname"},
+}
+```
+
+**FEEDBACK_EXPRESSIONS** (shown when answer is correct):
+```python
+FEEDBACK_EXPRESSIONS = {
+    # ... existing languages ...
+    "xx": "Correct!",  # In target language
+}
+```
+
+**TRANSLATIONS** (both English and German sections):
+```python
+# In TRANSLATIONS["en"]:
+"lang_xx_name": "LanguageName",
+"lang_xx_description": "Learn LanguageName numbers from 1 to 10 million",
+
+# In TRANSLATIONS["de"]:
+"lang_xx_name": "Sprachname",
+"lang_xx_description": "Lerne Sprachname Zahlen von 1 bis 10 Millionen",
+```
+
+### 7. Create Learn Pages (Optional)
 
 If you want learning materials, create:
 - `templates/learn_<lang_code>_de.html` - German UI version
@@ -132,7 +144,7 @@ def learn(lang_code):
     # ... rest of code
 ```
 
-### 7. Enable the Language
+### 8. Enable the Language
 
 Once everything is ready:
 
@@ -140,27 +152,46 @@ Once everything is ready:
 2. Test thoroughly
 3. Deploy!
 
-## Example: Adding French
+## Example: Adding Quechua
 
 ```bash
 # 1. Create directory
-mkdir -p languages/fr
-touch languages/fr/__init__.py
+mkdir -p languages/qu
+touch languages/qu/__init__.py
 
-# 2. Edit config to add:
-'fr': {
-    'name': 'French',
-    'native_name': 'Français',
-    'flag': '🇫🇷',
+# 2. Edit languages/config.py - add to AVAILABLE_LANGUAGES:
+'qu': {
+    'name': 'Quechua',
+    'native_name': 'Runasimi',
+    'flag': '🇵🇪',
     'ready': False,
-    'description': 'Learn French numbers from 1 to millions!',
+    'description': 'Learn Quechua numbers from 1 to millions!',
+    'validation_strategy': 'word_based',
 }
 
-# 3. Create numbers.py with French translations
+# 3. Edit languages/config.py - add import in get_language_numbers():
+elif lang_code == 'qu':
+    from .qu import NUMBERS
 
-# 4. Test with ready: False (shows "Coming Soon")
+# 4. Create numbers.py with Quechua translations
 
-# 5. When ready, set ready: True
+# 5. Edit app.py - add to LANGUAGE_NAME_PLACEHOLDERS:
+"qu": {"en": "Quechua", "de": "Quechua"},
+
+# 6. Edit app.py - add to FEEDBACK_EXPRESSIONS:
+"qu": "Allinmi!",
+
+# 7. Edit app.py - add to TRANSLATIONS["en"]:
+"lang_qu_name": "Quechua",
+"lang_qu_description": "Learn Quechua numbers from 1 to 10 million",
+
+# 8. Edit app.py - add to TRANSLATIONS["de"]:
+"lang_qu_name": "Quechua",
+"lang_qu_description": "Lerne Quechua Zahlen von 1 bis 10 Millionen",
+
+# 9. Test with ready: False (shows "Coming Soon")
+
+# 10. When ready, set ready: True in languages/config.py
 ```
 
 ## Number Generation Best Practices
@@ -178,26 +209,47 @@ touch languages/fr/__init__.py
    - Have a native speaker review
    - Test edge cases (100, 1000, millions, etc.)
 
-## UI Translations
-
-Currently, the UI language (German/English) is separate from the learning language. To add UI translations for language-specific content:
-
-1. Add keys to `TRANSLATIONS` dict in `app.py`
-2. Use `get_text('key')` in templates
-3. Keep learning content (numbers) separate from UI text
-
 ## Testing Checklist
 
 Before marking a language as `ready: True`:
 
 - [ ] Numbers dictionary is complete and accurate
-- [ ] Language appears on selection page (but disabled)
+- [ ] Language registered in `languages/config.py`
+- [ ] Import added to `get_language_numbers()` in `languages/config.py`
+- [ ] `LANGUAGE_NAME_PLACEHOLDERS` updated in `app.py`
+- [ ] `FEEDBACK_EXPRESSIONS` updated in `app.py`
+- [ ] `TRANSLATIONS` updated (both `en` and `de` sections) in `app.py`
+- [ ] Language appears on selection page with correct name
 - [ ] Mode selection works when accessed directly
 - [ ] Quiz modes function correctly
 - [ ] Results page displays properly
 - [ ] (Optional) Learn pages are created and work
 - [ ] Edge cases tested (very small/large numbers)
 - [ ] Native speaker review completed
+
+
+## Architecture
+
+The multi-language system consists of:
+
+1. **languages/** directory - Contains language-specific data
+   - `config.py` - Language registry and metadata
+   - `<lang_code>/` - Individual language directories
+     - `numbers.py` - Number translations
+     - `generate_numbers.py` - Script to generate numbers
+     - `__init__.py` - Package initialization
+
+2. **Route structure** - URL pattern: `/<lang_code>/...`
+   - `/` - Language selection page
+   - `/<lang_code>` - Mode selection page
+   - `/<lang_code>/quiz/<mode>` - Quiz pages
+   - `/<lang_code>/results` - Results page
+   - `/<lang_code>/learn` - Learn page
+
+3. **Session management**
+   - `language` - UI language (German/English)
+   - `learn_language` - Learning language (Spanish/Nepalese/etc)
+
 
 ## Questions?
 

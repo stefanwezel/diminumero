@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang_code|default('en') }}">
 <head>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7963483579984328"
      crossorigin="anonymous"></script>
@@ -18,6 +18,10 @@
     
     <title>{% block title %}diminumero{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://stefanwezel.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
     <!-- Language switcher -->

@@ -25,6 +25,22 @@ app.secret_key = os.environ.get(
 
 # Configuration
 QUESTIONS_PER_QUIZ = 10
+DEFAULT_UI_LANGUAGE = "en"
+
+LANGUAGE_NAME_PLACEHOLDERS = {
+    "es": {"en": "Spanish", "de": "Spanisch"},
+    "ne": {"en": "Nepalese", "de": "Nepalesisch"},
+    "de": {"en": "German", "de": "Deutsch"},
+    "fr": {"en": "French", "de": "Französisch"},
+}
+
+FEEDBACK_EXPRESSIONS = {
+    "es": "¡Correcto",
+    "ne": "सहि!",
+    "de": "Korrekt",
+    "fr": "Correct",
+}
+
 
 # Translations
 TRANSLATIONS = {
@@ -40,11 +56,23 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Start Learning",
         "language_selection_coming_soon": "Coming Soon",
         "language_selection_back": "Change Language",
+        "language_selection_contribute_title": "Language Missing?",
+        "language_selection_contribute_description": "Help us add more languages!",
+        "language_selection_contribute_btn": "Contribute on GitHub",
+        # Language names and descriptions
+        "lang_es_name": "Spanish",
+        "lang_es_description": "Learn Spanish numbers from 1 to 10 million",
+        "lang_ne_name": "Nepalese",
+        "lang_ne_description": "Learn Nepalese numbers (Coming Soon)",
+        "lang_de_name": "German",
+        "lang_de_description": "Learn German numbers from 1 to 10 million",
+        "lang_fr_name": "French",
+        "lang_fr_description": "Learn French numbers from 1 to 10 million",
         # Home page (mode selection)
         "home_title": "diminumero - Home",
         "home_hero_title": "diminumero",
-        "home_hero_subtitle": "Test your Spanish number knowledge!",
-        "home_hero_description": "Practice translating numbers from digits to Spanish words. Choose your difficulty mode and start learning!",
+        "home_hero_subtitle": "Test your LANGUAGE_NAME_PLACEHOLDER number knowledge!",
+        "home_hero_description": "Practice translating numbers from digits to LANGUAGE_NAME_PLACEHOLDER words. Choose your difficulty mode and start learning!",
         # Mode selection
         "mode_easy": "Easy",
         "mode_easy_desc": "Multiple choice with 4 options. Perfect for beginners!",
@@ -59,19 +87,20 @@ TRANSLATIONS = {
         "info_questions": "Questions",
         "info_numbers": "Numbers",
         # Learn section
-        "learn_nav_text": "Learn Spanish Numbers",
+        "learn_nav_text": "Learn LANGUAGE_NAME_PLACEHOLDER Numbers",
         "learn_nav_button": "Learn First",
         "learn_nav_desc": "Understand the patterns before you practice!",
         # Footer
         "footer_feedback": "Send Feedback",
         "footer_imprint": "Imprint",
+        "footer_about": "About",
         "footer_learn": "Learn",
         # Quiz interface
         "quiz_question": "Question",
         "quiz_score": "Score",
         "quiz_exit": "Exit Quiz",
-        "quiz_easy_prompt": "What is this number in Spanish?",
-        "quiz_advanced_prompt": "Type this number in Spanish:",
+        "quiz_easy_prompt": "What is this number in LANGUAGE_NAME_PLACEHOLDER?",
+        "quiz_advanced_prompt": "Type this number in LANGUAGE_NAME_PLACEHOLDER:",
         "quiz_advanced_placeholder": "Type your answer here...",
         "quiz_skip": "Skip",
         "quiz_skip_tooltip": "Skip this question (no points awarded)",
@@ -92,7 +121,7 @@ TRANSLATIONS = {
         "flash_language_load_error": "Failed to load language data.",
         "flash_learn_not_available": "Learning materials not yet available for this language.",
         "flash_hardcore_soon": "Hardcore mode is coming soon! Try Easy or Advanced mode.",
-        "flash_correct": "¡Correcto! 🎉",
+        "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorrect. The answer was: {}",
         "flash_gave_up": "The answer was: {}",
         # Imprint page
@@ -109,6 +138,17 @@ TRANSLATIONS = {
         "imprint_copyright_heading": "Copyright",
         "imprint_copyright_text": "The content and works created by the site operators on these pages are subject to German copyright law. Reproduction, editing, distribution, and any kind of use outside the limits of copyright law require the written consent of the respective author or creator. Downloads and copies of this site are only permitted for private, non-commercial use. Insofar as the content on this site was not created by the operator, the copyrights of third parties are respected. In particular, third-party content is marked as such. Should you nevertheless become aware of a copyright infringement, please inform us accordingly. Upon becoming aware of legal violations, we will remove such content immediately.",
         "imprint_back_home": "Back to Home",
+        # About page
+        "about_title": "About - diminumero",
+        "about_heading": "About diminumero",
+        "about_mission_heading": "Our Mission",
+        "about_mission_text": "diminumero is a free, open-source app for practicing numbers in foreign languages. Numbers are often neglected in language learning, yet they come up constantly in everyday life — prices, dates, times, phone numbers. diminumero makes it fun to build that skill.",
+        "about_how_heading": "How It Works",
+        "about_how_text": "Choose a language, pick a difficulty mode, and translate numbers into words. The quiz engine uses weighted randomization to focus on the numbers you're most likely to encounter, while progressively challenging you with larger ones. Live feedback and multiple modes help you learn at your own pace.",
+        "about_open_source_heading": "Open Source",
+        "about_open_source_text": "diminumero is open source and community-driven. Contributions are welcome — whether that's adding a new language, fixing a bug, or improving the learning experience.",
+        "about_github_link": "View on GitHub",
+        "about_back_home": "Back to Home",
         # Email subject
         # Privacy policy
         "footer_privacy": "Privacy Policy",
@@ -176,11 +216,23 @@ TRANSLATIONS = {
         "language_selection_start_btn": "Lernen beginnen",
         "language_selection_coming_soon": "Demnächst",
         "language_selection_back": "Sprache wechseln",
+        "language_selection_contribute_title": "Sprache fehlt?",
+        "language_selection_contribute_description": "Hilf uns, weitere Sprachen hinzuzufügen!",
+        "language_selection_contribute_btn": "Auf GitHub beitragen",
+        # Language names and descriptions
+        "lang_es_name": "Spanisch",
+        "lang_es_description": "Lerne Spanische Zahlen von 1 bis 10 Millionen",
+        "lang_ne_name": "Nepalesisch",
+        "lang_ne_description": "Lerne Nepalesische Zahlen (Demnächst)",
+        "lang_de_name": "Deutsch",
+        "lang_de_description": "Lerne Deutsche Zahlen von 1 bis 10 Millionen",
+        "lang_fr_name": "Französisch",
+        "lang_fr_description": "Lerne Französische Zahlen von 1 bis 10 Millionen",
         # Home page (mode selection)
         "home_title": "diminumero - Startseite",
         "home_hero_title": "diminumero",
-        "home_hero_subtitle": "Teste dein Wissen über spanische Zahlen!",
-        "home_hero_description": "Übe die Übersetzung von Zahlen in spanische Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!",
+        "home_hero_subtitle": "Teste dein Wissen über LANGUAGE_NAME_PLACEHOLDERe Zahlen!",
+        "home_hero_description": "Übe die Übersetzung von Zahlen in LANGUAGE_NAME_PLACEHOLDERe Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!",
         # Mode selection
         "mode_easy": "Einfach",
         "mode_easy_desc": "Multiple Choice mit 4 Optionen. Perfekt für Anfänger!",
@@ -195,19 +247,20 @@ TRANSLATIONS = {
         "info_questions": "Fragen",
         "info_numbers": "Zahlen",
         # Learn section
-        "learn_nav_text": "Spanische Zahlen lernen",
+        "learn_nav_text": "LANGUAGE_NAME_PLACEHOLDER Zahlen lernen",
         "learn_nav_button": "Zuerst lernen",
         "learn_nav_desc": "Verstehe die Muster, bevor du übst!",
         # Footer
         "footer_feedback": "Feedback senden",
         "footer_imprint": "Impressum",
+        "footer_about": "Über uns",
         "footer_learn": "Lernen",
         # Quiz interface
         "quiz_question": "Frage",
         "quiz_score": "Punktzahl",
         "quiz_exit": "Beenden",
-        "quiz_easy_prompt": "Wie lautet diese Zahl auf Spanisch?",
-        "quiz_advanced_prompt": "Schreibe diese Zahl auf Spanisch:",
+        "quiz_easy_prompt": "Wie lautet diese Zahl auf LANGUAGE_NAME_PLACEHOLDER?",
+        "quiz_advanced_prompt": "Schreibe diese Zahl auf LANGUAGE_NAME_PLACEHOLDER:",
         "quiz_advanced_placeholder": "Gib deine Antwort hier ein...",
         "quiz_skip": "Skippen",
         "quiz_skip_tooltip": "Diese Frage überspringen (keine Punkte)",
@@ -228,7 +281,7 @@ TRANSLATIONS = {
         "flash_language_load_error": "Laden der Sprachdaten fehlgeschlagen.",
         "flash_learn_not_available": "Lernmaterialien für diese Sprache sind noch nicht verfügbar.",
         "flash_hardcore_soon": "Hardcore-Modus kommt bald! Probiere den einfachen oder fortgeschrittenen Modus.",
-        "flash_correct": "¡Correcto! 🎉",
+        "flash_correct": "{}! 🎉",
         "flash_incorrect": "Falsch. Die Antwort war: {}",
         "flash_gave_up": "Die Antwort war: {}",
         # Imprint page
@@ -245,6 +298,17 @@ TRANSLATIONS = {
         "imprint_copyright_heading": "Urheberrecht",
         "imprint_copyright_text": "Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet. Soweit die Inhalte auf dieser Seite nicht vom Betreiber erstellt wurden, werden die Urheberrechte Dritter beachtet. Insbesondere werden Inhalte Dritter als solche gekennzeichnet. Sollten Sie trotzdem auf eine Urheberrechtsverletzung aufmerksam werden, bitten wir um einen entsprechenden Hinweis. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Inhalte umgehend entfernen.",
         "imprint_back_home": "Zurück zur Startseite",
+        # About page
+        "about_title": "Über uns - diminumero",
+        "about_heading": "Über diminumero",
+        "about_mission_heading": "Unsere Mission",
+        "about_mission_text": "diminumero ist eine kostenloses, open-source App zum Üben von Zahlen in Fremdsprachen. Zahlen werden beim Sprachenlernen oft vernachlässigt, kommen aber ständig im Alltag vor – bei Preisen, Daten, Uhrzeiten, Telefonnummern. Mit diminumero macht es Spaß, diese Fähigkeit aufzubauen.",
+        "about_how_heading": "So funktioniert es",
+        "about_how_text": "Wähle eine Sprache, einen Schwierigkeitsgrad und übersetze Zahlen in Wörter. Der Quiz-Mechanismus verwendet gewichtete Zufallsauswahl, um auf die Zahlen zu fokussieren, denen man am häufigsten begegnet, und fordert dich schrittweise mit größeren Zahlen heraus. Live-Feedback und verschiedene Modi helfen dir, in deinem eigenen Tempo zu lernen.",
+        "about_open_source_heading": "Open Source",
+        "about_open_source_text": "diminumero ist Open Source und community-getrieben. Beiträge sind willkommen – ob das Hinzufügen einer neuen Sprache, das Beheben eines Fehlers oder die Verbesserung des Lernerlebnisses.",
+        "about_github_link": "Auf GitHub ansehen",
+        "about_back_home": "Zurück zur Startseite",
         # Email subject
         # Privacy policy
         "footer_privacy": "Datenschutz",
@@ -303,31 +367,44 @@ TRANSLATIONS = {
 }
 
 
+@app.before_request
+def initialize_ui_language():
+    """Set default UI language on first visit if not already in session."""
+    if "language" not in session:
+        session["language"] = DEFAULT_UI_LANGUAGE
+
+
 def get_text(key):
     """Get translated text for the current language."""
-    lang = session.get("language", "de")  # Default to German
-    return TRANSLATIONS.get(lang, {}).get(key, key)
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    name = TRANSLATIONS.get(ui_language, {}).get(key, key)
+    name = name.replace(
+        "LANGUAGE_NAME_PLACEHOLDER",
+        LANGUAGE_NAME_PLACEHOLDERS[session.get("learn_language", "es")][ui_language],
+    )
+    return name
 
 
 @app.route("/")
 def index():
     """Language selection landing page."""
-    # Initialize UI language if not set
-    if "language" not in session:
-        session["language"] = "de"  # Default to German
+    # Create translated copy of language metadata
+    translated_languages = {}
+    for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
+        translated_languages[lang_code] = {
+            **lang_info,  # Copy all properties
+            "name": get_text(f"lang_{lang_code}_name"),
+            "description": get_text(f"lang_{lang_code}_description"),
+        }
 
     return render_template(
-        "language_selection.html", languages=AVAILABLE_LANGUAGES, get_text=get_text
+        "language_selection.html", languages=translated_languages, get_text=get_text
     )
 
 
 @app.route("/<lang_code>")
 def mode_selection(lang_code):
     """Mode selection page for a specific learning language."""
-    # Initialize UI language if not set
-    if "language" not in session:
-        session["language"] = "de"
-
     # Validate language code
     if not is_language_ready(lang_code):
         flash(get_text("flash_invalid_language"), "error")
@@ -344,12 +421,16 @@ def mode_selection(lang_code):
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
 
+    # Currently only Spanish has learning materials
+    has_learn_materials = lang_code == "es"
+
     return render_template(
         "index.html",
         total_numbers=total_numbers,
         questions_per_quiz=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
+        has_learn_materials=has_learn_materials,
     )
 
 
@@ -379,7 +460,7 @@ def start_quiz(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     # Clear quiz-related session data but keep UI language
-    ui_language = session.get("language", "de")
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     session.clear()
     session["language"] = ui_language
     session["learn_language"] = lang_code
@@ -427,11 +508,21 @@ def quiz_easy(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
             session["total_questions"] = session.get("total_questions", 0) + 1
+
+        # Clear current question so next GET generates a new one
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
+        session.pop("current_options", None)  # Clear options too
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
@@ -440,26 +531,37 @@ def quiz_easy(lang_code):
         # Continue to next question
         return redirect(url_for("quiz_easy", lang_code=lang_code))
 
-    # GET request - display new question
+    # GET request - display question
     # Check if quiz should end
     if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
         return redirect(url_for("results", lang_code=lang_code))
 
-    # Generate new question
-    asked_numbers = session.get("asked_numbers", [])
-    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+    # Check if we already have a current question (page refresh)
+    if (
+        "current_number" in session
+        and "correct_answer" in session
+        and "current_options" in session
+    ):
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+        options = session["current_options"]
+    else:
+        # Generate new question
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
 
-    # Store in session
-    session["current_number"] = number
-    session["correct_answer"] = correct_answer
+        # Generate multiple choice options
+        options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
 
-    # Update asked numbers
-    if "asked_numbers" not in session:
-        session["asked_numbers"] = []
-    session["asked_numbers"].append(number)
+        # Store in session
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
+        session["current_options"] = options
 
-    # Generate multiple choice options
-    options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
+        # Update asked numbers
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
 
     # Get current progress
     score = session.get("score", 0)
@@ -503,6 +605,10 @@ def quiz_advanced(lang_code):
             flash(get_text("flash_gave_up").format(correct_answer), "info")
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+            # Clear current question so next GET generates a new one
+            session.pop("current_number", None)
+            session.pop("correct_answer", None)
+
             # Check if quiz is complete
             if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
                 return redirect(url_for("results", lang_code=lang_code))
@@ -519,11 +625,20 @@ def quiz_advanced(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
             session["total_questions"] = session.get("total_questions", 0) + 1
+
+        # Clear current question so next GET generates a new one
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
@@ -532,23 +647,28 @@ def quiz_advanced(lang_code):
         # Continue to next question
         return redirect(url_for("quiz_advanced", lang_code=lang_code))
 
-    # GET request - display new question
+    # GET request - display question
     # Check if quiz should end
     if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
         return redirect(url_for("results", lang_code=lang_code))
 
-    # Generate new question
-    asked_numbers = session.get("asked_numbers", [])
-    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+    # Check if we already have a current question (page refresh)
+    if "current_number" in session and "correct_answer" in session:
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+    else:
+        # Generate new question
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
 
-    # Store in session
-    session["current_number"] = number
-    session["correct_answer"] = correct_answer
+        # Store in session
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
 
-    # Update asked numbers
-    if "asked_numbers" not in session:
-        session["asked_numbers"] = []
-    session["asked_numbers"].append(number)
+        # Update asked numbers
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
 
     # Get current progress
     score = session.get("score", 0)
@@ -571,11 +691,17 @@ def validate_answer():
     """API endpoint for live validation of user input."""
     user_input = request.json.get("input", "")
     correct_answer = session.get("correct_answer", "")
+    lang_code = session.get("learn_language", "")
 
     if not correct_answer:
         return jsonify({"error": "No active question"}), 400
 
-    validation = quiz_logic.validate_partial_answer(user_input, correct_answer)
+    if not lang_code:
+        return jsonify({"error": "No active language"}), 400
+
+    validation = quiz_logic.validate_partial_answer(
+        user_input, correct_answer, lang_code
+    )
 
     return jsonify(validation)
 
@@ -606,6 +732,10 @@ def quiz_hardcore(lang_code):
             flash(get_text("flash_gave_up").format(correct_answer), "info")
             session["total_questions"] = session.get("total_questions", 0) + 1
 
+            # Clear current question so next GET generates a new one
+            session.pop("current_number", None)
+            session.pop("correct_answer", None)
+
             # Check if quiz is complete
             if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
                 return redirect(url_for("results", lang_code=lang_code))
@@ -622,11 +752,20 @@ def quiz_hardcore(lang_code):
 
             if is_correct:
                 session["score"] = session.get("score", 0) + 1
-                flash(get_text("flash_correct"), "success")
+                flash(
+                    get_text("flash_correct").format(
+                        FEEDBACK_EXPRESSIONS.get(lang_code)
+                    ),
+                    "success",
+                )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
             session["total_questions"] = session.get("total_questions", 0) + 1
+
+        # Clear current question so next GET generates a new one
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
@@ -635,23 +774,28 @@ def quiz_hardcore(lang_code):
         # Continue to next question
         return redirect(url_for("quiz_hardcore", lang_code=lang_code))
 
-    # GET request - display new question
+    # GET request - display question
     # Check if quiz should end
     if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
         return redirect(url_for("results", lang_code=lang_code))
 
-    # Generate new question
-    asked_numbers = session.get("asked_numbers", [])
-    number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+    # Check if we already have a current question (page refresh)
+    if "current_number" in session and "correct_answer" in session:
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+    else:
+        # Generate new question
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
 
-    # Store in session
-    session["current_number"] = number
-    session["correct_answer"] = correct_answer
+        # Store in session
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
 
-    # Update asked numbers
-    if "asked_numbers" not in session:
-        session["asked_numbers"] = []
-    session["asked_numbers"].append(number)
+        # Update asked numbers
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
 
     # Get current progress
     score = session.get("score", 0)
@@ -698,7 +842,9 @@ def results(lang_code):
 @app.route("/restart", methods=["POST"])
 def restart():
     """Restart the quiz."""
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     session.clear()
+    session["language"] = ui_language
     return redirect(url_for("index"))
 
 
@@ -714,6 +860,12 @@ def imprint():
     return render_template("imprint.html", get_text=get_text)
 
 
+@app.route("/about")
+def about():
+    """Display about page."""
+    return render_template("about.html", get_text=get_text)
+
+
 @app.route("/<lang_code>/learn")
 def learn(lang_code):
     """Display learn/tutorial page for a specific language."""
@@ -726,7 +878,7 @@ def learn(lang_code):
         flash(get_text("flash_learn_not_available"), "info")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    ui_lang = session.get("language", "de")
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     template = f"learn_{lang_code}_{ui_lang}.html"
 
     # Fallback to English if template doesn't exist

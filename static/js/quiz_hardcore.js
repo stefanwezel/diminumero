@@ -16,12 +16,21 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Normalize text for comparison (same logic as Python backend)
      * - Convert to lowercase
+     * - Replace German umlauts (ü→ue, ö→oe, ä→ae, ß→ss)
      * - Remove extra spaces
      * - Remove accents
      */
     function normalizeText(text) {
         // Convert to lowercase and trim
         text = text.toLowerCase().trim();
+        
+        // Replace German umlauts and ß with ASCII equivalents
+        // This allows users to type "fuenf" for "fünf", "zwoelf" for "zwölf", etc.
+        // Using global regex replace for better browser compatibility
+        text = text.replace(/ü/g, 'ue');
+        text = text.replace(/ö/g, 'oe');
+        text = text.replace(/ä/g, 'ae');
+        text = text.replace(/ß/g, 'ss');
         
         // Remove extra spaces between words
         text = text.replace(/\s+/g, ' ');
