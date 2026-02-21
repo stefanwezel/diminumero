@@ -1,6 +1,5 @@
 """Tests for quiz_logic module."""
 
-import pytest
 import quiz_logic
 from languages import get_language_numbers
 

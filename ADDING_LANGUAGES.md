@@ -33,6 +33,16 @@ AVAILABLE_LANGUAGES = {
         'flag': '🏳️',  # Emoji flag
         'ready': False,  # Set to True when ready
         'description': 'Learn LanguageName numbers!',
+        'validation_strategy': 'word_based',  # or 'component_based'
+        # Display name in each supported UI language
+        'ui_names': {'en': 'LanguageName', 'de': 'Sprachname'},
+        # Description shown on the language selection page
+        'ui_descriptions': {
+            'en': 'Learn LanguageName numbers from 1 to 10 million',
+            'de': 'Lerne Sprachname Zahlen von 1 bis 10 Millionen',
+        },
+        # Word shown to the user when they answer correctly (in the target language)
+        'feedback_expression': 'Correct!',
     },
 }
 ```
@@ -93,38 +103,7 @@ from .numbers import NUMBERS
 __all__ = ['NUMBERS']
 ```
 
-### 6. Update app.py Translations
-
-Add your language to the following dictionaries in `app.py`:
-
-**LANGUAGE_NAME_PLACEHOLDERS** (used for dynamic text replacement):
-```python
-LANGUAGE_NAME_PLACEHOLDERS = {
-    # ... existing languages ...
-    "xx": {"en": "LanguageName", "de": "Sprachname"},
-}
-```
-
-**FEEDBACK_EXPRESSIONS** (shown when answer is correct):
-```python
-FEEDBACK_EXPRESSIONS = {
-    # ... existing languages ...
-    "xx": "Correct!",  # In target language
-}
-```
-
-**TRANSLATIONS** (both English and German sections):
-```python
-# In TRANSLATIONS["en"]:
-"lang_xx_name": "LanguageName",
-"lang_xx_description": "Learn LanguageName numbers from 1 to 10 million",
-
-# In TRANSLATIONS["de"]:
-"lang_xx_name": "Sprachname",
-"lang_xx_description": "Lerne Sprachname Zahlen von 1 bis 10 Millionen",
-```
-
-### 7. Create Learn Pages (Optional)
+### 6. Create Learn Pages (Optional)
 
 If you want learning materials, create:
 - `templates/learn_<lang_code>_de.html` - German UI version
@@ -144,7 +123,7 @@ def learn(lang_code):
     # ... rest of code
 ```
 
-### 8. Enable the Language
+### 7. Enable the Language
 
 Once everything is ready:
 
@@ -167,6 +146,12 @@ touch languages/qu/__init__.py
     'ready': False,
     'description': 'Learn Quechua numbers from 1 to millions!',
     'validation_strategy': 'word_based',
+    'ui_names': {'en': 'Quechua', 'de': 'Quechua'},
+    'ui_descriptions': {
+        'en': 'Learn Quechua numbers from 1 to 10 million',
+        'de': 'Lerne Quechua Zahlen von 1 bis 10 Millionen',
+    },
+    'feedback_expression': 'Allinmi!',
 }
 
 # 3. Edit languages/config.py - add import in get_language_numbers():
@@ -175,23 +160,9 @@ elif lang_code == 'qu':
 
 # 4. Create numbers.py with Quechua translations
 
-# 5. Edit app.py - add to LANGUAGE_NAME_PLACEHOLDERS:
-"qu": {"en": "Quechua", "de": "Quechua"},
+# 5. Test with ready: False (shows "Coming Soon")
 
-# 6. Edit app.py - add to FEEDBACK_EXPRESSIONS:
-"qu": "Allinmi!",
-
-# 7. Edit app.py - add to TRANSLATIONS["en"]:
-"lang_qu_name": "Quechua",
-"lang_qu_description": "Learn Quechua numbers from 1 to 10 million",
-
-# 8. Edit app.py - add to TRANSLATIONS["de"]:
-"lang_qu_name": "Quechua",
-"lang_qu_description": "Lerne Quechua Zahlen von 1 bis 10 Millionen",
-
-# 9. Test with ready: False (shows "Coming Soon")
-
-# 10. When ready, set ready: True in languages/config.py
+# 6. When ready, set ready: True in languages/config.py
 ```
 
 ## Number Generation Best Practices
@@ -214,11 +185,8 @@ elif lang_code == 'qu':
 Before marking a language as `ready: True`:
 
 - [ ] Numbers dictionary is complete and accurate
-- [ ] Language registered in `languages/config.py`
+- [ ] Language registered in `languages/config.py` with `ui_names`, `ui_descriptions`, and `feedback_expression`
 - [ ] Import added to `get_language_numbers()` in `languages/config.py`
-- [ ] `LANGUAGE_NAME_PLACEHOLDERS` updated in `app.py`
-- [ ] `FEEDBACK_EXPRESSIONS` updated in `app.py`
-- [ ] `TRANSLATIONS` updated (both `en` and `de` sections) in `app.py`
 - [ ] Language appears on selection page with correct name
 - [ ] Mode selection works when accessed directly
 - [ ] Quiz modes function correctly
