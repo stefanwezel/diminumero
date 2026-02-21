@@ -35,15 +35,27 @@
         <div class="results-actions">
             <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                 <input type="hidden" name="mode" value="{{ session.get('mode', 'easy') }}">
-                <button type="submit" class="btn btn-primary btn-large">
-                    {{ get_text('results_try_again') }}
+                <button type="submit" class="btn-try-again">
+                    🔄 {{ get_text('results_try_again') }}
                 </button>
             </form>
+
+            {% if has_learn_materials %}
             <a href="{{ url_for('learn', lang_code=lang_code) }}" class="btn btn-primary btn-large">
                 📚 {{ get_text('footer_learn') }}
             </a>
+            {% else %}
+            <div class="btn btn-primary btn-large results-learn-unavailable">
+                📚 {{ get_text('footer_learn') }}
+                <a href="https://github.com/stefanwezel/diminumero/blob/main/ADD_NEW_LEARNING_MATERIALS.md"
+                   target="_blank" rel="noopener noreferrer" class="learn-contribute-link">
+                    {{ get_text('learn_contribute_link') }}
+                </a>
+            </div>
+            {% endif %}
+
             <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary btn-large">
-                {{ get_text('results_back_home') }}
+                🛖 {{ get_text('results_back_home') }}
             </a>
         </div>
         
