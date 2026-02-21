@@ -8,7 +8,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, 'Noto Sans Devanagari', sans-serif;
     background: linear-gradient(135deg, #F2F3AE 0%, #EDD382 100%);
     min-height: 100vh;
     display: flex;
