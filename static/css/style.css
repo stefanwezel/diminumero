@@ -213,6 +213,8 @@ body {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    text-decoration: none;
+    text-align: center;
 }
 
 .btn-primary {
@@ -589,14 +591,42 @@ body {
 
 .results-actions {
     margin-top: 40px;
-    display: flex;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
-    flex-wrap: wrap;
+}
+
+.results-actions form {
+    grid-column: 1 / -1;
 }
 
 .results-actions .btn {
-    min-width: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-try-again {
+    display: block;
+    width: 100%;
+    padding: 20px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #FC9E4F 0%, #EDD382 100%);
+    color: #92400E;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(252, 158, 79, 0.3);
+}
+
+.btn-try-again:hover {
+    box-shadow: 0 6px 20px rgba(252, 158, 79, 0.5);
+    transform: translateY(-2px);
 }
 
 /* Toast Notifications */
@@ -1276,6 +1306,17 @@ html {
     box-shadow: 0 8px 25px rgba(100, 100, 100, 0.2);
 }
 
+.results-learn-unavailable {
+    background: linear-gradient(135deg, #9a9a9a 0%, #b8b8b8 100%);
+    box-shadow: 0 8px 25px rgba(100, 100, 100, 0.2);
+    cursor: not-allowed;
+    opacity: 0.7;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
 .learn-contribute-link {
     display: inline-block;
     margin-top: 14px;
@@ -1294,20 +1335,6 @@ html {
     text-decoration: underline;
 }
 
-/* Results page - adjust actions for 3 buttons */
-.results-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 30px;
-}
-
-.results-actions .btn-large {
-    flex: 1;
-    min-width: 180px;
-    max-width: 250px;
-}
 
 /* Mobile Responsive for Learn Section */
 @media (max-width: 768px) {
@@ -1372,12 +1399,11 @@ html {
     }
 
     .results-actions {
-        flex-direction: column;
-        align-items: stretch;
+        grid-template-columns: 1fr;
     }
 
-    .results-actions .btn-large {
-        max-width: 100%;
+    .results-actions form {
+        grid-column: auto;
     }
 }
 

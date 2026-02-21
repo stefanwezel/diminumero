@@ -23,13 +23,13 @@ AVAILABLE_LANGUAGES = {
         "name": "Nepalese",
         "native_name": "नेपाली",
         "flag": "🇳🇵",
-        "ready": True,  # Placeholder - coming soon
-        "description": "Learn Nepalese numbers (Coming Soon)",
+        "ready": True,
+        "description": "Learn Nepalese numbers",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         "ui_names": {"en": "Nepalese", "de": "Nepalesisch"},
         "ui_descriptions": {
-            "en": "Learn Nepalese numbers (Coming Soon)",
-            "de": "Lerne Nepalesische Zahlen (Demnächst)",
+            "en": "Learn Nepalese numbers from 1 to 1000",
+            "de": "Lerne Nepalesische Zahlen von 1 bis 1000",
         },
         "feedback_expression": "सहि!",
     },

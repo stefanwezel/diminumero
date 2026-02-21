@@ -503,6 +503,8 @@ def results(lang_code):
     score_ratio = (score / max_questions) if max_questions > 0 else 0
     percentage = score_ratio * 100
 
+    has_learn_materials = lang_code == "es"
+
     return render_template(
         "results.html",
         score=score,
@@ -511,6 +513,7 @@ def results(lang_code):
         score_ratio=score_ratio,
         percentage=percentage,
         lang_code=lang_code,
+        has_learn_materials=has_learn_materials,
         get_text=get_text,
     )
 
