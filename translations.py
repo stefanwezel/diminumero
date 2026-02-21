@@ -38,6 +38,7 @@ TRANSLATIONS = {
         "learn_nav_text": "Learn LANGUAGE_NAME_PLACEHOLDER Numbers",
         "learn_nav_button": "Learn First",
         "learn_nav_desc": "Understand the patterns before you practice!",
+        "learn_contribute_link": "Contribute by adding learning materials",
         # Footer
         "footer_feedback": "Send Feedback",
         "footer_imprint": "Imprint",
@@ -163,6 +164,7 @@ TRANSLATIONS = {
         "learn_nav_text": "LANGUAGE_NAME_PLACEHOLDER Zahlen lernen",
         "learn_nav_button": "Zuerst lernen",
         "learn_nav_desc": "Verstehe die Muster, bevor du übst!",
+        "learn_contribute_link": "Supporte das Project durch hinzufügen von Lernmaterialien",
         # Footer
         "footer_feedback": "Feedback senden",
         "footer_imprint": "Impressum",

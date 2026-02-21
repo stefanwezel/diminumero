@@ -1276,6 +1276,24 @@ html {
     box-shadow: 0 8px 25px rgba(100, 100, 100, 0.2);
 }
 
+.learn-contribute-link {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 6px 14px;
+    background: #F2F3AE;
+    border-radius: 8px;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.learn-contribute-link:hover {
+    background: #EDD382;
+    text-decoration: underline;
+}
+
 /* Results page - adjust actions for 3 buttons */
 .results-actions {
     display: flex;
