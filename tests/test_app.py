@@ -38,7 +38,7 @@ class TestIndexRoute:
         assert "español" in data.lower() or "नेपाली" in data
 
     def test_index_sets_default_language(self, client):
-        """Test that index sets default UI language to German."""
+        """Test that index sets default UI language to English."""
         with client.session_transaction() as sess:
             # Clear session
             sess.clear()
@@ -47,7 +47,7 @@ class TestIndexRoute:
         assert response.status_code == 200
 
         with client.session_transaction() as sess:
-            assert sess.get("language") == "de"
+            assert sess.get("language") == "en"
 
 
 class TestModeSelection:

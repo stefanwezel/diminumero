@@ -25,6 +25,7 @@ app.secret_key = os.environ.get(
 
 # Configuration
 QUESTIONS_PER_QUIZ = 10
+DEFAULT_UI_LANGUAGE = "en"
 
 LANGUAGE_NAME_PLACEHOLDERS = {
     "es": {"en": "Spanish", "de": "Spanisch"},
@@ -366,9 +367,16 @@ TRANSLATIONS = {
 }
 
 
+@app.before_request
+def initialize_ui_language():
+    """Set default UI language on first visit if not already in session."""
+    if "language" not in session:
+        session["language"] = DEFAULT_UI_LANGUAGE
+
+
 def get_text(key):
     """Get translated text for the current language."""
-    ui_language = session.get("language", "en")  # Default to English
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     name = TRANSLATIONS.get(ui_language, {}).get(key, key)
     name = name.replace(
         "LANGUAGE_NAME_PLACEHOLDER",
@@ -380,10 +388,6 @@ def get_text(key):
 @app.route("/")
 def index():
     """Language selection landing page."""
-    # Initialize UI language if not set
-    if "language" not in session:
-        session["language"] = "de"  # Default to German
-
     # Create translated copy of language metadata
     translated_languages = {}
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
@@ -401,10 +405,6 @@ def index():
 @app.route("/<lang_code>")
 def mode_selection(lang_code):
     """Mode selection page for a specific learning language."""
-    # Initialize UI language if not set
-    if "language" not in session:
-        session["language"] = "de"
-
     # Validate language code
     if not is_language_ready(lang_code):
         flash(get_text("flash_invalid_language"), "error")
@@ -460,7 +460,7 @@ def start_quiz(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     # Clear quiz-related session data but keep UI language
-    ui_language = session.get("language", "de")
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     session.clear()
     session["language"] = ui_language
     session["learn_language"] = lang_code
@@ -842,7 +842,9 @@ def results(lang_code):
 @app.route("/restart", methods=["POST"])
 def restart():
     """Restart the quiz."""
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     session.clear()
+    session["language"] = ui_language
     return redirect(url_for("index"))
 
 
@@ -876,7 +878,7 @@ def learn(lang_code):
         flash(get_text("flash_learn_not_available"), "info")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    ui_lang = session.get("language", "de")
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     template = f"learn_{lang_code}_{ui_lang}.html"
 
     # Fallback to English if template doesn't exist
