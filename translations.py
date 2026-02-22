@@ -62,7 +62,7 @@ TRANSLATIONS = {
         "results_perfect": "🌟 Perfect score! You're a numbers master!",
         "results_great": "🎉 Great job! You really know your numbers!",
         "results_good": "👍 Good work! Keep practicing to improve!",
-        "results_keep_practicing": "📚 Keep practicing! You'll get better with time!",
+        "results_keep_practicing": "Keep practicing! You'll get better with time!",
         "results_try_again": "Try Again",
         "results_back_home": "Back to Home",
         # Flash messages
@@ -188,7 +188,7 @@ TRANSLATIONS = {
         "results_perfect": "🌟 Perfekte Punktzahl! Du bist ein Meister der Zahlen!",
         "results_great": "🎉 Großartig! Du kennst deine Zahlen wirklich gut!",
         "results_good": "👍 Gute Arbeit! Übe weiter, um dich zu verbessern!",
-        "results_keep_practicing": "📚 Weiter üben! Mit der Zeit wirst du besser!",
+        "results_keep_practicing": "Weiter üben! Mit der Zeit wirst du besser!",
         "results_try_again": "Nochmal versuchen",
         "results_back_home": "Zurück zur Startseite",
         # Flash messages
