@@ -16,7 +16,6 @@ Examples:
 
 import argparse
 import json
-import math
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -353,18 +352,12 @@ def print_comparison(datasets: list[tuple[str, dict]]) -> None:
 
 CHART_JS_CDN = "https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"
 
-COLORS = [
-    "rgba(54, 162, 235, 0.8)",
-    "rgba(255, 99, 132, 0.8)",
-    "rgba(75, 192, 192, 0.8)",
-    "rgba(255, 159, 64, 0.8)",
-]
-COLORS_BORDER = [
-    "rgba(54, 162, 235, 1)",
-    "rgba(255, 99, 132, 1)",
-    "rgba(75, 192, 192, 1)",
-    "rgba(255, 159, 64, 1)",
-]
+SUCCESS_COLOR = "rgba(34, 197, 94, 0.8)"
+SUCCESS_COLOR_BORDER = "rgba(34, 197, 94, 1)"
+FAILURE_COLOR = "rgba(239, 68, 68, 0.8)"
+FAILURE_COLOR_BORDER = "rgba(239, 68, 68, 1)"
+TIMELINE_COLOR = "rgba(59, 130, 246, 0.8)"
+TIMELINE_BORDER = "rgba(59, 130, 246, 1)"
 
 
 def _js_array(values: list) -> str:
@@ -374,7 +367,7 @@ def _js_array(values: list) -> str:
 def build_html(datasets: list[tuple[str, dict]]) -> str:
     # Build per-second timeline data for each file
     timeline_datasets = []
-    for idx, (fname, data) in enumerate(datasets):
+    for _idx, (fname, data) in enumerate(datasets):
         requests = data.get("requests", [])
         if not requests:
             continue
@@ -396,71 +389,50 @@ def build_html(datasets: list[tuple[str, dict]]) -> str:
             {
                 "label": fname,
                 "data": avg_per_sec,
-                "labels": [str(l) for l in labels],
-                "color": COLORS[idx % len(COLORS)],
-                "border": COLORS_BORDER[idx % len(COLORS_BORDER)],
+                "labels": [str(i) for i in labels],
             }
         )
-
-    # Endpoint latency comparison
-    all_endpoints: list[str] = []
-    for _, data in datasets:
-        for ep in data.get("by_endpoint", {}):
-            if ep not in all_endpoints:
-                all_endpoints.append(ep)
-
-    endpoint_datasets_p50 = []
-    endpoint_datasets_p95 = []
-    endpoint_datasets_p99 = []
-    for idx, (fname, data) in enumerate(datasets):
-        by_ep = data.get("by_endpoint", {})
-        p50s = [by_ep.get(ep, {}).get("p50_ms", 0) for ep in all_endpoints]
-        p95s = [by_ep.get(ep, {}).get("p95_ms", 0) for ep in all_endpoints]
-        p99s = [by_ep.get(ep, {}).get("p99_ms", 0) for ep in all_endpoints]
-        endpoint_datasets_p50.append(
-            {"label": f"{fname} p50", "data": p50s, "color": COLORS[idx % len(COLORS)]}
-        )
-        endpoint_datasets_p95.append(
-            {
-                "label": f"{fname} p95",
-                "data": p95s,
-                "color": COLORS[(idx + 1) % len(COLORS)],
-            }
-        )
-        endpoint_datasets_p99.append(
-            {
-                "label": f"{fname} p99",
-                "data": p99s,
-                "color": COLORS[(idx + 2) % len(COLORS)],
-            }
-        )
-
-    endpoint_chart_datasets = (
-        endpoint_datasets_p50 + endpoint_datasets_p95 + endpoint_datasets_p99
-    )
 
     # Success/failure doughnut
     doughnut_labels = []
     doughnut_data = []
     doughnut_colors = []
-    for idx, (fname, data) in enumerate(datasets):
+    for _idx, (fname, data) in enumerate(datasets):
         s = data.get("summary", {})
         doughnut_labels += [f"{fname} OK", f"{fname} Fail"]
         doughnut_data += [s.get("successful_requests", 0), s.get("failed_requests", 0)]
-        doughnut_colors += [COLORS[idx % len(COLORS)], "rgba(220, 38, 38, 0.8)"]
+        doughnut_colors += [SUCCESS_COLOR, FAILURE_COLOR]
 
-    # Build HTML
+    # Build summary cards HTML
     summary_cards_html = ""
     for fname, data in datasets:
         s = data.get("summary", {})
+        error_rate = s.get("error_rate_percent", 0)
+        error_color = "#dc2626" if error_rate > 0 else "#16a34a"
         summary_cards_html += f"""
         <div class="card-group">
           <h3>{fname}</h3>
           <div class="cards">
-            <div class="card"><div class="card-value">{s.get("requests_per_second", 0):.1f}</div><div class="card-label">RPS</div></div>
-            <div class="card"><div class="card-value">{s.get("error_rate_percent", 0):.2f}%</div><div class="card-label">Error Rate</div></div>
-            <div class="card"><div class="card-value">{s.get("p95_response_time_ms", 0):.1f} ms</div><div class="card-label">p95</div></div>
-            <div class="card"><div class="card-value">{s.get("total_quizzes_completed", 0)}</div><div class="card-label">Quizzes</div></div>
+            <div class="card">
+              <div class="card-value">{s.get("requests_per_second", 0):.1f}</div>
+              <div class="card-label">RPS</div>
+              <div class="card-desc">Requests per second; overall throughput rate</div>
+            </div>
+            <div class="card">
+              <div class="card-value" style="color:{error_color}">{error_rate:.2f}%</div>
+              <div class="card-label">Error Rate</div>
+              <div class="card-desc">Share of requests with HTTP 4xx/5xx or network errors</div>
+            </div>
+            <div class="card">
+              <div class="card-value">{s.get("p95_response_time_ms", 0):.1f} ms</div>
+              <div class="card-label">p95</div>
+              <div class="card-desc">95th percentile latency; worst-case for 95% of users</div>
+            </div>
+            <div class="card">
+              <div class="card-value">{s.get("total_quizzes_completed", 0)}</div>
+              <div class="card-label">Quizzes</div>
+              <div class="card-desc">Full 10-question quiz sessions completed</div>
+            </div>
           </div>
         </div>
         """
@@ -478,9 +450,10 @@ def build_html(datasets: list[tuple[str, dict]]) -> str:
             count = stats["count"]
             sc = stats["success_count"]
             pct = sc / count * 100 if count else 0.0
+            pct_color = "#16a34a" if pct == 100.0 else "#dc2626"
             rows += (
                 f"<tr><td>{ep}</td><td>{count}</td>"
-                f"<td>{pct:.1f}%</td>"
+                f'<td style="color:{pct_color};font-weight:600">{pct:.1f}%</td>'
                 f"<td>{stats['avg_ms']:.1f}</td>"
                 f"<td>{stats['p50_ms']:.1f}</td>"
                 f"<td>{stats['p95_ms']:.1f}</td>"
@@ -489,8 +462,15 @@ def build_html(datasets: list[tuple[str, dict]]) -> str:
         ep_tables_html += f"""
         <h3>{fname} — Endpoint Detail</h3>
         <table>
-          <thead><tr><th>Endpoint</th><th>Count</th><th>Success%</th>
-          <th>Avg ms</th><th>p50 ms</th><th>p95 ms</th><th>p99 ms</th></tr></thead>
+          <thead><tr>
+            <th>Endpoint</th>
+            <th title="Total requests sent to this endpoint">Count</th>
+            <th title="Requests returning HTTP 2xx/3xx">Success%</th>
+            <th title="Mean response time">Avg ms</th>
+            <th title="Median response time">p50 ms</th>
+            <th title="95th percentile response time">p95 ms</th>
+            <th title="99th percentile response time">p99 ms</th>
+          </tr></thead>
           <tbody>{rows}</tbody>
         </table>
         """
@@ -503,19 +483,11 @@ def build_html(datasets: list[tuple[str, dict]]) -> str:
 
     timeline_js_datasets = []
     for td in timeline_datasets:
-        # pad shorter series
         padded = td["data"] + [None] * (len(all_timeline_labels) - len(td["data"]))
         timeline_js_datasets.append(
             f'{{"label":{json.dumps(td["label"])},"data":{json.dumps(padded)},'
-            f'"borderColor":{json.dumps(td["border"])},"backgroundColor":"transparent",'
+            f'"borderColor":{json.dumps(TIMELINE_BORDER)},"backgroundColor":"transparent",'
             f'"tension":0.3,"fill":false,"spanGaps":true}}'
-        )
-
-    ep_js_datasets = []
-    for ed in endpoint_chart_datasets:
-        ep_js_datasets.append(
-            f'{{"label":{json.dumps(ed["label"])},"data":{json.dumps(ed["data"])},'
-            f'"backgroundColor":{json.dumps(ed["color"])}}}'
         )
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -532,17 +504,18 @@ def build_html(datasets: list[tuple[str, dict]]) -> str:
   h1 {{ color: #333; }}
   h2 {{ color: #555; margin-top: 2em; border-bottom: 2px solid #ddd; padding-bottom: 4px; }}
   h3 {{ color: #666; }}
+  .section-desc {{ color: #888; font-size: 0.9em; margin: -0.5em 0 1em; }}
   .card-group {{ margin-bottom: 1.5em; }}
   .cards {{ display: flex; gap: 16px; flex-wrap: wrap; }}
   .card {{ background: white; border-radius: 8px; padding: 16px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); min-width: 120px; text-align: center; }}
-  .card-value {{ font-size: 2em; font-weight: bold; color: #2563eb; }}
-  .card-label {{ color: #666; font-size: 0.85em; margin-top: 4px; }}
+  .card-value {{ font-size: 2em; font-weight: bold; color: #1e3a5f; }}
+  .card-label {{ color: #444; font-size: 0.85em; margin-top: 4px; font-weight: 600; }}
+  .card-desc {{ color: #888; font-size: 0.75em; margin-top: 4px; }}
   .chart-container {{ background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 1.5em; max-width: 900px; }}
-  .chart-row {{ display: flex; gap: 20px; flex-wrap: wrap; }}
-  .chart-row .chart-container {{ flex: 1; min-width: 400px; }}
+  .chart-container-sm {{ background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 1.5em; max-width: 500px; }}
   table {{ border-collapse: collapse; width: 100%; max-width: 900px; background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 1.5em; }}
   th, td {{ padding: 10px 14px; text-align: left; border-bottom: 1px solid #eee; }}
-  th {{ background: #f0f4ff; color: #333; font-weight: 600; }}
+  th {{ background: #f0f4ff; color: #333; font-weight: 600; cursor: help; }}
   tr:last-child td {{ border-bottom: none; }}
   footer {{ color: #999; font-size: 0.8em; margin-top: 3em; }}
 </style>
@@ -555,19 +528,15 @@ def build_html(datasets: list[tuple[str, dict]]) -> str:
 {summary_cards_html}
 
 <h2>Response Time over Time</h2>
+<p class="section-desc">Average response time in ms bucketed per second of the test run.</p>
 <div class="chart-container">
   <canvas id="timelineChart"></canvas>
 </div>
 
-<div class="chart-row">
-  <div class="chart-container">
-    <h3>Endpoint Latency (p50 / p95 / p99)</h3>
-    <canvas id="endpointChart"></canvas>
-  </div>
-  <div class="chart-container">
-    <h3>Success vs Failure</h3>
-    <canvas id="doughnutChart"></canvas>
-  </div>
+<h2>Success vs Failure</h2>
+<p class="section-desc">Successful = HTTP 2xx/3xx; Failed = HTTP 4xx/5xx or connection errors.</p>
+<div class="chart-container-sm">
+  <canvas id="doughnutChart"></canvas>
 </div>
 
 <h2>Endpoint Detail</h2>
@@ -585,19 +554,6 @@ new Chart(document.getElementById('timelineChart'), {{
   options: {{
     responsive: true,
     plugins: {{ title: {{ display: true, text: 'Avg Response Time (ms) per Second' }} }},
-    scales: {{ y: {{ title: {{ display: true, text: 'ms' }} }} }}
-  }}
-}});
-
-new Chart(document.getElementById('endpointChart'), {{
-  type: 'bar',
-  data: {{
-    labels: {_js_array(all_endpoints)},
-    datasets: [{",".join(ep_js_datasets)}]
-  }},
-  options: {{
-    responsive: true,
-    plugins: {{ legend: {{ position: 'top' }} }},
     scales: {{ y: {{ title: {{ display: true, text: 'ms' }} }} }}
   }}
 }});

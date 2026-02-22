@@ -116,6 +116,49 @@ python languages/<lang_code>/generate_numbers.py  # e.g., es, de, fr
 
 This creates a fresh `numbers.py` in the respective language directory with proper translations.
 
+## 🔥 Stress Testing
+
+The `tools/` directory contains two scripts for load testing a running instance.
+
+### Run a stress test
+
+```bash
+uv run tools/stress_test.py --url https://diminumero.com --users 5 --duration 30 --output /tmp/result.json
+```
+
+Key options:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--url` | `https://diminumero.com` | Base URL of the target instance |
+| `--users` | `5` | Number of concurrent virtual users |
+| `--duration` | `30` | Test duration in seconds |
+| `--mode` | `easy` | Quiz mode to exercise (`easy`, `advanced`, `hardcore`, or `mixed` to rotate randomly) |
+| `--language` | `es` | Language to practice (`es`, `de`, `fr`, `ne`, or `random` to rotate each quiz) |
+| `--output` | auto-timestamped | Path for the JSON result file |
+
+### Analyse results
+
+Print a terminal report for one or more result files:
+
+```bash
+uv run tools/analyze_results.py /tmp/result.json
+```
+
+Generate an HTML report with charts:
+
+```bash
+uv run tools/analyze_results.py /tmp/result.json --html /tmp/report.html
+```
+
+Pass multiple files to get a side-by-side comparison table:
+
+```bash
+uv run tools/analyze_results.py result_a.json result_b.json --html /tmp/compare.html
+```
+
+The HTML report includes a response-time timeline, a success/failure doughnut chart, and a per-endpoint detail table.
+
 ## 🎨 Customization
 
 - **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `app.py` (default 10 questions)
