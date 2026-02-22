@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Envelope body -->
+  <rect x="6" y="14" width="52" height="36" rx="5" fill="#FC9E4F" stroke="#020122" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Inner fill for flap area -->
+  <path d="M6 19L32 38L58 19" fill="#EDD382"/>
+  <path d="M6 19L32 38L58 19" stroke="#020122" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom fold lines -->
+  <path d="M6 50L24 35" stroke="#020122" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M58 50L40 35" stroke="#020122" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -68,13 +68,13 @@
         <div class="learn-cta">
             {% if has_learn_materials %}
             <a href="{{ url_for('learn', lang_code=lang_code) }}" class="learn-card">
-                <div class="learn-icon">📚</div>
+                <div class="learn-icon"><img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="learn-icon-img"></div>
                 <h3>{{ get_text('learn_nav_button') }}</h3>
                 <p>{{ get_text('learn_nav_desc') }}</p>
             </a>
             {% else %}
             <div class="learn-card learn-unavailable">
-                <div class="learn-icon">📚</div>
+                <div class="learn-icon"><img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="learn-icon-img"></div>
                 <h3>{{ get_text('learn_nav_button') }}</h3>
                 <p>{{ get_text('language_selection_coming_soon') }}</p>
                 <a href="https://github.com/stefanwezel/diminumero/blob/main/ADD_NEW_LEARNING_MATERIALS.md"
@@ -87,7 +87,7 @@
         
         <div class="feedback-section">
             <a href="mailto:wezelstefan@gmail.com?subject={{ get_text('feedback_subject') }}" class="btn btn-feedback">
-                📧 {{ get_text('footer_feedback') }}
+                <img src="{{ url_for('static', filename='icons/icon-email.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('footer_feedback') }}
             </a>
         </div>
         

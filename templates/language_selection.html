@@ -32,7 +32,7 @@
             </div>
             {% endfor %}
             <div class="mode-card">
-                <div class="language-flag">❓</div>
+                <div class="language-flag"><img src="{{ url_for('static', filename='icons/icon-question.svg') }}" alt="?" class="language-flag-icon"></div>
                 <h3 class="mode-title">{{ get_text('language_selection_contribute_title') }}</h3>
                 <p class="language-native-name">&nbsp;</p>
                 <p class="mode-description">{{ get_text('language_selection_contribute_description') }}</p>
@@ -44,7 +44,7 @@
         
         <div class="feedback-section">
             <a href="mailto:wezelstefan@gmail.com?subject={{ get_text('feedback_subject') }}" class="btn btn-feedback">
-                📧 {{ get_text('footer_feedback') }}
+                <img src="{{ url_for('static', filename='icons/icon-email.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('footer_feedback') }}
             </a>
         </div>
         
