@@ -3,6 +3,7 @@
 This script generates German number translations and saves them to numbers.py.
 """
 
+import os
 import random
 
 
@@ -131,8 +132,6 @@ numbers_set.update(random.sample(range(1000001, 10000001), 100))
 NUMBERS = {n: number_to_german(n) for n in sorted(numbers_set)}
 
 # Write to numbers.py
-import os
-
 output_dir = "languages/de"
 os.makedirs(output_dir, exist_ok=True)
 
