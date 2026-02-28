@@ -63,6 +63,7 @@ TRANSLATIONS = {
         "results_great": "🎉 Great job! You really know your numbers!",
         "results_good": "👍 Good work! Keep practicing to improve!",
         "results_keep_practicing": "Keep practicing! You'll get better with time!",
+        "results_speed_bonus": "⚡ Lightning fast! You completed the quiz in record time!",
         "results_try_again": "Try Again",
         "results_back_home": "Back to Home",
         # Flash messages
@@ -189,6 +190,7 @@ TRANSLATIONS = {
         "results_great": "🎉 Großartig! Du kennst deine Zahlen wirklich gut!",
         "results_good": "👍 Gute Arbeit! Übe weiter, um dich zu verbessern!",
         "results_keep_practicing": "Weiter üben! Mit der Zeit wirst du besser!",
+        "results_speed_bonus": "⚡ Blitzschnell! Du hast das Quiz in Rekordzeit abgeschlossen!",
         "results_try_again": "Nochmal versuchen",
         "results_back_home": "Zurück zur Startseite",
         # Flash messages
