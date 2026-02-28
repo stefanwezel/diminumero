@@ -2,6 +2,7 @@
 
 import pytest
 from app import app as flask_app
+from config import QUESTIONS_PER_QUIZ
 from languages import get_language_numbers
 
 # Load Spanish numbers for testing
@@ -288,11 +289,11 @@ class TestResultsPage:
     """Tests for results page."""
 
     def test_results_display(self, client):
-        """Test that results page displays score."""
-        # Set up a completed quiz session
+        """Test that results page displays score and percentage."""
+        score = max(1, QUESTIONS_PER_QUIZ // 2)
         with client.session_transaction() as sess:
-            sess["score"] = 7
-            sess["total_questions"] = 7
+            sess["score"] = score
+            sess["total_questions"] = score
             sess["mode"] = "easy"
             sess["learn_language"] = "es"
 
@@ -300,23 +301,22 @@ class TestResultsPage:
         assert response.status_code == 200
         data = response.data.decode("utf-8")
 
-        # Should show score
-        assert "7" in data
-        assert "10" in data
-        assert "70 %" in data
+        expected_pct = round(score / QUESTIONS_PER_QUIZ * 100)
+        assert str(score) in data
+        assert str(QUESTIONS_PER_QUIZ) in data
+        assert f"{expected_pct} %" in data
 
     def test_results_percentage_calculation(self, client):
-        """Test that results page calculates percentage correctly."""
+        """Test that a perfect score shows 100%."""
         with client.session_transaction() as sess:
-            sess["score"] = 10
-            sess["total_questions"] = 10
+            sess["score"] = QUESTIONS_PER_QUIZ
+            sess["total_questions"] = QUESTIONS_PER_QUIZ
             sess["learn_language"] = "es"
 
         response = client.get("/es/results")
         assert response.status_code == 200
         data = response.data.decode("utf-8")
 
-        # Should show 100%
         assert "100 %" in data
 
     def test_results_without_language_redirects(self, client):
