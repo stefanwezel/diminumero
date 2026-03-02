@@ -3,6 +3,42 @@
 {% block title %}{{ get_text('results_title') }}{% endblock %}
 
 {% block content %}
+{% if show_perfect_splash or show_splash %}
+{% if show_perfect_splash %}
+<div id="perfect-splash" class="speed-bonus-overlay" style="display:none">
+    <div class="speed-bonus-popup">
+        <p>{{ get_text('results_perfect') }}</p>
+    </div>
+</div>
+{% endif %}
+{% if show_splash %}
+<div id="speed-splash" class="speed-bonus-overlay" style="display:none">
+    <div class="speed-bonus-popup">
+        <p>{{ get_text('results_speed_bonus') }}</p>
+    </div>
+</div>
+{% endif %}
+<script>
+    var queue = [
+        {% if show_perfect_splash %}'perfect-splash',{% endif %}
+        {% if show_splash %}'speed-splash',{% endif %}
+    ];
+    function showNext() {
+        if (!queue.length) return;
+        var id = queue.shift();
+        var el = document.getElementById(id);
+        el.style.display = 'flex';
+        setTimeout(function () {
+            el.classList.add('speed-bonus-overlay--out');
+            setTimeout(function () {
+                el.style.display = 'none';
+                showNext();
+            }, 650);
+        }, 1400);
+    }
+    showNext();
+</script>
+{% endif %}
 <div class="results-page">
     <div class="results-container">
         <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="results-logo">
@@ -31,6 +67,11 @@
             {% endif %}
         </div>
         
+        <!-- Speed bonus message -->
+        {% if is_speed_bonus %}
+        <p class="result-message">{{ get_text('results_speed_bonus') }}</p>
+        {% endif %}
+
         <!-- Action buttons -->
         <div class="results-actions">
             <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">

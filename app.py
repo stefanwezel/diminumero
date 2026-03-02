@@ -13,7 +13,14 @@ from flask import (
 from dotenv import load_dotenv
 import quiz_logic
 import os
-from config import QUESTIONS_PER_QUIZ, DEFAULT_UI_LANGUAGE
+import time
+from config import (
+    QUESTIONS_PER_QUIZ,
+    DEFAULT_UI_LANGUAGE,
+    SPEED_BONUS_TIME_EASY,
+    SPEED_BONUS_TIME_ADVANCED,
+    SPEED_BONUS_TIME_HARDCORE,
+)
 from languages import (
     AVAILABLE_LANGUAGES,
     get_feedback_expression,
@@ -119,6 +126,31 @@ def set_language(lang):
     return redirect(request.referrer or url_for("index"))
 
 
+def _results_redirect(lang_code):
+    """Redirect to results, marking session for splash overlays if earned."""
+    quiz_start_time = session.get("quiz_start_time")
+    elapsed = time.time() - quiz_start_time if quiz_start_time else None
+    mode = session.get("mode", "easy")
+    speed_limits = {
+        "easy": SPEED_BONUS_TIME_EASY,
+        "advanced": SPEED_BONUS_TIME_ADVANCED,
+        "hardcore": SPEED_BONUS_TIME_HARDCORE,
+    }
+    speed_limit = speed_limits.get(mode, SPEED_BONUS_TIME_EASY)
+
+    score = session.get("score", 0)
+    score_percentage = (
+        (score / QUESTIONS_PER_QUIZ) * 100 if QUESTIONS_PER_QUIZ > 0 else 0
+    )
+
+    if score_percentage == 100:
+        session["show_perfect_splash"] = True
+    if elapsed is not None and elapsed < speed_limit and score_percentage > 80:
+        session["show_speed_splash"] = True
+
+    return redirect(url_for("results", lang_code=lang_code))
+
+
 @app.route("/<lang_code>/start", methods=["POST"])
 def start_quiz(lang_code):
     """Initialize a new quiz session."""
@@ -144,6 +176,7 @@ def start_quiz(lang_code):
     session["total_questions"] = 0
     session["asked_numbers"] = []
     session["mode"] = mode
+    session["quiz_start_time"] = time.time()
 
     # Redirect to appropriate quiz
     if mode == "easy":
@@ -202,7 +235,7 @@ def quiz_easy(lang_code):
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
-            return redirect(url_for("results", lang_code=lang_code))
+            return _results_redirect(lang_code)
 
         # Continue to next question
         return redirect(url_for("quiz_easy", lang_code=lang_code))
@@ -318,7 +351,7 @@ def quiz_advanced(lang_code):
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
-            return redirect(url_for("results", lang_code=lang_code))
+            return _results_redirect(lang_code)
 
         # Continue to next question
         return redirect(url_for("quiz_advanced", lang_code=lang_code))
@@ -445,7 +478,7 @@ def quiz_hardcore(lang_code):
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
-            return redirect(url_for("results", lang_code=lang_code))
+            return _results_redirect(lang_code)
 
         # Continue to next question
         return redirect(url_for("quiz_hardcore", lang_code=lang_code))
@@ -503,6 +536,20 @@ def results(lang_code):
     score_ratio = (score / max_questions) if max_questions > 0 else 0
     percentage = score_ratio * 100
 
+    mode = session.get("mode", "easy")
+    speed_limits = {
+        "easy": SPEED_BONUS_TIME_EASY,
+        "advanced": SPEED_BONUS_TIME_ADVANCED,
+        "hardcore": SPEED_BONUS_TIME_HARDCORE,
+    }
+    quiz_start_time = session.get("quiz_start_time")
+    elapsed = time.time() - quiz_start_time if quiz_start_time else None
+    speed_limit = speed_limits.get(mode, SPEED_BONUS_TIME_EASY)
+    is_speed_bonus = elapsed is not None and elapsed < speed_limit and percentage > 80
+
+    show_splash = session.pop("show_speed_splash", False)
+    show_perfect_splash = session.pop("show_perfect_splash", False)
+
     has_learn_materials = lang_code == "es"
 
     return render_template(
@@ -514,6 +561,9 @@ def results(lang_code):
         percentage=percentage,
         lang_code=lang_code,
         has_learn_materials=has_learn_materials,
+        is_speed_bonus=is_speed_bonus,
+        show_splash=show_splash,
+        show_perfect_splash=show_perfect_splash,
         get_text=get_text,
     )
 

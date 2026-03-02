@@ -232,7 +232,7 @@ class TestCheckAnswerAdvanced:
 
 
 class TestNumbersDataIntegrity:
-    """Tests for numbers_data.py integrity."""
+    """Tests for Spanish language numbers data integrity."""
 
     def test_numbers_dict_not_empty(self):
         """Test that NUMBERS dictionary is not empty."""
