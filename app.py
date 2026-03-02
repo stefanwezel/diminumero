@@ -11,6 +11,7 @@ from flask import (
     jsonify,
 )
 from dotenv import load_dotenv
+import jinja2
 import quiz_logic
 import os
 import time
@@ -210,8 +211,6 @@ def quiz_easy(lang_code):
         # Process the submitted answer
         user_answer = request.form.get("answer")
         correct_answer = session.get("correct_answer")
-        current_number = session.get("current_number")
-
         if user_answer and correct_answer:
             is_correct = quiz_logic.check_answer(user_answer, correct_answer)
 
@@ -613,7 +612,7 @@ def learn(lang_code):
     # Fallback to English if template doesn't exist
     try:
         return render_template(template, lang_code=lang_code, get_text=get_text)
-    except:
+    except jinja2.TemplateNotFound:
         template = f"learn_{lang_code}_en.html"
         return render_template(template, lang_code=lang_code, get_text=get_text)
 

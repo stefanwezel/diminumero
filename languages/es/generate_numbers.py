@@ -8,6 +8,8 @@ To use this as a template for other languages:
 4. Run the script to generate the numbers.py file
 """
 
+import random
+
 
 def number_to_spanish(n):
     """Convert a number to Spanish."""
@@ -119,8 +121,6 @@ def number_to_spanish(n):
 
 
 # Generate 1000 unique numbers
-import random
-
 random.seed(42)  # For reproducibility
 numbers_set = set()
 

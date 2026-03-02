@@ -74,7 +74,6 @@ def decompose_german_number(number_text):
     components_sorted = sorted(components, key=len, reverse=True)
 
     result = []
-    remaining = number_text
     position = 0
 
     while position < len(number_text):
