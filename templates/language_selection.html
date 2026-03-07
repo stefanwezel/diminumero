@@ -1,6 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_text('language_selection_title') }}{% endblock %}
+{% block title %}{{ get_text('seo_title_index') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_index') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_index') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_index') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_index') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_index') }}">{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "diminumero",
+    "applicationCategory": "EducationalApplication",
+    "description": "{{ get_text('meta_desc_index') }}",
+    "url": "{{ site_url }}",
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+    },
+    "inLanguage": ["es", "de", "fr", "da", "ne"],
+    "operatingSystem": "Any"
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="landing-page">

@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_text('home_title') }}{% endblock %}
+{% block title %}{{ get_text('seo_title_mode_selection') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_mode_selection') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_mode_selection') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_mode_selection') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_mode_selection') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_mode_selection') }}">{% endblock %}
 
 {% block content %}
 <div class="landing-page">

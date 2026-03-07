@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_text('privacy_title') }}{% endblock %}
+{% block title %}{{ get_text('seo_title_privacy') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_privacy') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_privacy') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_privacy') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_privacy') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_privacy') }}">{% endblock %}
 
 {% block content %}
 <div class="imprint-page">
