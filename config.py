@@ -1,5 +1,10 @@
 """Application-level configuration for diminumero."""
 
+import os
+
+# Site URL for SEO (canonical URLs, sitemap, etc.)
+SITE_URL = os.environ.get("SITE_URL", "https://diminumero.com")
+
 # Number of questions per quiz session
 QUESTIONS_PER_QUIZ = 10
 

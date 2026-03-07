@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ lang_code|default('en') }}">
+<html lang="{{ ui_language|default('en') }}">
 <head>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7963483579984328"
      crossorigin="anonymous"></script>
@@ -17,6 +17,23 @@
     <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
     
     <title>{% block title %}diminumero{% endblock %}</title>
+    {% block meta_description %}{% endblock %}
+    {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="diminumero">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}diminumero{% endblock %}">
+    {% block og_description %}{% endblock %}
+    {% if canonical_url %}<meta property="og:url" content="{{ canonical_url }}">{% endif %}
+    <meta property="og:image" content="{{ url_for('static', filename='logo-512.png', _external=True) }}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{% block twitter_title %}diminumero{% endblock %}">
+    {% block twitter_description %}{% endblock %}
+    <meta name="twitter:image" content="{{ url_for('static', filename='logo-512.png', _external=True) }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
@@ -25,6 +42,7 @@
     <!-- GoatCounter Analytics -->
     <script data-goatcounter="https://stefanwezel.goatcounter.com/count"
             async src="//gc.zgo.at/count.js"></script>
+    {% block json_ld %}{% endblock %}
 </head>
 <body>
     <!-- Language switcher -->

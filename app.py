@@ -2,6 +2,7 @@
 
 from flask import (
     Flask,
+    Response,
     render_template,
     request,
     redirect,
@@ -18,6 +19,7 @@ import time
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
+    SITE_URL,
     SPEED_BONUS_TIME_EASY,
     SPEED_BONUS_TIME_ADVANCED,
     SPEED_BONUS_TIME_HARDCORE,
@@ -46,6 +48,18 @@ def initialize_ui_language():
     """Set default UI language on first visit if not already in session."""
     if "language" not in session:
         session["language"] = DEFAULT_UI_LANGUAGE
+
+
+@app.context_processor
+def inject_seo_context():
+    """Inject SEO-related variables into all templates."""
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    canonical_url = SITE_URL.rstrip("/") + request.path
+    return {
+        "ui_language": ui_language,
+        "site_url": SITE_URL,
+        "canonical_url": canonical_url,
+    }
 
 
 def get_text(key):
@@ -615,6 +629,50 @@ def learn(lang_code):
     except jinja2.TemplateNotFound:
         template = f"learn_{lang_code}_en.html"
         return render_template(template, lang_code=lang_code, get_text=get_text)
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    """Serve robots.txt for search engine crawlers."""
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /api/",
+        "Disallow: /set_language/",
+        "Disallow: /restart",
+        "Disallow: /*/quiz/",
+        "Disallow: /*/results",
+        "Disallow: /*/start",
+        "",
+        f"Sitemap: {SITE_URL.rstrip('/')}/sitemap.xml",
+    ]
+    return Response("\n".join(lines), mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    """Serve sitemap.xml for search engine crawlers."""
+    base = SITE_URL.rstrip("/")
+    urls = [
+        (f"{base}/", "1.0"),
+    ]
+    for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
+        if lang_info.get("ready"):
+            urls.append((f"{base}/{lang_code}", "0.8"))
+    urls.append((f"{base}/es/learn", "0.7"))
+    urls.append((f"{base}/about", "0.5"))
+    urls.append((f"{base}/privacy", "0.3"))
+    urls.append((f"{base}/imprint", "0.3"))
+
+    xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_lines.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for loc, priority in urls:
+        xml_lines.append("  <url>")
+        xml_lines.append(f"    <loc>{loc}</loc>")
+        xml_lines.append(f"    <priority>{priority}</priority>")
+        xml_lines.append("  </url>")
+    xml_lines.append("</urlset>")
+    return Response("\n".join(xml_lines), mimetype="application/xml")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,8 @@
       "type": "image/png"
     }
   ],
+  "description": "Practice numbers in foreign languages with free interactive quizzes",
+  "start_url": "/",
   "theme_color": "#F2F3AE",
   "background_color": "#F2F3AE",
   "display": "standalone"

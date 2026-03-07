@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_text('mode_advanced') }} - {{ get_text('quiz_question') }} {{ total + 1 }}{% endblock %}
+{% block title %}{{ get_text('seo_title_quiz_advanced') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_quiz_advanced') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_quiz_advanced') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
 
 {% block content %}
 <div class="quiz-page">
