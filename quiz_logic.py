@@ -81,13 +81,7 @@ def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
     Returns:
         List of 4 options (strings) in truly random order
     """
-    # Get all possible wrong answers (exclude the correct one)
-    #wrong_answers = [
-    #    answer for num, answer in numbers_dict.items() if num != correct_number
-    #]
-        # Determine magnitude (digit length)
     digit_length = len(str(correct_number))
-
 
     # Filter numbers with same digit length (exclude correct number)
     same_magnitude_numbers = [
@@ -95,10 +89,6 @@ def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
         for num, answer in numbers_dict.items()
         if num != correct_number and len(str(num)) == digit_length
     ]
-
-    print(f"Candidates with same magnitude ({digit_length} digits):")
-    for num, answer in same_magnitude_numbers:
-        print(f"  {num} -> {answer}")
 
     # Extract only answers
     wrong_answers = [answer for num, answer in same_magnitude_numbers]
