@@ -61,6 +61,20 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Correct",
     },
+    "da": {
+        "name": "Danish",
+        "native_name": "Dansk",
+        "flag": "🇩🇰",
+        "ready": True,
+        "description": "Learn Danish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Danish", "de": "Dänisch"},
+        "ui_descriptions": {
+            "en": "Learn Danish numbers from 1 to 10 million",
+            "de": "Lerne Dänische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Korrekt!",
+    },
 }
 
 
@@ -89,6 +103,8 @@ def get_language_numbers(lang_code):
             from .de import NUMBERS
         elif lang_code == "fr":
             from .fr import NUMBERS
+        elif lang_code == "da":
+            from .da import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
