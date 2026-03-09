@@ -89,6 +89,90 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Corretto!",
     },
+    "tr": {
+        "name": "Turkish",
+        "native_name": "Türkçe",
+        "flag": "🇹🇷",
+        "ready": True,
+        "description": "Learn Turkish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Turkish", "de": "Türkisch"},
+        "ui_descriptions": {
+            "en": "Learn Turkish numbers from 1 to 10 million",
+            "de": "Lerne Türkische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Doğru!",
+    },
+    "ko": {
+        "name": "Korean",
+        "native_name": "한국어",
+        "flag": "🇰🇷",
+        "ready": True,
+        "description": "Learn Korean numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Korean", "de": "Koreanisch"},
+        "ui_descriptions": {
+            "en": "Learn Korean numbers from 1 to 10 million",
+            "de": "Lerne Koreanische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "정답!",
+    },
+    "no": {
+        "name": "Norwegian",
+        "native_name": "Norsk",
+        "flag": "🇳🇴",
+        "ready": True,
+        "description": "Learn Norwegian numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Norwegian", "de": "Norwegisch"},
+        "ui_descriptions": {
+            "en": "Learn Norwegian numbers from 1 to 10 million",
+            "de": "Lerne Norwegische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Riktig!",
+    },
+    "pt": {
+        "name": "Portuguese",
+        "native_name": "Português",
+        "flag": "🇧🇷",
+        "ready": True,
+        "description": "Learn Portuguese numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Portuguese", "de": "Portugiesisch"},
+        "ui_descriptions": {
+            "en": "Learn Portuguese numbers from 1 to 10 million",
+            "de": "Lerne Portugiesische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Correto!",
+    },
+    "sv": {
+        "name": "Swedish",
+        "native_name": "Svenska",
+        "flag": "🇸🇪",
+        "ready": True,
+        "description": "Learn Swedish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Swedish", "de": "Schwedisch"},
+        "ui_descriptions": {
+            "en": "Learn Swedish numbers from 1 to 10 million",
+            "de": "Lerne Schwedische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Rätt!",
+    },
+    "ja": {
+        "name": "Japanese",
+        "native_name": "日本語",
+        "flag": "🇯🇵",
+        "ready": True,
+        "description": "Learn Japanese numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Japanese", "de": "Japanisch"},
+        "ui_descriptions": {
+            "en": "Learn Japanese numbers from 1 to 10 million",
+            "de": "Lerne Japanische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "正解!",
+    },
 }
 
 
@@ -121,6 +205,18 @@ def get_language_numbers(lang_code):
             from .da import NUMBERS
         elif lang_code == "it":
             from .it import NUMBERS
+        elif lang_code == "tr":
+            from .tr import NUMBERS
+        elif lang_code == "ko":
+            from .ko import NUMBERS
+        elif lang_code == "no":
+            from .no import NUMBERS
+        elif lang_code == "pt":
+            from .pt import NUMBERS
+        elif lang_code == "sv":
+            from .sv import NUMBERS
+        elif lang_code == "ja":
+            from .ja import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
