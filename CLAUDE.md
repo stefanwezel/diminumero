@@ -51,7 +51,7 @@ docker-compose -f docker-compose.prod.yml up --build
 
 - **languages/**: Multi-language subsystem
   - `config.py`: Language registry (`AVAILABLE_LANGUAGES`) with metadata, validation strategies, and helper functions (`get_language_numbers()`, `get_validation_strategy()`, `get_component_decomposer()`, etc.)
-  - Each language directory (es/, de/, fr/, ne/) contains `numbers.py` (number→translation dict) and `generate_numbers.py`
+  - Each language directory (es/, de/, fr/, ne/, da/, it/) contains `numbers.py` (number→translation dict) and `generate_numbers.py`
 
 ### Quiz Modes
 
@@ -82,7 +82,7 @@ User selects language → mode selection → `start_quiz()` initializes session 
 
 Two separate language keys coexist in the session:
 - `language` — UI display language (`"en"` or `"de"`)
-- `learn_language` — Language being practiced (`"es"`, `"de"`, `"fr"`, `"ne"`)
+- `learn_language` — Language being practiced (`"es"`, `"de"`, `"fr"`, `"ne"`, `"da"`, `"it"`)
 
 Quiz state keys: `score`, `total_questions`, `asked_numbers`, `mode`, `current_number`, `correct_answer`, `current_options` (easy mode only).
 
@@ -100,10 +100,11 @@ Tests live in `tests/` with no shared `conftest.py` — each file defines its ow
 
 ## Adding Languages
 
-See ADDING_LANGUAGES.md for the complete guide. Key steps:
+This is the most common recurring task in this repository. See ADDING_LANGUAGES.md for the complete guide. Key steps:
 1. Create `languages/{code}/` directory with `numbers.py` and `generate_numbers.py`
 2. Register in `languages/config.py` with `ready: False` initially; add import to `get_language_numbers()`
-3. Set `ready: True` after testing
+3. Update SEO strings in `translations.py` and JSON-LD in `templates/language_selection.html`
+4. Set `ready: True` after testing
 
 ## Adding Learning Materials
 

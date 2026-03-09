@@ -75,6 +75,20 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Korrekt!",
     },
+    "it": {
+        "name": "Italian",
+        "native_name": "Italiano",
+        "flag": "🇮🇹",
+        "ready": True,
+        "description": "Learn Italian numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Italian", "de": "Italienisch"},
+        "ui_descriptions": {
+            "en": "Learn Italian numbers from 1 to 10 million",
+            "de": "Lerne Italienische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Corretto!",
+    },
 }
 
 
@@ -105,6 +119,8 @@ def get_language_numbers(lang_code):
             from .fr import NUMBERS
         elif lang_code == "da":
             from .da import NUMBERS
+        elif lang_code == "it":
+            from .it import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
