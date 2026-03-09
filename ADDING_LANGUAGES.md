@@ -123,7 +123,22 @@ def learn(lang_code):
     # ... rest of code
 ```
 
-### 7. Enable the Language
+### 7. Update SEO Assets
+
+Update the following files so search engines and structured data reflect the new language:
+
+**`translations.py`** — Add the language name to the index page SEO strings (both English and German):
+- `meta_desc_index` (en): Add "LanguageName" to the list of languages
+- `seo_title_index` (en): Add "LanguageName" to the title
+- `meta_desc_index` (de): Add "Sprachname" to the list of languages
+- `seo_title_index` (de): Add "Sprachname" to the title
+
+**`templates/language_selection.html`** — Add your language code to the JSON-LD `inLanguage` array:
+```json
+"inLanguage": ["es", "de", "fr", "it", "da", "ne", "xx"]
+```
+
+### 8. Enable the Language
 
 Once everything is ready:
 
@@ -192,6 +207,9 @@ Before marking a language as `ready: True`:
 - [ ] Quiz modes function correctly
 - [ ] Results page displays properly
 - [ ] (Optional) Learn pages are created and work
+- [ ] SEO meta descriptions updated in `translations.py` (en + de)
+- [ ] SEO titles updated in `translations.py` (en + de)
+- [ ] Language code added to JSON-LD `inLanguage` in `templates/language_selection.html`
 - [ ] Edge cases tested (very small/large numbers)
 - [ ] Native speaker review completed
 

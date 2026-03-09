@@ -128,7 +128,7 @@ TRANSLATIONS = {
         # Email subject
         "feedback_subject": "diminumero Feedback",
         # SEO meta descriptions
-        "meta_desc_index": "Practice numbers in Spanish, French, German, Danish and Nepalese with free interactive quizzes. Multiple difficulty modes for all levels.",
+        "meta_desc_index": "Practice numbers in Spanish, French, German, Italian, Danish and Nepalese with free interactive quizzes. Multiple difficulty modes for all levels.",
         "meta_desc_mode_selection": "Practice LANGUAGE_NAME_PLACEHOLDER numbers with free quizzes. Choose easy, advanced or hardcore mode and start learning today.",
         "meta_desc_quiz": "Translate numbers into foreign language words. Test your knowledge with interactive quizzes on diminumero.",
         "meta_desc_results": "See your quiz results and track your progress learning foreign language numbers on diminumero.",
@@ -137,7 +137,7 @@ TRANSLATIONS = {
         "meta_desc_privacy": "Privacy policy for diminumero. We use only essential session cookies and do not collect personal data.",
         "meta_desc_imprint": "Legal information and imprint for diminumero, a free language learning app by Stefan Wezel.",
         # SEO titles
-        "seo_title_index": "Learn Numbers in Spanish, French, German & More - Free Quiz | diminumero",
+        "seo_title_index": "Learn Numbers in Spanish, French, German, Italian & More - Free Quiz | diminumero",
         "seo_title_mode_selection": "Practice LANGUAGE_NAME_PLACEHOLDER Numbers - Choose Quiz Mode | diminumero",
         "seo_title_quiz_easy": "Easy Mode - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
         "seo_title_quiz_advanced": "Advanced Mode - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
@@ -275,7 +275,7 @@ TRANSLATIONS = {
         # Email subject
         "feedback_subject": "diminumero Feedback",
         # SEO meta descriptions
-        "meta_desc_index": "Übe Zahlen auf Spanisch, Französisch, Deutsch, Dänisch und Nepalesisch mit kostenlosen interaktiven Quizzen. Mehrere Schwierigkeitsgrade für alle Niveaus.",
+        "meta_desc_index": "Übe Zahlen auf Spanisch, Französisch, Deutsch, Italienisch, Dänisch und Nepalesisch mit kostenlosen interaktiven Quizzen. Mehrere Schwierigkeitsgrade für alle Niveaus.",
         "meta_desc_mode_selection": "Übe LANGUAGE_NAME_PLACEHOLDERe Zahlen mit kostenlosen Quizzen. Wähle einfachen, schwierigen oder Hardcore-Modus und lerne noch heute.",
         "meta_desc_quiz": "Übersetze Zahlen in fremdsprachige Wörter. Teste dein Wissen mit interaktiven Quizzen auf diminumero.",
         "meta_desc_results": "Sieh dir deine Quizergebnisse an und verfolge deinen Fortschritt beim Lernen fremdsprachiger Zahlen auf diminumero.",
@@ -284,7 +284,7 @@ TRANSLATIONS = {
         "meta_desc_privacy": "Datenschutzerklärung für diminumero. Wir verwenden nur notwendige Sitzungs-Cookies und sammeln keine persönlichen Daten.",
         "meta_desc_imprint": "Rechtliche Informationen und Impressum für diminumero, eine kostenlose Sprachlern-App von Stefan Wezel.",
         # SEO titles
-        "seo_title_index": "Zahlen lernen auf Spanisch, Französisch, Deutsch & mehr - Kostenloses Quiz | diminumero",
+        "seo_title_index": "Zahlen lernen auf Spanisch, Französisch, Deutsch, Italienisch & mehr - Kostenloses Quiz | diminumero",
         "seo_title_mode_selection": "LANGUAGE_NAME_PLACEHOLDERe Zahlen üben - Quizmodus wählen | diminumero",
         "seo_title_quiz_easy": "Einfacher Modus - LANGUAGE_NAME_PLACEHOLDERe Zahlen Quiz | diminumero",
         "seo_title_quiz_advanced": "Schwieriger Modus - LANGUAGE_NAME_PLACEHOLDERe Zahlen Quiz | diminumero",
