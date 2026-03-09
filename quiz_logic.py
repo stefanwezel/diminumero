@@ -159,6 +159,9 @@ def normalize_text(text):
     for umlaut, replacement in german_replacements.items():
         text = text.replace(umlaut, replacement)
 
+    # Replace Turkish dotless-i with ASCII i (not decomposed by NFD)
+    text = text.replace("ı", "i")
+
     # Remove extra spaces between words
     text = " ".join(text.split())
 

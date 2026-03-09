@@ -19,19 +19,33 @@ AVAILABLE_LANGUAGES = {
         # Word shown to the user when they answer correctly (in the target language)
         "feedback_expression": "¡Correcto",
     },
-    "ne": {
-        "name": "Nepalese",
-        "native_name": "नेपाली",
-        "flag": "🇳🇵",
+    "fr": {
+        "name": "French",
+        "native_name": "Français",
+        "flag": "🇫🇷",
         "ready": True,
-        "description": "Learn Nepalese numbers",
-        "validation_strategy": "word_based",  # Numbers separated by spaces
-        "ui_names": {"en": "Nepalese", "de": "Nepalesisch"},
+        "description": "Learn French numbers from 1 to 10 million",
+        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
+        "ui_names": {"en": "French", "de": "Französisch"},
         "ui_descriptions": {
-            "en": "Learn Nepalese numbers from 1 to 1000",
-            "de": "Lerne Nepalesische Zahlen von 1 bis 1000",
+            "en": "Learn French numbers from 1 to 10 million",
+            "de": "Lerne Französische Zahlen von 1 bis 10 Millionen",
         },
-        "feedback_expression": "सहि!",
+        "feedback_expression": "Correct",
+    },
+    "ja": {
+        "name": "Japanese",
+        "native_name": "日本語",
+        "flag": "🇯🇵",
+        "ready": True,
+        "description": "Learn Japanese numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Japanese", "de": "Japanisch"},
+        "ui_descriptions": {
+            "en": "Learn Japanese numbers from 1 to 10 million",
+            "de": "Lerne Japanische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "正解!",
     },
     "de": {
         "name": "German",
@@ -47,19 +61,103 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Korrekt",
     },
-    "fr": {
-        "name": "French",
-        "native_name": "Français",
-        "flag": "🇫🇷",
+    "ko": {
+        "name": "Korean",
+        "native_name": "한국어",
+        "flag": "🇰🇷",
         "ready": True,
-        "description": "Learn French numbers from 1 to 10 million",
-        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
-        "ui_names": {"en": "French", "de": "Französisch"},
+        "description": "Learn Korean numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Korean", "de": "Koreanisch"},
         "ui_descriptions": {
-            "en": "Learn French numbers from 1 to 10 million",
-            "de": "Lerne Französische Zahlen von 1 bis 10 Millionen",
+            "en": "Learn Korean numbers from 1 to 10 million",
+            "de": "Lerne Koreanische Zahlen von 1 bis 10 Millionen",
         },
-        "feedback_expression": "Correct",
+        "feedback_expression": "정답!",
+    },
+    "it": {
+        "name": "Italian",
+        "native_name": "Italiano",
+        "flag": "🇮🇹",
+        "ready": True,
+        "description": "Learn Italian numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Italian", "de": "Italienisch"},
+        "ui_descriptions": {
+            "en": "Learn Italian numbers from 1 to 10 million",
+            "de": "Lerne Italienische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Corretto!",
+    },
+    "zh": {
+        "name": "Chinese",
+        "native_name": "中文",
+        "flag": "🇨🇳",
+        "ready": True,
+        "description": "Learn Chinese numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Chinese", "de": "Chinesisch"},
+        "ui_descriptions": {
+            "en": "Learn Chinese numbers from 1 to 10 million",
+            "de": "Lerne Chinesische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "正确!",
+    },
+    "pt": {
+        "name": "Portuguese",
+        "native_name": "Português",
+        "flag": "🇧🇷",
+        "ready": True,
+        "description": "Learn Portuguese numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Portuguese", "de": "Portugiesisch"},
+        "ui_descriptions": {
+            "en": "Learn Portuguese numbers from 1 to 10 million",
+            "de": "Lerne Portugiesische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Correto!",
+    },
+    "tr": {
+        "name": "Turkish",
+        "native_name": "Türkçe",
+        "flag": "🇹🇷",
+        "ready": True,
+        "description": "Learn Turkish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Turkish", "de": "Türkisch"},
+        "ui_descriptions": {
+            "en": "Learn Turkish numbers from 1 to 10 million",
+            "de": "Lerne Türkische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Doğru!",
+    },
+    "ne": {
+        "name": "Nepalese",
+        "native_name": "नेपाली",
+        "flag": "🇳🇵",
+        "ready": True,
+        "description": "Learn Nepalese numbers",
+        "validation_strategy": "word_based",  # Numbers separated by spaces
+        "ui_names": {"en": "Nepalese", "de": "Nepalesisch"},
+        "ui_descriptions": {
+            "en": "Learn Nepalese numbers from 1 to 1000",
+            "de": "Lerne Nepalesische Zahlen von 1 bis 1000",
+        },
+        "feedback_expression": "सहि!",
+    },
+    "sv": {
+        "name": "Swedish",
+        "native_name": "Svenska",
+        "flag": "🇸🇪",
+        "ready": True,
+        "description": "Learn Swedish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Swedish", "de": "Schwedisch"},
+        "ui_descriptions": {
+            "en": "Learn Swedish numbers from 1 to 10 million",
+            "de": "Lerne Schwedische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "Rätt!",
     },
     "da": {
         "name": "Danish",
@@ -75,19 +173,19 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Korrekt!",
     },
-    "it": {
-        "name": "Italian",
-        "native_name": "Italiano",
-        "flag": "🇮🇹",
+    "no": {
+        "name": "Norwegian",
+        "native_name": "Norsk",
+        "flag": "🇳🇴",
         "ready": True,
-        "description": "Learn Italian numbers from 1 to 10 million",
+        "description": "Learn Norwegian numbers from 1 to 10 million",
         "validation_strategy": "word_based",
-        "ui_names": {"en": "Italian", "de": "Italienisch"},
+        "ui_names": {"en": "Norwegian", "de": "Norwegisch"},
         "ui_descriptions": {
-            "en": "Learn Italian numbers from 1 to 10 million",
-            "de": "Lerne Italienische Zahlen von 1 bis 10 Millionen",
+            "en": "Learn Norwegian numbers from 1 to 10 million",
+            "de": "Lerne Norwegische Zahlen von 1 bis 10 Millionen",
         },
-        "feedback_expression": "Corretto!",
+        "feedback_expression": "Riktig!",
     },
 }
 
@@ -121,6 +219,20 @@ def get_language_numbers(lang_code):
             from .da import NUMBERS
         elif lang_code == "it":
             from .it import NUMBERS
+        elif lang_code == "tr":
+            from .tr import NUMBERS
+        elif lang_code == "ko":
+            from .ko import NUMBERS
+        elif lang_code == "no":
+            from .no import NUMBERS
+        elif lang_code == "pt":
+            from .pt import NUMBERS
+        elif lang_code == "sv":
+            from .sv import NUMBERS
+        elif lang_code == "ja":
+            from .ja import NUMBERS
+        elif lang_code == "zh":
+            from .zh import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
