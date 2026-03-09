@@ -89,6 +89,20 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Corretto!",
     },
+    "zh": {
+        "name": "Chinese",
+        "native_name": "中文",
+        "flag": "🇨🇳",
+        "ready": True,
+        "description": "Learn Chinese numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {"en": "Chinese", "de": "Chinesisch"},
+        "ui_descriptions": {
+            "en": "Learn Chinese numbers from 1 to 10 million",
+            "de": "Lerne Chinesische Zahlen von 1 bis 10 Millionen",
+        },
+        "feedback_expression": "正确!",
+    },
     "pt": {
         "name": "Portuguese",
         "native_name": "Português",
@@ -217,6 +231,8 @@ def get_language_numbers(lang_code):
             from .sv import NUMBERS
         elif lang_code == "ja":
             from .ja import NUMBERS
+        elif lang_code == "zh":
+            from .zh import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
