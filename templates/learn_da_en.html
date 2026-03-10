@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">&larr; Back</a>
+
+    <header class="learn-hero">
+      <h1>Learn Danish Numbers</h1>
+      <p>
+        This page covers <strong>Danish number words</strong>. Danish is famous for its <strong>vigesimal</strong> (base-20) system
+        for tens &mdash; 50 is literally &ldquo;half-third-times-twenty&rdquo; (<em>halvtreds</em>). Once you understand the pattern, it&rsquo;s consistent.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Contents</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: irregular bases</a></li>
+        <li><a href="#teens">13&ndash;19: teens</a></li>
+        <li><a href="#tens">20&ndash;99: vigesimal tens</a></li>
+        <li><a href="#hundreds">Hundreds</a></li>
+        <li><a href="#thousands">Thousands &amp; large numbers</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: irregular bases</h2>
+      <p>Memorize these individually:</p>
+      <ul>
+        <li><strong>0</strong> = nul</li>
+        <li><strong>1</strong> = en / et</li>
+        <li><strong>2</strong> = to</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fire</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = seks</li>
+        <li><strong>7</strong> = syv</li>
+        <li><strong>8</strong> = otte</li>
+        <li><strong>9</strong> = ni</li>
+        <li><strong>10</strong> = ti</li>
+        <li><strong>11</strong> = elleve</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: teens</h2>
+      <p>
+        Pattern: digit + <strong>ten</strong> (from &ldquo;ti&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretten</li>
+        <li><strong>14</strong> = fjorten</li>
+        <li><strong>15</strong> = femten</li>
+        <li><strong>16</strong> = seksten</li>
+        <li><strong>17</strong> = sytten</li>
+        <li><strong>18</strong> = atten</li>
+        <li><strong>19</strong> = nitten</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: vigesimal tens</h2>
+      <p>
+        Danish uses a <strong>base-20</strong> system for its tens. 20 and 30 are straightforward, but 50, 60, 70, 80, 90 are based on
+        multiples of 20:
+      </p>
+      <ul>
+        <li><strong>20</strong> = tyve</li>
+        <li><strong>30</strong> = tredive</li>
+        <li><strong>40</strong> = fyrre (short for &ldquo;fire gange ti&rdquo; = 4&times;10)</li>
+        <li><strong>50</strong> = halvtreds (half-third-times-twenty = 2.5&times;20)</li>
+        <li><strong>60</strong> = tres (three-times-twenty = 3&times;20)</li>
+        <li><strong>70</strong> = halvfjerds (half-fourth-times-twenty = 3.5&times;20)</li>
+        <li><strong>80</strong> = firs (four-times-twenty = 4&times;20)</li>
+        <li><strong>90</strong> = halvfems (half-fifth-times-twenty = 4.5&times;20)</li>
+      </ul>
+      <p>
+        Ones come <strong>before</strong> tens, connected with <strong>og</strong> (&ldquo;and&rdquo;):
+      </p>
+      <ul>
+        <li><strong>21</strong> = enogtyve</li>
+        <li><strong>53</strong> = treoghalvtreds</li>
+        <li><strong>99</strong> = nioghalvfems</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>Quick check</strong>: 25, 50, 74?</summary>
+        <p><strong>25</strong> femogtyve &middot; <strong>50</strong> halvtreds &middot; <strong>74</strong> fireoghalvfjerds</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hundreds</h2>
+      <ul>
+        <li><strong>100</strong> = (et) hundrede</li>
+        <li><strong>200</strong> = to hundrede</li>
+        <li><strong>300</strong> = tre hundrede</li>
+        <li><strong>150</strong> = (et) hundrede og halvtreds</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Thousands &amp; large numbers</h2>
+      <ul>
+        <li><strong>1,000</strong> = (et) tusind(e)</li>
+        <li><strong>2,000</strong> = to tusind(e)</li>
+        <li><strong>10,000</strong> = ti tusind(e)</li>
+        <li><strong>1,000,000</strong> = en million</li>
+        <li><strong>1,000,000,000</strong> = en milliard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>Vigesimal tens</strong>: halvtreds (50), tres (60), halvfjerds (70), firs (80), halvfems (90) &mdash; these must be memorized.</li>
+        <li><strong>Word order</strong>: ones before tens (enogtyve = 21), like German.</li>
+        <li><strong>og</strong>: don&rsquo;t forget the conjunction between ones and tens.</li>
+        <li><strong>en vs. et</strong>: &ldquo;en&rdquo; for common gender, &ldquo;et&rdquo; for neuter.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        Start Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

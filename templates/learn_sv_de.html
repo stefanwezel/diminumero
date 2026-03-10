@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">&larr; Zur&uuml;ck</a>
+
+    <header class="learn-hero">
+      <h1>Schwedische Zahlen lernen</h1>
+      <p>
+        Diese Seite erkl&auml;rt <strong>schwedische Zahlw&ouml;rter</strong> &mdash; unregelm&auml;&szlig;ige Grundzahlen, das <em>-ton</em>-Suffix f&uuml;r Teens,
+        zusammengesetzte W&ouml;rter und Sonderzeichen (&aring;, &auml;, &ouml;).
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Inhalt</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: unregelm&auml;&szlig;ige Grundzahlen</a></li>
+        <li><a href="#teens">13&ndash;19: -ton-Suffix</a></li>
+        <li><a href="#tens">20&ndash;99: Zehner</a></li>
+        <li><a href="#hundreds">Hunderter</a></li>
+        <li><a href="#thousands">Tausender &amp; gro&szlig;e Zahlen</a></li>
+        <li><a href="#mistakes">Typische Fehler</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: unregelm&auml;&szlig;ige Grundzahlen</h2>
+      <p>Einzeln auswendig lernen:</p>
+      <ul>
+        <li><strong>0</strong> = noll</li>
+        <li><strong>1</strong> = en / ett</li>
+        <li><strong>2</strong> = tv&aring;</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fyra</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = sex</li>
+        <li><strong>7</strong> = sju</li>
+        <li><strong>8</strong> = &aring;tta</li>
+        <li><strong>9</strong> = nio</li>
+        <li><strong>10</strong> = tio</li>
+        <li><strong>11</strong> = elva</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: -ton-Suffix</h2>
+      <p>
+        Muster: Ziffer + <strong>ton</strong> (von &bdquo;tio&ldquo;, also zehn):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretton</li>
+        <li><strong>14</strong> = fjorton</li>
+        <li><strong>15</strong> = femton</li>
+        <li><strong>16</strong> = sexton</li>
+        <li><strong>17</strong> = sjutton</li>
+        <li><strong>18</strong> = arton</li>
+        <li><strong>19</strong> = nitton</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: Zehner</h2>
+      <p>
+        Die Zehnerw&ouml;rter: tjugo (20), trettio (30), fyrtio (40), femtio (50), sextio (60),
+        sjuttio (70), &aring;ttio (80), nittio (90).
+      </p>
+      <ul>
+        <li><strong>21</strong> = tjugoen</li>
+        <li><strong>35</strong> = trettiofem</li>
+        <li><strong>99</strong> = nittionio</li>
+      </ul>
+      <p>
+        Zahlen von 21&ndash;99 werden typischerweise als ein Wort geschrieben.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>Mini-Check</strong>: 22, 48, 73?</summary>
+        <p><strong>22</strong> tjugotv&aring; &middot; <strong>48</strong> fyrtio&aring;tta &middot; <strong>73</strong> sjuttiotre</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hunderter</h2>
+      <ul>
+        <li><strong>100</strong> = (ett) hundra</li>
+        <li><strong>200</strong> = tv&aring;hundra</li>
+        <li><strong>300</strong> = trehundra</li>
+        <li><strong>123</strong> = (ett)hundratjugotre</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Tausender &amp; gro&szlig;e Zahlen</h2>
+      <ul>
+        <li><strong>1.000</strong> = (ett) tusen</li>
+        <li><strong>2.000</strong> = tv&aring;tusen</li>
+        <li><strong>10.000</strong> = tiotusen</li>
+        <li><strong>1.000.000</strong> = en miljon</li>
+        <li><strong>1.000.000.000</strong> = en miljard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Typische Fehler</h2>
+      <ol>
+        <li><strong>en vs. ett</strong>: &bdquo;en&ldquo; f&uuml;r en-W&ouml;rter, &bdquo;ett&ldquo; f&uuml;r ett-W&ouml;rter; bei alleinstehenden Zahlen ist &bdquo;en&ldquo; &uuml;blich.</li>
+        <li><strong>Teens-Schreibweise</strong>: fjorton (14), arton (18) &mdash; nicht direkt vom Ziffernamen.</li>
+        <li><strong>Zusammensetzungen</strong>: tjugoen, trettiofem &mdash; keine Leerzeichen zwischen Zehnern und Einern.</li>
+        <li><strong>Sonderzeichen</strong>: &aring; (&aring;tta, &aring;ttio), &ouml;, &auml; in manchen Formen.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        Zum Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
