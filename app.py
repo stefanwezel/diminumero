@@ -119,8 +119,9 @@ def mode_selection(lang_code):
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
 
-    # Currently only Spanish has learning materials
-    has_learn_materials = lang_code == "es"
+    has_learn_materials = lang_code in {
+        "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no",
+    }
 
     return render_template(
         "index.html",
@@ -563,7 +564,9 @@ def results(lang_code):
     show_splash = session.pop("show_speed_splash", False)
     show_perfect_splash = session.pop("show_perfect_splash", False)
 
-    has_learn_materials = lang_code == "es"
+    has_learn_materials = lang_code in {
+        "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no",
+    }
 
     return render_template(
         "results.html",
@@ -615,8 +618,9 @@ def learn(lang_code):
     if not is_language_ready(lang_code):
         return redirect(url_for("index"))
 
-    # Currently only Spanish has learn pages
-    if lang_code != "es":
+    if lang_code not in {
+        "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no",
+    }:
         flash(get_text("flash_learn_not_available"), "info")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
@@ -659,7 +663,8 @@ def sitemap_xml():
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
             urls.append((f"{base}/{lang_code}", "0.8"))
-    urls.append((f"{base}/es/learn", "0.7"))
+    for lc in ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no"]:
+        urls.append((f"{base}/{lc}/learn", "0.7"))
     urls.append((f"{base}/about", "0.5"))
     urls.append((f"{base}/privacy", "0.3"))
     urls.append((f"{base}/imprint", "0.3"))

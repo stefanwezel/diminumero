@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">&larr; Zur&uuml;ck</a>
+
+    <header class="learn-hero">
+      <h1>Deutsche Zahlen lernen</h1>
+      <p>
+        Diese Seite erkl&auml;rt <strong>deutsche Zahlw&ouml;rter</strong> &mdash; zusammengesetzte W&ouml;rter, umgekehrte Reihenfolge
+        (Einer vor Zehnern), Umlaute und Sonderformen wie <em>eins</em> vs. <em>ein</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Inhalt</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: unregelm&auml;&szlig;ige Grundzahlen</a></li>
+        <li><a href="#teens">13&ndash;19: Teens</a></li>
+        <li><a href="#tens">20&ndash;99: umgekehrte Reihenfolge</a></li>
+        <li><a href="#hundreds">Hunderter</a></li>
+        <li><a href="#thousands">Tausender &amp; gro&szlig;e Zahlen</a></li>
+        <li><a href="#spelling">Zusammengesetzte W&ouml;rter &amp; Umlaute</a></li>
+        <li><a href="#mistakes">Typische Fehler</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: unregelm&auml;&szlig;ige Grundzahlen</h2>
+      <p>Diese W&ouml;rter einfach auswendig lernen:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = eins</li>
+        <li><strong>2</strong> = zwei</li>
+        <li><strong>3</strong> = drei</li>
+        <li><strong>4</strong> = vier</li>
+        <li><strong>5</strong> = f&uuml;nf</li>
+        <li><strong>6</strong> = sechs</li>
+        <li><strong>7</strong> = sieben</li>
+        <li><strong>8</strong> = acht</li>
+        <li><strong>9</strong> = neun</li>
+        <li><strong>10</strong> = zehn</li>
+        <li><strong>11</strong> = elf</li>
+        <li><strong>12</strong> = zw&ouml;lf</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: Teens</h2>
+      <p>
+        Muster: Ziffer + <strong>zehn</strong>:
+      </p>
+      <ul>
+        <li><strong>13</strong> = dreizehn</li>
+        <li><strong>14</strong> = vierzehn</li>
+        <li><strong>16</strong> = sechzehn (nicht &bdquo;sechszehn&ldquo;)</li>
+        <li><strong>17</strong> = siebzehn (nicht &bdquo;siebenzehn&ldquo;)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: umgekehrte Reihenfolge</h2>
+      <p>
+        Im Deutschen kommt der <strong>Einer zuerst</strong>, dann <strong>und</strong>, dann der Zehner &mdash;
+        alles als <strong>ein zusammengesetztes Wort</strong>:
+      </p>
+      <ul>
+        <li><strong>21</strong> = einundzwanzig (ein-und-zwanzig)</li>
+        <li><strong>34</strong> = vierunddrei&szlig;ig</li>
+        <li><strong>57</strong> = siebenundf&uuml;nfzig</li>
+        <li><strong>99</strong> = neunundneunzig</li>
+      </ul>
+      <p>
+        Die Zehnerw&ouml;rter: zwanzig (20), drei&szlig;ig (30), vierzig (40), f&uuml;nfzig (50), sechzig (60),
+        siebzig (70), achtzig (80), neunzig (90).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>Mini-Check</strong>: 23, 45, 88?</summary>
+        <p><strong>23</strong> dreiundzwanzig &middot; <strong>45</strong> f&uuml;nfundvierzig &middot; <strong>88</strong> achtundachtzig</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hunderter</h2>
+      <ul>
+        <li><strong>100</strong> = (ein)hundert</li>
+        <li><strong>200</strong> = zweihundert</li>
+        <li><strong>300</strong> = dreihundert</li>
+        <li><strong>123</strong> = (ein)hundertdreiundzwanzig</li>
+      </ul>
+      <p>
+        Alles wird als ein langes zusammengesetztes Wort ohne Leerzeichen geschrieben.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Tausender &amp; gro&szlig;e Zahlen</h2>
+      <ul>
+        <li><strong>1.000</strong> = (ein)tausend</li>
+        <li><strong>2.000</strong> = zweitausend</li>
+        <li><strong>10.000</strong> = zehntausend</li>
+        <li><strong>1.000.000</strong> = eine Million</li>
+        <li><strong>1.000.000.000</strong> = eine Milliarde</li>
+      </ul>
+      <p>
+        Zahlen bis 999.999 sind ein zusammengesetztes Wort. <strong>Million</strong> und <strong>Milliarde</strong>
+        sind eigenst&auml;ndige Substantive.
+      </p>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Zusammengesetzte W&ouml;rter &amp; Umlaute</h2>
+      <p>
+        Wichtige Details zur Schreibweise:
+      </p>
+      <ul>
+        <li>Alle Zahlen unter einer Million werden als <strong>ein Wort</strong> geschrieben (keine Leerzeichen, keine Bindestriche)</li>
+        <li>Umlaute beachten: f<strong>&uuml;</strong>nf, zw<strong>&ouml;</strong>lf, f&uuml;nfzig, drei<strong>&szlig;</strong>ig</li>
+        <li><strong>sechs</strong> verliert das &bdquo;s&ldquo;: sech<em>zehn</em>, sech<em>zig</em></li>
+        <li><strong>sieben</strong> wird zu sieb-: sieb<em>zehn</em>, sieb<em>zig</em></li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Typische Fehler</h2>
+      <ol>
+        <li><strong>Reihenfolge</strong>: 42 ist <em>zwei</em>und<em>vierzig</em>, nicht vierzig-und-zwei.</li>
+        <li><strong>eins vs. ein</strong>: &bdquo;eins&ldquo; steht allein, aber &bdquo;ein&ldquo; in Zusammensetzungen (einundzwanzig, einhundert).</li>
+        <li><strong>drei&szlig;ig</strong>: mit &bdquo;&szlig;&ldquo; (nicht &bdquo;z&ldquo;) &mdash; das einzige Zehnerwort, das nicht auf -zig endet.</li>
+        <li><strong>Leerzeichen</strong>: keine Leerzeichen innerhalb von Zahlen unter einer Million.</li>
+        <li><strong>sechzehn / siebzehn</strong>: verk&uuml;rzte St&auml;mme, nicht &bdquo;sechszehn&ldquo; oder &bdquo;siebenzehn&ldquo;.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        Zum Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">&larr; Back</a>
+
+    <header class="learn-hero">
+      <h1>Learn French Numbers</h1>
+      <p>
+        This page covers the key patterns for <strong>French number words</strong> &mdash; including the famous
+        <em>soixante-dix</em>, <em>quatre-vingts</em>, and <em>quatre-vingt-dix</em> quirks.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Contents</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;16: irregular bases</a></li>
+        <li><a href="#teens">17&ndash;19: dix-sept pattern</a></li>
+        <li><a href="#tens">20&ndash;69: regular tens</a></li>
+        <li><a href="#seventies">70&ndash;79: soixante-dix</a></li>
+        <li><a href="#eighties">80&ndash;89: quatre-vingts</a></li>
+        <li><a href="#nineties">90&ndash;99: quatre-vingt-dix</a></li>
+        <li><a href="#hundreds">Hundreds</a></li>
+        <li><a href="#thousands">Thousands &amp; large numbers</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;16: irregular bases</h2>
+      <p>
+        Memorize <strong>0&ndash;16</strong> as unique words:
+        z&eacute;ro, un, deux, trois, quatre, cinq, six, sept, huit, neuf, dix,
+        onze, douze, treize, quatorze, quinze, seize.
+      </p>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>17&ndash;19: dix-sept pattern</h2>
+      <p>
+        From 17, the pattern is <strong>dix-</strong> + unit:
+      </p>
+      <ul>
+        <li><strong>17</strong> = dix-sept</li>
+        <li><strong>18</strong> = dix-huit</li>
+        <li><strong>19</strong> = dix-neuf</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;69: regular tens</h2>
+      <p>
+        The tens are: vingt (20), trente (30), quarante (40), cinquante (50), soixante (60).
+        Combine with <strong>et un</strong> for 1, or a hyphen for 2&ndash;9:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vingt et un</li>
+        <li><strong>22</strong> = vingt-deux</li>
+        <li><strong>31</strong> = trente et un</li>
+        <li><strong>45</strong> = quarante-cinq</li>
+        <li><strong>68</strong> = soixante-huit</li>
+      </ul>
+      <p>
+        Note: <strong>et</strong> is used only with 1 (vingt et un, trente et un, etc.), never with other digits.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>Quick check</strong>: 21, 35, 52?</summary>
+        <p><strong>21</strong> vingt et un &middot; <strong>35</strong> trente-cinq &middot; <strong>52</strong> cinquante-deux</p>
+      </details>
+    </section>
+
+    <section id="seventies" class="learn-section">
+      <h2>70&ndash;79: soixante-dix</h2>
+      <p>
+        French uses <strong>60 + 10&ndash;19</strong> instead of a separate word for 70:
+      </p>
+      <ul>
+        <li><strong>70</strong> = soixante-dix</li>
+        <li><strong>71</strong> = soixante et onze</li>
+        <li><strong>72</strong> = soixante-douze</li>
+        <li><strong>79</strong> = soixante-dix-neuf</li>
+      </ul>
+    </section>
+
+    <section id="eighties" class="learn-section">
+      <h2>80&ndash;89: quatre-vingts</h2>
+      <p>
+        80 literally means <strong>four twenties</strong>:
+      </p>
+      <ul>
+        <li><strong>80</strong> = quatre-vingts (note the <strong>-s</strong>)</li>
+        <li><strong>81</strong> = quatre-vingt-un (no <strong>-s</strong>, no <strong>et</strong>)</li>
+        <li><strong>85</strong> = quatre-vingt-cinq</li>
+      </ul>
+      <p>
+        The <strong>-s</strong> on <em>vingts</em> disappears when followed by another number.
+      </p>
+    </section>
+
+    <section id="nineties" class="learn-section">
+      <h2>90&ndash;99: quatre-vingt-dix</h2>
+      <p>
+        90 is <strong>80 + 10</strong>, then continues like the seventies pattern:
+      </p>
+      <ul>
+        <li><strong>90</strong> = quatre-vingt-dix</li>
+        <li><strong>91</strong> = quatre-vingt-onze</li>
+        <li><strong>99</strong> = quatre-vingt-dix-neuf</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>Quick check</strong>: 71, 80, 95?</summary>
+        <p><strong>71</strong> soixante et onze &middot; <strong>80</strong> quatre-vingts &middot; <strong>95</strong> quatre-vingt-quinze</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hundreds</h2>
+      <ul>
+        <li><strong>100</strong> = cent</li>
+        <li><strong>200</strong> = deux cents (with <strong>-s</strong>)</li>
+        <li><strong>201</strong> = deux cent un (no <strong>-s</strong> when followed by more)</li>
+        <li><strong>500</strong> = cinq cents</li>
+      </ul>
+      <p>
+        Rule: <strong>cents</strong> takes an <strong>-s</strong> only when it is the last word (deux cents, trois cents),
+        but not when followed by another number (deux cent un).
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Thousands &amp; large numbers</h2>
+      <ul>
+        <li><strong>1,000</strong> = mille (never "un mille")</li>
+        <li><strong>2,000</strong> = deux mille</li>
+        <li><strong>1,000,000</strong> = un million</li>
+        <li><strong>2,000,000</strong> = deux millions</li>
+        <li><strong>1,000,000,000</strong> = un milliard</li>
+      </ul>
+      <p>
+        <strong>Mille</strong> is invariable (never takes -s). <strong>Million</strong> and <strong>milliard</strong>
+        are nouns and do take -s in the plural.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>quatre-vingts vs. quatre-vingt-un</strong>: the -s disappears before another number.</li>
+        <li><strong>deux cents vs. deux cent un</strong>: same rule for hundreds.</li>
+        <li><strong>soixante et onze</strong> (71): don&rsquo;t forget the <strong>et</strong>.</li>
+        <li><strong>mille</strong>: never "un mille", never "milles".</li>
+        <li><strong>Hyphens</strong>: required between all number words under 100 (modern spelling reform).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        Start Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

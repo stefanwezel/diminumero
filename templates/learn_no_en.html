@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">&larr; Back</a>
+
+    <header class="learn-hero">
+      <h1>Learn Norwegian Numbers</h1>
+      <p>
+        This page covers <strong>Norwegian number words</strong> (Bokm&aring;l). Norwegian has regular tens
+        (unlike Danish), reversed word order for 21&ndash;99, and straightforward compound rules.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>Contents</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: irregular bases</a></li>
+        <li><a href="#teens">13&ndash;19: teens</a></li>
+        <li><a href="#tens">20&ndash;99: tens</a></li>
+        <li><a href="#hundreds">Hundreds</a></li>
+        <li><a href="#thousands">Thousands &amp; large numbers</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: irregular bases</h2>
+      <p>Memorize these individually:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = en / ett</li>
+        <li><strong>2</strong> = to</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fire</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = seks</li>
+        <li><strong>7</strong> = sju / syv</li>
+        <li><strong>8</strong> = &aring;tte</li>
+        <li><strong>9</strong> = ni</li>
+        <li><strong>10</strong> = ti</li>
+        <li><strong>11</strong> = elleve</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: teens</h2>
+      <p>
+        Pattern: digit + <strong>ten</strong> (from &ldquo;ti&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretten</li>
+        <li><strong>14</strong> = fjorten</li>
+        <li><strong>15</strong> = femten</li>
+        <li><strong>16</strong> = seksten</li>
+        <li><strong>17</strong> = sytten</li>
+        <li><strong>18</strong> = atten</li>
+        <li><strong>19</strong> = nitten</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: tens</h2>
+      <p>
+        Norwegian uses regular, decimal tens (unlike Danish&rsquo;s vigesimal system):
+      </p>
+      <ul>
+        <li><strong>20</strong> = tjue</li>
+        <li><strong>30</strong> = tretti</li>
+        <li><strong>40</strong> = f&oslash;rti</li>
+        <li><strong>50</strong> = femti</li>
+        <li><strong>60</strong> = seksti</li>
+        <li><strong>70</strong> = sytti</li>
+        <li><strong>80</strong> = &aring;tti</li>
+        <li><strong>90</strong> = nitti</li>
+      </ul>
+      <p>
+        Compounds: ones + <strong>og</strong> (&ldquo;and&rdquo;) + tens, or simply ones + tens as one word:
+      </p>
+      <ul>
+        <li><strong>21</strong> = tjueen</li>
+        <li><strong>35</strong> = trettifem</li>
+        <li><strong>99</strong> = nittini</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>Quick check</strong>: 22, 46, 83?</summary>
+        <p><strong>22</strong> tjueto &middot; <strong>46</strong> f&oslash;rtiseks &middot; <strong>83</strong> &aring;ttitre</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hundreds</h2>
+      <ul>
+        <li><strong>100</strong> = (ett) hundre</li>
+        <li><strong>200</strong> = to hundre</li>
+        <li><strong>300</strong> = tre hundre</li>
+        <li><strong>150</strong> = (ett) hundre og femti</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Thousands &amp; large numbers</h2>
+      <ul>
+        <li><strong>1,000</strong> = (ett) tusen</li>
+        <li><strong>2,000</strong> = to tusen</li>
+        <li><strong>10,000</strong> = ti tusen</li>
+        <li><strong>1,000,000</strong> = en million</li>
+        <li><strong>1,000,000,000</strong> = en milliard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>en vs. ett</strong>: &ldquo;en&rdquo; for masculine/feminine, &ldquo;ett&rdquo; for neuter.</li>
+        <li><strong>sju vs. syv</strong>: both are correct for 7; &ldquo;syv&rdquo; is more informal.</li>
+        <li><strong>Don&rsquo;t confuse with Danish</strong>: Norwegian uses regular decimal tens (tjue, tretti&hellip;), not vigesimal.</li>
+        <li><strong>&aring;tte vs. &aring;tti</strong>: 8 vs. 80 &mdash; one letter difference.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        Start Quiz
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
