@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ ui_language|default('en') }}">
+<html lang="{{ ui_language|default('en') }}" dir="{{ ui_dir|default('ltr') }}">
 <head>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7963483579984328"
      crossorigin="anonymous"></script>
@@ -47,8 +47,28 @@
 <body>
     <!-- Language switcher -->
     <div class="language-switcher">
-        <a href="{{ url_for('set_language', lang='en') }}" class="lang-flag {% if session.get('language', 'de') == 'en' %}active{% endif %}" title="English">EN</a>
-        <a href="{{ url_for('set_language', lang='de') }}" class="lang-flag {% if session.get('language', 'de') == 'de' %}active{% endif %}" title="Deutsch">DE</a>
+        <button class="lang-globe-btn" id="langGlobeBtn"
+                aria-label="Switch UI language"
+                aria-expanded="false" aria-haspopup="listbox">🌐</button>
+        <div class="lang-dropdown" id="langDropdown" role="listbox" aria-label="UI language">
+            {% set ui_langs = [
+                ('en', '🇬🇧', 'English'),
+                ('de', '🇩🇪', 'Deutsch'),
+                ('es', '🇪🇸', 'Español'),
+                ('it', '🇮🇹', 'Italiano'),
+                ('fr', '🇫🇷', 'Français'),
+                ('pt', '🇧🇷', 'Português'),
+                ('ar', '🇸🇦', 'العربية'),
+                ('uk', '🇺🇦', 'Українська'),
+            ] %}
+            {% for code, flag, label in ui_langs %}
+            <a href="{{ url_for('set_language', lang=code) }}"
+               class="lang-option {% if session.get('language', 'en') == code %}active{% endif %}"
+               role="option"
+               aria-selected="{{ 'true' if session.get('language', 'en') == code else 'false' }}"
+               title="{{ label }}">{{ flag }} {{ label }}</a>
+            {% endfor %}
+        </div>
     </div>
     
     <div class="container">
@@ -82,5 +102,22 @@
     </div>
     
     <script src="{{ url_for('static', filename='js/cookie-banner.js') }}"></script>
+    <script>
+    (function(){
+        var btn=document.getElementById('langGlobeBtn');
+        var dd=document.getElementById('langDropdown');
+        if(!btn||!dd)return;
+        function close(){dd.classList.remove('open');btn.setAttribute('aria-expanded','false');}
+        btn.addEventListener('click',function(e){
+            e.stopPropagation();
+            var open=dd.classList.toggle('open');
+            btn.setAttribute('aria-expanded',open);
+        });
+        document.addEventListener('click',function(e){
+            if(!btn.contains(e.target)&&!dd.contains(e.target))close();
+        });
+        document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+    }());
+    </script>
 </body>
 </html>
