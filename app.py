@@ -23,6 +23,8 @@ from config import (
     SPEED_BONUS_TIME_EASY,
     SPEED_BONUS_TIME_ADVANCED,
     SPEED_BONUS_TIME_HARDCORE,
+    SUPPORTED_UI_LANGUAGES,
+    RTL_UI_LANGUAGES,
 )
 from languages import (
     AVAILABLE_LANGUAGES,
@@ -57,6 +59,7 @@ def inject_seo_context():
     canonical_url = SITE_URL.rstrip("/") + request.path
     return {
         "ui_language": ui_language,
+        "ui_dir": "rtl" if ui_language in RTL_UI_LANGUAGES else "ltr",
         "site_url": SITE_URL,
         "canonical_url": canonical_url,
     }
@@ -136,7 +139,7 @@ def mode_selection(lang_code):
 @app.route("/set_language/<lang>")
 def set_language(lang):
     """Set the UI language preference (not learning language)."""
-    if lang in ["en", "de"]:
+    if lang in SUPPORTED_UI_LANGUAGES:
         session["language"] = lang
     # Redirect back to the referring page or index
     return redirect(request.referrer or url_for("index"))
