@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>تعلّم الأرقام الإيطالية</h1>
+      <p>
+        تتناول هذه الصفحة <strong>الأرقام الإيطالية</strong> &mdash; حذف الحروف المتحركة، وقواعد التشكيل،
+        والأجزاء الصعبة مثل <em>ventuno</em> و<em>ventitr&eacute;</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;19: لبنات البناء</a></li>
+        <li><a href="#tens">20&ndash;99: العشرات والحذف</a></li>
+        <li><a href="#hundreds">المئات</a></li>
+        <li><a href="#thousands">الآلاف والأعداد الكبيرة</a></li>
+        <li><a href="#mistakes">الأخطاء الشائعة</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;19: لبنات البناء</h2>
+      <p>احفظ هذه الأرقام منفردة:</p>
+      <ul>
+        <li><strong>0</strong> = zero</li>
+        <li><strong>1</strong> = uno</li>
+        <li><strong>2</strong> = due</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = quattro</li>
+        <li><strong>5</strong> = cinque</li>
+        <li><strong>6</strong> = sei</li>
+        <li><strong>7</strong> = sette</li>
+        <li><strong>8</strong> = otto</li>
+        <li><strong>9</strong> = nove</li>
+        <li><strong>10</strong> = dieci</li>
+        <li><strong>11</strong> = undici</li>
+        <li><strong>12</strong> = dodici</li>
+        <li><strong>13</strong> = tredici</li>
+        <li><strong>14</strong> = quattordici</li>
+        <li><strong>15</strong> = quindici</li>
+        <li><strong>16</strong> = sedici</li>
+        <li><strong>17</strong> = diciassette</li>
+        <li><strong>18</strong> = diciotto</li>
+        <li><strong>19</strong> = diciannove</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: العشرات وحذف الحروف المتحركة</h2>
+      <p>
+        العشرات: venti (20)، trenta (30)، quaranta (40)، cinquanta (50)، sessanta (60)،
+        settanta (70)، ottanta (80)، novanta (90).
+      </p>
+      <p>
+        حين تبدأ خانة الآحاد بحرف متحرك (<strong>uno</strong> أو <strong>otto</strong>)، تُحذف الحرف المتحرك الأخير من العشرات:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vent<strong>uno</strong> (وليس &ldquo;ventiuno&rdquo;)</li>
+        <li><strong>28</strong> = vent<strong>otto</strong> (وليس &ldquo;ventiotto&rdquo;)</li>
+        <li><strong>38</strong> = trent<strong>otto</strong></li>
+      </ul>
+      <p>
+        قاعدة التشكيل: المركّبات مع <strong>tre</strong> تأخذ علامة التشكيل: venti<strong>tr&eacute;</strong>، trenta<strong>tr&eacute;</strong>، إلخ.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 21, 33, 48؟</summary>
+        <p><strong>21</strong> ventuno &middot; <strong>33</strong> trentatr&eacute; &middot; <strong>48</strong> quarantotto</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>المئات</h2>
+      <ul>
+        <li><strong>100</strong> = cento</li>
+        <li><strong>200</strong> = duecento</li>
+        <li><strong>300</strong> = trecento</li>
+        <li><strong>500</strong> = cinquecento</li>
+        <li><strong>101</strong> = centuno (حذف مع uno)</li>
+      </ul>
+      <p>
+        تُكتب جميع المئات كلمةً واحدة. يُطبَّق الحذف أيضًا مع <strong>uno</strong> و<strong>otto</strong> بعد cento.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>الآلاف والأعداد الكبيرة</h2>
+      <ul>
+        <li><strong>1,000</strong> = mille</li>
+        <li><strong>2,000</strong> = duemila (ملاحظة: <strong>mila</strong> في الجمع)</li>
+        <li><strong>3,000</strong> = tremila</li>
+        <li><strong>10,000</strong> = diecimila</li>
+        <li><strong>1,000,000</strong> = un milione</li>
+        <li><strong>2,000,000</strong> = due milioni</li>
+        <li><strong>1,000,000,000</strong> = un miliardo</li>
+      </ul>
+      <p>
+        يصبح <strong>mille</strong> في الجمع <strong>mila</strong>. أما <strong>milione</strong> و<strong>miliardo</strong>
+        فهما اسمان يُجمعان جمعًا منتظمًا.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>الأخطاء الشائعة</h2>
+      <ol>
+        <li><strong>حذف الحروف المتحركة</strong>: ventuno (وليس ventiuno)، ventotto (وليس ventiotto).</li>
+        <li><strong>التشكيل على -tr&eacute;</strong>: ventitr&eacute;، trentatr&eacute;، إلخ.</li>
+        <li><strong>mille مقابل mila</strong>: mille (1,000) لكن duemila، tremila، إلخ.</li>
+        <li><strong>milione اسمٌ</strong>: &ldquo;un milione&rdquo; (وليس &ldquo;mille mille&rdquo;).</li>
+        <li><strong>diciassette / diciannove</strong>: حروف مزدوجة (ss، nn).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

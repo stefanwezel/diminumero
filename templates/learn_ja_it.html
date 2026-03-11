@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Impara i numeri giapponesi</h1>
+      <p>
+        Questa pagina illustra i <strong>numeri giapponesi in kanji</strong>.
+        Il sistema giapponese è molto regolare una volta appresi i valori di posizione e le cifre di base.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#digits">Cifre: 0&ndash;9</a></li>
+        <li><a href="#tens">10&ndash;99: decine</a></li>
+        <li><a href="#hundreds">100&ndash;999: centinaia</a></li>
+        <li><a href="#thousands">1.000&ndash;9.999: migliaia</a></li>
+        <li><a href="#large">Grandi numeri: &#19975; (10.000+)</a></li>
+        <li><a href="#exceptions">Letture irregolari</a></li>
+      </ul>
+    </nav>
+
+    <section id="digits" class="learn-section">
+      <h2>Cifre: 0&ndash;9</h2>
+      <ul>
+        <li><strong>0</strong> = &#38646; (rei/zero)</li>
+        <li><strong>1</strong> = &#19968; (ichi)</li>
+        <li><strong>2</strong> = &#20108; (ni)</li>
+        <li><strong>3</strong> = &#19977; (san)</li>
+        <li><strong>4</strong> = &#22235; (yon/shi)</li>
+        <li><strong>5</strong> = &#20116; (go)</li>
+        <li><strong>6</strong> = &#20845; (roku)</li>
+        <li><strong>7</strong> = &#19971; (nana/shichi)</li>
+        <li><strong>8</strong> = &#20843; (hachi)</li>
+        <li><strong>9</strong> = &#20061; (ky&uuml;/ku)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>10&ndash;99: decine</h2>
+      <p>
+        <strong>&#21313;</strong> (j&uuml;) significa 10. Si combina cifra + &#21313; per i multipli di dieci, e &#21313; + cifra per le decine con unità:
+      </p>
+      <ul>
+        <li><strong>10</strong> = &#21313;</li>
+        <li><strong>11</strong> = &#21313;&#19968;</li>
+        <li><strong>20</strong> = &#20108;&#21313;</li>
+        <li><strong>25</strong> = &#20108;&#21313;&#20116;</li>
+        <li><strong>99</strong> = &#20061;&#21313;&#20061;</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 14, 30, 67?</summary>
+        <p><strong>14</strong> &#21313;&#22235; &middot; <strong>30</strong> &#19977;&#21313; &middot; <strong>67</strong> &#20845;&#21313;&#19971;</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>100&ndash;999: centinaia</h2>
+      <p>
+        <strong>&#30334;</strong> (hyaku) significa 100:
+      </p>
+      <ul>
+        <li><strong>100</strong> = &#30334;</li>
+        <li><strong>200</strong> = &#20108;&#30334;</li>
+        <li><strong>300</strong> = &#19977;&#30334; (sanbyaku &mdash; cambiamento fonetico)</li>
+        <li><strong>456</strong> = &#22235;&#30334;&#20116;&#21313;&#20845;</li>
+        <li><strong>600</strong> = &#20845;&#30334; (roppyaku &mdash; cambiamento fonetico)</li>
+        <li><strong>800</strong> = &#20843;&#30334; (happyaku &mdash; cambiamento fonetico)</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>1.000&ndash;9.999: migliaia</h2>
+      <p>
+        <strong>&#21315;</strong> (sen) significa 1.000:
+      </p>
+      <ul>
+        <li><strong>1.000</strong> = &#21315;</li>
+        <li><strong>2.000</strong> = &#20108;&#21315;</li>
+        <li><strong>3.000</strong> = &#19977;&#21315; (sanzen &mdash; cambiamento fonetico)</li>
+        <li><strong>8.000</strong> = &#20843;&#21315; (hassen &mdash; cambiamento fonetico)</li>
+        <li><strong>5.432</strong> = &#20116;&#21315;&#22235;&#30334;&#19977;&#21313;&#20108;</li>
+      </ul>
+    </section>
+
+    <section id="large" class="learn-section">
+      <h2>Grandi numeri: &#19975; (10.000+)</h2>
+      <p>
+        A differenza delle lingue occidentali, il giapponese raggruppa i numeri in unità di <strong>10.000</strong> (&#19975;, man):
+      </p>
+      <ul>
+        <li><strong>10.000</strong> = &#19968;&#19975;</li>
+        <li><strong>100.000</strong> = &#21313;&#19975;</li>
+        <li><strong>1.000.000</strong> = &#30334;&#19975;</li>
+      </ul>
+    </section>
+
+    <section id="exceptions" class="learn-section">
+      <h2>Letture irregolari</h2>
+      <p>
+        Nella scrittura in kanji i caratteri rimangono gli stessi, ma attenzione ai cambiamenti fonetici nel giapponese parlato:
+      </p>
+      <ol>
+        <li><strong>300</strong> &#19977;&#30334; = <em>sanbyaku</em> (non san-hyaku)</li>
+        <li><strong>600</strong> &#20845;&#30334; = <em>roppyaku</em> (non roku-hyaku)</li>
+        <li><strong>800</strong> &#20843;&#30334; = <em>happyaku</em> (non hachi-hyaku)</li>
+        <li><strong>3.000</strong> &#19977;&#21315; = <em>sanzen</em> (non san-sen)</li>
+        <li><strong>8.000</strong> &#20843;&#21315; = <em>hassen</em> (non hachi-sen)</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

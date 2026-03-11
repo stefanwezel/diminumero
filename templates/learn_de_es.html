@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende los números en alemán</h1>
+      <p>
+        Esta página cubre los <strong>números en alemán</strong> &mdash; palabras compuestas, orden invertido
+        (unidades antes que decenas), diéresis y formas especiales como <em>eins</em> vs. <em>ein</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: bases irregulares</a></li>
+        <li><a href="#teens">13&ndash;19: teens</a></li>
+        <li><a href="#tens">20&ndash;99: orden invertido</a></li>
+        <li><a href="#hundreds">Centenas</a></li>
+        <li><a href="#thousands">Miles y números grandes</a></li>
+        <li><a href="#spelling">Palabras compuestas y diéresis</a></li>
+        <li><a href="#mistakes">Errores comunes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: bases irregulares</h2>
+      <p>Memoriza estos individualmente:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = eins</li>
+        <li><strong>2</strong> = zwei</li>
+        <li><strong>3</strong> = drei</li>
+        <li><strong>4</strong> = vier</li>
+        <li><strong>5</strong> = f&uuml;nf</li>
+        <li><strong>6</strong> = sechs</li>
+        <li><strong>7</strong> = sieben</li>
+        <li><strong>8</strong> = acht</li>
+        <li><strong>9</strong> = neun</li>
+        <li><strong>10</strong> = zehn</li>
+        <li><strong>11</strong> = elf</li>
+        <li><strong>12</strong> = zw&ouml;lf</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: teens</h2>
+      <p>
+        Patrón: dígito + <strong>zehn</strong> (como el sufijo "-teen" en inglés):
+      </p>
+      <ul>
+        <li><strong>13</strong> = dreizehn</li>
+        <li><strong>14</strong> = vierzehn</li>
+        <li><strong>16</strong> = sechzehn (no &ldquo;sechszehn&rdquo;)</li>
+        <li><strong>17</strong> = siebzehn (no &ldquo;siebenzehn&rdquo;)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: orden invertido</h2>
+      <p>
+        En alemán se dice primero la <strong>cifra de las unidades</strong>, luego <strong>und</strong> ("y"), y después las decenas &mdash;
+        todo escrito como <strong>una sola palabra compuesta</strong>:
+      </p>
+      <ul>
+        <li><strong>21</strong> = einundzwanzig (uno-y-veinte)</li>
+        <li><strong>34</strong> = vierunddrei&szlig;ig</li>
+        <li><strong>57</strong> = siebenundf&uuml;nfzig</li>
+        <li><strong>99</strong> = neunundneunzig</li>
+      </ul>
+      <p>
+        Las decenas: zwanzig (20), drei&szlig;ig (30), vierzig (40), f&uuml;nfzig (50), sechzig (60),
+        siebzig (70), achtzig (80), neunzig (90).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 23, 45, 88?</summary>
+        <p><strong>23</strong> dreiundzwanzig &middot; <strong>45</strong> f&uuml;nfundvierzig &middot; <strong>88</strong> achtundachtzig</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centenas</h2>
+      <ul>
+        <li><strong>100</strong> = (ein)hundert</li>
+        <li><strong>200</strong> = zweihundert</li>
+        <li><strong>300</strong> = dreihundert</li>
+        <li><strong>123</strong> = (ein)hundertdreiundzwanzig</li>
+      </ul>
+      <p>
+        Todo se escribe como una sola palabra compuesta larga, sin espacios.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Miles y números grandes</h2>
+      <ul>
+        <li><strong>1000</strong> = (ein)tausend</li>
+        <li><strong>2000</strong> = zweitausend</li>
+        <li><strong>10 000</strong> = zehntausend</li>
+        <li><strong>1 000 000</strong> = eine Million</li>
+        <li><strong>1 000 000 000</strong> = eine Milliarde</li>
+      </ul>
+      <p>
+        Los números hasta 999 999 son una sola palabra compuesta. <strong>Million</strong> y <strong>Milliarde</strong>
+        son sustantivos separados.
+      </p>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Palabras compuestas y diéresis</h2>
+      <p>
+        Detalles ortográficos clave:
+      </p>
+      <ul>
+        <li>Todos los números inferiores a un millón se escriben como <strong>una sola palabra</strong> (sin espacios ni guiones)</li>
+        <li>Ojo con las diéresis: f<strong>&uuml;</strong>nf, zw<strong>&ouml;</strong>lf, f&uuml;nfzig, drei<strong>&szlig;</strong>ig</li>
+        <li><strong>sechs</strong> pierde la &ldquo;s&rdquo;: sech<em>zehn</em>, sech<em>zig</em></li>
+        <li><strong>sieben</strong> se acorta a sieb-: sieb<em>zehn</em>, sieb<em>zig</em></li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errores comunes</h2>
+      <ol>
+        <li><strong>Orden de las palabras</strong>: 42 es <em>zwei</em>und<em>vierzig</em>, no vierzig-und-zwei.</li>
+        <li><strong>eins vs. ein</strong>: &ldquo;eins&rdquo; va solo, pero &ldquo;ein&rdquo; en compuestos (einundzwanzig, einhundert).</li>
+        <li><strong>drei&szlig;ig</strong>: usa &ldquo;&szlig;&rdquo; (no &ldquo;z&rdquo;) &mdash; es la única decena que no termina en -zig.</li>
+        <li><strong>Espacios</strong>: no añadir espacios dentro de números inferiores a un millón.</li>
+        <li><strong>sechzehn / siebzehn</strong>: raíces acortadas, no &ldquo;sechszehn&rdquo; ni &ldquo;siebenzehn&rdquo;.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

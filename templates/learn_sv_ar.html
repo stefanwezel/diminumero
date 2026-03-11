@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>تعلّم الأرقام بالسويدية</h1>
+      <p>
+        تتناول هذه الصفحة <strong>الأرقام السويدية</strong> &mdash; الأسس غير المنتظمة، ولاحقة <em>-ton</em> للأرقام من 13 إلى 19،
+        والكلمات المركّبة، والأحرف الخاصة (&aring;، &auml;، &ouml;).
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: الأسس غير المنتظمة</a></li>
+        <li><a href="#teens">13&ndash;19: لاحقة -ton</a></li>
+        <li><a href="#tens">20&ndash;99: العشرات</a></li>
+        <li><a href="#hundreds">المئات</a></li>
+        <li><a href="#thousands">الآلاف والأرقام الكبيرة</a></li>
+        <li><a href="#mistakes">الأخطاء الشائعة</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: الأسس غير المنتظمة</h2>
+      <p>احفظ هذه الأرقام بشكل منفرد:</p>
+      <ul>
+        <li><strong>0</strong> = noll</li>
+        <li><strong>1</strong> = en / ett</li>
+        <li><strong>2</strong> = tv&aring;</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fyra</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = sex</li>
+        <li><strong>7</strong> = sju</li>
+        <li><strong>8</strong> = &aring;tta</li>
+        <li><strong>9</strong> = nio</li>
+        <li><strong>10</strong> = tio</li>
+        <li><strong>11</strong> = elva</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: لاحقة -ton</h2>
+      <p>
+        النمط: الرقم + <strong>ton</strong> (من &ldquo;tio&rdquo;، التي تعني عشرة):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretton</li>
+        <li><strong>14</strong> = fjorton</li>
+        <li><strong>15</strong> = femton</li>
+        <li><strong>16</strong> = sexton</li>
+        <li><strong>17</strong> = sjutton</li>
+        <li><strong>18</strong> = arton</li>
+        <li><strong>19</strong> = nitton</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: العشرات</h2>
+      <p>
+        كلمات العشرات: tjugo (20)، trettio (30)، fyrtio (40)، femtio (50)، sextio (60)،
+        sjuttio (70)، &aring;ttio (80)، nittio (90).
+      </p>
+      <ul>
+        <li><strong>21</strong> = tjugoen</li>
+        <li><strong>35</strong> = trettiofem</li>
+        <li><strong>99</strong> = nittionio</li>
+      </ul>
+      <p>
+        تُكتب الأرقام من 21 إلى 99 عادةً كلمةً واحدة مركّبة.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22، 48، 73؟</summary>
+        <p><strong>22</strong> tjugotv&aring; &middot; <strong>48</strong> fyrtio&aring;tta &middot; <strong>73</strong> sjuttiotre</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>المئات</h2>
+      <ul>
+        <li><strong>100</strong> = (ett) hundra</li>
+        <li><strong>200</strong> = tv&aring;hundra</li>
+        <li><strong>300</strong> = trehundra</li>
+        <li><strong>123</strong> = (ett)hundratjugotre</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>الآلاف والأرقام الكبيرة</h2>
+      <ul>
+        <li><strong>1.000</strong> = (ett) tusen</li>
+        <li><strong>2.000</strong> = tv&aring;tusen</li>
+        <li><strong>10.000</strong> = tiotusen</li>
+        <li><strong>1.000.000</strong> = en miljon</li>
+        <li><strong>1.000.000.000</strong> = en miljard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>الأخطاء الشائعة</h2>
+      <ol>
+        <li><strong>en مقابل ett</strong>: &ldquo;en&rdquo; للأسماء المذكّرة، &ldquo;ett&rdquo; للأسماء المحايدة؛ أما للأرقام المستقلة فيُستخدم &ldquo;en&rdquo; عادةً.</li>
+        <li><strong>إملاء أرقام العقد الثاني</strong>: fjorton (14)، arton (18) &mdash; لا تشتقّان مباشرةً من اسم الرقم.</li>
+        <li><strong>الكلمات المركّبة</strong>: tjugoen، trettiofem &mdash; لا مسافة بين العشرات والآحاد.</li>
+        <li><strong>الأحرف الخاصة</strong>: &aring; في (&aring;tta، &aring;ttio)، و&ouml;، و&auml; في بعض الصيغ.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

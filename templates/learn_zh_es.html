@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende los números en chino</h1>
+      <p>
+        Esta página cubre los <strong>números en chino mandarín</strong> &mdash; un sistema posicional regular
+        con dígitos y caracteres de valor posicional. El principal reto es saber cuándo usar <strong>&#38646;</strong> (cero) como marcador de hueco.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#digits">Dígitos: 0&ndash;9</a></li>
+        <li><a href="#tens">10&ndash;99: decenas</a></li>
+        <li><a href="#hundreds">Centenas</a></li>
+        <li><a href="#thousands">Miles</a></li>
+        <li><a href="#large">Números grandes: &#19975; (10 000+)</a></li>
+        <li><a href="#zero">Las reglas del cero (&#38646;)</a></li>
+      </ul>
+    </nav>
+
+    <section id="digits" class="learn-section">
+      <h2>Dígitos: 0&ndash;9</h2>
+      <ul>
+        <li><strong>0</strong> = &#38646; (l&iacute;ng)</li>
+        <li><strong>1</strong> = &#19968; (y&imacr;)</li>
+        <li><strong>2</strong> = &#20108; (&egrave;r)</li>
+        <li><strong>3</strong> = &#19977; (s&amacr;n)</li>
+        <li><strong>4</strong> = &#22235; (s&igrave;)</li>
+        <li><strong>5</strong> = &#20116; (w&#468;)</li>
+        <li><strong>6</strong> = &#20845; (li&ugrave;)</li>
+        <li><strong>7</strong> = &#19971; (q&imacr;)</li>
+        <li><strong>8</strong> = &#20843; (b&amacr;)</li>
+        <li><strong>9</strong> = &#20061; (ji&#468;)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>10&ndash;99: decenas</h2>
+      <p>
+        <strong>&#21313;</strong> (sh&iacute;) significa 10. El patrón es dígito + &#21313; para múltiplos de diez, y &#21313; + dígito para los números del 11 al 19:
+      </p>
+      <ul>
+        <li><strong>10</strong> = &#21313;</li>
+        <li><strong>11</strong> = &#21313;&#19968;</li>
+        <li><strong>20</strong> = &#20108;&#21313;</li>
+        <li><strong>25</strong> = &#20108;&#21313;&#20116;</li>
+        <li><strong>99</strong> = &#20061;&#21313;&#20061;</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 14, 30, 67?</summary>
+        <p><strong>14</strong> &#21313;&#22235; &middot; <strong>30</strong> &#19977;&#21313; &middot; <strong>67</strong> &#20845;&#21313;&#19971;</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centenas</h2>
+      <p>
+        <strong>&#30334;</strong> (b&#462;i) significa 100:
+      </p>
+      <ul>
+        <li><strong>100</strong> = &#19968;&#30334;</li>
+        <li><strong>200</strong> = &#20108;&#30334;</li>
+        <li><strong>350</strong> = &#19977;&#30334;&#20116;&#21313;</li>
+        <li><strong>101</strong> = &#19968;&#30334;&#38646;&#19968; (&#38646; marca el hueco)</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Miles</h2>
+      <p>
+        <strong>&#21315;</strong> (qi&amacr;n) significa 1000:
+      </p>
+      <ul>
+        <li><strong>1000</strong> = &#19968;&#21315;</li>
+        <li><strong>2000</strong> = &#20108;&#21315;</li>
+        <li><strong>5678</strong> = &#20116;&#21315;&#20845;&#30334;&#19971;&#21313;&#20843;</li>
+        <li><strong>1001</strong> = &#19968;&#21315;&#38646;&#19968;</li>
+      </ul>
+    </section>
+
+    <section id="large" class="learn-section">
+      <h2>Números grandes: &#19975; (10 000+)</h2>
+      <p>
+        El chino agrupa los números en unidades de <strong>10 000</strong> (&#19975;, w&agrave;n):
+      </p>
+      <ul>
+        <li><strong>10 000</strong> = &#19968;&#19975;</li>
+        <li><strong>100 000</strong> = &#21313;&#19975;</li>
+        <li><strong>1 000 000</strong> = &#30334;&#19975;</li>
+      </ul>
+    </section>
+
+    <section id="zero" class="learn-section">
+      <h2>Las reglas del cero (&#38646;)</h2>
+      <p>
+        Se inserta &#38646; como marcador cuando hay un hueco entre valores posicionales:
+      </p>
+      <ol>
+        <li><strong>101</strong> = &#19968;&#30334;<strong>&#38646;</strong>&#19968; (hueco donde iría la decena)</li>
+        <li><strong>1001</strong> = &#19968;&#21315;<strong>&#38646;</strong>&#19968; (hueco donde irían la centena y la decena)</li>
+        <li><strong>1010</strong> = &#19968;&#21315;<strong>&#38646;</strong>&#19968;&#21313;</li>
+      </ol>
+      <p>
+        Varios ceros consecutivos se representan con un <strong>único</strong> &#38646;.
+      </p>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

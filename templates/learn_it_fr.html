@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Apprendre les nombres en italien</h1>
+      <p>
+        Cette page couvre les <strong>nombres italiens</strong> &mdash; l'élision vocalique, les règles d'accentuation
+        et les points délicats comme <em>ventuno</em> et <em>ventitr&eacute;</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;19&nbsp;: les briques de base</a></li>
+        <li><a href="#tens">20&ndash;99&nbsp;: dizaines et élision</a></li>
+        <li><a href="#hundreds">Les centaines</a></li>
+        <li><a href="#thousands">Les milliers et les grands nombres</a></li>
+        <li><a href="#mistakes">Erreurs fréquentes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;19&nbsp;: les briques de base</h2>
+      <p>Mémorisez-les individuellement&nbsp;:</p>
+      <ul>
+        <li><strong>0</strong> = zero</li>
+        <li><strong>1</strong> = uno</li>
+        <li><strong>2</strong> = due</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = quattro</li>
+        <li><strong>5</strong> = cinque</li>
+        <li><strong>6</strong> = sei</li>
+        <li><strong>7</strong> = sette</li>
+        <li><strong>8</strong> = otto</li>
+        <li><strong>9</strong> = nove</li>
+        <li><strong>10</strong> = dieci</li>
+        <li><strong>11</strong> = undici</li>
+        <li><strong>12</strong> = dodici</li>
+        <li><strong>13</strong> = tredici</li>
+        <li><strong>14</strong> = quattordici</li>
+        <li><strong>15</strong> = quindici</li>
+        <li><strong>16</strong> = sedici</li>
+        <li><strong>17</strong> = diciassette</li>
+        <li><strong>18</strong> = diciotto</li>
+        <li><strong>19</strong> = diciannove</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99&nbsp;: dizaines et élision vocalique</h2>
+      <p>
+        Les dizaines&nbsp;: venti (20), trenta (30), quaranta (40), cinquanta (50), sessanta (60),
+        settanta (70), ottanta (80), novanta (90).
+      </p>
+      <p>
+        Lorsque le chiffre des unités commence par une voyelle (<strong>uno</strong> ou <strong>otto</strong>), la voyelle finale de la dizaine est <strong>supprimée</strong>&nbsp;:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vent<strong>uno</strong> (et non &ldquo;ventiuno&rdquo;)</li>
+        <li><strong>28</strong> = vent<strong>otto</strong> (et non &ldquo;ventiotto&rdquo;)</li>
+        <li><strong>38</strong> = trent<strong>otto</strong></li>
+      </ul>
+      <p>
+        Règle d'accentuation&nbsp;: les composés avec <strong>tre</strong> prennent un accent&nbsp;: venti<strong>tr&eacute;</strong>, trenta<strong>tr&eacute;</strong>, etc.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>&nbsp;: 21, 33, 48&nbsp;?</summary>
+        <p><strong>21</strong> ventuno &middot; <strong>33</strong> trentatr&eacute; &middot; <strong>48</strong> quarantotto</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Les centaines</h2>
+      <ul>
+        <li><strong>100</strong> = cento</li>
+        <li><strong>200</strong> = duecento</li>
+        <li><strong>300</strong> = trecento</li>
+        <li><strong>500</strong> = cinquecento</li>
+        <li><strong>101</strong> = centuno (élision avec uno)</li>
+      </ul>
+      <p>
+        Toutes les centaines s'écrivent en un seul mot. L'élision s'applique aussi avec <strong>uno</strong> et <strong>otto</strong> après cento.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Les milliers et les grands nombres</h2>
+      <ul>
+        <li><strong>1&nbsp;000</strong> = mille</li>
+        <li><strong>2&nbsp;000</strong> = duemila (noter&nbsp;: <strong>mila</strong> au pluriel)</li>
+        <li><strong>3&nbsp;000</strong> = tremila</li>
+        <li><strong>10&nbsp;000</strong> = diecimila</li>
+        <li><strong>1&nbsp;000&nbsp;000</strong> = un milione</li>
+        <li><strong>2&nbsp;000&nbsp;000</strong> = due milioni</li>
+        <li><strong>1&nbsp;000&nbsp;000&nbsp;000</strong> = un miliardo</li>
+      </ul>
+      <p>
+        <strong>Mille</strong> devient <strong>mila</strong> au pluriel. <strong>Milione</strong> et <strong>miliardo</strong>
+        sont des noms avec des pluriels réguliers.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Erreurs fréquentes</h2>
+      <ol>
+        <li><strong>Élision vocalique</strong>&nbsp;: ventuno (et non ventiuno), ventotto (et non ventiotto).</li>
+        <li><strong>Accent sur -tr&eacute;</strong>&nbsp;: ventitr&eacute;, trentatr&eacute;, etc.</li>
+        <li><strong>mille vs. mila</strong>&nbsp;: mille (1&nbsp;000) mais duemila, tremila, etc.</li>
+        <li><strong>milione est un nom</strong>&nbsp;: &ldquo;un milione&rdquo; (et non &ldquo;mille mille&rdquo;).</li>
+        <li><strong>diciassette / diciannove</strong>&nbsp;: lettres doubles (ss, nn).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

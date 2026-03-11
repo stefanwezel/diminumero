@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Apprendre les nombres en allemand</h1>
+      <p>
+        Cette page couvre les <strong>nombres allemands</strong> &mdash; mots composés, ordre inversé
+        (unités avant dizaines), trémas, et formes particulières comme <em>eins</em> vs. <em>ein</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12&nbsp;: bases irrégulières</a></li>
+        <li><a href="#teens">13&ndash;19&nbsp;: les «&nbsp;-zehn&nbsp;»</a></li>
+        <li><a href="#tens">20&ndash;99&nbsp;: ordre inversé</a></li>
+        <li><a href="#hundreds">Les centaines</a></li>
+        <li><a href="#thousands">Les milliers et les grands nombres</a></li>
+        <li><a href="#spelling">Mots composés et trémas</a></li>
+        <li><a href="#mistakes">Erreurs fréquentes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12&nbsp;: bases irrégulières</h2>
+      <p>À mémoriser individuellement&nbsp;:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = eins</li>
+        <li><strong>2</strong> = zwei</li>
+        <li><strong>3</strong> = drei</li>
+        <li><strong>4</strong> = vier</li>
+        <li><strong>5</strong> = f&uuml;nf</li>
+        <li><strong>6</strong> = sechs</li>
+        <li><strong>7</strong> = sieben</li>
+        <li><strong>8</strong> = acht</li>
+        <li><strong>9</strong> = neun</li>
+        <li><strong>10</strong> = zehn</li>
+        <li><strong>11</strong> = elf</li>
+        <li><strong>12</strong> = zw&ouml;lf</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19&nbsp;: les «&nbsp;-zehn&nbsp;»</h2>
+      <p>
+        Modèle&nbsp;: chiffre + <strong>zehn</strong> (comme le suffixe «&nbsp;-teen&nbsp;» en anglais)&nbsp;:
+      </p>
+      <ul>
+        <li><strong>13</strong> = dreizehn</li>
+        <li><strong>14</strong> = vierzehn</li>
+        <li><strong>16</strong> = sechzehn (pas «&nbsp;sechszehn&nbsp;»)</li>
+        <li><strong>17</strong> = siebzehn (pas «&nbsp;siebenzehn&nbsp;»)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99&nbsp;: ordre inversé</h2>
+      <p>
+        En allemand, on dit d'abord le <strong>chiffre des unités</strong>, puis <strong>und</strong> («&nbsp;et&nbsp;»), puis la dizaine &mdash;
+        le tout écrit comme <strong>un seul mot composé</strong>&nbsp;:
+      </p>
+      <ul>
+        <li><strong>21</strong> = einundzwanzig (un-et-vingt)</li>
+        <li><strong>34</strong> = vierunddrei&szlig;ig</li>
+        <li><strong>57</strong> = siebenundf&uuml;nfzig</li>
+        <li><strong>99</strong> = neunundneunzig</li>
+      </ul>
+      <p>
+        Les dizaines&nbsp;: zwanzig (20), drei&szlig;ig (30), vierzig (40), f&uuml;nfzig (50), sechzig (60),
+        siebzig (70), achtzig (80), neunzig (90).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>&nbsp;: 23, 45, 88&nbsp;?</summary>
+        <p><strong>23</strong> dreiundzwanzig &middot; <strong>45</strong> f&uuml;nfundvierzig &middot; <strong>88</strong> achtundachtzig</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Les centaines</h2>
+      <ul>
+        <li><strong>100</strong> = (ein)hundert</li>
+        <li><strong>200</strong> = zweihundert</li>
+        <li><strong>300</strong> = dreihundert</li>
+        <li><strong>123</strong> = (ein)hundertdreiundzwanzig</li>
+      </ul>
+      <p>
+        Tout s'écrit en un seul long mot composé, sans espaces.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Les milliers et les grands nombres</h2>
+      <ul>
+        <li><strong>1&nbsp;000</strong> = (ein)tausend</li>
+        <li><strong>2&nbsp;000</strong> = zweitausend</li>
+        <li><strong>10&nbsp;000</strong> = zehntausend</li>
+        <li><strong>1&nbsp;000&nbsp;000</strong> = eine Million</li>
+        <li><strong>1&nbsp;000&nbsp;000&nbsp;000</strong> = eine Milliarde</li>
+      </ul>
+      <p>
+        Les nombres jusqu'à 999&nbsp;999 forment un seul mot composé. <strong>Million</strong> et <strong>Milliarde</strong>
+        sont des noms séparés.
+      </p>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Mots composés et trémas</h2>
+      <p>
+        Points orthographiques essentiels&nbsp;:
+      </p>
+      <ul>
+        <li>Tous les nombres inférieurs à un million s'écrivent en <strong>un seul mot</strong> (sans espaces ni traits d'union)</li>
+        <li>Attention aux trémas&nbsp;: f<strong>&uuml;</strong>nf, zw<strong>&ouml;</strong>lf, f&uuml;nfzig, drei<strong>&szlig;</strong>ig</li>
+        <li><strong>sechs</strong> perd le «&nbsp;s&nbsp;»&nbsp;: sech<em>zehn</em>, sech<em>zig</em></li>
+        <li><strong>sieben</strong> se raccourcit en sieb-&nbsp;: sieb<em>zehn</em>, sieb<em>zig</em></li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Erreurs fréquentes</h2>
+      <ol>
+        <li><strong>Ordre des mots</strong>&nbsp;: 42 se dit <em>zwei</em>und<em>vierzig</em>, pas vierzig-und-zwei.</li>
+        <li><strong>eins vs. ein</strong>&nbsp;: «&nbsp;eins&nbsp;» s'emploie seul, mais «&nbsp;ein&nbsp;» dans les composés (einundzwanzig, einhundert).</li>
+        <li><strong>drei&szlig;ig</strong>&nbsp;: s'écrit avec «&nbsp;&szlig;&nbsp;» (pas «&nbsp;z&nbsp;») &mdash; seule dizaine qui ne se termine pas en -zig.</li>
+        <li><strong>Les espaces</strong>&nbsp;: ne pas ajouter d'espaces dans les nombres inférieurs à un million.</li>
+        <li><strong>sechzehn / siebzehn</strong>&nbsp;: radicaux raccourcis, pas «&nbsp;sechszehn&nbsp;» ni «&nbsp;siebenzehn&nbsp;».</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

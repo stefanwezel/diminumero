@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Impara i numeri in turco</h1>
+      <p>
+        Questa pagina tratta i <strong>numeri in turco</strong>. I numeri turchi sono notevolmente regolari &mdash;
+        non ci sono irregolarità nelle decine o trucchi con le parole composte. Impara le parole base e potrai costruire qualsiasi numero.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#digits">Cifre: 0&ndash;9</a></li>
+        <li><a href="#tens">10&ndash;99: decine</a></li>
+        <li><a href="#hundreds">Centinaia</a></li>
+        <li><a href="#thousands">Migliaia e numeri grandi</a></li>
+        <li><a href="#spelling">Ortografia e caratteri speciali</a></li>
+      </ul>
+    </nav>
+
+    <section id="digits" class="learn-section">
+      <h2>Cifre: 0&ndash;9</h2>
+      <ul>
+        <li><strong>0</strong> = s&iacute;f&iacute;r</li>
+        <li><strong>1</strong> = bir</li>
+        <li><strong>2</strong> = iki</li>
+        <li><strong>3</strong> = &uuml;&ccedil;</li>
+        <li><strong>4</strong> = d&ouml;rt</li>
+        <li><strong>5</strong> = be&scedil;</li>
+        <li><strong>6</strong> = alt&inodot;</li>
+        <li><strong>7</strong> = yedi</li>
+        <li><strong>8</strong> = sekiz</li>
+        <li><strong>9</strong> = dokuz</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>10&ndash;99: decine</h2>
+      <p>
+        Si dice semplicemente la parola della decina, poi quella delle unità (con uno spazio). Non servono congiunzioni:
+      </p>
+      <ul>
+        <li><strong>10</strong> = on</li>
+        <li><strong>11</strong> = on bir</li>
+        <li><strong>20</strong> = yirmi</li>
+        <li><strong>30</strong> = otuz</li>
+        <li><strong>40</strong> = k&inodot;rk</li>
+        <li><strong>50</strong> = elli</li>
+        <li><strong>60</strong> = altm&inodot;&scedil;</li>
+        <li><strong>70</strong> = yetmi&scedil;</li>
+        <li><strong>80</strong> = seksen</li>
+        <li><strong>90</strong> = doksan</li>
+        <li><strong>42</strong> = k&inodot;rk iki</li>
+        <li><strong>99</strong> = doksan dokuz</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 15, 37, 84?</summary>
+        <p><strong>15</strong> on be&scedil; &middot; <strong>37</strong> otuz yedi &middot; <strong>84</strong> seksen d&ouml;rt</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centinaia</h2>
+      <ul>
+        <li><strong>100</strong> = y&uuml;z</li>
+        <li><strong>200</strong> = iki y&uuml;z</li>
+        <li><strong>300</strong> = &uuml;&ccedil; y&uuml;z</li>
+        <li><strong>150</strong> = y&uuml;z elli</li>
+        <li><strong>999</strong> = dokuz y&uuml;z doksan dokuz</li>
+      </ul>
+      <p>
+        Nota: 100 è semplicemente <strong>y&uuml;z</strong> (non &ldquo;bir y&uuml;z&rdquo;).
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Migliaia e numeri grandi</h2>
+      <ul>
+        <li><strong>1.000</strong> = bin (non &ldquo;bir bin&rdquo;)</li>
+        <li><strong>2.000</strong> = iki bin</li>
+        <li><strong>10.000</strong> = on bin</li>
+        <li><strong>1.000.000</strong> = bir milyon</li>
+        <li><strong>1.000.000.000</strong> = bir milyar</li>
+      </ul>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Ortografia e caratteri speciali</h2>
+      <p>Il turco usa alcuni caratteri non presenti in italiano:</p>
+      <ul>
+        <li><strong>&ccedil;</strong> &mdash; come in &uuml;&ccedil; (3)</li>
+        <li><strong>&scedil;</strong> &mdash; come in be&scedil; (5)</li>
+        <li><strong>&uuml;</strong> &mdash; come in &uuml;&ccedil; (3), y&uuml;z (100)</li>
+        <li><strong>&ouml;</strong> &mdash; come in d&ouml;rt (4)</li>
+        <li><strong>&inodot;</strong> (i senza punto) &mdash; come in k&inodot;rk (40), alt&inodot; (6)</li>
+      </ul>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprenda os números em norueguês</h1>
+      <p>
+        Esta página cobre as <strong>palavras numéricas em norueguês</strong> (Bokm&aring;l). O norueguês tem dezenas
+        regulares (ao contrário do dinamarquês), ordem inversa das palavras para 21&ndash;99 e regras de composição simples.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: bases irregulares</a></li>
+        <li><a href="#teens">13&ndash;19: os teens</a></li>
+        <li><a href="#tens">20&ndash;99: as dezenas</a></li>
+        <li><a href="#hundreds">Centenas</a></li>
+        <li><a href="#thousands">Milhares e números grandes</a></li>
+        <li><a href="#mistakes">Erros comuns</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: bases irregulares</h2>
+      <p>Memorize-os individualmente:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = en / ett</li>
+        <li><strong>2</strong> = to</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fire</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = seks</li>
+        <li><strong>7</strong> = sju / syv</li>
+        <li><strong>8</strong> = &aring;tte</li>
+        <li><strong>9</strong> = ni</li>
+        <li><strong>10</strong> = ti</li>
+        <li><strong>11</strong> = elleve</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: os teens</h2>
+      <p>
+        Padrão: dígito + <strong>dez</strong> (de &ldquo;ti&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretten</li>
+        <li><strong>14</strong> = fjorten</li>
+        <li><strong>15</strong> = femten</li>
+        <li><strong>16</strong> = seksten</li>
+        <li><strong>17</strong> = sytten</li>
+        <li><strong>18</strong> = atten</li>
+        <li><strong>19</strong> = nitten</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: as dezenas</h2>
+      <p>
+        O norueguês usa dezenas decimais regulares (ao contrário do sistema vigesimal do dinamarquês):
+      </p>
+      <ul>
+        <li><strong>20</strong> = tjue</li>
+        <li><strong>30</strong> = tretti</li>
+        <li><strong>40</strong> = f&oslash;rti</li>
+        <li><strong>50</strong> = femti</li>
+        <li><strong>60</strong> = seksti</li>
+        <li><strong>70</strong> = sytti</li>
+        <li><strong>80</strong> = &aring;tti</li>
+        <li><strong>90</strong> = nitti</li>
+      </ul>
+      <p>
+        Compostos: unidades + <strong>og</strong> (&ldquo;e&rdquo;) + dezenas, ou simplesmente unidades + dezenas como uma única palavra:
+      </p>
+      <ul>
+        <li><strong>21</strong> = tjueen</li>
+        <li><strong>35</strong> = trettifem</li>
+        <li><strong>99</strong> = nittini</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22, 46, 83?</summary>
+        <p><strong>22</strong> tjueto &middot; <strong>46</strong> f&oslash;rtiseks &middot; <strong>83</strong> &aring;ttitre</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centenas</h2>
+      <ul>
+        <li><strong>100</strong> = (ett) hundre</li>
+        <li><strong>200</strong> = to hundre</li>
+        <li><strong>300</strong> = tre hundre</li>
+        <li><strong>150</strong> = (ett) hundre og femti</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Milhares e números grandes</h2>
+      <ul>
+        <li><strong>1.000</strong> = (ett) tusen</li>
+        <li><strong>2.000</strong> = to tusen</li>
+        <li><strong>10.000</strong> = ti tusen</li>
+        <li><strong>1.000.000</strong> = en million</li>
+        <li><strong>1.000.000.000</strong> = en milliard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Erros comuns</h2>
+      <ol>
+        <li><strong>en vs. ett</strong>: &ldquo;en&rdquo; para o masculino/feminino, &ldquo;ett&rdquo; para o neutro.</li>
+        <li><strong>sju vs. syv</strong>: ambas são corretas para 7; &ldquo;syv&rdquo; é mais informal.</li>
+        <li><strong>Não confundir com o dinamarquês</strong>: o norueguês usa dezenas decimais regulares (tjue, tretti&hellip;), não vigesimais.</li>
+        <li><strong>&aring;tte vs. &aring;tti</strong>: 8 vs. 80 &mdash; apenas uma letra de diferença.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

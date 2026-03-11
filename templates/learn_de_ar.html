@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>تعلّم الأرقام الألمانية</h1>
+      <p>
+        تتناول هذه الصفحة <strong>الأرقام الألمانية</strong> &mdash; الكلمات المركبة، الترتيب المعكوس
+        (الآحاد قبل العشرات)، الأوملاوت، والأشكال الخاصة مثل <em>eins</em> مقابل <em>ein</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: الأساسيات الشاذة</a></li>
+        <li><a href="#teens">13&ndash;19: المراهقون</a></li>
+        <li><a href="#tens">20&ndash;99: الترتيب المعكوس</a></li>
+        <li><a href="#hundreds">المئات</a></li>
+        <li><a href="#thousands">الآلاف والأعداد الكبيرة</a></li>
+        <li><a href="#spelling">الكلمات المركبة والأوملاوت</a></li>
+        <li><a href="#mistakes">الأخطاء الشائعة</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: الأساسيات الشاذة</h2>
+      <p>احفظ هذه الأرقام منفردةً:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = eins</li>
+        <li><strong>2</strong> = zwei</li>
+        <li><strong>3</strong> = drei</li>
+        <li><strong>4</strong> = vier</li>
+        <li><strong>5</strong> = f&uuml;nf</li>
+        <li><strong>6</strong> = sechs</li>
+        <li><strong>7</strong> = sieben</li>
+        <li><strong>8</strong> = acht</li>
+        <li><strong>9</strong> = neun</li>
+        <li><strong>10</strong> = zehn</li>
+        <li><strong>11</strong> = elf</li>
+        <li><strong>12</strong> = zw&ouml;lf</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: المراهقون</h2>
+      <p>
+        النمط: الرقم + <strong>zehn</strong> (كاللاحقة الإنجليزية &ldquo;-teen&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = dreizehn</li>
+        <li><strong>14</strong> = vierzehn</li>
+        <li><strong>16</strong> = sechzehn (وليس &ldquo;sechszehn&rdquo;)</li>
+        <li><strong>17</strong> = siebzehn (وليس &ldquo;siebenzehn&rdquo;)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: الترتيب المعكوس</h2>
+      <p>
+        تقول الألمانية <strong>رقم الآحاد أولًا</strong>، ثم <strong>und</strong> (&ldquo;و&rdquo;)، ثم العشرات &mdash;
+        وتُكتب جميعها كـ<strong>كلمة مركبة واحدة</strong>:
+      </p>
+      <ul>
+        <li><strong>21</strong> = einundzwanzig (واحد وعشرون)</li>
+        <li><strong>34</strong> = vierunddrei&szlig;ig</li>
+        <li><strong>57</strong> = siebenundf&uuml;nfzig</li>
+        <li><strong>99</strong> = neunundneunzig</li>
+      </ul>
+      <p>
+        كلمات العشرات: zwanzig (20)، drei&szlig;ig (30)، vierzig (40)، f&uuml;nfzig (50)، sechzig (60)،
+        siebzig (70)، achtzig (80)، neunzig (90).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 23, 45, 88؟</summary>
+        <p><strong>23</strong> dreiundzwanzig &middot; <strong>45</strong> f&uuml;nfundvierzig &middot; <strong>88</strong> achtundachtzig</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>المئات</h2>
+      <ul>
+        <li><strong>100</strong> = (ein)hundert</li>
+        <li><strong>200</strong> = zweihundert</li>
+        <li><strong>300</strong> = dreihundert</li>
+        <li><strong>123</strong> = (ein)hundertdreiundzwanzig</li>
+      </ul>
+      <p>
+        تُكتب جميعها ككلمة مركبة طويلة واحدة بدون مسافات.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>الآلاف والأعداد الكبيرة</h2>
+      <ul>
+        <li><strong>1,000</strong> = (ein)tausend</li>
+        <li><strong>2,000</strong> = zweitausend</li>
+        <li><strong>10,000</strong> = zehntausend</li>
+        <li><strong>1,000,000</strong> = eine Million</li>
+        <li><strong>1,000,000,000</strong> = eine Milliarde</li>
+      </ul>
+      <p>
+        الأرقام حتى 999,999 هي كلمة مركبة واحدة. أما <strong>Million</strong> و<strong>Milliarde</strong>
+        فهما اسمان منفصلان.
+      </p>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>الكلمات المركبة والأوملاوت</h2>
+      <p>
+        تفاصيل إملائية مهمة:
+      </p>
+      <ul>
+        <li>تُكتب جميع الأرقام دون المليون كـ<strong>كلمة واحدة</strong> (بدون مسافات أو واصلات)</li>
+        <li>انتبه إلى الأوملاوت: f<strong>&uuml;</strong>nf، zw<strong>&ouml;</strong>lf، f&uuml;nfzig، drei<strong>&szlig;</strong>ig</li>
+        <li><strong>sechs</strong> تفقد الـ&ldquo;s&rdquo;: sech<em>zehn</em>، sech<em>zig</em></li>
+        <li><strong>sieben</strong> تُقصَّر إلى sieb-: sieb<em>zehn</em>، sieb<em>zig</em></li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>الأخطاء الشائعة</h2>
+      <ol>
+        <li><strong>ترتيب الكلمات</strong>: 42 هي <em>zwei</em>und<em>vierzig</em>، وليس vierzig-und-zwei.</li>
+        <li><strong>eins مقابل ein</strong>: &ldquo;eins&rdquo; تقف وحدها، لكن &ldquo;ein&rdquo; في المركبات (einundzwanzig، einhundert).</li>
+        <li><strong>drei&szlig;ig</strong>: تستخدم &ldquo;&szlig;&rdquo; (وليس &ldquo;z&rdquo;) &mdash; الكلمة العشرية الوحيدة التي لا تنتهي بـ-zig.</li>
+        <li><strong>المسافات</strong>: لا تُضف مسافات داخل الأرقام دون المليون.</li>
+        <li><strong>sechzehn / siebzehn</strong>: جذور مقصّرة، وليست &ldquo;sechszehn&rdquo; أو &ldquo;siebenzehn&rdquo;.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

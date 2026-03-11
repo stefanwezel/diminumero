@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Apprendre les nombres en chinois</h1>
+      <p>
+        Cette page couvre les <strong>nombres en chinois mandarin</strong> &mdash; un système positionnel régulier
+        avec des chiffres et des caractères de valeur de position. Le principal défi est de savoir quand utiliser <strong>&#38646;</strong> (zéro) comme marqueur de vide.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#digits">Chiffres&nbsp;: 0&ndash;9</a></li>
+        <li><a href="#tens">10&ndash;99&nbsp;: les dizaines</a></li>
+        <li><a href="#hundreds">Les centaines</a></li>
+        <li><a href="#thousands">Les milliers</a></li>
+        <li><a href="#large">Grands nombres&nbsp;: &#19975; (10&nbsp;000 et plus)</a></li>
+        <li><a href="#zero">Les règles du zéro (&#38646;)</a></li>
+      </ul>
+    </nav>
+
+    <section id="digits" class="learn-section">
+      <h2>Chiffres&nbsp;: 0&ndash;9</h2>
+      <ul>
+        <li><strong>0</strong> = &#38646; (l&iacute;ng)</li>
+        <li><strong>1</strong> = &#19968; (y&imacr;)</li>
+        <li><strong>2</strong> = &#20108; (&egrave;r)</li>
+        <li><strong>3</strong> = &#19977; (s&amacr;n)</li>
+        <li><strong>4</strong> = &#22235; (s&igrave;)</li>
+        <li><strong>5</strong> = &#20116; (w&#468;)</li>
+        <li><strong>6</strong> = &#20845; (li&ugrave;)</li>
+        <li><strong>7</strong> = &#19971; (q&imacr;)</li>
+        <li><strong>8</strong> = &#20843; (b&amacr;)</li>
+        <li><strong>9</strong> = &#20061; (ji&#468;)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>10&ndash;99&nbsp;: les dizaines</h2>
+      <p>
+        <strong>&#21313;</strong> (sh&iacute;) signifie 10. Le modèle est chiffre + &#21313; pour les multiples de dix, et &#21313; + chiffre pour les nombres de 11 à 19&nbsp;:
+      </p>
+      <ul>
+        <li><strong>10</strong> = &#21313;</li>
+        <li><strong>11</strong> = &#21313;&#19968;</li>
+        <li><strong>20</strong> = &#20108;&#21313;</li>
+        <li><strong>25</strong> = &#20108;&#21313;&#20116;</li>
+        <li><strong>99</strong> = &#20061;&#21313;&#20061;</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>&nbsp;: 14, 30, 67&nbsp;?</summary>
+        <p><strong>14</strong> &#21313;&#22235; &middot; <strong>30</strong> &#19977;&#21313; &middot; <strong>67</strong> &#20845;&#21313;&#19971;</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Les centaines</h2>
+      <p>
+        <strong>&#30334;</strong> (b&#462;i) signifie 100&nbsp;:
+      </p>
+      <ul>
+        <li><strong>100</strong> = &#19968;&#30334;</li>
+        <li><strong>200</strong> = &#20108;&#30334;</li>
+        <li><strong>350</strong> = &#19977;&#30334;&#20116;&#21313;</li>
+        <li><strong>101</strong> = &#19968;&#30334;&#38646;&#19968; (&#38646; marque le vide)</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Les milliers</h2>
+      <p>
+        <strong>&#21315;</strong> (qi&amacr;n) signifie 1&nbsp;000&nbsp;:
+      </p>
+      <ul>
+        <li><strong>1&nbsp;000</strong> = &#19968;&#21315;</li>
+        <li><strong>2&nbsp;000</strong> = &#20108;&#21315;</li>
+        <li><strong>5&nbsp;678</strong> = &#20116;&#21315;&#20845;&#30334;&#19971;&#21313;&#20843;</li>
+        <li><strong>1&nbsp;001</strong> = &#19968;&#21315;&#38646;&#19968;</li>
+      </ul>
+    </section>
+
+    <section id="large" class="learn-section">
+      <h2>Grands nombres&nbsp;: &#19975; (10&nbsp;000 et plus)</h2>
+      <p>
+        Le chinois regroupe les nombres par unités de <strong>10&nbsp;000</strong> (&#19975;, w&agrave;n)&nbsp;:
+      </p>
+      <ul>
+        <li><strong>10&nbsp;000</strong> = &#19968;&#19975;</li>
+        <li><strong>100&nbsp;000</strong> = &#21313;&#19975;</li>
+        <li><strong>1&nbsp;000&nbsp;000</strong> = &#30334;&#19975;</li>
+      </ul>
+    </section>
+
+    <section id="zero" class="learn-section">
+      <h2>Les règles du zéro (&#38646;)</h2>
+      <p>
+        &#38646; est inséré comme marqueur de vide lorsqu'il y a un écart entre les valeurs de position&nbsp;:
+      </p>
+      <ol>
+        <li><strong>101</strong> = &#19968;&#30334;<strong>&#38646;</strong>&#19968; (vide là où serait la dizaine)</li>
+        <li><strong>1&nbsp;001</strong> = &#19968;&#21315;<strong>&#38646;</strong>&#19968; (vide là où seraient la centaine et la dizaine)</li>
+        <li><strong>1&nbsp;010</strong> = &#19968;&#21315;<strong>&#38646;</strong>&#19968;&#21313;</li>
+      </ol>
+      <p>
+        Plusieurs zéros consécutifs sont représentés par un <strong>unique</strong> &#38646;.
+      </p>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

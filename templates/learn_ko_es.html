@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende los números en coreano</h1>
+      <p>
+        Esta página cubre el <strong>sistema numérico sino-coreano</strong> (&#51068;, &#51060;, &#49340;&hellip;),
+        que es el sistema que se usa para números grandes, fechas, dinero y números de teléfono.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#digits">Dígitos: 0&ndash;9</a></li>
+        <li><a href="#tens">10&ndash;99: decenas</a></li>
+        <li><a href="#hundreds">Centenas</a></li>
+        <li><a href="#thousands">Miles</a></li>
+        <li><a href="#large">Números grandes: &#47564; (10 000+)</a></li>
+      </ul>
+    </nav>
+
+    <section id="digits" class="learn-section">
+      <h2>Dígitos: 0&ndash;9</h2>
+      <ul>
+        <li><strong>0</strong> = &#50689; (yeong)</li>
+        <li><strong>1</strong> = &#51068; (il)</li>
+        <li><strong>2</strong> = &#51060; (i)</li>
+        <li><strong>3</strong> = &#49340; (sam)</li>
+        <li><strong>4</strong> = &#49324; (sa)</li>
+        <li><strong>5</strong> = &#50724; (o)</li>
+        <li><strong>6</strong> = &#50977; (yuk)</li>
+        <li><strong>7</strong> = &#52832; (chil)</li>
+        <li><strong>8</strong> = &#54036; (pal)</li>
+        <li><strong>9</strong> = &#44396; (gu)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>10&ndash;99: decenas</h2>
+      <p>
+        <strong>&#49901;</strong> (sip) significa 10. El sistema es completamente regular:
+      </p>
+      <ul>
+        <li><strong>10</strong> = &#49901;</li>
+        <li><strong>11</strong> = &#49901;&#51068;</li>
+        <li><strong>20</strong> = &#51060;&#49901;</li>
+        <li><strong>35</strong> = &#49340;&#49901;&#50724;</li>
+        <li><strong>99</strong> = &#44396;&#49901;&#44396;</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 15, 42, 78?</summary>
+        <p><strong>15</strong> &#49901;&#50724; &middot; <strong>42</strong> &#49324;&#49901;&#51060; &middot; <strong>78</strong> &#52832;&#49901;&#54036;</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centenas</h2>
+      <p>
+        <strong>&#48177;</strong> (baek) significa 100:
+      </p>
+      <ul>
+        <li><strong>100</strong> = &#48177;</li>
+        <li><strong>200</strong> = &#51060;&#48177;</li>
+        <li><strong>500</strong> = &#50724;&#48177;</li>
+        <li><strong>321</strong> = &#49340;&#48177;&#51060;&#49901;&#51068;</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Miles</h2>
+      <p>
+        <strong>&#52380;</strong> (cheon) significa 1000:
+      </p>
+      <ul>
+        <li><strong>1000</strong> = &#52380;</li>
+        <li><strong>2000</strong> = &#51060;&#52380;</li>
+        <li><strong>5678</strong> = &#50724;&#52380;&#50977;&#48177;&#52832;&#49901;&#54036;</li>
+      </ul>
+    </section>
+
+    <section id="large" class="learn-section">
+      <h2>Números grandes: &#47564; (10 000+)</h2>
+      <p>
+        Al igual que el japonés, el coreano agrupa en unidades de <strong>10 000</strong> (&#47564;, man):
+      </p>
+      <ul>
+        <li><strong>10 000</strong> = &#47564;</li>
+        <li><strong>100 000</strong> = &#49901;&#47564;</li>
+        <li><strong>1 000 000</strong> = &#48177;&#47564;</li>
+      </ul>
+      <p>
+        El sistema sino-coreano es muy regular &mdash; una vez que conoces los dígitos y los valores posicionales, puedes construir cualquier número.
+      </p>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

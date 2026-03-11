@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Вивчаємо іспанські числівники</h1>
+      <p>
+        На цій сторінці розглянуто ключові закономірності <strong>іспанських числівників</strong> — з багатьма прикладами
+        (і типовими пастками: <em>cien vs. ciento</em>, наголоси, <em>veintiún</em>, <em>un millón</em>).
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0–29: основні блоки</a></li>
+        <li><a href="#tens">30–99: десятки + «y» + одиниці</a></li>
+        <li><a href="#hundreds">100–999: cien/ciento та сотні</a></li>
+        <li><a href="#thousands">Тисячі</a></li>
+        <li><a href="#millions">Мільйони та великі числа</a></li>
+        <li><a href="#spelling">Правопис та наголоси</a></li>
+        <li><a href="#mistakes">Типові помилки</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0–29: основні блоки</h2>
+      <p>
+        Найкраще вивчити напам'ять <strong>0–15</strong> (cero … quince). Далі починаються закономірності:
+      </p>
+      <ul>
+        <li><strong>16–19</strong>: <strong>dieci-</strong> + число → dieciséis, diecisiete, dieciocho, diecinueve</li>
+        <li><strong>20</strong>: veinte</li>
+        <li><strong>21–29</strong>: <strong>veinti-</strong> + число → veintiuno, veintidós, veintitrés, …</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 18, 22, 29?</summary>
+        <p><strong>18</strong> dieciocho · <strong>22</strong> veintidós · <strong>29</strong> veintinueve</p>
+      </details>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>30–99: десятки + «y» + одиниці</h2>
+      <p>
+        Від <strong>30</strong> стандартна схема така:
+        <strong>десятки</strong> + (<strong>y</strong> + одиниці), якщо одиниця не нуль.
+      </p>
+      <ul>
+        <li>30 = treinta</li>
+        <li>31 = treinta y uno</li>
+        <li>42 = cuarenta y dos</li>
+        <li>98 = noventa y ocho</li>
+      </ul>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>100–999: <em>cien</em> vs. <em>ciento</em> та сотні</h2>
+      <ul>
+        <li><strong>100</strong> = cien</li>
+        <li><strong>101–199</strong> = ciento + … (напр. 115 = ciento quince)</li>
+        <li><strong>200–900</strong>: doscientos, trescientos, cuatrocientos, …</li>
+      </ul>
+      <p>
+        Нерегулярні сотні, які часто плутають:
+        <strong>quinientos</strong> (500), <strong>setecientos</strong> (700), <strong>novecientos</strong> (900).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 100, 115, 500, 742?</summary>
+        <p><strong>100</strong> cien · <strong>115</strong> ciento quince · <strong>500</strong> quinientos · <strong>742</strong> setecientos cuarenta y dos</p>
+      </details>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Тисячі</h2>
+      <ul>
+        <li><strong>1000</strong> = mil (не «un mil»)</li>
+        <li><strong>2000</strong> = dos mil</li>
+        <li><strong>4321</strong> = cuatro mil trescientos veintiuno</li>
+      </ul>
+      <p>
+        Перед <strong>mil</strong> слово <strong>uno → un</strong> (апокопа):
+        <strong>21 000</strong> = <strong>veintiún mil</strong>,
+        <strong>31 000</strong> = <strong>treinta y un mil</strong>.
+        (З іменником жіночого роду можна зустріти «treinta y una mil <em>personas</em>», але для «числа окремо» стандартом є «treinta y un mil».)
+      </p>
+    </section>
+
+    <section id="millions" class="learn-section">
+      <h2>Мільйони та великі числа</h2>
+      <ul>
+        <li><strong>1 000 000</strong> = <strong>un millón</strong></li>
+        <li><strong>2 000 000</strong> = dos millones</li>
+        <li><strong>1 234 567</strong> = un millón doscientos treinta y cuatro mil quinientos sesenta y siete</li>
+        <li><strong>1 000 000 000</strong> = <strong>mil millones</strong> (також: «un millardo»)</li>
+        <li><strong>1 000 000 000 000</strong> = un billón (іспанська довга шкала)</li>
+      </ul>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Правопис та наголоси</h2>
+      <p>
+        Орфографічне правило:
+        <strong>16–19</strong>, <strong>21–29</strong> та <strong>всі сотні</strong> зазвичай пишуться
+        <strong>одним словом</strong> (dieciséis, veintidós, doscientos). Форми типу «veinte y uno» вважаються застарілими.
+      </p>
+      <p>
+        Важливі наголоси:
+        <strong>dieciséis</strong>, <strong>veintidós</strong>, <strong>veintitrés</strong>, <strong>veintiséis</strong>.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Типові помилки</h2>
+      <ol>
+        <li><strong>cien vs. ciento</strong>: 100 = cien, але 101 = ciento uno.</li>
+        <li><strong>21 000</strong>: не «veintiuno mil» → <strong>veintiún mil</strong>.</li>
+        <li><strong>1 000 000</strong>: не «uno millón» → <strong>un millón</strong>.</li>
+        <li><strong>Пропущені наголоси</strong>: особливо 16/22/23/26.</li>
+        <li><strong>Нерегулярні сотні</strong>: quinientos / setecientos / novecientos.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

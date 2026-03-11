@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Вивчаємо німецькі числівники</h1>
+      <p>
+        На цій сторінці розглянуто <strong>німецькі числівники</strong> &mdash; складні слова, обернений порядок
+        (одиниці перед десятками), умлаути та особливі форми, наприклад <em>eins</em> vs. <em>ein</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: нерегулярні основи</a></li>
+        <li><a href="#teens">13&ndash;19: «підлітки»</a></li>
+        <li><a href="#tens">20&ndash;99: обернений порядок</a></li>
+        <li><a href="#hundreds">Сотні</a></li>
+        <li><a href="#thousands">Тисячі та великі числа</a></li>
+        <li><a href="#spelling">Складні слова та умлаути</a></li>
+        <li><a href="#mistakes">Типові помилки</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: нерегулярні основи</h2>
+      <p>Вивчіть ці слова окремо:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = eins</li>
+        <li><strong>2</strong> = zwei</li>
+        <li><strong>3</strong> = drei</li>
+        <li><strong>4</strong> = vier</li>
+        <li><strong>5</strong> = f&uuml;nf</li>
+        <li><strong>6</strong> = sechs</li>
+        <li><strong>7</strong> = sieben</li>
+        <li><strong>8</strong> = acht</li>
+        <li><strong>9</strong> = neun</li>
+        <li><strong>10</strong> = zehn</li>
+        <li><strong>11</strong> = elf</li>
+        <li><strong>12</strong> = zw&ouml;lf</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: «підлітки»</h2>
+      <p>
+        Схема: цифра + <strong>zehn</strong> (як англійське &ldquo;-teen&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = dreizehn</li>
+        <li><strong>14</strong> = vierzehn</li>
+        <li><strong>16</strong> = sechzehn (не &ldquo;sechszehn&rdquo;)</li>
+        <li><strong>17</strong> = siebzehn (не &ldquo;siebenzehn&rdquo;)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: обернений порядок</h2>
+      <p>
+        У німецькій спочатку йде <strong>одиниця</strong>, потім <strong>und</strong> («і»), потім десяток —
+        і все пишеться <strong>одним складним словом</strong>:
+      </p>
+      <ul>
+        <li><strong>21</strong> = einundzwanzig (один-і-двадцять)</li>
+        <li><strong>34</strong> = vierunddrei&szlig;ig</li>
+        <li><strong>57</strong> = siebenundf&uuml;nfzig</li>
+        <li><strong>99</strong> = neunundneunzig</li>
+      </ul>
+      <p>
+        Десятки: zwanzig (20), drei&szlig;ig (30), vierzig (40), f&uuml;nfzig (50), sechzig (60),
+        siebzig (70), achtzig (80), neunzig (90).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 23, 45, 88?</summary>
+        <p><strong>23</strong> dreiundzwanzig &middot; <strong>45</strong> f&uuml;nfundvierzig &middot; <strong>88</strong> achtundachtzig</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Сотні</h2>
+      <ul>
+        <li><strong>100</strong> = (ein)hundert</li>
+        <li><strong>200</strong> = zweihundert</li>
+        <li><strong>300</strong> = dreihundert</li>
+        <li><strong>123</strong> = (ein)hundertdreiundzwanzig</li>
+      </ul>
+      <p>
+        Усе пишеться одним довгим складним словом без пробілів.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Тисячі та великі числа</h2>
+      <ul>
+        <li><strong>1 000</strong> = (ein)tausend</li>
+        <li><strong>2 000</strong> = zweitausend</li>
+        <li><strong>10 000</strong> = zehntausend</li>
+        <li><strong>1 000 000</strong> = eine Million</li>
+        <li><strong>1 000 000 000</strong> = eine Milliarde</li>
+      </ul>
+      <p>
+        Числа до 999 999 пишуться одним складним словом. <strong>Million</strong> та <strong>Milliarde</strong>
+        є окремими іменниками.
+      </p>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Складні слова та умлаути</h2>
+      <p>
+        Ключові особливості правопису:
+      </p>
+      <ul>
+        <li>Усі числа до мільйона пишуться <strong>одним словом</strong> (без пробілів і дефісів)</li>
+        <li>Зверніть увагу на умлаути: f<strong>&uuml;</strong>nf, zw<strong>&ouml;</strong>lf, f&uuml;nfzig, drei<strong>&szlig;</strong>ig</li>
+        <li><strong>sechs</strong> втрачає «s»: sech<em>zehn</em>, sech<em>zig</em></li>
+        <li><strong>sieben</strong> скорочується до sieb-: sieb<em>zehn</em>, sieb<em>zig</em></li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Типові помилки</h2>
+      <ol>
+        <li><strong>Порядок слів</strong>: 42 — це <em>zwei</em>und<em>vierzig</em>, а не vierzig-und-zwei.</li>
+        <li><strong>eins vs. ein</strong>: «eins» — самостійно, але «ein» — у складних словах (einundzwanzig, einhundert).</li>
+        <li><strong>drei&szlig;ig</strong>: пишеться через «&szlig;» (не «z») — єдиний десяток, що не закінчується на -zig.</li>
+        <li><strong>Пробіли</strong>: не додавайте пробіли всередині чисел до мільйона.</li>
+        <li><strong>sechzehn / siebzehn</strong>: скорочені основи, а не «sechszehn» або «siebenzehn».</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

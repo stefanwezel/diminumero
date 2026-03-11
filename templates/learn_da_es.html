@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende los números en danés</h1>
+      <p>
+        Esta página cubre las <strong>palabras numéricas en danés</strong>. El danés es famoso por su sistema
+        <strong>vigesimal</strong> (base 20) para las decenas &mdash; 50 literalmente significa
+        &ldquo;la mitad de la tercera veintena&rdquo; (<em>halvtreds</em>). Una vez que entiendes el patrón, es consistente.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: bases irregulares</a></li>
+        <li><a href="#teens">13&ndash;19: los teens</a></li>
+        <li><a href="#tens">20&ndash;99: decenas vigesimales</a></li>
+        <li><a href="#hundreds">Centenas</a></li>
+        <li><a href="#thousands">Miles y números grandes</a></li>
+        <li><a href="#mistakes">Errores comunes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: bases irregulares</h2>
+      <p>Memoriza estos de forma individual:</p>
+      <ul>
+        <li><strong>0</strong> = nul</li>
+        <li><strong>1</strong> = en / et</li>
+        <li><strong>2</strong> = to</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fire</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = seks</li>
+        <li><strong>7</strong> = syv</li>
+        <li><strong>8</strong> = otte</li>
+        <li><strong>9</strong> = ni</li>
+        <li><strong>10</strong> = ti</li>
+        <li><strong>11</strong> = elleve</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: los teens</h2>
+      <p>
+        Patrón: dígito + <strong>ten</strong> (de &ldquo;ti&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretten</li>
+        <li><strong>14</strong> = fjorten</li>
+        <li><strong>15</strong> = femten</li>
+        <li><strong>16</strong> = seksten</li>
+        <li><strong>17</strong> = sytten</li>
+        <li><strong>18</strong> = atten</li>
+        <li><strong>19</strong> = nitten</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: decenas vigesimales</h2>
+      <p>
+        El danés usa un sistema <strong>base 20</strong> para sus decenas. 20 y 30 son sencillos, pero 50, 60, 70, 80 y 90
+        se basan en múltiplos de 20:
+      </p>
+      <ul>
+        <li><strong>20</strong> = tyve</li>
+        <li><strong>30</strong> = tredive</li>
+        <li><strong>40</strong> = fyrre (abreviatura de &ldquo;fire gange ti&rdquo; = 4&times;10)</li>
+        <li><strong>50</strong> = halvtreds (la mitad de la tercera veintena = 2,5&times;20)</li>
+        <li><strong>60</strong> = tres (tres veces veinte = 3&times;20)</li>
+        <li><strong>70</strong> = halvfjerds (la mitad de la cuarta veintena = 3,5&times;20)</li>
+        <li><strong>80</strong> = firs (cuatro veces veinte = 4&times;20)</li>
+        <li><strong>90</strong> = halvfems (la mitad de la quinta veintena = 4,5&times;20)</li>
+      </ul>
+      <p>
+        Las unidades van <strong>antes</strong> de las decenas, unidas con <strong>og</strong> (&ldquo;y&rdquo;):
+      </p>
+      <ul>
+        <li><strong>21</strong> = enogtyve</li>
+        <li><strong>53</strong> = treoghalvtreds</li>
+        <li><strong>99</strong> = nioghalvfems</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 25, 50, 74?</summary>
+        <p><strong>25</strong> femogtyve &middot; <strong>50</strong> halvtreds &middot; <strong>74</strong> fireoghalvfjerds</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centenas</h2>
+      <ul>
+        <li><strong>100</strong> = (et) hundrede</li>
+        <li><strong>200</strong> = to hundrede</li>
+        <li><strong>300</strong> = tre hundrede</li>
+        <li><strong>150</strong> = (et) hundrede og halvtreds</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Miles y números grandes</h2>
+      <ul>
+        <li><strong>1.000</strong> = (et) tusind(e)</li>
+        <li><strong>2.000</strong> = to tusind(e)</li>
+        <li><strong>10.000</strong> = ti tusind(e)</li>
+        <li><strong>1.000.000</strong> = en million</li>
+        <li><strong>1.000.000.000</strong> = en milliard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errores comunes</h2>
+      <ol>
+        <li><strong>Decenas vigesimales</strong>: halvtreds (50), tres (60), halvfjerds (70), firs (80), halvfems (90) &mdash; hay que memorizarlas.</li>
+        <li><strong>Orden de palabras</strong>: las unidades van antes que las decenas (enogtyve = 21), como en alemán.</li>
+        <li><strong>og</strong>: no olvides la conjunción entre las unidades y las decenas.</li>
+        <li><strong>en vs. et</strong>: &ldquo;en&rdquo; para el género común, &ldquo;et&rdquo; para el neutro.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
