@@ -47,15 +47,17 @@ TRANSLATIONS = {
 }
 ```
 
-Also add a `"language_xx"` key to **every existing** UI language dict (including `"en"` and `"de"`) so those UIs can refer to your new language by name if needed:
+Also add a `"language_xx"` key to **every existing** UI language dict so those UIs can display the new language's name in the globe dropdown:
 
 ```python
 # in "en":
 "language_xx": "Xhosa",
 # in "de":
 "language_xx": "Xhosa",
-# etc.
+# etc. for es, it, fr, pt, ar, uk
 ```
+
+> **Note**: Learning language names and descriptions (shown on the language cards) are **not** stored in `translations.py`. They come from `ui_names` and `ui_descriptions` in `languages/config.py`. When you add a new UI language, add the new code to those dicts for every learning language — see step 3.
 
 ### 3. `languages/config.py`
 
@@ -91,6 +93,16 @@ Add a tuple to the `ui_langs` list inside the language switcher block:
 
 Use the language's own native name as the label (e.g. `'Français'` not `'French'`).
 
+### 5. Learn page templates (optional)
+
+The `learn()` route generates template names as `learn_{lang_code}_{ui_lang}.html` and falls back to `learn_{lang_code}_en.html` if the UI-language-specific file doesn't exist. You don't *have* to create translated learn templates — the English fallback works automatically. If you do want translated learn pages, create one file per learning language that has learn materials:
+
+```
+templates/learn_es_xx.html
+templates/learn_fr_xx.html
+... (one per language in the has_learn_materials set)
+```
+
 ---
 
 ## SEO checklist
@@ -124,5 +136,6 @@ No template changes are needed for RTL support.
 3. Click the 🌐 globe — verify the new language appears highlighted in the dropdown.
 4. If RTL: inspect `<html dir="rtl">` in the source and verify the globe is top-left.
 5. Check `/`, `/<lang_code>`, `/about`, `/privacy` pages render in the new language.
-6. Run `uv run pytest` — all existing tests should pass.
-7. Test an invalid code: `/set_language/zz` should redirect without changing the session language.
+6. Verify learning language cards show translated names and descriptions (from `ui_names`/`ui_descriptions` in `languages/config.py`).
+7. Run `uv run pytest` — all existing tests should pass.
+8. Test an invalid code: `/set_language/zz` should redirect without changing the session language.

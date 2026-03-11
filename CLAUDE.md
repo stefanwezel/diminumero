@@ -100,7 +100,7 @@ Tests live in `tests/` with no shared `conftest.py` — each file defines its ow
 
 ## Adding Languages
 
-This is the most common recurring task in this repository. See ADDING_LANGUAGES.md for the complete guide. Key steps:
+This is the most common recurring task in this repository. See ADD_LANGUAGE.md for the complete guide. Key steps:
 1. Create `languages/{code}/` directory with `numbers.py` and `generate_numbers.py`
 2. Register in `languages/config.py` with `ready: False` initially; add import to `get_language_numbers()`
 3. Update SEO strings in `translations.py` and JSON-LD in `templates/language_selection.html`
@@ -108,7 +108,7 @@ This is the most common recurring task in this repository. See ADDING_LANGUAGES.
 
 ## Adding Learning Materials
 
-See ADD_NEW_LEARNING_MATERIALS.md for the complete guide. Key steps:
+See ADD_LEARNING_MATERIALS.md for the complete guide. Key steps:
 1. Create `templates/learn_{code}_en.html` and `templates/learn_{code}_de.html`
 2. Update `has_learn_materials` flag in `mode_selection()` in `app.py`
 3. Update language guard in `learn()` in `app.py`

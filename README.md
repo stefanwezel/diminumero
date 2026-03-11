@@ -9,15 +9,15 @@
 
 An interactive web application to practice number translations in multiple languages. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers per language from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
 
-**Currently supported languages:** Spanish, German, French (Nepalese in progress)
+**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian
 
 ## ✨ Features
 
-- **Multi-Language Support**: Practice numbers in Spanish, German, and more (see [Adding Languages](ADDING_LANGUAGES.md))
+- **Multi-Language Support**: Practice numbers in Spanish, German, and more (see [Adding Languages](ADD_LANGUAGE.md))
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Step-wise probability by order of magnitude - numbers <100 have baseline probability, 100-999 are 10× less likely, 1000-9999 are 100× less likely, etc.
 - **Three Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), and Hardcore
-- **Bilingual UI**: Interface available in English and German
+- **Multilingual UI**: Interface available in English, German, Spanish, Italian, French, Portuguese, Arabic, and Ukrainian
 - **Responsive Design**: Works seamlessly on desktop and mobile
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
 
@@ -161,13 +161,13 @@ The HTML report includes a response-time timeline, a success/failure doughnut ch
 
 ## 🎨 Customization
 
-- **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `app.py` (default 10 questions)
+- **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `config.py` (default 10 questions)
 - **Number Weighting**: Adjust order-of-magnitude thresholds and weights in `quiz_logic.py` (currently 10x reduction per magnitude)
 - **Colors**: Update color variables in `static/css/style.css`
 
 ## 🌍 Adding New Languages
 
-Want to add support for a new language? See [ADDING_LANGUAGES.md](ADDING_LANGUAGES.md) for a complete guide on how to extend the application with new languages.
+Want to add support for a new language? See [ADD_LANGUAGE.md](ADD_LANGUAGE.md) for a complete guide on how to extend the application with new languages.
 
 ## 📄 License
 
