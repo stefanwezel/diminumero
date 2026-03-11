@@ -21,7 +21,7 @@
     </header>
 
     <nav class="learn-toc">
-      <strong>Inhalt</strong>
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
       <ul>
         <li><a href="#basics">0&ndash;19: Grundbausteine</a></li>
         <li><a href="#tens">20&ndash;99: Zehner</a></li>
@@ -74,7 +74,7 @@
       </ul>
 
       <details class="learn-check">
-        <summary><strong>Mini-Check</strong>: 22, 47, 88?</summary>
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22, 47, 88?</summary>
         <p><strong>22</strong> vinte e dois &middot; <strong>47</strong> quarenta e sete &middot; <strong>88</strong> oitenta e oito</p>
       </details>
     </section>
@@ -124,7 +124,7 @@
 
     <div class="learn-footer">
       <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
-        Zum Quiz
+        {{ get_text('learn_btn_start_quiz') }}
       </a>
     </div>
   </div>

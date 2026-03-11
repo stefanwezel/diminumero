@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Apprendre les nombres en portugais</h1>
+      <p>
+        Cette page couvre les <strong>nombres en portugais</strong> &mdash; la conjonction <em>e</em> partout,
+        <em>cem</em> vs. <em>cento</em>, et les centaines au pluriel comme <em>duzentos</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;19&nbsp;: les briques de base</a></li>
+        <li><a href="#tens">20&ndash;99&nbsp;: les dizaines</a></li>
+        <li><a href="#hundreds">Les centaines</a></li>
+        <li><a href="#thousands">Les milliers et les grands nombres</a></li>
+        <li><a href="#mistakes">Erreurs fréquentes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;19&nbsp;: les briques de base</h2>
+      <p>Mémorisez individuellement&nbsp;:</p>
+      <ul>
+        <li><strong>0</strong> = zero</li>
+        <li><strong>1</strong> = um</li>
+        <li><strong>2</strong> = dois</li>
+        <li><strong>3</strong> = tr&ecirc;s</li>
+        <li><strong>4</strong> = quatro</li>
+        <li><strong>5</strong> = cinco</li>
+        <li><strong>6</strong> = seis</li>
+        <li><strong>7</strong> = sete</li>
+        <li><strong>8</strong> = oito</li>
+        <li><strong>9</strong> = nove</li>
+        <li><strong>10</strong> = dez</li>
+        <li><strong>11</strong> = onze</li>
+        <li><strong>12</strong> = doze</li>
+        <li><strong>13</strong> = treze</li>
+        <li><strong>14</strong> = catorze (ou quatorze)</li>
+        <li><strong>15</strong> = quinze</li>
+        <li><strong>16</strong> = dezasseis (PT) / dezesseis (BR)</li>
+        <li><strong>17</strong> = dezassete (PT) / dezessete (BR)</li>
+        <li><strong>18</strong> = dezoito</li>
+        <li><strong>19</strong> = dezanove (PT) / dezenove (BR)</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99&nbsp;: les dizaines</h2>
+      <p>
+        Les dizaines&nbsp;: vinte (20), trinta (30), quarenta (40), cinquenta (50), sessenta (60),
+        setenta (70), oitenta (80), noventa (90).
+      </p>
+      <p>
+        On les combine avec <strong>e</strong> («&nbsp;et&nbsp;»)&nbsp;:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vinte e um</li>
+        <li><strong>35</strong> = trinta e cinco</li>
+        <li><strong>99</strong> = noventa e nove</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>&nbsp;: 22, 47, 88&nbsp;?</summary>
+        <p><strong>22</strong> vinte e dois &middot; <strong>47</strong> quarenta e sete &middot; <strong>88</strong> oitenta e oito</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Les centaines</h2>
+      <ul>
+        <li><strong>100</strong> = cem (seul)</li>
+        <li><strong>101</strong> = cento e um (cento suivi d'autres chiffres)</li>
+        <li><strong>200</strong> = duzentos</li>
+        <li><strong>300</strong> = trezentos</li>
+        <li><strong>400</strong> = quatrocentos</li>
+        <li><strong>500</strong> = quinhentos</li>
+        <li><strong>600</strong> = seiscentos</li>
+        <li><strong>700</strong> = setecentos</li>
+        <li><strong>800</strong> = oitocentos</li>
+        <li><strong>900</strong> = novecentos</li>
+      </ul>
+      <p>
+        Point clé&nbsp;: <strong>cem</strong> s'emploie seul pour exactement 100&nbsp;; on utilise <strong>cento</strong> suivi d'autres chiffres (cento e um, cento e vinte).
+        La conjonction <strong>e</strong> est utilisée partout.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Les milliers et les grands nombres</h2>
+      <ul>
+        <li><strong>1&nbsp;000</strong> = mil</li>
+        <li><strong>2&nbsp;000</strong> = dois mil</li>
+        <li><strong>1&nbsp;500</strong> = mil e quinhentos</li>
+        <li><strong>1&nbsp;000&nbsp;000</strong> = um milh&atilde;o</li>
+        <li><strong>2&nbsp;000&nbsp;000</strong> = dois milh&otilde;es</li>
+        <li><strong>1&nbsp;000&nbsp;000&nbsp;000</strong> = um bilh&atilde;o (BR) / mil milh&otilde;es (PT)</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Erreurs fréquentes</h2>
+      <ol>
+        <li><strong>cem vs. cento</strong>&nbsp;: 100 = cem, mais 101 = cento e um.</li>
+        <li><strong>Centaines au pluriel</strong>&nbsp;: duzentos, trezentos (et non &ldquo;dois centos&rdquo;).</li>
+        <li><strong>quinhentos</strong> (500)&nbsp;: irrégulier (et non &ldquo;cincocentos&rdquo;).</li>
+        <li><strong>Conjonction e</strong>&nbsp;: utilisée partout entre les composants.</li>
+        <li><strong>mil</strong>&nbsp;: jamais &ldquo;um mil&rdquo; pour 1&nbsp;000.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

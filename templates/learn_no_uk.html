@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Вивчаємо числа норвезькою мовою</h1>
+      <p>
+        Ця сторінка охоплює <strong>числівники норвезької мови</strong> (Bokm&aring;l). Норвезька має регулярні
+        десятки (на відміну від данської), зворотний порядок слів для 21&ndash;99 і прості правила складання слів.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: нерегулярні основи</a></li>
+        <li><a href="#teens">13&ndash;19: другий десяток</a></li>
+        <li><a href="#tens">20&ndash;99: десятки</a></li>
+        <li><a href="#hundreds">Сотні</a></li>
+        <li><a href="#thousands">Тисячі та великі числа</a></li>
+        <li><a href="#mistakes">Типові помилки</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: нерегулярні основи</h2>
+      <p>Запам'ятайте кожне окремо:</p>
+      <ul>
+        <li><strong>0</strong> = null</li>
+        <li><strong>1</strong> = en / ett</li>
+        <li><strong>2</strong> = to</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = fire</li>
+        <li><strong>5</strong> = fem</li>
+        <li><strong>6</strong> = seks</li>
+        <li><strong>7</strong> = sju / syv</li>
+        <li><strong>8</strong> = &aring;tte</li>
+        <li><strong>9</strong> = ni</li>
+        <li><strong>10</strong> = ti</li>
+        <li><strong>11</strong> = elleve</li>
+        <li><strong>12</strong> = tolv</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: другий десяток</h2>
+      <p>
+        Закономірність: цифра + <strong>десять</strong> (від &ldquo;ti&rdquo;):
+      </p>
+      <ul>
+        <li><strong>13</strong> = tretten</li>
+        <li><strong>14</strong> = fjorten</li>
+        <li><strong>15</strong> = femten</li>
+        <li><strong>16</strong> = seksten</li>
+        <li><strong>17</strong> = sytten</li>
+        <li><strong>18</strong> = atten</li>
+        <li><strong>19</strong> = nitten</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: десятки</h2>
+      <p>
+        Норвезька використовує регулярні десяткові десятки (на відміну від двадцяткової системи данської):
+      </p>
+      <ul>
+        <li><strong>20</strong> = tjue</li>
+        <li><strong>30</strong> = tretti</li>
+        <li><strong>40</strong> = f&oslash;rti</li>
+        <li><strong>50</strong> = femti</li>
+        <li><strong>60</strong> = seksti</li>
+        <li><strong>70</strong> = sytti</li>
+        <li><strong>80</strong> = &aring;tti</li>
+        <li><strong>90</strong> = nitti</li>
+      </ul>
+      <p>
+        Складові слова: одиниці + <strong>og</strong> (&ldquo;і&rdquo;) + десятки, або просто одиниці + десятки як одне слово:
+      </p>
+      <ul>
+        <li><strong>21</strong> = tjueen</li>
+        <li><strong>35</strong> = trettifem</li>
+        <li><strong>99</strong> = nittini</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22, 46, 83?</summary>
+        <p><strong>22</strong> tjueto &middot; <strong>46</strong> f&oslash;rtiseks &middot; <strong>83</strong> &aring;ttitre</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Сотні</h2>
+      <ul>
+        <li><strong>100</strong> = (ett) hundre</li>
+        <li><strong>200</strong> = to hundre</li>
+        <li><strong>300</strong> = tre hundre</li>
+        <li><strong>150</strong> = (ett) hundre og femti</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Тисячі та великі числа</h2>
+      <ul>
+        <li><strong>1&nbsp;000</strong> = (ett) tusen</li>
+        <li><strong>2&nbsp;000</strong> = to tusen</li>
+        <li><strong>10&nbsp;000</strong> = ti tusen</li>
+        <li><strong>1&nbsp;000&nbsp;000</strong> = en million</li>
+        <li><strong>1&nbsp;000&nbsp;000&nbsp;000</strong> = en milliard</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Типові помилки</h2>
+      <ol>
+        <li><strong>en проти ett</strong>: &ldquo;en&rdquo; для чоловічого/жіночого роду, &ldquo;ett&rdquo; для середнього.</li>
+        <li><strong>sju проти syv</strong>: обидва варіанти правильні для 7; &ldquo;syv&rdquo; більш розмовний.</li>
+        <li><strong>Не плутати з данською</strong>: норвезька використовує регулярні десяткові десятки (tjue, tretti&hellip;), а не двадцяткові.</li>
+        <li><strong>&aring;tte проти &aring;tti</strong>: 8 проти 80 &mdash; різниця в одну літеру.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

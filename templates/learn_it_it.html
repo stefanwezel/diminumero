@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Impara i numeri italiani</h1>
+      <p>
+        Questa pagina illustra i <strong>numeri italiani</strong> &mdash; l'elisione delle vocali, le regole degli accenti
+        e le parti difficili come <em>ventuno</em> e <em>ventitr&eacute;</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;19: mattoni di base</a></li>
+        <li><a href="#tens">20&ndash;99: decine ed elisione</a></li>
+        <li><a href="#hundreds">Centinaia</a></li>
+        <li><a href="#thousands">Migliaia e grandi numeri</a></li>
+        <li><a href="#mistakes">Errori comuni</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;19: mattoni di base</h2>
+      <p>Memorizza questi individualmente:</p>
+      <ul>
+        <li><strong>0</strong> = zero</li>
+        <li><strong>1</strong> = uno</li>
+        <li><strong>2</strong> = due</li>
+        <li><strong>3</strong> = tre</li>
+        <li><strong>4</strong> = quattro</li>
+        <li><strong>5</strong> = cinque</li>
+        <li><strong>6</strong> = sei</li>
+        <li><strong>7</strong> = sette</li>
+        <li><strong>8</strong> = otto</li>
+        <li><strong>9</strong> = nove</li>
+        <li><strong>10</strong> = dieci</li>
+        <li><strong>11</strong> = undici</li>
+        <li><strong>12</strong> = dodici</li>
+        <li><strong>13</strong> = tredici</li>
+        <li><strong>14</strong> = quattordici</li>
+        <li><strong>15</strong> = quindici</li>
+        <li><strong>16</strong> = sedici</li>
+        <li><strong>17</strong> = diciassette</li>
+        <li><strong>18</strong> = diciotto</li>
+        <li><strong>19</strong> = diciannove</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: decine ed elisione vocalica</h2>
+      <p>
+        Le decine: venti (20), trenta (30), quaranta (40), cinquanta (50), sessanta (60),
+        settanta (70), ottanta (80), novanta (90).
+      </p>
+      <p>
+        Quando la cifra delle unità inizia con una vocale (<strong>uno</strong> o <strong>otto</strong>), la vocale finale della decina viene <strong>eliminata</strong>:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vent<strong>uno</strong> (non &ldquo;ventiuno&rdquo;)</li>
+        <li><strong>28</strong> = vent<strong>otto</strong> (non &ldquo;ventiotto&rdquo;)</li>
+        <li><strong>38</strong> = trent<strong>otto</strong></li>
+      </ul>
+      <p>
+        Regola dell'accento: i composti con <strong>tre</strong> prendono l'accento: venti<strong>tr&eacute;</strong>, trenta<strong>tr&eacute;</strong>, ecc.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 21, 33, 48?</summary>
+        <p><strong>21</strong> ventuno &middot; <strong>33</strong> trentatr&eacute; &middot; <strong>48</strong> quarantotto</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centinaia</h2>
+      <ul>
+        <li><strong>100</strong> = cento</li>
+        <li><strong>200</strong> = duecento</li>
+        <li><strong>300</strong> = trecento</li>
+        <li><strong>500</strong> = cinquecento</li>
+        <li><strong>101</strong> = centuno (elisione con uno)</li>
+      </ul>
+      <p>
+        Tutte le centinaia si scrivono come una sola parola. L'elisione si applica con <strong>uno</strong> e <strong>otto</strong> anche dopo cento.
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Migliaia e grandi numeri</h2>
+      <ul>
+        <li><strong>1.000</strong> = mille</li>
+        <li><strong>2.000</strong> = duemila (attenzione: <strong>mila</strong> al plurale)</li>
+        <li><strong>3.000</strong> = tremila</li>
+        <li><strong>10.000</strong> = diecimila</li>
+        <li><strong>1.000.000</strong> = un milione</li>
+        <li><strong>2.000.000</strong> = due milioni</li>
+        <li><strong>1.000.000.000</strong> = un miliardo</li>
+      </ul>
+      <p>
+        <strong>Mille</strong> diventa <strong>mila</strong> al plurale. <strong>Milione</strong> e <strong>miliardo</strong>
+        sono sostantivi con plurali regolari.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errori comuni</h2>
+      <ol>
+        <li><strong>Elisione vocalica</strong>: ventuno (non ventiuno), ventotto (non ventiotto).</li>
+        <li><strong>Accento su -tr&eacute;</strong>: ventitr&eacute;, trentatr&eacute;, ecc.</li>
+        <li><strong>mille vs. mila</strong>: mille (1.000) ma duemila, tremila, ecc.</li>
+        <li><strong>milione è un sostantivo</strong>: &ldquo;un milione&rdquo; (non &ldquo;mille mille&rdquo;).</li>
+        <li><strong>diciassette / diciannove</strong>: lettere doppie (ss, nn).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

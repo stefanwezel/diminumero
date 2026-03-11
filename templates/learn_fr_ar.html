@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>تعلّم الأرقام الفرنسية</h1>
+      <p>
+        تتناول هذه الصفحة الأنماط الرئيسية لـ<strong>الأرقام الفرنسية</strong> &mdash; بما فيها الأنماط الشهيرة
+        <em>soixante-dix</em> و<em>quatre-vingts</em> و<em>quatre-vingt-dix</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;16: الأساسيات الشاذة</a></li>
+        <li><a href="#teens">17&ndash;19: نمط dix-sept</a></li>
+        <li><a href="#tens">20&ndash;69: العشرات المنتظمة</a></li>
+        <li><a href="#seventies">70&ndash;79: soixante-dix</a></li>
+        <li><a href="#eighties">80&ndash;89: quatre-vingts</a></li>
+        <li><a href="#nineties">90&ndash;99: quatre-vingt-dix</a></li>
+        <li><a href="#hundreds">المئات</a></li>
+        <li><a href="#thousands">الآلاف والأعداد الكبيرة</a></li>
+        <li><a href="#mistakes">الأخطاء الشائعة</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;16: الأساسيات الشاذة</h2>
+      <p>
+        احفظ <strong>0&ndash;16</strong> كمفردات مستقلة:
+        zéro، un، deux، trois، quatre، cinq، six، sept، huit، neuf، dix،
+        onze، douze، treize، quatorze، quinze، seize.
+      </p>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>17&ndash;19: نمط dix-sept</h2>
+      <p>
+        من 17 يكون النمط <strong>dix-</strong> + الرقم:
+      </p>
+      <ul>
+        <li><strong>17</strong> = dix-sept</li>
+        <li><strong>18</strong> = dix-huit</li>
+        <li><strong>19</strong> = dix-neuf</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;69: العشرات المنتظمة</h2>
+      <p>
+        العشرات هي: vingt (20)، trente (30)، quarante (40)، cinquante (50)، soixante (60).
+        تُضاف <strong>et un</strong> مع الرقم 1، أو واصلة مع 2&ndash;9:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vingt et un</li>
+        <li><strong>22</strong> = vingt-deux</li>
+        <li><strong>31</strong> = trente et un</li>
+        <li><strong>45</strong> = quarante-cinq</li>
+        <li><strong>68</strong> = soixante-huit</li>
+      </ul>
+      <p>
+        ملاحظة: تُستخدم <strong>et</strong> مع 1 فقط (vingt et un، trente et un …)، وليس مع الأرقام الأخرى.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 21, 35, 52؟</summary>
+        <p><strong>21</strong> vingt et un &middot; <strong>35</strong> trente-cinq &middot; <strong>52</strong> cinquante-deux</p>
+      </details>
+    </section>
+
+    <section id="seventies" class="learn-section">
+      <h2>70&ndash;79: soixante-dix</h2>
+      <p>
+        تستخدم الفرنسية <strong>60 + 10&ndash;19</strong> بدلًا من كلمة منفصلة للسبعين:
+      </p>
+      <ul>
+        <li><strong>70</strong> = soixante-dix</li>
+        <li><strong>71</strong> = soixante et onze</li>
+        <li><strong>72</strong> = soixante-douze</li>
+        <li><strong>79</strong> = soixante-dix-neuf</li>
+      </ul>
+    </section>
+
+    <section id="eighties" class="learn-section">
+      <h2>80&ndash;89: quatre-vingts</h2>
+      <p>
+        تعني 80 حرفيًا <strong>أربعة عشرينات</strong>:
+      </p>
+      <ul>
+        <li><strong>80</strong> = quatre-vingts (لاحظ الـ<strong>-s</strong>)</li>
+        <li><strong>81</strong> = quatre-vingt-un (بدون <strong>-s</strong>، وبدون <strong>et</strong>)</li>
+        <li><strong>85</strong> = quatre-vingt-cinq</li>
+      </ul>
+      <p>
+        تختفي الـ<strong>-s</strong> من <em>vingts</em> حين يليها رقم آخر.
+      </p>
+    </section>
+
+    <section id="nineties" class="learn-section">
+      <h2>90&ndash;99: quatre-vingt-dix</h2>
+      <p>
+        90 هي <strong>80 + 10</strong>، ثم تسير على نمط السبعينيات:
+      </p>
+      <ul>
+        <li><strong>90</strong> = quatre-vingt-dix</li>
+        <li><strong>91</strong> = quatre-vingt-onze</li>
+        <li><strong>99</strong> = quatre-vingt-dix-neuf</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 71, 80, 95؟</summary>
+        <p><strong>71</strong> soixante et onze &middot; <strong>80</strong> quatre-vingts &middot; <strong>95</strong> quatre-vingt-quinze</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>المئات</h2>
+      <ul>
+        <li><strong>100</strong> = cent</li>
+        <li><strong>200</strong> = deux cents (مع <strong>-s</strong>)</li>
+        <li><strong>201</strong> = deux cent un (بدون <strong>-s</strong> حين يليه رقم)</li>
+        <li><strong>500</strong> = cinq cents</li>
+      </ul>
+      <p>
+        القاعدة: تأخذ <strong>cents</strong> الـ<strong>-s</strong> فقط حين تكون الكلمة الأخيرة (deux cents، trois cents)،
+        لا حين يليها رقم آخر (deux cent un).
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>الآلاف والأعداد الكبيرة</h2>
+      <ul>
+        <li><strong>1,000</strong> = mille (وليس "un mille" أبدًا)</li>
+        <li><strong>2,000</strong> = deux mille</li>
+        <li><strong>1,000,000</strong> = un million</li>
+        <li><strong>2,000,000</strong> = deux millions</li>
+        <li><strong>1,000,000,000</strong> = un milliard</li>
+      </ul>
+      <p>
+        <strong>Mille</strong> لا تتغير (لا تأخذ -s أبدًا). أما <strong>million</strong> و<strong>milliard</strong>
+        فهما اسمان يأخذان الجمع بالـ-s.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>الأخطاء الشائعة</h2>
+      <ol>
+        <li><strong>quatre-vingts مقابل quatre-vingt-un</strong>: تختفي الـ-s قبل رقم آخر.</li>
+        <li><strong>deux cents مقابل deux cent un</strong>: نفس القاعدة للمئات.</li>
+        <li><strong>soixante et onze</strong> (71): لا تنسَ الـ<strong>et</strong>.</li>
+        <li><strong>mille</strong>: لا يُقال "un mille"، ولا جمع "milles".</li>
+        <li><strong>الواصلات</strong>: مطلوبة بين جميع الأرقام دون المئة (إصلاح إملائي حديث).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

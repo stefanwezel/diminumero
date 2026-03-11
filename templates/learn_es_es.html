@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende los números en español</h1>
+      <p>
+        Esta página enseña los patrones clave de los <strong>números en español</strong> — con muchos ejemplos
+        (y las trampas más comunes: <em>cien vs. ciento</em>, acentos, <em>veintiún</em>, <em>un millón</em>).
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0–29: bloques fundamentales</a></li>
+        <li><a href="#tens">30–99: decenas + "y" + unidades</a></li>
+        <li><a href="#hundreds">100–999: cien/ciento y centenas</a></li>
+        <li><a href="#thousands">Miles</a></li>
+        <li><a href="#millions">Millones y números grandes</a></li>
+        <li><a href="#spelling">Ortografía y acentos</a></li>
+        <li><a href="#mistakes">Errores comunes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0–29: bloques fundamentales</h2>
+      <p>
+        Conviene memorizar <strong>0–15</strong> (cero … quince). Luego entran los patrones:
+      </p>
+      <ul>
+        <li><strong>16–19</strong>: <strong>dieci-</strong> + número → dieciséis, diecisiete, dieciocho, diecinueve</li>
+        <li><strong>20</strong>: veinte</li>
+        <li><strong>21–29</strong>: <strong>veinti-</strong> + número → veintiuno, veintidós, veintitrés, …</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 18, 22, 29?</summary>
+        <p><strong>18</strong> dieciocho · <strong>22</strong> veintidós · <strong>29</strong> veintinueve</p>
+      </details>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>30–99: decenas + "y" + unidades</h2>
+      <p>
+        A partir de <strong>30</strong>, el patrón estándar es:
+        <strong>decenas</strong> + (<strong>y</strong> + unidades) cuando la cifra de unidades no es cero.
+      </p>
+      <ul>
+        <li>30 = treinta</li>
+        <li>31 = treinta y uno</li>
+        <li>42 = cuarenta y dos</li>
+        <li>98 = noventa y ocho</li>
+      </ul>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>100–999: <em>cien</em> vs. <em>ciento</em> y centenas</h2>
+      <ul>
+        <li><strong>100</strong> = cien</li>
+        <li><strong>101–199</strong> = ciento + … (p. ej. 115 = ciento quince)</li>
+        <li><strong>200–900</strong>: doscientos, trescientos, cuatrocientos, …</li>
+      </ul>
+      <p>
+        Centenas irregulares que se suelen olvidar:
+        <strong>quinientos</strong> (500), <strong>setecientos</strong> (700), <strong>novecientos</strong> (900).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 100, 115, 500, 742?</summary>
+        <p><strong>100</strong> cien · <strong>115</strong> ciento quince · <strong>500</strong> quinientos · <strong>742</strong> setecientos cuarenta y dos</p>
+      </details>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Miles</h2>
+      <ul>
+        <li><strong>1000</strong> = mil (no "un mil")</li>
+        <li><strong>2000</strong> = dos mil</li>
+        <li><strong>4321</strong> = cuatro mil trescientos veintiuno</li>
+      </ul>
+      <p>
+        Antes de <strong>mil</strong>, <strong>uno → un</strong> (apócope):
+        <strong>21 000</strong> = <strong>veintiún mil</strong>,
+        <strong>31 000</strong> = <strong>treinta y un mil</strong>.
+        (Con un sustantivo femenino se puede ver también "treinta y una mil <em>personas</em>", pero para números solos "treinta y un mil" es la forma por defecto.)
+      </p>
+    </section>
+
+    <section id="millions" class="learn-section">
+      <h2>Millones y números grandes</h2>
+      <ul>
+        <li><strong>1 000 000</strong> = <strong>un millón</strong></li>
+        <li><strong>2 000 000</strong> = dos millones</li>
+        <li><strong>1 234 567</strong> = un millón doscientos treinta y cuatro mil quinientos sesenta y siete</li>
+        <li><strong>1 000 000 000</strong> = <strong>mil millones</strong> (también: "un millardo")</li>
+        <li><strong>1 000 000 000 000</strong> = un billón (escala larga española)</li>
+      </ul>
+    </section>
+
+    <section id="spelling" class="learn-section">
+      <h2>Ortografía y acentos</h2>
+      <p>
+        Regla general de ortografía:
+        <strong>16–19</strong>, <strong>21–29</strong> y <strong>todas las centenas</strong> se escriben habitualmente
+        como <strong>una sola palabra</strong> (dieciséis, veintidós, doscientos). Formas como "veinte y uno" se consideran anticuadas.
+      </p>
+      <p>
+        Acentos que importan mucho:
+        <strong>dieciséis</strong>, <strong>veintidós</strong>, <strong>veintitrés</strong>, <strong>veintiséis</strong>.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errores comunes</h2>
+      <ol>
+        <li><strong>cien vs. ciento</strong>: 100 = cien, pero 101 = ciento uno.</li>
+        <li><strong>21 000</strong>: no "veintiuno mil" → <strong>veintiún mil</strong>.</li>
+        <li><strong>1 000 000</strong>: no "uno millón" → <strong>un millón</strong>.</li>
+        <li><strong>Acentos olvidados</strong>: especialmente 16/22/23/26.</li>
+        <li><strong>Centenas irregulares</strong>: quinientos / setecientos / novecientos.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

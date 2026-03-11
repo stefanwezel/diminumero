@@ -21,7 +21,7 @@
     </header>
 
     <nav class="learn-toc">
-      <strong>Inhalt</strong>
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
       <ul>
         <li><a href="#basics">0&ndash;16: unregelm&auml;&szlig;ige Grundzahlen</a></li>
         <li><a href="#teens">17&ndash;19: dix-sept-Muster</a></li>
@@ -74,7 +74,7 @@
       </p>
 
       <details class="learn-check">
-        <summary><strong>Mini-Check</strong>: 21, 35, 52?</summary>
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 21, 35, 52?</summary>
         <p><strong>21</strong> vingt et un &middot; <strong>35</strong> trente-cinq &middot; <strong>52</strong> cinquante-deux</p>
       </details>
     </section>
@@ -119,7 +119,7 @@
       </ul>
 
       <details class="learn-check">
-        <summary><strong>Mini-Check</strong>: 71, 80, 95?</summary>
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 71, 80, 95?</summary>
         <p><strong>71</strong> soixante et onze &middot; <strong>80</strong> quatre-vingts &middot; <strong>95</strong> quatre-vingt-quinze</p>
       </details>
     </section>
@@ -166,7 +166,7 @@
 
     <div class="learn-footer">
       <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
-        Zum Quiz
+        {{ get_text('learn_btn_start_quiz') }}
       </a>
     </div>
   </div>

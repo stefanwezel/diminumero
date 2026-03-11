@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Apprendre les nombres en français</h1>
+      <p>
+        Cette page couvre les principales règles des <strong>nombres français</strong> &mdash; y compris les célèbres
+        particularités <em>soixante-dix</em>, <em>quatre-vingts</em> et <em>quatre-vingt-dix</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;16&nbsp;: bases irrégulières</a></li>
+        <li><a href="#teens">17&ndash;19&nbsp;: le modèle dix-sept</a></li>
+        <li><a href="#tens">20&ndash;69&nbsp;: dizaines régulières</a></li>
+        <li><a href="#seventies">70&ndash;79&nbsp;: soixante-dix</a></li>
+        <li><a href="#eighties">80&ndash;89&nbsp;: quatre-vingts</a></li>
+        <li><a href="#nineties">90&ndash;99&nbsp;: quatre-vingt-dix</a></li>
+        <li><a href="#hundreds">Les centaines</a></li>
+        <li><a href="#thousands">Les milliers et les grands nombres</a></li>
+        <li><a href="#mistakes">Erreurs fréquentes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;16&nbsp;: bases irrégulières</h2>
+      <p>
+        Mémorisez <strong>0&ndash;16</strong> comme des mots uniques&nbsp;:
+        zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf, dix,
+        onze, douze, treize, quatorze, quinze, seize.
+      </p>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>17&ndash;19&nbsp;: le modèle dix-sept</h2>
+      <p>
+        À partir de 17, le modèle est <strong>dix-</strong> + unité&nbsp;:
+      </p>
+      <ul>
+        <li><strong>17</strong> = dix-sept</li>
+        <li><strong>18</strong> = dix-huit</li>
+        <li><strong>19</strong> = dix-neuf</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;69&nbsp;: dizaines régulières</h2>
+      <p>
+        Les dizaines sont&nbsp;: vingt (20), trente (30), quarante (40), cinquante (50), soixante (60).
+        On ajoute <strong>et un</strong> pour 1, ou un trait d'union pour 2&ndash;9&nbsp;:
+      </p>
+      <ul>
+        <li><strong>21</strong> = vingt et un</li>
+        <li><strong>22</strong> = vingt-deux</li>
+        <li><strong>31</strong> = trente et un</li>
+        <li><strong>45</strong> = quarante-cinq</li>
+        <li><strong>68</strong> = soixante-huit</li>
+      </ul>
+      <p>
+        Remarque&nbsp;: <strong>et</strong> ne s'utilise qu'avec 1 (vingt et un, trente et un, etc.), jamais avec les autres chiffres.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>&nbsp;: 21, 35, 52&nbsp;?</summary>
+        <p><strong>21</strong> vingt et un &middot; <strong>35</strong> trente-cinq &middot; <strong>52</strong> cinquante-deux</p>
+      </details>
+    </section>
+
+    <section id="seventies" class="learn-section">
+      <h2>70&ndash;79&nbsp;: soixante-dix</h2>
+      <p>
+        Le français utilise <strong>60 + 10&ndash;19</strong> au lieu d'un mot distinct pour 70&nbsp;:
+      </p>
+      <ul>
+        <li><strong>70</strong> = soixante-dix</li>
+        <li><strong>71</strong> = soixante et onze</li>
+        <li><strong>72</strong> = soixante-douze</li>
+        <li><strong>79</strong> = soixante-dix-neuf</li>
+      </ul>
+    </section>
+
+    <section id="eighties" class="learn-section">
+      <h2>80&ndash;89&nbsp;: quatre-vingts</h2>
+      <p>
+        80 signifie littéralement <strong>quatre fois vingt</strong>&nbsp;:
+      </p>
+      <ul>
+        <li><strong>80</strong> = quatre-vingts (noter le <strong>-s</strong>)</li>
+        <li><strong>81</strong> = quatre-vingt-un (pas de <strong>-s</strong>, pas de <strong>et</strong>)</li>
+        <li><strong>85</strong> = quatre-vingt-cinq</li>
+      </ul>
+      <p>
+        Le <strong>-s</strong> de <em>vingts</em> disparaît lorsqu'il est suivi d'un autre nombre.
+      </p>
+    </section>
+
+    <section id="nineties" class="learn-section">
+      <h2>90&ndash;99&nbsp;: quatre-vingt-dix</h2>
+      <p>
+        90 correspond à <strong>80 + 10</strong>, puis suit le même modèle que les soixante-dix&nbsp;:
+      </p>
+      <ul>
+        <li><strong>90</strong> = quatre-vingt-dix</li>
+        <li><strong>91</strong> = quatre-vingt-onze</li>
+        <li><strong>99</strong> = quatre-vingt-dix-neuf</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>&nbsp;: 71, 80, 95&nbsp;?</summary>
+        <p><strong>71</strong> soixante et onze &middot; <strong>80</strong> quatre-vingts &middot; <strong>95</strong> quatre-vingt-quinze</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Les centaines</h2>
+      <ul>
+        <li><strong>100</strong> = cent</li>
+        <li><strong>200</strong> = deux cents (avec <strong>-s</strong>)</li>
+        <li><strong>201</strong> = deux cent un (sans <strong>-s</strong> quand suivi d'un autre nombre)</li>
+        <li><strong>500</strong> = cinq cents</li>
+      </ul>
+      <p>
+        Règle&nbsp;: <strong>cents</strong> prend un <strong>-s</strong> uniquement quand il est le dernier mot (deux cents, trois cents),
+        mais pas quand il est suivi d'un autre nombre (deux cent un).
+      </p>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Les milliers et les grands nombres</h2>
+      <ul>
+        <li><strong>1&nbsp;000</strong> = mille (jamais «&nbsp;un mille&nbsp;»)</li>
+        <li><strong>2&nbsp;000</strong> = deux mille</li>
+        <li><strong>1&nbsp;000&nbsp;000</strong> = un million</li>
+        <li><strong>2&nbsp;000&nbsp;000</strong> = deux millions</li>
+        <li><strong>1&nbsp;000&nbsp;000&nbsp;000</strong> = un milliard</li>
+      </ul>
+      <p>
+        <strong>Mille</strong> est invariable (ne prend jamais de -s). <strong>Million</strong> et <strong>milliard</strong>
+        sont des noms et prennent un -s au pluriel.
+      </p>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Erreurs fréquentes</h2>
+      <ol>
+        <li><strong>quatre-vingts vs. quatre-vingt-un</strong>&nbsp;: le -s disparaît avant un autre nombre.</li>
+        <li><strong>deux cents vs. deux cent un</strong>&nbsp;: même règle pour les centaines.</li>
+        <li><strong>soixante et onze</strong> (71)&nbsp;: ne pas oublier le <strong>et</strong>.</li>
+        <li><strong>mille</strong>&nbsp;: jamais «&nbsp;un mille&nbsp;», jamais «&nbsp;milles&nbsp;».</li>
+        <li><strong>Les traits d'union</strong>&nbsp;: obligatoires entre tous les mots numéraux inférieurs à 100 (réforme orthographique moderne).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
