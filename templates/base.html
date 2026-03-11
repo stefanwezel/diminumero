@@ -68,6 +68,10 @@
                aria-selected="{{ 'true' if session.get('language', 'en') == code else 'false' }}"
                title="{{ label }}">{{ flag }} {{ label }}</a>
             {% endfor %}
+            <div class="lang-dropdown-footer">
+                <a href="https://github.com/stefanwezel/diminumero/blob/main/ADD_UI_LANGUAGE.md"
+                   target="_blank" rel="noopener noreferrer">UI language missing?</a>
+            </div>
         </div>
     </div>
     
