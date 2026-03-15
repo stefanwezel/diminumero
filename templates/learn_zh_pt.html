@@ -7,6 +7,10 @@
 {% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
 {% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
 
+{% block json_ld %}
+{% include '_learn_jsonld.html' %}
+{% endblock %}
+
 {% block content %}
 <main class="container learn">
   <div class="learn-content">

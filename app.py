@@ -32,6 +32,7 @@ from languages import (
     get_language_numbers,
     get_language_ui_description,
     get_language_ui_name,
+    get_languages_with_learn_materials,
     is_language_ready,
 )
 from translations import TRANSLATIONS
@@ -52,16 +53,74 @@ def initialize_ui_language():
         session["language"] = DEFAULT_UI_LANGUAGE
 
 
+@app.after_request
+def set_cache_headers(response):
+    """Set Cache-Control headers based on the route."""
+    path = request.path
+    if path in ("/about", "/privacy", "/imprint", "/"):
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    elif path in ("/sitemap.xml", "/robots.txt"):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    elif "/quiz/" in path or "/results" in path or path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    elif "/learn" in path:
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    else:
+        response.headers["Cache-Control"] = "public, max-age=600"
+    return response
+
+
+OG_LOCALE_MAP = {
+    "en": "en_US",
+    "de": "de_DE",
+    "es": "es_ES",
+    "it": "it_IT",
+    "fr": "fr_FR",
+    "pt": "pt_BR",
+    "ar": "ar_SA",
+    "uk": "uk_UA",
+}
+
+
 @app.context_processor
 def inject_seo_context():
     """Inject SEO-related variables into all templates."""
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    canonical_url = SITE_URL.rstrip("/") + request.path
+    base = SITE_URL.rstrip("/")
+    canonical_url = base + request.path
+
+    # og:locale
+    og_locale = OG_LOCALE_MAP.get(ui_language, "en_US")
+    og_locale_alternates = [v for k, v in OG_LOCALE_MAP.items() if k != ui_language]
+
+    # Breadcrumbs
+    breadcrumbs = [{"name": "Home", "url": f"{base}/"}]
+    path = request.path.strip("/")
+    if path:
+        parts = path.split("/")
+        if parts[0] in AVAILABLE_LANGUAGES:
+            lang_name = AVAILABLE_LANGUAGES[parts[0]].get("name", parts[0])
+            breadcrumbs.append(
+                {"name": lang_name, "url": f"{base}/{parts[0]}"}
+            )
+            if len(parts) >= 2:
+                sub = "/".join(parts[1:])
+                breadcrumbs.append(
+                    {"name": sub.replace("/", " - ").title(), "url": f"{base}/{path}"}
+                )
+        elif parts[0] in ("about", "privacy", "imprint"):
+            breadcrumbs.append(
+                {"name": parts[0].title(), "url": f"{base}/{parts[0]}"}
+            )
+
     return {
         "ui_language": ui_language,
         "ui_dir": "rtl" if ui_language in RTL_UI_LANGUAGES else "ltr",
         "site_url": SITE_URL,
         "canonical_url": canonical_url,
+        "og_locale": og_locale,
+        "og_locale_alternates": og_locale_alternates,
+        "breadcrumbs": breadcrumbs,
     }
 
 
@@ -122,9 +181,7 @@ def mode_selection(lang_code):
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
 
-    has_learn_materials = lang_code in {
-        "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no",
-    }
+    has_learn_materials = lang_code in get_languages_with_learn_materials()
 
     return render_template(
         "index.html",
@@ -567,9 +624,7 @@ def results(lang_code):
     show_splash = session.pop("show_speed_splash", False)
     show_perfect_splash = session.pop("show_perfect_splash", False)
 
-    has_learn_materials = lang_code in {
-        "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no",
-    }
+    has_learn_materials = lang_code in get_languages_with_learn_materials()
 
     return render_template(
         "results.html",
@@ -621,9 +676,7 @@ def learn(lang_code):
     if not is_language_ready(lang_code):
         return redirect(url_for("index"))
 
-    if lang_code not in {
-        "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no",
-    }:
+    if lang_code not in get_languages_with_learn_materials():
         flash(get_text("flash_learn_not_available"), "info")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
@@ -666,7 +719,7 @@ def sitemap_xml():
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
             urls.append((f"{base}/{lang_code}", "0.8"))
-    for lc in ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no"]:
+    for lc in get_languages_with_learn_materials():
         urls.append((f"{base}/{lc}/learn", "0.7"))
     urls.append((f"{base}/about", "0.5"))
     urls.append((f"{base}/privacy", "0.3"))

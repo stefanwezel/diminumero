@@ -7,6 +7,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Español",
         "flag": "🇪🇸",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Spanish numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         # UI display names keyed by UI language code
@@ -33,6 +34,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Français",
         "flag": "🇫🇷",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn French numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
         "ui_names": {
@@ -56,6 +58,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "日本語",
         "flag": "🇯🇵",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Japanese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -79,6 +82,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Deutsch",
         "flag": "🇩🇪",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn German numbers from 1 to 10 million",
         "validation_strategy": "component_based",  # Compound words
         "ui_names": {
@@ -102,6 +106,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "한국어",
         "flag": "🇰🇷",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Korean numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -125,6 +130,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Italiano",
         "flag": "🇮🇹",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Italian numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -148,6 +154,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "中文",
         "flag": "🇨🇳",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Chinese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -171,6 +178,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Português",
         "flag": "🇧🇷",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Portuguese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -194,6 +202,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Türkçe",
         "flag": "🇹🇷",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Turkish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -240,6 +249,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Svenska",
         "flag": "🇸🇪",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Swedish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -263,6 +273,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Dansk",
         "flag": "🇩🇰",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Danish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -286,6 +297,7 @@ AVAILABLE_LANGUAGES = {
         "native_name": "Norsk",
         "flag": "🇳🇴",
         "ready": True,
+        "has_learn_materials": True,
         "description": "Learn Norwegian numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -305,6 +317,15 @@ AVAILABLE_LANGUAGES = {
         "feedback_expression": "Riktig!",
     },
 }
+
+
+def get_languages_with_learn_materials():
+    """Return language codes that have learn materials and are ready."""
+    return [
+        code
+        for code, info in AVAILABLE_LANGUAGES.items()
+        if info.get("has_learn_materials", False) and info.get("ready", False)
+    ]
 
 
 def get_language_numbers(lang_code):

@@ -7,6 +7,29 @@
 {% block twitter_title %}{{ get_text('seo_title_imprint') }}{% endblock %}
 {% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_imprint') }}">{% endblock %}
 
+{% block json_ld %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "diminumero",
+    "url": "{{ site_url }}",
+    "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "wezelstefan@gmail.com",
+        "contactType": "customer support"
+    },
+    "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Wennfelder Garten 11",
+        "addressLocality": "Tuebingen",
+        "postalCode": "72072",
+        "addressCountry": "DE"
+    }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="imprint-page">
     <div class="imprint-container">

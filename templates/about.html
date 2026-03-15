@@ -7,6 +7,19 @@
 {% block twitter_title %}{{ get_text('seo_title_about') }}{% endblock %}
 {% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_about') }}">{% endblock %}
 
+{% block json_ld %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "diminumero",
+    "url": "{{ site_url }}",
+    "description": "{{ get_text('meta_desc_about') }}",
+    "logo": "{{ url_for('static', filename='logo-512.png', _external=True) }}"
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="imprint-page">
     <div class="imprint-container">

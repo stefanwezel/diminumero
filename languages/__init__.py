@@ -6,6 +6,7 @@ from .config import (
     get_language_numbers,
     get_language_ui_description,
     get_language_ui_name,
+    get_languages_with_learn_materials,
     is_language_available,
     is_language_ready,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "get_language_numbers",
     "get_language_ui_description",
     "get_language_ui_name",
+    "get_languages_with_learn_materials",
     "is_language_available",
     "is_language_ready",
 ]

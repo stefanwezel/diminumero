@@ -1,0 +1,23 @@
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    "name": "{{ get_text('seo_title_learn') }}",
+    "description": "{{ get_text('meta_desc_learn') }}",
+    "url": "{{ canonical_url }}",
+    "educationalLevel": "Beginner",
+    "learningResourceType": "lesson",
+    "inLanguage": "{{ lang_code }}",
+    "provider": {
+        "@type": "Organization",
+        "name": "diminumero",
+        "url": "{{ site_url }}"
+    },
+    "isPartOf": {
+        "@type": "Course",
+        "name": "diminumero",
+        "description": "Free interactive number translation practice",
+        "url": "{{ site_url }}"
+    }
+}
+</script>

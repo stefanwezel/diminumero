@@ -18,7 +18,9 @@
     
     <title>{% block title %}diminumero{% endblock %}</title>
     {% block meta_description %}{% endblock %}
+    {% block meta_robots %}{% endblock %}
     {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
+    <link rel="alternate" hreflang="x-default" href="{{ canonical_url }}">
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="diminumero">
@@ -27,9 +29,13 @@
     {% block og_description %}{% endblock %}
     {% if canonical_url %}<meta property="og:url" content="{{ canonical_url }}">{% endif %}
     <meta property="og:image" content="{{ url_for('static', filename='logo-512.png', _external=True) }}">
+    <meta property="og:locale" content="{{ og_locale }}">
+    {% for alt_locale in og_locale_alternates %}
+    <meta property="og:locale:alternate" content="{{ alt_locale }}">
+    {% endfor %}
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block twitter_title %}diminumero{% endblock %}">
     {% block twitter_description %}{% endblock %}
     <meta name="twitter:image" content="{{ url_for('static', filename='logo-512.png', _external=True) }}">
@@ -38,10 +44,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
     <!-- GoatCounter Analytics -->
     <script data-goatcounter="https://stefanwezel.goatcounter.com/count"
             async src="//gc.zgo.at/count.js"></script>
+    {% if breadcrumbs|length > 1 %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {% for crumb in breadcrumbs %}
+            {
+                "@type": "ListItem",
+                "position": {{ loop.index }},
+                "name": "{{ crumb.name }}",
+                "item": "{{ crumb.url }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    </script>
+    {% endif %}
     {% block json_ld %}{% endblock %}
 </head>
 <body>
