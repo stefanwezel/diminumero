@@ -8,7 +8,7 @@
 {% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
 
 {% block content %}
-<div class="quiz-page">
+<div class="quiz-page quiz-easy-page">
     <!-- Header with score and exit button -->
     <div class="quiz-header">
         <div class="progress-info">
@@ -23,7 +23,7 @@
     </div>
     
     <!-- Progress bar -->
-    <div class="progress-bar">
+    <div class="progress-bar" id="easy-progress-bar">
         <div class="progress-fill" style="width: {{ (total / max_questions * 100) }}%"></div>
     </div>
     
@@ -44,4 +44,13 @@
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth <= 768) {
+        var el = document.getElementById('easy-progress-bar');
+        if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+});
+</script>
 {% endblock %}

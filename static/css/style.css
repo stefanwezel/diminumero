@@ -968,6 +968,49 @@ body {
     .validation-feedback {
         font-size: 1.1rem;
     }
+
+    /* Easy mode mobile: fit progress bar + question + all 4 options without scrolling */
+    body:has(.quiz-easy-page) {
+        align-items: flex-start;
+    }
+
+    .quiz-easy-page {
+        padding: 15px 15px 20px;
+    }
+
+    .quiz-easy-page .quiz-header {
+        margin-bottom: 10px;
+    }
+
+    .quiz-easy-page .progress-bar {
+        margin-bottom: 15px;
+    }
+
+    .quiz-easy-page .question-container {
+        margin-bottom: 15px;
+    }
+
+    .quiz-easy-page .question-label {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .quiz-easy-page .number-display {
+        margin: 10px 0;
+    }
+
+    .quiz-easy-page .options-form {
+        margin-top: 10px;
+    }
+
+    .quiz-easy-page .options-grid {
+        gap: 10px;
+    }
+
+    .quiz-easy-page .option-btn {
+        min-height: 60px;
+        padding: 12px 10px;
+    }
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
