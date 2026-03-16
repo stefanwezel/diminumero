@@ -7,22 +7,36 @@ import time
 # Seed random with high-resolution time and secrets
 random.seed(secrets.randbits(128) ^ int(time.time() * 1000000))
 
+# Decay factor per order of magnitude for each magnitude level.
+# Level 1 reproduces the original 10x decay (mostly small numbers).
+# Level 5 gives uniform weighting (all sizes equally likely).
+MAGNITUDE_DECAY_FACTORS = {1: 10, 2: 5, 3: 3, 4: 2, 5: 1}
 
-def get_random_question(numbers_dict, exclude_numbers=None):
+
+def _get_magnitude_band(num):
+    """Return the order-of-magnitude band for a number (0-4)."""
+    if num < 100:
+        return 0
+    elif num < 1000:
+        return 1
+    elif num < 10000:
+        return 2
+    elif num < 100000:
+        return 3
+    else:
+        return 4
+
+
+def get_random_question(numbers_dict, exclude_numbers=None, magnitude_level=1):
     """
     Get a random number from the available numbers with weighted probability.
-    Lower numbers have higher probability; probability drops by 10x per order of magnitude above 100.
-
-    Probability weights:
-    - Numbers < 100: weight = 1.0 (baseline)
-    - Numbers 100-999: weight = 0.1 (10x less likely)
-    - Numbers 1000-9999: weight = 0.01 (100x less likely)
-    - Numbers 10000-99999: weight = 0.001 (1000x less likely)
-    - Numbers 100000+: weight = 0.0001 (10000x less likely)
+    The magnitude_level parameter (1-5) controls how aggressively larger numbers
+    are down-weighted. Level 1 strongly favors small numbers; level 5 is uniform.
 
     Args:
         numbers_dict: Dictionary mapping numbers to their translations
         exclude_numbers: List of numbers to exclude (already asked in this session)
+        magnitude_level: Integer 1-5 controlling large-number frequency
 
     Returns:
         Tuple of (number, correct_answer)
@@ -38,26 +52,14 @@ def get_random_question(numbers_dict, exclude_numbers=None):
     if not available_numbers:
         available_numbers = list(numbers_dict.keys())
 
-    # Calculate weights with step-wise decrease based on order of magnitude
-    # Each order of magnitude above 100 reduces probability by 10x
-    weights = []
+    # Look up decay factor; invalid levels fall back to 10 (same as level 1)
+    decay = MAGNITUDE_DECAY_FACTORS.get(magnitude_level, 10)
 
+    # Calculate weights: weight = (1 / decay) ^ band
+    weights = []
     for num in available_numbers:
-        if num < 100:
-            # Full weight for numbers < 100
-            weight = 1.0
-        elif num < 1000:
-            # 100-999: 10x less likely
-            weight = 0.1
-        elif num < 10000:
-            # 1000-9999: 100x less likely
-            weight = 0.01
-        elif num < 100000:
-            # 10000-99999: 1000x less likely
-            weight = 0.001
-        else:
-            # 100000+: 10000x less likely
-            weight = 0.0001
+        band = _get_magnitude_band(num)
+        weight = (1 / decay) ** band if decay > 0 else 1.0
         weights.append(weight)
 
     # Re-seed random with fresh entropy for each call

@@ -56,6 +56,51 @@ class TestGetRandomQuestion:
         assert has_large, "Should include some numbers > 1000"
 
 
+class TestMagnitudeLevel:
+    """Tests for magnitude_level parameter of get_random_question."""
+
+    def test_default_level_unchanged(self):
+        """Test that default level 1 still returns valid numbers."""
+        number, answer = quiz_logic.get_random_question(NUMBERS, magnitude_level=1)
+        assert number in NUMBERS
+        assert NUMBERS[number] == answer
+
+    def test_level_5_produces_large_numbers(self):
+        """Test that level 5 (uniform) produces some large numbers in a sample."""
+        numbers = []
+        for _ in range(200):
+            number, _ = quiz_logic.get_random_question(NUMBERS, magnitude_level=5)
+            numbers.append(number)
+        has_large = any(n >= 1000 for n in numbers)
+        assert has_large, "Level 5 should produce some numbers >= 1000"
+
+    def test_level_1_favors_small(self):
+        """Test that level 1 produces predominantly small numbers."""
+        numbers = []
+        for _ in range(200):
+            number, _ = quiz_logic.get_random_question(NUMBERS, magnitude_level=1)
+            numbers.append(number)
+        small_count = sum(1 for n in numbers if n < 100)
+        assert small_count > len(numbers) * 0.5, (
+            "Level 1 should mostly produce small numbers"
+        )
+
+    def test_invalid_level_fallback(self):
+        """Test that invalid magnitude levels fall back gracefully."""
+        number, answer = quiz_logic.get_random_question(NUMBERS, magnitude_level=99)
+        assert number in NUMBERS
+        assert NUMBERS[number] == answer
+
+    def test_all_levels_return_valid_numbers(self):
+        """Test that all valid levels return valid numbers."""
+        for level in range(1, 6):
+            number, answer = quiz_logic.get_random_question(
+                NUMBERS, magnitude_level=level
+            )
+            assert number in NUMBERS
+            assert NUMBERS[number] == answer
+
+
 class TestGenerateMultipleChoice:
     """Tests for generate_multiple_choice function."""
 

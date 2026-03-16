@@ -169,6 +169,41 @@ class TestStartQuiz:
         assert response.status_code == 200
 
 
+class TestMagnitudeLevel:
+    """Tests for magnitude level (order-of-magnitude dial)."""
+
+    def test_magnitude_level_stored_in_session(self, client):
+        """Test that magnitude level is stored in session from form."""
+        client.post("/es/start", data={"mode": "easy", "magnitude_level": "3"})
+        with client.session_transaction() as sess:
+            assert sess.get("magnitude_level") == 3
+
+    def test_magnitude_level_default_is_1(self, client):
+        """Test that default magnitude level is 1 when not provided."""
+        client.post("/es/start", data={"mode": "easy"})
+        with client.session_transaction() as sess:
+            assert sess.get("magnitude_level") == 1
+
+    def test_magnitude_level_invalid_defaults_to_1(self, client):
+        """Test that invalid magnitude level values default to 1."""
+        client.post("/es/start", data={"mode": "easy", "magnitude_level": "abc"})
+        with client.session_transaction() as sess:
+            assert sess.get("magnitude_level") == 1
+
+    def test_magnitude_level_out_of_range_defaults_to_1(self, client):
+        """Test that out-of-range magnitude level defaults to 1."""
+        client.post("/es/start", data={"mode": "easy", "magnitude_level": "9"})
+        with client.session_transaction() as sess:
+            assert sess.get("magnitude_level") == 1
+
+    def test_mode_selection_contains_magnitude_dial(self, client):
+        """Test that mode selection page contains the magnitude dial."""
+        response = client.get("/es")
+        data = response.data.decode("utf-8")
+        assert "magnitude-slider" in data
+        assert "magnitude-hidden-input" in data
+
+
 class TestQuizEasy:
     """Tests for easy mode quiz."""
 

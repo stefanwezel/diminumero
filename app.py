@@ -62,7 +62,9 @@ def set_cache_headers(response):
     elif path in ("/sitemap.xml", "/robots.txt"):
         response.headers["Cache-Control"] = "public, max-age=86400"
     elif "/quiz/" in path or "/results" in path or path.startswith("/api/"):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
     elif "/learn" in path:
         response.headers["Cache-Control"] = "public, max-age=3600"
     else:
@@ -100,18 +102,14 @@ def inject_seo_context():
         parts = path.split("/")
         if parts[0] in AVAILABLE_LANGUAGES:
             lang_name = AVAILABLE_LANGUAGES[parts[0]].get("name", parts[0])
-            breadcrumbs.append(
-                {"name": lang_name, "url": f"{base}/{parts[0]}"}
-            )
+            breadcrumbs.append({"name": lang_name, "url": f"{base}/{parts[0]}"})
             if len(parts) >= 2:
                 sub = "/".join(parts[1:])
                 breadcrumbs.append(
                     {"name": sub.replace("/", " - ").title(), "url": f"{base}/{path}"}
                 )
         elif parts[0] in ("about", "privacy", "imprint"):
-            breadcrumbs.append(
-                {"name": parts[0].title(), "url": f"{base}/{parts[0]}"}
-            )
+            breadcrumbs.append({"name": parts[0].title(), "url": f"{base}/{parts[0]}"})
 
     return {
         "ui_language": ui_language,
@@ -190,6 +188,7 @@ def mode_selection(lang_code):
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
+        magnitude_level=session.get("magnitude_level", 1),
     )
 
 
@@ -243,6 +242,14 @@ def start_quiz(lang_code):
         flash(get_text("flash_invalid_mode"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
+    # Read magnitude level from form, validate (int 1-5, default 1)
+    try:
+        magnitude_level = int(request.form.get("magnitude_level", 1))
+    except (TypeError, ValueError):
+        magnitude_level = 1
+    if magnitude_level not in range(1, 6):
+        magnitude_level = 1
+
     # Clear quiz-related session data but keep UI language
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     session.clear()
@@ -252,6 +259,7 @@ def start_quiz(lang_code):
     session["total_questions"] = 0
     session["asked_numbers"] = []
     session["mode"] = mode
+    session["magnitude_level"] = magnitude_level
     session["quiz_start_time"] = time.time()
 
     # Redirect to appropriate quiz
@@ -331,7 +339,9 @@ def quiz_easy(lang_code):
     else:
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+        number, correct_answer = quiz_logic.get_random_question(
+            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+        )
 
         # Generate multiple choice options
         options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
@@ -442,7 +452,9 @@ def quiz_advanced(lang_code):
     else:
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+        number, correct_answer = quiz_logic.get_random_question(
+            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+        )
 
         # Store in session
         session["current_number"] = number
@@ -569,7 +581,9 @@ def quiz_hardcore(lang_code):
     else:
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(numbers, asked_numbers)
+        number, correct_answer = quiz_logic.get_random_question(
+            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+        )
 
         # Store in session
         session["current_number"] = number
