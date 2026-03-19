@@ -43,7 +43,7 @@ docker-compose -f docker-compose.prod.yml up --build
 - **translations.py** (project root): Contains the `TEXTS` dict used by `get_text()` in `app.py` for the bilingual (English/German) UI.
 
 - **quiz_logic.py**: Quiz engine with weighted random selection, multiple choice generation using `secrets` module, and language-aware answer validation. Key functions:
-  - `get_random_question()` — weighted selection, smaller numbers prioritized
+  - `get_random_question(numbers_dict, exclude_numbers, magnitude_level)` — weighted selection with configurable magnitude level (1-5). `MAGNITUDE_DECAY_FACTORS` maps each level to a decay factor; weight per number = `(1/decay)^band` where band 0=<100 through band 4=100K+
   - `generate_multiple_choice()` — 4 options using `secrets` for randomization
   - `check_answer()` — exact string comparison (easy mode multiple choice)
   - `check_answer_advanced()` — normalized comparison via `normalize_text()` (advanced/hardcore text input)
@@ -61,7 +61,7 @@ docker-compose -f docker-compose.prod.yml up --build
 
 ### Data Flow
 
-User selects language → mode selection → `start_quiz()` initializes session → quiz route serves questions from `get_random_question()` → answers validated → after 10 questions → results page
+User selects language → mode selection (+ magnitude dial) → `start_quiz()` initializes session (including `magnitude_level`) → quiz route serves questions from `get_random_question(magnitude_level=...)` → answers validated → after 10 questions → results page
 
 ### URL Route Structure
 
@@ -84,11 +84,11 @@ Two separate language keys coexist in the session:
 - `language` — UI display language (`"en"` or `"de"`)
 - `learn_language` — Language being practiced (`"es"`, `"de"`, `"fr"`, `"ne"`, `"da"`, `"it"`)
 
-Quiz state keys: `score`, `total_questions`, `asked_numbers`, `mode`, `current_number`, `correct_answer`, `current_options` (easy mode only).
+Quiz state keys: `score`, `total_questions`, `asked_numbers`, `mode`, `magnitude_level`, `current_number`, `correct_answer`, `current_options` (easy mode only).
 
 ### Key Design Decisions
 
-- **Weighted randomization**: Numbers <100 get baseline weight; larger numbers progressively less likely (0.1 for 100-999, 0.01 for 1000-9999, etc.)
+- **Weighted randomization**: Controlled by a user-facing magnitude dial (levels 1-5) on the mode selection page. Level 1 (default, decay=10) strongly favors small numbers; level 5 (decay=1) is uniform. The setting persists in the session so it carries across quizzes. Formula: `weight = (1/decay)^band` where bands are 0 (<100) through 4 (100K+).
 - **Validation strategies**: Each language in `AVAILABLE_LANGUAGES` must declare `validation_strategy`: `"word_based"` (space-separated, e.g. Spanish/French) or `"component_based"` (compound words, e.g. German). Component-based languages also need a `decompose_<language>_number()` function in their `__init__.py`.
 - **German normalization**: Umlauts converted (ü→ue, ö→oe, ä→ae, ß→ss) in `normalize_text()`, allowing ASCII input for German compound numbers.
 - **Session-based state**: Quiz progress, scores, and preferences stored in Flask session

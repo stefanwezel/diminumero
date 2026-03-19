@@ -12,8 +12,14 @@ AVAILABLE_LANGUAGES = {
         "validation_strategy": "word_based",  # Numbers separated by spaces
         # UI display names keyed by UI language code
         "ui_names": {
-            "en": "Spanish", "de": "Spanisch", "es": "Español", "it": "Spagnolo",
-            "fr": "Espagnol", "pt": "Espanhol", "ar": "الإسبانية", "uk": "Іспанська",
+            "en": "Spanish",
+            "de": "Spanisch",
+            "es": "Español",
+            "it": "Spagnolo",
+            "fr": "Espagnol",
+            "pt": "Espanhol",
+            "ar": "الإسبانية",
+            "uk": "Іспанська",
         },
         # Translated descriptions shown on the language selection page
         "ui_descriptions": {
@@ -38,8 +44,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn French numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
         "ui_names": {
-            "en": "French", "de": "Französisch", "es": "Francés", "it": "Francese",
-            "fr": "Français", "pt": "Francês", "ar": "الفرنسية", "uk": "Французька",
+            "en": "French",
+            "de": "Französisch",
+            "es": "Francés",
+            "it": "Francese",
+            "fr": "Français",
+            "pt": "Francês",
+            "ar": "الفرنسية",
+            "uk": "Французька",
         },
         "ui_descriptions": {
             "en": "Learn French numbers from 1 to 10 million",
@@ -62,8 +74,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Japanese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Japanese", "de": "Japanisch", "es": "Japonés", "it": "Giapponese",
-            "fr": "Japonais", "pt": "Japonês", "ar": "اليابانية", "uk": "Японська",
+            "en": "Japanese",
+            "de": "Japanisch",
+            "es": "Japonés",
+            "it": "Giapponese",
+            "fr": "Japonais",
+            "pt": "Japonês",
+            "ar": "اليابانية",
+            "uk": "Японська",
         },
         "ui_descriptions": {
             "en": "Learn Japanese numbers from 1 to 10 million",
@@ -86,8 +104,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn German numbers from 1 to 10 million",
         "validation_strategy": "component_based",  # Compound words
         "ui_names": {
-            "en": "German", "de": "Deutsch", "es": "Alemán", "it": "Tedesco",
-            "fr": "Allemand", "pt": "Alemão", "ar": "الألمانية", "uk": "Німецька",
+            "en": "German",
+            "de": "Deutsch",
+            "es": "Alemán",
+            "it": "Tedesco",
+            "fr": "Allemand",
+            "pt": "Alemão",
+            "ar": "الألمانية",
+            "uk": "Німецька",
         },
         "ui_descriptions": {
             "en": "Learn German numbers from 1 to 10 million",
@@ -110,8 +134,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Korean numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Korean", "de": "Koreanisch", "es": "Coreano", "it": "Coreano",
-            "fr": "Coréen", "pt": "Coreano", "ar": "الكورية", "uk": "Корейська",
+            "en": "Korean",
+            "de": "Koreanisch",
+            "es": "Coreano",
+            "it": "Coreano",
+            "fr": "Coréen",
+            "pt": "Coreano",
+            "ar": "الكورية",
+            "uk": "Корейська",
         },
         "ui_descriptions": {
             "en": "Learn Korean numbers from 1 to 10 million",
@@ -134,8 +164,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Italian numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Italian", "de": "Italienisch", "es": "Italiano", "it": "Italiano",
-            "fr": "Italien", "pt": "Italiano", "ar": "الإيطالية", "uk": "Італійська",
+            "en": "Italian",
+            "de": "Italienisch",
+            "es": "Italiano",
+            "it": "Italiano",
+            "fr": "Italien",
+            "pt": "Italiano",
+            "ar": "الإيطالية",
+            "uk": "Італійська",
         },
         "ui_descriptions": {
             "en": "Learn Italian numbers from 1 to 10 million",
@@ -158,8 +194,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Chinese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Chinese", "de": "Chinesisch", "es": "Chino", "it": "Cinese",
-            "fr": "Chinois", "pt": "Chinês", "ar": "الصينية", "uk": "Китайська",
+            "en": "Chinese",
+            "de": "Chinesisch",
+            "es": "Chino",
+            "it": "Cinese",
+            "fr": "Chinois",
+            "pt": "Chinês",
+            "ar": "الصينية",
+            "uk": "Китайська",
         },
         "ui_descriptions": {
             "en": "Learn Chinese numbers from 1 to 10 million",
@@ -182,8 +224,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Portuguese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Portuguese", "de": "Portugiesisch", "es": "Portugués", "it": "Portoghese",
-            "fr": "Portugais", "pt": "Português", "ar": "البرتغالية", "uk": "Португальська",
+            "en": "Portuguese",
+            "de": "Portugiesisch",
+            "es": "Portugués",
+            "it": "Portoghese",
+            "fr": "Portugais",
+            "pt": "Português",
+            "ar": "البرتغالية",
+            "uk": "Португальська",
         },
         "ui_descriptions": {
             "en": "Learn Portuguese numbers from 1 to 10 million",
@@ -206,8 +254,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Turkish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Turkish", "de": "Türkisch", "es": "Turco", "it": "Turco",
-            "fr": "Turc", "pt": "Turco", "ar": "التركية", "uk": "Турецька",
+            "en": "Turkish",
+            "de": "Türkisch",
+            "es": "Turco",
+            "it": "Turco",
+            "fr": "Turc",
+            "pt": "Turco",
+            "ar": "التركية",
+            "uk": "Турецька",
         },
         "ui_descriptions": {
             "en": "Learn Turkish numbers from 1 to 10 million",
@@ -229,8 +283,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Nepalese numbers",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         "ui_names": {
-            "en": "Nepalese", "de": "Nepalesisch", "es": "Nepalés", "it": "Nepalese",
-            "fr": "Népalais", "pt": "Nepalês", "ar": "النيبالية", "uk": "Непальська",
+            "en": "Nepalese",
+            "de": "Nepalesisch",
+            "es": "Nepalés",
+            "it": "Nepalese",
+            "fr": "Népalais",
+            "pt": "Nepalês",
+            "ar": "النيبالية",
+            "uk": "Непальська",
         },
         "ui_descriptions": {
             "en": "Learn Nepalese numbers from 1 to 1000",
@@ -253,8 +313,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Swedish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Swedish", "de": "Schwedisch", "es": "Sueco", "it": "Svedese",
-            "fr": "Suédois", "pt": "Sueco", "ar": "السويدية", "uk": "Шведська",
+            "en": "Swedish",
+            "de": "Schwedisch",
+            "es": "Sueco",
+            "it": "Svedese",
+            "fr": "Suédois",
+            "pt": "Sueco",
+            "ar": "السويدية",
+            "uk": "Шведська",
         },
         "ui_descriptions": {
             "en": "Learn Swedish numbers from 1 to 10 million",
@@ -277,8 +343,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Danish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Danish", "de": "Dänisch", "es": "Danés", "it": "Danese",
-            "fr": "Danois", "pt": "Dinamarquês", "ar": "الدنماركية", "uk": "Данська",
+            "en": "Danish",
+            "de": "Dänisch",
+            "es": "Danés",
+            "it": "Danese",
+            "fr": "Danois",
+            "pt": "Dinamarquês",
+            "ar": "الدنماركية",
+            "uk": "Данська",
         },
         "ui_descriptions": {
             "en": "Learn Danish numbers from 1 to 10 million",
@@ -301,8 +373,14 @@ AVAILABLE_LANGUAGES = {
         "description": "Learn Norwegian numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
-            "en": "Norwegian", "de": "Norwegisch", "es": "Noruego", "it": "Norvegese",
-            "fr": "Norvégien", "pt": "Norueguês", "ar": "النرويجية", "uk": "Норвезька",
+            "en": "Norwegian",
+            "de": "Norwegisch",
+            "es": "Noruego",
+            "it": "Norvegese",
+            "fr": "Norvégien",
+            "pt": "Norueguês",
+            "ar": "النرويجية",
+            "uk": "Норвезька",
         },
         "ui_descriptions": {
             "en": "Learn Norwegian numbers from 1 to 10 million",

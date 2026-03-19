@@ -15,7 +15,7 @@ An interactive web application to practice number translations in multiple langu
 
 - **Multi-Language Support**: Practice numbers in Spanish, German, and more (see [Adding Languages](ADD_LANGUAGE.md))
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
-- **Smart Weighting**: Step-wise probability by order of magnitude - numbers <100 have baseline probability, 100-999 are 10× less likely, 1000-9999 are 100× less likely, etc.
+- **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
 - **Three Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), and Hardcore
 - **Multilingual UI**: Interface available in English, German, Spanish, Italian, French, Portuguese, Arabic, and Ukrainian
 - **Responsive Design**: Works seamlessly on desktop and mobile
@@ -162,7 +162,7 @@ The HTML report includes a response-time timeline, a success/failure doughnut ch
 ## 🎨 Customization
 
 - **Quiz Length**: Modify `QUESTIONS_PER_QUIZ` in `config.py` (default 10 questions)
-- **Number Weighting**: Adjust order-of-magnitude thresholds and weights in `quiz_logic.py` (currently 10x reduction per magnitude)
+- **Number Weighting**: Users control the number range via a 5-level magnitude dial on the mode selection page. Decay factors are defined in `MAGNITUDE_DECAY_FACTORS` in `quiz_logic.py`
 - **Colors**: Update color variables in `static/css/style.css`
 
 ## 🌍 Adding New Languages

@@ -47,35 +47,70 @@
                 <p class="mode-description">{{ get_text('mode_easy_desc') }}</p>
                 <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="easy">
+                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_easy_btn') }}
                     </button>
                 </form>
             </div>
-            
+
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_advanced') }}</h3>
                 <p class="mode-description">{{ get_text('mode_advanced_desc') }}</p>
                 <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="advanced">
+                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_advanced_btn') }}
                     </button>
                 </form>
             </div>
-            
+
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_hardcore') }}</h3>
                 <p class="mode-description">{{ get_text('mode_hardcore_desc') }}</p>
                 <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="hardcore">
+                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_hardcore_btn') }}
                     </button>
                 </form>
             </div>
         </div>
-        
+
+        <div class="magnitude-dial-section">
+            <label class="magnitude-label" for="magnitude-slider">{{ get_text('magnitude_label') }}</label>
+            <div class="magnitude-slider-row">
+                <span class="magnitude-end-label">{{ get_text('magnitude_small') }}</span>
+                <input type="range" id="magnitude-slider" class="magnitude-slider" min="1" max="5" value="{{ magnitude_level }}" step="1">
+                <span class="magnitude-end-label">{{ get_text('magnitude_large') }}</span>
+            </div>
+            <p class="magnitude-level-desc" id="magnitude-level-desc">{{ get_text('magnitude_level_' ~ magnitude_level) }}</p>
+        </div>
+
+        <script>
+        (function() {
+            var slider = document.getElementById('magnitude-slider');
+            var desc = document.getElementById('magnitude-level-desc');
+            var hiddenInputs = document.querySelectorAll('.magnitude-hidden-input');
+            var descriptions = {
+                1: {{ get_text('magnitude_level_1')|tojson }},
+                2: {{ get_text('magnitude_level_2')|tojson }},
+                3: {{ get_text('magnitude_level_3')|tojson }},
+                4: {{ get_text('magnitude_level_4')|tojson }},
+                5: {{ get_text('magnitude_level_5')|tojson }}
+            };
+            slider.addEventListener('input', function() {
+                var val = this.value;
+                desc.textContent = descriptions[val];
+                for (var i = 0; i < hiddenInputs.length; i++) {
+                    hiddenInputs[i].value = val;
+                }
+            });
+        })();
+        </script>
+
         <div class="info">
             <div class="info-item">
                 <span class="info-number">{{ questions_per_quiz }}</span>
