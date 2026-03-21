@@ -28,8 +28,8 @@
 <div class="landing-page">
     <div class="hero">
         <!-- Back to language selection -->
-        <div style="text-align: left; margin-bottom: 1rem;">
-            <a href="{{ url_for('index') }}" class="btn btn-secondary" style="display: inline-block; padding: 0.5rem 1rem;">
+        <div class="back-nav">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-back-nav">
                 ← {{ get_text('language_selection_back') }}
             </a>
         </div>
@@ -41,7 +41,7 @@
             {{ get_text('home_hero_description') }}
         </p>
         
-        <div class="mode-selection">
+        <div class="mode-selection" id="mode-selection">
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_easy') }}</h3>
                 <p class="mode-description">{{ get_text('mode_easy_desc') }}</p>
@@ -155,4 +155,10 @@
         </footer>
     </div>
 </div>
+<script>
+if (window.innerWidth <= 768) {
+    var el = document.getElementById('mode-selection');
+    if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+}
+</script>
 {% endblock %}
