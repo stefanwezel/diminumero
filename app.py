@@ -16,10 +16,14 @@ from flask import (
 )
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
+from flask_migrate import Migrate
 import jinja2
 import quiz_logic
 import os
+import secrets
 import time
+
+from models import Card, db
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
@@ -48,6 +52,17 @@ app = Flask(__name__)
 app.secret_key = os.environ.get(
     "FLASK_SECRET_KEY", "dev-secret-key-change-in-production"
 )
+
+# SQLite lives under Flask's instance folder (gitignored, mount as a Docker
+# volume in prod). The DATABASE_URL env var lets prod swap to Postgres later.
+os.makedirs(app.instance_path, exist_ok=True)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    f"sqlite:///{os.path.join(app.instance_path, 'diminumero.db')}",
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)
+migrate = Migrate(app, db)
 
 # Auth0 OIDC client (Authlib).
 # AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET must be set in the env;
@@ -97,7 +112,8 @@ def set_cache_headers(response):
         "/quiz/" in path
         or "/results" in path
         or path.startswith("/api/")
-        or path in ("/login", "/callback", "/logout", "/cards")
+        or path in ("/login", "/callback", "/logout")
+        or path.startswith("/cards")
     ):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
@@ -783,15 +799,274 @@ def logout():
     return redirect(f"https://{domain}/v2/logout?{params}")
 
 
+def _current_user_sub() -> str:
+    """Return the Auth0 sub for the logged-in user; login_required guarantees presence."""
+    return session["user"]["sub"]
+
+
+def _user_card_or_404(card_id: int) -> Card:
+    """Fetch a card and 404 if it does not belong to the current user."""
+    card = db.session.get(Card, card_id)
+    if card is None or card.user_sub != _current_user_sub():
+        from flask import abort
+
+        abort(404)
+    return card
+
+
 @app.route("/cards")
 @login_required
 def cards():
-    """Placeholder 'My Cards' page — index-card vocab practice lands here later."""
+    """List the user's index cards + create form."""
+    user_cards = (
+        db.session.query(Card)
+        .filter_by(user_sub=_current_user_sub())
+        .order_by(Card.created_at.desc())
+        .all()
+    )
+    edit_id = request.args.get("edit", type=int)
+    edit_card = None
+    if edit_id is not None:
+        candidate = db.session.get(Card, edit_id)
+        if candidate is not None and candidate.user_sub == _current_user_sub():
+            edit_card = candidate
     return render_template(
         "cards.html",
         user=session["user"],
+        cards=user_cards,
+        edit_card=edit_card,
         get_text=get_text,
     )
+
+
+@app.route("/cards", methods=["POST"])
+@login_required
+def cards_create():
+    """Create a new index card from the form on /cards."""
+    front = (request.form.get("front") or "").strip()
+    back = (request.form.get("back") or "").strip()
+    if not front or not back:
+        flash(get_text("cards_flash_both_sides_required"), "error")
+        return redirect(url_for("cards"))
+    card = Card(user_sub=_current_user_sub(), front=front, back=back)
+    db.session.add(card)
+    db.session.commit()
+    flash(get_text("cards_flash_created"), "success")
+    return redirect(url_for("cards"))
+
+
+@app.route("/cards/<int:card_id>/edit", methods=["POST"])
+@login_required
+def cards_edit(card_id: int):
+    """Update both sides of an existing card."""
+    card = _user_card_or_404(card_id)
+    front = (request.form.get("front") or "").strip()
+    back = (request.form.get("back") or "").strip()
+    if not front or not back:
+        flash(get_text("cards_flash_both_sides_required"), "error")
+        return redirect(url_for("cards", edit=card_id))
+    card.front = front
+    card.back = back
+    db.session.commit()
+    flash(get_text("cards_flash_updated"), "success")
+    return redirect(url_for("cards"))
+
+
+@app.route("/cards/<int:card_id>/delete", methods=["POST"])
+@login_required
+def cards_delete(card_id: int):
+    """Permanently remove a card."""
+    card = _user_card_or_404(card_id)
+    db.session.delete(card)
+    db.session.commit()
+    flash(get_text("cards_flash_deleted"), "info")
+    return redirect(url_for("cards"))
+
+
+# ----- Practice session ----------------------------------------------------
+
+
+def _pick_prompt_side(direction: str) -> str:
+    """Return 'front' or 'back' as the side to *show* the user as the prompt."""
+    if direction == "front_to_back":
+        return "front"
+    if direction == "back_to_front":
+        return "back"
+    return "front" if secrets.randbelow(2) == 0 else "back"
+
+
+def _load_next_card(state: dict) -> Card | None:
+    """Pick the next unasked card for this practice session, advance state."""
+    asked = set(state.get("asked_ids", []))
+    candidates = (
+        db.session.query(Card)
+        .filter_by(user_sub=_current_user_sub())
+        .filter(~Card.id.in_(asked) if asked else db.true())
+        .all()
+    )
+    if not candidates:
+        return None
+    card = candidates[secrets.randbelow(len(candidates))]
+    state["current_card_id"] = card.id
+    state["current_prompt_side"] = _pick_prompt_side(state["direction"])
+    state["current_revealed"] = False
+    return card
+
+
+@app.route("/cards/practice/start", methods=["POST"])
+@login_required
+def cards_practice_start():
+    """Initialize a new practice session and redirect to the first question."""
+    direction = request.form.get("direction", "front_to_back")
+    if direction not in ("front_to_back", "back_to_front", "random"):
+        direction = "front_to_back"
+    have_any = (
+        db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).first()
+        is not None
+    )
+    if not have_any:
+        flash(get_text("cards_flash_need_cards"), "info")
+        return redirect(url_for("cards"))
+    session["card_practice"] = {
+        "direction": direction,
+        "asked_ids": [],
+        "score": 0,
+        "total": 0,
+        "current_card_id": None,
+        "current_prompt_side": None,
+        "current_revealed": False,
+    }
+    return redirect(url_for("cards_practice"))
+
+
+def _get_practice_state() -> dict | None:
+    return session.get("card_practice")
+
+
+def _save_practice_state(state: dict) -> None:
+    session["card_practice"] = state
+    session.modified = True
+
+
+@app.route("/cards/practice", methods=["GET", "POST"])
+@login_required
+def cards_practice():
+    """Show the current practice card or process an answer/reveal."""
+    state = _get_practice_state()
+    if state is None:
+        return redirect(url_for("cards"))
+
+    if request.method == "POST":
+        card = (
+            db.session.get(Card, state["current_card_id"])
+            if state.get("current_card_id")
+            else None
+        )
+        if card is None or card.user_sub != _current_user_sub():
+            session.pop("card_practice", None)
+            return redirect(url_for("cards"))
+
+        prompt_side = state["current_prompt_side"]
+        correct_answer = card.back if prompt_side == "front" else card.front
+
+        if "reveal" in request.form:
+            flash(
+                get_text("cards_flash_revealed").format(correct_answer),
+                "info",
+            )
+            state["total"] += 1
+        else:
+            user_answer = (request.form.get("answer") or "").strip()
+            if user_answer and quiz_logic.check_answer_advanced(
+                user_answer, correct_answer
+            ):
+                state["score"] += 1
+                state["total"] += 1
+                flash(get_text("cards_flash_correct"), "success")
+            else:
+                # Wrong final submit: count as attempted, show correct answer.
+                flash(
+                    get_text("cards_flash_incorrect").format(correct_answer),
+                    "error",
+                )
+                state["total"] += 1
+
+        state["asked_ids"].append(card.id)
+        state["current_card_id"] = None
+        _save_practice_state(state)
+        return redirect(url_for("cards_practice"))
+
+    # GET: load (or re-load) current card.
+    if state.get("current_card_id") is None:
+        next_card = _load_next_card(state)
+        if next_card is None:
+            _save_practice_state(state)
+            return redirect(url_for("cards_practice_results"))
+        _save_practice_state(state)
+        card = next_card
+    else:
+        card = db.session.get(Card, state["current_card_id"])
+        if card is None or card.user_sub != _current_user_sub():
+            session.pop("card_practice", None)
+            return redirect(url_for("cards"))
+
+    prompt_side = state["current_prompt_side"]
+    prompt_text = card.front if prompt_side == "front" else card.back
+
+    total_cards = (
+        db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).count()
+    )
+
+    return render_template(
+        "cards_practice.html",
+        user=session["user"],
+        prompt_text=prompt_text,
+        score=state["score"],
+        total=state["total"],
+        max_questions=total_cards,
+        get_text=get_text,
+    )
+
+
+@app.route("/cards/practice/results")
+@login_required
+def cards_practice_results():
+    """Show the final practice score and clear the session state."""
+    state = session.pop("card_practice", None)
+    if state is None:
+        return redirect(url_for("cards"))
+    score = state.get("score", 0)
+    total = state.get("total", 0)
+    percentage = (score / total * 100) if total else 0
+    return render_template(
+        "cards_results.html",
+        user=session["user"],
+        score=score,
+        total=total,
+        percentage=percentage,
+        get_text=get_text,
+    )
+
+
+@app.route("/api/cards/validate", methods=["POST"])
+@login_required
+def cards_validate_api():
+    """Live word-by-word validation for the current practice card."""
+    state = _get_practice_state()
+    if state is None or not state.get("current_card_id"):
+        return jsonify({"error": "No active practice card"}), 400
+
+    card = db.session.get(Card, state["current_card_id"])
+    if card is None or card.user_sub != _current_user_sub():
+        return jsonify({"error": "Card not found"}), 404
+
+    prompt_side = state["current_prompt_side"]
+    correct_answer = card.back if prompt_side == "front" else card.front
+
+    user_input = (request.json or {}).get("input", "")
+    # `lang_code="es"` forces the word_based strategy regardless of the card's
+    # actual language — fine for free-form vocabulary.
+    return jsonify(quiz_logic.validate_partial_answer(user_input, correct_answer, "es"))
 
 
 @app.route("/robots.txt")
@@ -810,6 +1085,7 @@ def robots_txt():
         "Disallow: /callback",
         "Disallow: /logout",
         "Disallow: /cards",
+        "Disallow: /cards/",
         "",
         f"Sitemap: {SITE_URL.rstrip('/')}/sitemap.xml",
     ]

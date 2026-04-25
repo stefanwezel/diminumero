@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('cards_results_title') }} - diminumero{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block og_title %}{{ get_text('cards_results_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('cards_results_title') }} - diminumero{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero">
+        <h1 class="title">{{ get_text('cards_results_title') }}</h1>
+        <p class="subtitle">
+            {{ score }} / {{ total }}
+            {% if total %}
+                <span class="cards-results-percent">({{ "%.0f"|format(percentage) }}%)</span>
+            {% endif %}
+        </p>
+        <p class="description">
+            {% if total == 0 %}
+                {{ get_text('cards_results_no_attempts') }}
+            {% elif percentage == 100 %}
+                {{ get_text('cards_results_perfect') }}
+            {% elif percentage >= 50 %}
+                {{ get_text('cards_results_good') }}
+            {% else %}
+                {{ get_text('cards_results_keep_going') }}
+            {% endif %}
+        </p>
+        <div class="feedback-section">
+            <a href="{{ url_for('cards') }}" class="btn btn-primary">
+                {{ get_text('cards_results_back_btn') }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

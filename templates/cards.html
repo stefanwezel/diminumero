@@ -6,25 +6,130 @@
 {% block twitter_title %}{{ get_text('cards_title') }} - diminumero{% endblock %}
 
 {% block content %}
-<div class="landing-page">
-    <div class="hero">
+<div class="cards-page">
+    <header class="cards-page-header">
         <h1 class="title">{{ get_text('cards_title') }}</h1>
         <p class="subtitle">
             {{ get_text('cards_signed_in_as') }}
             <strong>{{ user.name or user.nickname or user.email }}</strong>
         </p>
-        <p class="description">
-            {{ get_text('cards_placeholder_body') }}
-        </p>
+        <p class="description">{{ get_text('cards_intro_body') }}</p>
+    </header>
 
-        <div class="feedback-section">
-            <a href="{{ url_for('index') }}" class="btn btn-primary">
-                {{ get_text('cards_practice_numbers_btn') }}
-            </a>
-            <a href="{{ url_for('logout') }}" class="btn btn-feedback">
-                {{ get_text('nav_logout') }}
-            </a>
-        </div>
+    {% if cards %}
+    <section class="cards-practice-launcher">
+        <h2 class="cards-section-heading">{{ get_text('cards_practice_heading') }}</h2>
+        <form method="POST" action="{{ url_for('cards_practice_start') }}"
+              class="cards-practice-form">
+            <fieldset class="cards-direction-fieldset">
+                <legend>{{ get_text('cards_direction_label') }}</legend>
+                <label class="cards-radio">
+                    <input type="radio" name="direction" value="front_to_back" checked>
+                    <span>{{ get_text('cards_direction_front_to_back') }}</span>
+                </label>
+                <label class="cards-radio">
+                    <input type="radio" name="direction" value="back_to_front">
+                    <span>{{ get_text('cards_direction_back_to_front') }}</span>
+                </label>
+                <label class="cards-radio">
+                    <input type="radio" name="direction" value="random">
+                    <span>{{ get_text('cards_direction_random') }}</span>
+                </label>
+            </fieldset>
+            <button type="submit" class="btn btn-primary">
+                {{ get_text('cards_start_practice_btn') }}
+            </button>
+        </form>
+    </section>
+    {% endif %}
+
+    <section class="cards-create-section">
+        <h2 class="cards-section-heading">
+            {% if edit_card %}
+                {{ get_text('cards_edit_heading') }}
+            {% else %}
+                {{ get_text('cards_create_heading') }}
+            {% endif %}
+        </h2>
+        <form method="POST"
+              action="{% if edit_card %}{{ url_for('cards_edit', card_id=edit_card.id) }}{% else %}{{ url_for('cards_create') }}{% endif %}"
+              class="cards-create-form">
+            <div class="cards-input-row">
+                <label class="cards-input">
+                    <span class="cards-input-label">{{ get_text('cards_front_label') }}</span>
+                    <input type="text" name="front" required maxlength="500"
+                           autocomplete="off"
+                           value="{{ edit_card.front if edit_card else '' }}"
+                           placeholder="{{ get_text('cards_front_placeholder') }}">
+                </label>
+                <label class="cards-input">
+                    <span class="cards-input-label">{{ get_text('cards_back_label') }}</span>
+                    <input type="text" name="back" required maxlength="500"
+                           autocomplete="off"
+                           value="{{ edit_card.back if edit_card else '' }}"
+                           placeholder="{{ get_text('cards_back_placeholder') }}">
+                </label>
+            </div>
+            <div class="cards-form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if edit_card %}
+                        {{ get_text('cards_save_btn') }}
+                    {% else %}
+                        {{ get_text('cards_add_btn') }}
+                    {% endif %}
+                </button>
+                {% if edit_card %}
+                    <a href="{{ url_for('cards') }}" class="btn btn-secondary">
+                        {{ get_text('cards_cancel_btn') }}
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </section>
+
+    <section class="cards-list-section">
+        <h2 class="cards-section-heading">
+            {{ get_text('cards_your_cards_heading') }}
+            <span class="cards-count">({{ cards|length }})</span>
+        </h2>
+        {% if cards %}
+            <ul class="cards-list">
+            {% for card in cards %}
+                <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}">
+                    <div class="cards-list-text">
+                        <span class="cards-list-front">{{ card.front }}</span>
+                        <span class="cards-list-sep">↔</span>
+                        <span class="cards-list-back">{{ card.back }}</span>
+                    </div>
+                    <div class="cards-list-actions">
+                        <a href="{{ url_for('cards', edit=card.id) }}#edit"
+                           class="btn btn-secondary cards-list-btn">
+                            {{ get_text('cards_edit_btn') }}
+                        </a>
+                        <form method="POST"
+                              action="{{ url_for('cards_delete', card_id=card.id) }}"
+                              class="cards-delete-form"
+                              onsubmit="return confirm('{{ get_text('cards_delete_confirm')|e }}');">
+                            <button type="submit" class="btn btn-secondary cards-list-btn cards-list-btn-delete">
+                                {{ get_text('cards_delete_btn') }}
+                            </button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p class="cards-empty">{{ get_text('cards_empty_state') }}</p>
+        {% endif %}
+    </section>
+
+    <div class="cards-page-footer">
+        <a href="{{ url_for('index') }}" class="btn btn-feedback">
+            {{ get_text('cards_practice_numbers_btn') }}
+        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-feedback">
+            {{ get_text('nav_logout') }}
+        </a>
     </div>
 </div>
 {% endblock %}
