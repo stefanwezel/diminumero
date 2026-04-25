@@ -48,11 +48,63 @@ body {
     color: #020122;
 }
 
-/* Language Switcher */
-.language-switcher {
+/* Top-right controls (auth + language switcher) */
+.top-controls {
     position: fixed; top: 20px; right: 20px; z-index: 1000;
+    display: flex; align-items: center; gap: 8px;
 }
-[dir="rtl"] .language-switcher { right: auto; left: 20px; }
+[dir="rtl"] .top-controls { right: auto; left: 20px; flex-direction: row-reverse; }
+
+.language-switcher { position: relative; }
+[dir="rtl"] .language-switcher { right: auto; left: auto; }
+
+/* Auth button + menu */
+.btn-auth {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 40px; padding: 0 14px;
+    border-radius: 20px; border: 1px solid rgba(237,211,130,0.5);
+    background: linear-gradient(135deg, #FC9E4F 0%, #EDD382 100%);
+    color: #fff; font-weight: 700; font-size: 0.85rem;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    text-decoration: none; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+}
+@media (hover: hover) {
+    .btn-auth:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(252,158,79,0.3);
+    }
+}
+.btn-auth-user {
+    background: rgba(255,255,255,0.85); color: #020122;
+    backdrop-filter: blur(5px);
+}
+.auth-user-name {
+    max-width: 140px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+}
+.auth-caret { font-size: 0.75rem; opacity: 0.7; }
+
+.auth-menu { position: relative; }
+.auth-dropdown {
+    display: none; position: absolute;
+    top: calc(100% + 8px); right: 0;
+    min-width: 170px; padding: 6px;
+    background: rgba(255,255,255,0.97); backdrop-filter: blur(8px);
+    border: 1px solid rgba(237,211,130,0.5); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    pointer-events: none; z-index: 1001;
+}
+[dir="rtl"] .auth-dropdown { right: auto; left: 0; }
+.auth-dropdown.open { display: block; pointer-events: auto; }
+.auth-option {
+    display: block; padding: 8px 12px; border-radius: 8px;
+    text-decoration: none; color: #020122;
+    font-size: 0.9rem; font-weight: 500;
+    transition: background 0.15s ease; white-space: nowrap;
+}
+.auth-option:hover { background: rgba(252,158,79,0.12); }
 
 .lang-globe-btn {
     font-size: 1.3rem; width: 40px; height: 40px;
@@ -112,8 +164,10 @@ body {
 }
 .lang-dropdown-footer a:hover { color: #FC9E4F; text-decoration: underline; }
 @media (max-width: 400px) {
-    .language-switcher { top: 12px; right: 12px; }
+    .top-controls { top: 12px; right: 12px; gap: 6px; }
     .lang-dropdown { right: -6px; min-width: 150px; }
+    .btn-auth { height: 36px; padding: 0 10px; font-size: 0.75rem; }
+    .auth-user-name { max-width: 80px; }
 }
 
 .container {
@@ -1252,7 +1306,7 @@ body {
         font-size: 1rem;
     }
     
-    .language-switcher {
+    .top-controls {
         top: 10px;
         right: 10px;
     }

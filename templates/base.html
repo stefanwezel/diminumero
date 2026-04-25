@@ -69,8 +69,27 @@
     {% block json_ld %}{% endblock %}
 </head>
 <body>
-    <!-- Language switcher -->
-    <div class="language-switcher">
+    <!-- Top-right controls: auth + language switcher -->
+    <div class="top-controls">
+        {% if user %}
+            <div class="auth-menu" id="authMenu">
+                <button class="btn-auth btn-auth-user" id="authMenuBtn"
+                        aria-haspopup="menu" aria-expanded="false"
+                        aria-label="{{ get_text('nav_my_cards') }}">
+                    <span class="auth-user-name">{{ user.name or user.nickname or user.email }}</span>
+                    <span class="auth-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="auth-dropdown" id="authDropdown" role="menu">
+                    <a class="auth-option" role="menuitem"
+                       href="{{ url_for('cards') }}">{{ get_text('nav_my_cards') }}</a>
+                    <a class="auth-option" role="menuitem"
+                       href="{{ url_for('logout') }}">{{ get_text('nav_logout') }}</a>
+                </div>
+            </div>
+        {% else %}
+            <a class="btn-auth" href="{{ url_for('login') }}">{{ get_text('nav_login') }}</a>
+        {% endif %}
+        <div class="language-switcher">
         <button class="lang-globe-btn" id="langGlobeBtn"
                 aria-label="Switch UI language"
                 aria-expanded="false" aria-haspopup="listbox">🌐</button>
@@ -97,8 +116,9 @@
                    target="_blank" rel="noopener noreferrer">UI language missing?</a>
             </div>
         </div>
+        </div>
     </div>
-    
+
     <div class="container">
         {% block content %}{% endblock %}
     </div>
@@ -134,6 +154,21 @@
     (function(){
         var btn=document.getElementById('langGlobeBtn');
         var dd=document.getElementById('langDropdown');
+        if(!btn||!dd)return;
+        function close(){dd.classList.remove('open');btn.setAttribute('aria-expanded','false');}
+        btn.addEventListener('click',function(e){
+            e.stopPropagation();
+            var open=dd.classList.toggle('open');
+            btn.setAttribute('aria-expanded',open);
+        });
+        document.addEventListener('click',function(e){
+            if(!btn.contains(e.target)&&!dd.contains(e.target))close();
+        });
+        document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+    }());
+    (function(){
+        var btn=document.getElementById('authMenuBtn');
+        var dd=document.getElementById('authDropdown');
         if(!btn||!dd)return;
         function close(){dd.classList.remove('open');btn.setAttribute('aria-expanded','false');}
         btn.addEventListener('click',function(e){

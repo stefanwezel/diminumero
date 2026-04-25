@@ -1,5 +1,8 @@
 """Flask application for diminumero."""
 
+from functools import wraps
+from urllib.parse import quote_plus, urlencode
+
 from flask import (
     Flask,
     Response,
@@ -11,6 +14,7 @@ from flask import (
     flash,
     jsonify,
 )
+from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import jinja2
 import quiz_logic
@@ -45,6 +49,34 @@ app.secret_key = os.environ.get(
     "FLASK_SECRET_KEY", "dev-secret-key-change-in-production"
 )
 
+# Auth0 OIDC client (Authlib).
+# AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET must be set in the env;
+# see .env.example. The /login, /callback, /logout, /cards routes depend on this.
+oauth = OAuth(app)
+_auth0_domain = os.environ.get("AUTH0_DOMAIN")
+if _auth0_domain:
+    oauth.register(
+        name="auth0",
+        client_id=os.environ.get("AUTH0_CLIENT_ID"),
+        client_secret=os.environ.get("AUTH0_CLIENT_SECRET"),
+        client_kwargs={"scope": "openid profile email"},
+        server_metadata_url=(
+            f"https://{_auth0_domain}/.well-known/openid-configuration"
+        ),
+    )
+
+
+def login_required(view):
+    """Redirect to /login when no Auth0 user is on the session."""
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+
+    return wrapped
+
 
 @app.before_request
 def initialize_ui_language():
@@ -61,7 +93,12 @@ def set_cache_headers(response):
         response.headers["Cache-Control"] = "public, max-age=3600"
     elif path in ("/sitemap.xml", "/robots.txt"):
         response.headers["Cache-Control"] = "public, max-age=86400"
-    elif "/quiz/" in path or "/results" in path or path.startswith("/api/"):
+    elif (
+        "/quiz/" in path
+        or "/results" in path
+        or path.startswith("/api/")
+        or path in ("/login", "/callback", "/logout", "/cards")
+    ):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
         )
@@ -119,6 +156,7 @@ def inject_seo_context():
         "og_locale": og_locale,
         "og_locale_alternates": og_locale_alternates,
         "breadcrumbs": breadcrumbs,
+        "user": session.get("user"),
     }
 
 
@@ -250,10 +288,13 @@ def start_quiz(lang_code):
     if magnitude_level not in range(1, 6):
         magnitude_level = 1
 
-    # Clear quiz-related session data but keep UI language
+    # Clear quiz-related session data but keep UI language and any logged-in user
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    saved_user = session.get("user")
     session.clear()
     session["language"] = ui_language
+    if saved_user is not None:
+        session["user"] = saved_user
     session["learn_language"] = lang_code
     session["score"] = 0
     session["total_questions"] = 0
@@ -660,8 +701,11 @@ def results(lang_code):
 def restart():
     """Restart the quiz."""
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    saved_user = session.get("user")
     session.clear()
     session["language"] = ui_language
+    if saved_user is not None:
+        session["user"] = saved_user
     return redirect(url_for("index"))
 
 
@@ -705,6 +749,51 @@ def learn(lang_code):
         return render_template(template, lang_code=lang_code, get_text=get_text)
 
 
+@app.route("/login")
+def login():
+    """Redirect the user to Auth0 Universal Login."""
+    return oauth.auth0.authorize_redirect(
+        redirect_uri=url_for("callback", _external=True)
+    )
+
+
+@app.route("/callback")
+def callback():
+    """Handle the Auth0 OIDC callback and store the user on the session."""
+    token = oauth.auth0.authorize_access_token()
+    session["user"] = token["userinfo"]
+    return redirect(url_for("cards"))
+
+
+@app.route("/logout")
+def logout():
+    """Clear the local session and bounce through Auth0's /v2/logout."""
+    session.pop("user", None)
+    domain = os.environ.get("AUTH0_DOMAIN")
+    client_id = os.environ.get("AUTH0_CLIENT_ID")
+    if not domain or not client_id:
+        return redirect(url_for("index"))
+    params = urlencode(
+        {
+            "returnTo": url_for("index", _external=True),
+            "client_id": client_id,
+        },
+        quote_via=quote_plus,
+    )
+    return redirect(f"https://{domain}/v2/logout?{params}")
+
+
+@app.route("/cards")
+@login_required
+def cards():
+    """Placeholder 'My Cards' page — index-card vocab practice lands here later."""
+    return render_template(
+        "cards.html",
+        user=session["user"],
+        get_text=get_text,
+    )
+
+
 @app.route("/robots.txt")
 def robots_txt():
     """Serve robots.txt for search engine crawlers."""
@@ -717,6 +806,10 @@ def robots_txt():
         "Disallow: /*/quiz/",
         "Disallow: /*/results",
         "Disallow: /*/start",
+        "Disallow: /login",
+        "Disallow: /callback",
+        "Disallow: /logout",
+        "Disallow: /cards",
         "",
         f"Sitemap: {SITE_URL.rstrip('/')}/sitemap.xml",
     ]

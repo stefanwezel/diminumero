@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('cards_title') }} - diminumero{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block og_title %}{{ get_text('cards_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('cards_title') }} - diminumero{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero">
+        <h1 class="title">{{ get_text('cards_title') }}</h1>
+        <p class="subtitle">
+            {{ get_text('cards_signed_in_as') }}
+            <strong>{{ user.name or user.nickname or user.email }}</strong>
+        </p>
+        <p class="description">
+            {{ get_text('cards_placeholder_body') }}
+        </p>
+
+        <div class="feedback-section">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                {{ get_text('cards_practice_numbers_btn') }}
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn btn-feedback">
+                {{ get_text('nav_logout') }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
