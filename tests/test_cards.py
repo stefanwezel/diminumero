@@ -142,7 +142,10 @@ class TestPracticeFlow:
         make_card(SAMPLE_USER["sub"], "silla", "chair")
         login(client)
 
-        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "count": "10"},
+        )
         # Loop until we hit results
         for _ in range(5):
             response = client.get("/cards/practice", follow_redirects=False)
@@ -197,6 +200,53 @@ class TestPracticeFlow:
         login(client)
         response = client.post("/api/cards/validate", json={"input": "anything"})
         assert response.status_code == 400
+
+    def test_count_caps_session_below_deck_size(self, client):
+        # 5-card deck, count=2 → only 2 questions before results.
+        for i in range(5):
+            make_card(SAMPLE_USER["sub"], f"front{i}", f"back{i}")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "count": "2"},
+        )
+        for _ in range(2):
+            response = client.get("/cards/practice", follow_redirects=False)
+            assert response.status_code == 200
+            with client.session_transaction() as sess:
+                state = sess["card_practice"]
+            with flask_app.app_context():
+                card = db.session.get(Card, state["current_card_id"])
+            client.post("/cards/practice", data={"answer": card.back})
+        # Third GET should redirect to results.
+        response = client.get("/cards/practice", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/cards/practice/results")
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["total"] == 2
+
+    def test_count_defaults_to_10(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        # No `count` field in form data.
+        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["count"] == 10
+
+    def test_count_clamped_to_valid_range(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start", data={"direction": "front_to_back", "count": "999"}
+        )
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["count"] == 100
+
+        client.post(
+            "/cards/practice/start", data={"direction": "front_to_back", "count": "0"}
+        )
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["count"] == 1
 
 
 class TestPracticeIsolation:

@@ -16,33 +16,6 @@
         <p class="description">{{ get_text('cards_intro_body') }}</p>
     </header>
 
-    {% if cards %}
-    <section class="cards-practice-launcher">
-        <h2 class="cards-section-heading">{{ get_text('cards_practice_heading') }}</h2>
-        <form method="POST" action="{{ url_for('cards_practice_start') }}"
-              class="cards-practice-form">
-            <fieldset class="cards-direction-fieldset">
-                <legend>{{ get_text('cards_direction_label') }}</legend>
-                <label class="cards-radio">
-                    <input type="radio" name="direction" value="front_to_back" checked>
-                    <span>{{ get_text('cards_direction_front_to_back') }}</span>
-                </label>
-                <label class="cards-radio">
-                    <input type="radio" name="direction" value="back_to_front">
-                    <span>{{ get_text('cards_direction_back_to_front') }}</span>
-                </label>
-                <label class="cards-radio">
-                    <input type="radio" name="direction" value="random">
-                    <span>{{ get_text('cards_direction_random') }}</span>
-                </label>
-            </fieldset>
-            <button type="submit" class="btn btn-primary">
-                {{ get_text('cards_start_practice_btn') }}
-            </button>
-        </form>
-    </section>
-    {% endif %}
-
     <section class="cards-create-section">
         <h2 class="cards-section-heading">
             {% if edit_card %}
@@ -93,13 +66,44 @@
             <span class="cards-count">({{ cards|length }})</span>
         </h2>
         {% if cards %}
+            <form method="POST" action="{{ url_for('cards_practice_start') }}"
+                  class="cards-practice-form">
+                <fieldset class="cards-direction-fieldset">
+                    <legend>{{ get_text('cards_direction_label') }}</legend>
+                    <label class="cards-radio">
+                        <input type="radio" name="direction" value="front_to_back" checked>
+                        <span>{{ get_text('cards_direction_front_to_back') }}</span>
+                    </label>
+                    <label class="cards-radio">
+                        <input type="radio" name="direction" value="back_to_front">
+                        <span>{{ get_text('cards_direction_back_to_front') }}</span>
+                    </label>
+                    <label class="cards-radio">
+                        <input type="radio" name="direction" value="random">
+                        <span>{{ get_text('cards_direction_random') }}</span>
+                    </label>
+                </fieldset>
+                <label class="cards-count-input">
+                    <span class="cards-count-input-label">{{ get_text('cards_count_label') }}</span>
+                    <input type="number" name="count" value="10"
+                           min="1" max="100" step="1" inputmode="numeric">
+                </label>
+                <button type="submit" class="btn btn-primary">
+                    {{ get_text('cards_start_practice_btn') }}
+                </button>
+            </form>
             <ul class="cards-list">
             {% for card in cards %}
                 <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}">
                     <div class="cards-list-text">
-                        <span class="cards-list-front">{{ card.front }}</span>
-                        <span class="cards-list-sep">↔</span>
-                        <span class="cards-list-back">{{ card.back }}</span>
+                        <div class="cards-list-line">
+                            <span class="cards-list-label cards-list-label-front">{{ get_text('cards_front_label') }}</span>
+                            <span class="cards-list-front">{{ card.front }}</span>
+                        </div>
+                        <div class="cards-list-line">
+                            <span class="cards-list-label cards-list-label-back">{{ get_text('cards_back_label') }}</span>
+                            <span class="cards-list-back">{{ card.back }}</span>
+                        </div>
                     </div>
                     <div class="cards-list-actions">
                         <a href="{{ url_for('cards', edit=card.id) }}#edit"

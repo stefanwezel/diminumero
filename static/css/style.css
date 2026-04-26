@@ -2437,7 +2437,6 @@ html {
     margin-left: 6px;
 }
 
-.cards-practice-launcher,
 .cards-create-section,
 .cards-list-section {
     margin-top: 30px;
@@ -2448,8 +2447,9 @@ html {
 .cards-practice-form {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: stretch;
     gap: 16px;
+    margin: 16px 0 20px;
 }
 
 .cards-direction-fieldset {
@@ -2483,6 +2483,41 @@ html {
 
 .cards-radio input[type="radio"] {
     accent-color: #FC9E4F;
+}
+
+.cards-count-input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 14px 8px;
+    border: 1px solid rgba(237, 211, 130, 0.6);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.cards-count-input-label {
+    font-size: 0.75rem;
+    color: #6B7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cards-count-input input[type="number"] {
+    width: 5rem;
+    padding: 6px 10px;
+    font-size: 1rem;
+    border: 1px solid rgba(237, 211, 130, 0.6);
+    border-radius: 8px;
+    color: #020122;
+    background: #fff;
+}
+
+.cards-count-input input[type="number"]:focus {
+    outline: none;
+    border-color: #FC9E4F;
+    box-shadow: 0 0 0 3px rgba(252, 158, 79, 0.18);
 }
 
 .cards-create-form {
@@ -2583,27 +2618,58 @@ html {
 }
 
 .cards-list-text {
-    font-family: "Caveat", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
-    font-size: 1.65rem;
+    font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: 1.4rem;
     line-height: 28px;
     color: #1a3a5c;
     word-break: break-word;
     min-width: 0;
 }
 
-.cards-list-front,
-.cards-list-back {
-    display: block;
+.cards-list-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
     line-height: 28px;
+}
+
+/* Small pill — explicit sans-serif so it stands apart from the handwriting
+ * card text. Font stack matches the body so it reads as standard UI chrome. */
+.cards-list-label {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, 'Noto Sans Devanagari', sans-serif;
+    font-style: normal;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    align-self: center;
+    line-height: 1.1;
+}
+
+.cards-list-label-front {
+    background: rgba(252, 158, 79, 0.18);
+    color: #B45309;
+    border: 1px solid rgba(252, 158, 79, 0.4);
+}
+
+.cards-list-label-back {
+    background: rgba(101, 79, 111, 0.12);
+    color: #654F6F;
+    border: 1px solid rgba(101, 79, 111, 0.3);
+}
+
+.cards-list-front {
+    color: #1a3a5c;
+    font-weight: 600;
+}
+
+.cards-list-back {
     color: #1a3a5c;
 }
 
-.cards-list-back {
-    color: #5a6e7a;
-    font-style: italic;
-}
-
-/* Separator no longer needed when front/back stack on consecutive rules. */
+/* Old span-based separator no longer used; markup now uses .cards-list-line. */
 .cards-list-sep { display: none; }
 
 .cards-list-actions {
@@ -2683,8 +2749,8 @@ html {
     box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.06),
         0 12px 28px rgba(0, 0, 0, 0.12);
-    font-family: "Caveat", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
-    font-size: 2.8rem;
+    font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: 2.4rem;
     line-height: 36px;
     color: #1a3a5c;
     text-align: center;
@@ -2710,15 +2776,84 @@ html {
         min-height: 100px;
     }
     .cards-list-text {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
     }
     .cards-list-actions {
         top: 6px;
         right: 6px;
     }
     .cards-practice-prompt {
-        font-size: 2rem;
+        font-size: 1.8rem;
         padding: 48px 20px 28px;
         min-height: 160px;
+    }
+}
+
+/* ===== Home page "NEW feature" callout ===== */
+.new-feature-callout {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 30px auto 36px;
+    padding: 18px 22px;
+    max-width: 640px;
+    background: linear-gradient(135deg, #FFFAEB 0%, #FFE9C7 100%);
+    border: 2px solid rgba(252, 158, 79, 0.45);
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(252, 158, 79, 0.18);
+    text-align: left;
+}
+
+.new-feature-badge {
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, #FC9E4F 0%, #654F6F 100%);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(252, 158, 79, 0.4);
+}
+
+.new-feature-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.new-feature-title {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    color: #020122;
+    font-weight: 700;
+}
+
+.new-feature-body {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #4a4a5e;
+    line-height: 1.4;
+}
+
+.new-feature-cta {
+    flex-shrink: 0;
+    padding: 10px 22px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+    .new-feature-callout {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        text-align: left;
+    }
+    .new-feature-cta {
+        align-self: stretch;
+        text-align: center;
     }
 }

@@ -920,6 +920,11 @@ def cards_practice_start():
     direction = request.form.get("direction", "front_to_back")
     if direction not in ("front_to_back", "back_to_front", "random"):
         direction = "front_to_back"
+    try:
+        count = int(request.form.get("count", 10))
+    except (TypeError, ValueError):
+        count = 10
+    count = max(1, min(count, 100))
     have_any = (
         db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).first()
         is not None
@@ -929,6 +934,7 @@ def cards_practice_start():
         return redirect(url_for("cards"))
     session["card_practice"] = {
         "direction": direction,
+        "count": count,
         "asked_ids": [],
         "score": 0,
         "total": 0,
@@ -997,6 +1003,12 @@ def cards_practice():
         return redirect(url_for("cards_practice"))
 
     # GET: load (or re-load) current card.
+    count = state.get("count", 10)
+    # End the round once the user has been asked `count` questions, even if
+    # more unseen cards exist in their deck.
+    if state["total"] >= count:
+        return redirect(url_for("cards_practice_results"))
+
     if state.get("current_card_id") is None:
         next_card = _load_next_card(state)
         if next_card is None:
@@ -1023,7 +1035,7 @@ def cards_practice():
         prompt_text=prompt_text,
         score=state["score"],
         total=state["total"],
-        max_questions=total_cards,
+        max_questions=min(count, total_cards),
         get_text=get_text,
     )
 
