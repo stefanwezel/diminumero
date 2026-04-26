@@ -22,5 +22,8 @@ ENV FLASK_APP=app.py
 # Expose port 5005
 EXPOSE 5005
 
-# Production-only: run gunicorn on 5005
-CMD gunicorn --bind 0.0.0.0:5005 --workers 2 app:app
+# Production-only: apply DB migrations, then run gunicorn on 5005.
+# `flask db upgrade` is idempotent — re-running on each start is safe and
+# ensures a fresh container against a persisted SQLite volume always has
+# the latest schema before serving traffic.
+CMD flask db upgrade && gunicorn --bind 0.0.0.0:5005 --workers 2 app:app

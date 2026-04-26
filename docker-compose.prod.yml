@@ -13,4 +13,8 @@ services:
       - FLASK_ENV=production
     env_file:
       - .env
+    volumes:
+      # SQLite DB lives in Flask's instance folder; bind-mount to ./data/
+      # so it survives container rebuilds. Back up with: tar czf backup-$(date +%F).tgz data/
+      - ./data:/app/instance
     restart: unless-stopped
