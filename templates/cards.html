@@ -112,8 +112,7 @@
                         </a>
                         <form method="POST"
                               action="{{ url_for('cards_delete', card_id=card.id) }}"
-                              class="cards-delete-form"
-                              onsubmit="return confirm('{{ get_text('cards_delete_confirm')|e }}');">
+                              class="cards-delete-form">
                             <button type="submit" class="btn btn-secondary cards-list-btn cards-list-btn-delete">
                                 {{ get_text('cards_delete_btn') }}
                             </button>
