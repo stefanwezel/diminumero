@@ -11,6 +11,14 @@ import tempfile
 _db_fd, _db_path = tempfile.mkstemp(suffix="-diminumero-test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_db_path}"
 
+# Auth0 vars must be set before app import so oauth.register() runs and
+# creates the `auth0` client that the auth tests mock. CI has no .env, so
+# load_dotenv() finds nothing — without these defaults the registration
+# is skipped and oauth.auth0 raises "No such client".
+os.environ.setdefault("AUTH0_DOMAIN", "test-tenant.eu.auth0.com")
+os.environ.setdefault("AUTH0_CLIENT_ID", "test-client-id")
+os.environ.setdefault("AUTH0_CLIENT_SECRET", "test-client-secret")
+
 import pytest  # noqa: E402
 
 from app import app as flask_app  # noqa: E402
