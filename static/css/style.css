@@ -2617,6 +2617,33 @@ html {
         0 6px 16px rgba(252, 158, 79, 0.25);
 }
 
+@keyframes cardFlash {
+    0% { box-shadow: 0 0 0 2px #FC9E4F, 0 6px 16px rgba(252, 158, 79, 0.45); }
+    100% {
+        box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.06),
+            0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+}
+
+.cards-list-item-flash {
+    animation: cardFlash 0.7s ease-out;
+}
+
+.cards-list-item-removing {
+    opacity: 0;
+    transform: scaleY(0.85);
+    transform-origin: top;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+}
+
+.cards-create-error {
+    color: #b00020;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
 .cards-list-text {
     font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
     font-size: 1.4rem;

@@ -7,6 +7,11 @@
 
 {% block content %}
 <div class="cards-page">
+    <div class="back-nav">
+        <a href="{{ practice_numbers_url }}" class="btn btn-secondary btn-back-nav">
+            ← {{ get_text('cards_practice_numbers_btn') }}
+        </a>
+    </div>
     <header class="cards-page-header">
         <h1 class="title">{{ get_text('cards_title') }}</h1>
         <p class="subtitle">
@@ -26,7 +31,8 @@
         </h2>
         <form method="POST"
               action="{% if edit_card %}{{ url_for('cards_edit', card_id=edit_card.id) }}{% else %}{{ url_for('cards_create') }}{% endif %}"
-              class="cards-create-form">
+              class="cards-create-form"
+              {% if not edit_card %}id="cards-create-form"{% endif %}>
             <div class="cards-input-row">
                 <label class="cards-input">
                     <span class="cards-input-label">{{ get_text('cards_front_label') }}</span>
@@ -60,10 +66,20 @@
         </form>
     </section>
 
-    <section class="cards-list-section">
+    <section class="cards-list-section"
+             data-i18n-front="{{ get_text('cards_front_label') }}"
+             data-i18n-back="{{ get_text('cards_back_label') }}"
+             data-i18n-edit="{{ get_text('cards_edit_btn') }}"
+             data-i18n-delete="{{ get_text('cards_delete_btn') }}"
+             data-i18n-save="{{ get_text('cards_save_btn') }}"
+             data-i18n-cancel="{{ get_text('cards_cancel_btn') }}"
+             data-i18n-front-placeholder="{{ get_text('cards_front_placeholder') }}"
+             data-i18n-back-placeholder="{{ get_text('cards_back_placeholder') }}"
+             data-i18n-created="{{ get_text('cards_flash_created') }}"
+             data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
         <h2 class="cards-section-heading">
             {{ get_text('cards_your_cards_heading') }}
-            <span class="cards-count">({{ cards|length }})</span>
+            <span class="cards-count" id="cards-count">({{ cards|length }})</span>
         </h2>
         {% if cards %}
             <form method="POST" action="{{ url_for('cards_practice_start') }}"
@@ -92,9 +108,10 @@
                     {{ get_text('cards_start_practice_btn') }}
                 </button>
             </form>
-            <ul class="cards-list">
+            <ul class="cards-list" data-cards-list>
             {% for card in cards %}
-                <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}">
+                <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}"
+                    data-card-id="{{ card.id }}">
                     <div class="cards-list-text">
                         <div class="cards-list-line">
                             <span class="cards-list-label cards-list-label-front">{{ get_text('cards_front_label') }}</span>
@@ -125,14 +142,6 @@
             <p class="cards-empty">{{ get_text('cards_empty_state') }}</p>
         {% endif %}
     </section>
-
-    <div class="cards-page-footer">
-        <a href="{{ url_for('index') }}" class="btn btn-feedback">
-            {{ get_text('cards_practice_numbers_btn') }}
-        </a>
-        <a href="{{ url_for('logout') }}" class="btn btn-feedback">
-            {{ get_text('nav_logout') }}
-        </a>
-    </div>
 </div>
+<script src="{{ url_for('static', filename='js/cards.js') }}" defer></script>
 {% endblock %}

@@ -830,11 +830,17 @@ def cards():
         candidate = db.session.get(Card, edit_id)
         if candidate is not None and candidate.user_sub == _current_user_sub():
             edit_card = candidate
+    practice_lang = session.get("learn_language")
+    if practice_lang and is_language_ready(practice_lang):
+        practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
+    else:
+        practice_numbers_url = url_for("index")
     return render_template(
         "cards.html",
         user=session["user"],
         cards=user_cards,
         edit_card=edit_card,
+        practice_numbers_url=practice_numbers_url,
         get_text=get_text,
     )
 
@@ -881,6 +887,51 @@ def cards_delete(card_id: int):
     db.session.commit()
     flash(get_text("cards_flash_deleted"), "info")
     return redirect(url_for("cards"))
+
+
+# ----- JSON cards API (in-place updates from /cards) -----------------------
+
+
+@app.route("/api/cards", methods=["POST"])
+@login_required
+def api_cards_create():
+    payload = request.get_json(silent=True) or {}
+    front = (payload.get("front") or "").strip()
+    back = (payload.get("back") or "").strip()
+    if not front or not back:
+        return jsonify(
+            {"ok": False, "error": get_text("cards_flash_both_sides_required")}
+        ), 400
+    card = Card(user_sub=_current_user_sub(), front=front, back=back)
+    db.session.add(card)
+    db.session.commit()
+    return jsonify({"ok": True, "card": card.to_dict()})
+
+
+@app.route("/api/cards/<int:card_id>", methods=["PATCH"])
+@login_required
+def api_cards_update(card_id: int):
+    card = _user_card_or_404(card_id)
+    payload = request.get_json(silent=True) or {}
+    front = (payload.get("front") or "").strip()
+    back = (payload.get("back") or "").strip()
+    if not front or not back:
+        return jsonify(
+            {"ok": False, "error": get_text("cards_flash_both_sides_required")}
+        ), 400
+    card.front = front
+    card.back = back
+    db.session.commit()
+    return jsonify({"ok": True, "card": card.to_dict()})
+
+
+@app.route("/api/cards/<int:card_id>", methods=["DELETE"])
+@login_required
+def api_cards_delete(card_id: int):
+    card = _user_card_or_404(card_id)
+    db.session.delete(card)
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ----- Practice session ----------------------------------------------------

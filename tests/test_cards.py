@@ -128,6 +128,94 @@ class TestCardsDelete:
             assert db.session.get(Card, card_id) is not None
 
 
+class TestCardsApi:
+    def test_create_returns_card_json(self, client):
+        login(client)
+        response = client.post(
+            "/api/cards", json={"front": "silla", "back": "chair"}
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["ok"] is True
+        assert data["card"]["front"] == "silla"
+        assert data["card"]["back"] == "chair"
+        assert isinstance(data["card"]["id"], int)
+        with flask_app.app_context():
+            assert db.session.query(Card).count() == 1
+
+    def test_create_rejects_empty_sides(self, client):
+        login(client)
+        response = client.post("/api/cards", json={"front": "", "back": "chair"})
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["ok"] is False
+        assert data["error"]
+        with flask_app.app_context():
+            assert db.session.query(Card).count() == 0
+
+    def test_create_requires_login(self, client):
+        response = client.post("/api/cards", json={"front": "a", "back": "b"})
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
+
+    def test_update_returns_card_json(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        response = client.patch(
+            f"/api/cards/{card_id}", json={"front": "mesa", "back": "desk"}
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["ok"] is True
+        assert data["card"]["back"] == "desk"
+        with flask_app.app_context():
+            assert db.session.get(Card, card_id).back == "desk"
+
+    def test_update_rejects_empty_sides(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        response = client.patch(
+            f"/api/cards/{card_id}", json={"front": "mesa", "back": ""}
+        )
+        assert response.status_code == 400
+        assert response.get_json()["ok"] is False
+        with flask_app.app_context():
+            assert db.session.get(Card, card_id).back == "table"
+
+    def test_update_other_users_card_404(self, client):
+        card_id = make_card(OTHER_USER["sub"], "secret", "hidden")
+        login(client)
+        response = client.patch(
+            f"/api/cards/{card_id}", json={"front": "x", "back": "y"}
+        )
+        assert response.status_code == 404
+        with flask_app.app_context():
+            assert db.session.get(Card, card_id).front == "secret"
+
+    def test_delete_returns_ok(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        response = client.delete(f"/api/cards/{card_id}")
+        assert response.status_code == 200
+        assert response.get_json() == {"ok": True}
+        with flask_app.app_context():
+            assert db.session.get(Card, card_id) is None
+
+    def test_delete_other_users_card_404(self, client):
+        card_id = make_card(OTHER_USER["sub"], "secret", "hidden")
+        login(client)
+        response = client.delete(f"/api/cards/{card_id}")
+        assert response.status_code == 404
+        with flask_app.app_context():
+            assert db.session.get(Card, card_id) is not None
+
+    def test_delete_requires_login(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        response = client.delete(f"/api/cards/{card_id}")
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
+
+
 class TestPracticeFlow:
     def test_start_redirects_to_cards_when_no_cards(self, client):
         login(client)
