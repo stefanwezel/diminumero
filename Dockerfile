@@ -22,5 +22,9 @@ ENV FLASK_APP=app.py
 # Expose port 5005
 EXPOSE 5005
 
-# Production-only: run gunicorn on 5005
-CMD gunicorn --bind 0.0.0.0:5005 --workers 2 app:app
+# Production-only: apply DB migrations, then run gunicorn on 5005.
+# `flask db upgrade` is idempotent — re-running on each start is safe and
+# ensures a fresh container against a fresh DB has the latest schema before
+# serving traffic. JSON-array form so SIGTERM is forwarded directly to
+# gunicorn (PID 1), enabling graceful shutdown on `docker compose down`.
+CMD ["sh", "-c", "flask db upgrade && exec gunicorn --bind 0.0.0.0:5005 --workers 2 app:app"]

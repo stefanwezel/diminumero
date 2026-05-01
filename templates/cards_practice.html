@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('cards_practice_title') }} - diminumero{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block og_title %}{{ get_text('cards_practice_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('cards_practice_title') }} - diminumero{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+    <div class="quiz-header">
+        <div class="progress-info">
+            {{ get_text('cards_practice_progress') }} {{ total + 1 }} / {{ max_questions }}
+        </div>
+        <div class="score-display">
+            {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
+        </div>
+        <div class="quiz-header-buttons">
+            <form action="{{ url_for('cards_practice_results') }}" method="GET" class="quiz-header-form">
+                <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
+            </form>
+            <form action="{{ url_for('cards_practice') }}" method="POST" class="quiz-header-form">
+                <button type="submit" name="reveal" value="1"
+                        class="btn btn-secondary btn-quiz-header"
+                        title="{{ get_text('cards_reveal_tooltip') }}">
+                    {{ get_text('cards_reveal_btn') }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (total / max_questions * 100) if max_questions else 0 }}%"></div>
+    </div>
+
+    <div class="question-container">
+        <h2 class="question-label">{{ get_text('cards_practice_prompt') }}</h2>
+        <div class="cards-practice-prompt">{{ prompt_text }}</div>
+    </div>
+
+    <form action="{{ url_for('cards_practice') }}" method="POST" class="answer-form" id="answerForm">
+        <div class="text-input-container">
+            <input
+                type="text"
+                name="answer"
+                id="answerInput"
+                class="answer-input"
+                placeholder="{{ get_text('cards_practice_input_placeholder') }}"
+                autocomplete="off"
+                autofocus
+            >
+            <div id="validationFeedback" class="validation-feedback"></div>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/cards_practice.js') }}"></script>
+{% endblock %}

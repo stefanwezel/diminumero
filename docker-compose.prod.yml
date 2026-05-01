@@ -12,5 +12,15 @@ services:
     environment:
       - FLASK_ENV=production
     env_file:
-      - .env
+      - .env.prod
+    # Lets the container resolve the VPS host bridge so it can reach a
+    # Postgres exposed on a host port (e.g. via Coolify's "Public" toggle)
+    # at host.docker.internal:<port>. Required on Linux; no-op on macOS/Windows.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # SQLite fallback persistence: when DATABASE_URL is unset the app falls
+      # back to sqlite:///instance/diminumero.db; this bind-mount keeps that
+      # file on the host. Safe to remove once Postgres is verified in prod.
+      - ./data:/app/instance
     restart: unless-stopped

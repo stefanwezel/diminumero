@@ -10,6 +10,10 @@ wheels/
 .venv
 
 .env
+.env.prod
+
+# Flask instance folder (SQLite DB lives here)
+instance/
 
 # Testing
 .pytest_cache/

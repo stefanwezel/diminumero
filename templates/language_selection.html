@@ -36,7 +36,24 @@
         <p class="description">
             {{ get_text('language_selection_description') }}
         </p>
-        
+
+        <aside class="new-feature-callout" aria-label="{{ get_text('home_new_feature_title') }}">
+            <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
+            <div class="new-feature-text">
+                <h2 class="new-feature-title">{{ get_text('home_new_feature_title') }}</h2>
+                <p class="new-feature-body">{{ get_text('home_new_feature_body') }}</p>
+            </div>
+            {% if user %}
+                <a href="{{ url_for('cards') }}" class="btn btn-primary new-feature-cta">
+                    {{ get_text('home_new_feature_cta_open') }}
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary new-feature-cta">
+                    {{ get_text('home_new_feature_cta_login') }}
+                </a>
+            {% endif %}
+        </aside>
+
         <div class="mode-selection">
             {% for lang_code, lang_info in languages.items() %}
             <div class="mode-card {% if not lang_info.ready %}mode-disabled{% endif %}">
