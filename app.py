@@ -1,5 +1,6 @@
 """Flask application for diminumero."""
 
+from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import quote_plus, urlencode
 
@@ -1164,24 +1165,23 @@ def robots_txt():
 def sitemap_xml():
     """Serve sitemap.xml for search engine crawlers."""
     base = SITE_URL.rstrip("/")
-    urls = [
-        (f"{base}/", "1.0"),
-    ]
+    lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    urls = [f"{base}/"]
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
-            urls.append((f"{base}/{lang_code}", "0.8"))
+            urls.append(f"{base}/{lang_code}")
     for lc in get_languages_with_learn_materials():
-        urls.append((f"{base}/{lc}/learn", "0.7"))
-    urls.append((f"{base}/about", "0.5"))
-    urls.append((f"{base}/privacy", "0.3"))
-    urls.append((f"{base}/imprint", "0.3"))
+        urls.append(f"{base}/{lc}/learn")
+    urls.append(f"{base}/about")
+    urls.append(f"{base}/privacy")
+    urls.append(f"{base}/imprint")
 
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml_lines.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for loc, priority in urls:
+    for loc in urls:
         xml_lines.append("  <url>")
         xml_lines.append(f"    <loc>{loc}</loc>")
-        xml_lines.append(f"    <priority>{priority}</priority>")
+        xml_lines.append(f"    <lastmod>{lastmod}</lastmod>")
         xml_lines.append("  </url>")
     xml_lines.append("</urlset>")
     return Response("\n".join(xml_lines), mimetype="application/xml")

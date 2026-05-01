@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="{{ ui_language|default('en') }}" dir="{{ ui_dir|default('ltr') }}">
 <head>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7963483579984328"
-     crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7963483579984328"
+     crossorigin="anonymous"></script>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
@@ -28,7 +33,10 @@
     <meta property="og:title" content="{% block og_title %}diminumero{% endblock %}">
     {% block og_description %}{% endblock %}
     {% if canonical_url %}<meta property="og:url" content="{{ canonical_url }}">{% endif %}
-    <meta property="og:image" content="{{ url_for('static', filename='logo-512.png', _external=True) }}">
+    <meta property="og:image" content="{{ url_for('static', filename='logo-1024.png', _external=True) }}">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:image:alt" content="diminumero — practice numbers in foreign languages">
     <meta property="og:locale" content="{{ og_locale }}">
     {% for alt_locale in og_locale_alternates %}
     <meta property="og:locale:alternate" content="{{ alt_locale }}">
@@ -38,10 +46,9 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block twitter_title %}diminumero{% endblock %}">
     {% block twitter_description %}{% endblock %}
-    <meta name="twitter:image" content="{{ url_for('static', filename='logo-512.png', _external=True) }}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='logo-1024.png', _external=True) }}">
+    <meta name="twitter:image:alt" content="diminumero — practice numbers in foreign languages">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
