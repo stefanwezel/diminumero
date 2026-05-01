@@ -17,8 +17,9 @@ An interactive web application to practice number translations in multiple langu
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
 - **Three Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), and Hardcore
+- **Index Cards**: Sign in with Auth0 to create your own free-form vocabulary cards and practice them with the same word-by-word validator the number quiz uses
 - **Multilingual UI**: Interface available in English, German, Spanish, Italian, French, Portuguese, Arabic, and Ukrainian
-- **Responsive Design**: Works seamlessly on desktop and mobile
+- **Responsive Design**: Works seamlessly on desktop and mobile, with touch-friendly interactions
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
 
 ## 🚀 Quick Start
@@ -48,18 +49,20 @@ uv run pytest
 ```
 
 ### Run Production Setup with Docker
-Before you start with a docker setup, make sure to setup a `.env` file. Have a look at the `.env.example` for reference. To start the production container, run
+Before you start with a docker setup, copy `.env.example` to `.env.prod` and fill in `FLASK_SECRET_KEY`, the `AUTH0_*` credentials (required for `/cards`), and optionally `DATABASE_URL` (defaults to a SQLite file under `./data/diminumero.db`, which the compose file bind-mounts for persistence). To start the production container, run
 ```bash
 docker-compose -f docker-compose.prod.yml up --build
 ```
-Access the application at http://127.0.0.1:5005.
+The container applies pending Alembic migrations on startup and then serves via gunicorn. Access the application at http://127.0.0.1:5005.
 
 ## 📁 Project Structure
 
 ```
 diminumero/
-├── app.py                 # Flask application & routes
+├── app.py                 # Flask application & routes (quiz, auth, cards)
 ├── quiz_logic.py          # Quiz generation & weighting logic
+├── models.py              # SQLAlchemy models (Card)
+├── migrations/            # Alembic migrations (Flask-Migrate)
 ├── languages/             # Multi-language support
 │   ├── config.py          # Language registry & metadata
 │   ├── es/                # Spanish (numbers.py, generate_numbers.py)
@@ -70,14 +73,19 @@ diminumero/
 │   ├── quiz_easy.html
 │   ├── quiz_advanced.html
 │   ├── quiz_hardcore.html
-│   └── results.html
+│   ├── results.html
+│   ├── cards.html
+│   ├── cards_practice.html
+│   └── cards_results.html
 └── static/
     ├── css/
     │   └── style.css      # Styling & animations
     └── js/
-        ├── quiz.js        # Easy mode interactions
-        ├── quiz_advanced.js   # Live validation logic
-        └── quiz_hardcore.js   # Hardcore mode logic
+        ├── quiz.js              # Easy mode interactions
+        ├── quiz_advanced.js     # Live validation logic
+        ├── quiz_hardcore.js     # Hardcore mode logic
+        ├── cards.js             # Card CRUD (in-place via JSON API)
+        └── cards_practice.js    # Card practice live validation
 ```
 
 ## 🎯 How It Works
@@ -99,9 +107,16 @@ diminumero/
 ### Hardcore Mode
 Same as Advanced mode but with stricter validation requirements for an extra challenge.
 
+### Index Cards (Auth required)
+1. **Sign In**: Click "Login" — you're bounced to Auth0's Universal Login
+2. **Create Cards**: On `/cards`, add front/back pairs (e.g. `el perro` / `the dog`); edit and delete in place
+3. **Practice**: Pick a direction (front→back, back→front, or random) and a card count, then answer with the same live word-by-word validator the number quiz uses
+
 ## 🛠️ Technologies
 
-- **Backend**: Flask 3.1+
+- **Backend**: Flask 3.1+, SQLAlchemy + Flask-Migrate (Alembic)
+- **Auth**: Auth0 (OIDC via Authlib)
+- **Database**: SQLite by default; Postgres in production via `psycopg`
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
 - **Styling**: Custom CSS with responsive design
 - **Number Generation**: Algorithmic grammar rules per language
