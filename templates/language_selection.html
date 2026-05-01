@@ -22,6 +22,7 @@
         "priceCurrency": "USD"
     },
     "inLanguage": ["es", "de", "fr", "it", "da", "ne", "tr", "ko", "no", "pt", "sv", "ja", "zh"],
+    "availableLanguage": ["en", "de", "es", "it", "fr", "pt", "ar", "uk"],
     "operatingSystem": "Any"
 }
 </script>
@@ -30,8 +31,8 @@
 {% block content %}
 <div class="landing-page">
     <div class="hero">
-        <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="hero-logo">
-        <h1 class="title">{{ get_text('home_hero_title') }}</h1>
+        <img src="{{ url_for('static', filename='logo-512.png') }}" alt="diminumero logo" class="hero-logo" width="512" height="512">
+        <h1 class="title">{{ get_text('seo_h1_index') }}</h1>
         <p class="subtitle">{{ get_text('language_selection_subtitle') }}</p>
         <p class="description">
             {{ get_text('language_selection_description') }}
