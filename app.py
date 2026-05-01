@@ -17,6 +17,7 @@ from flask import (
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask_migrate import Migrate
+from werkzeug.middleware.proxy_fix import ProxyFix
 import jinja2
 import quiz_logic
 import os
@@ -49,6 +50,10 @@ from translations import TRANSLATIONS
 load_dotenv()
 
 app = Flask(__name__)
+# Trust X-Forwarded-Proto/Host from the reverse proxy (Coolify/Traefik) so
+# url_for(..., _external=True) emits https URLs — required for the Auth0
+# redirect_uri to match the allowed callback in production.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get(
     "FLASK_SECRET_KEY", "dev-secret-key-change-in-production"
 )
