@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Learn Irish Numbers</h1>
+      <p>
+        This page covers the <strong>modern decimal system</strong> (<em>córas deachúlach</em>)
+        for counting in Irish. The numbers shown here are the
+        <strong>standalone abstract form</strong> (with the <em>a</em> particle) used when reciting
+        numbers without a noun &mdash; the form taught in school and used for phone numbers, maths
+        and the like. The historical vigesimal system (<em>trí fichid</em> = 60) is not used in the quiz.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">1&ndash;10: <em>a haon, a dó, a trí</em>&hellip;</a></li>
+        <li><a href="#teens">11&ndash;19: adding <em>déag</em></a></li>
+        <li><a href="#tens">20&ndash;99: tens with the <em>a</em> connector</a></li>
+        <li><a href="#hundreds">Hundreds: lenition &amp; eclipsis</a></li>
+        <li><a href="#thousands">Thousands &amp; millions</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>1&ndash;10: <em>a haon, a dó, a trí</em>&hellip;</h2>
+      <p>
+        Each number takes the particle <strong>a</strong> in front. Vowel-initial numbers
+        (1 <em>aon</em>, 8 <em>ocht</em>) get an <strong>h-prefix</strong> after the particle:
+      </p>
+      <ul>
+        <li><strong>1</strong> = a haon</li>
+        <li><strong>2</strong> = a dó</li>
+        <li><strong>3</strong> = a trí</li>
+        <li><strong>4</strong> = a ceathair</li>
+        <li><strong>5</strong> = a cúig</li>
+        <li><strong>6</strong> = a sé</li>
+        <li><strong>7</strong> = a seacht</li>
+        <li><strong>8</strong> = a hocht <em>(h-prefix on the vowel)</em></li>
+        <li><strong>9</strong> = a naoi</li>
+        <li><strong>10</strong> = a deich</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>11&ndash;19: adding <em>déag</em></h2>
+      <p>
+        The teens are the digit + <strong>déag</strong> (&ldquo;-teen&rdquo;). One quirk:
+        after <em>a dó</em>, <em>déag</em> lenites to <strong>dhéag</strong>:
+      </p>
+      <ul>
+        <li><strong>11</strong> = a haon déag</li>
+        <li><strong>12</strong> = a dó dhéag <em>(lenited)</em></li>
+        <li><strong>13</strong> = a trí déag</li>
+        <li><strong>14</strong> = a ceathair déag</li>
+        <li><strong>15</strong> = a cúig déag</li>
+        <li><strong>16</strong> = a sé déag</li>
+        <li><strong>17</strong> = a seacht déag</li>
+        <li><strong>18</strong> = a hocht déag</li>
+        <li><strong>19</strong> = a naoi déag</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: tens with the <em>a</em> connector</h2>
+      <p>The tens drop the <em>a</em> particle. Each one is its own word:</p>
+      <ul>
+        <li><strong>20</strong> = fiche</li>
+        <li><strong>30</strong> = tríocha</li>
+        <li><strong>40</strong> = daichead</li>
+        <li><strong>50</strong> = caoga</li>
+        <li><strong>60</strong> = seasca</li>
+        <li><strong>70</strong> = seachtó</li>
+        <li><strong>80</strong> = ochtó</li>
+        <li><strong>90</strong> = nócha</li>
+      </ul>
+      <p>For compounds, put the unit after the tens with <strong>a</strong> as a connector:</p>
+      <ul>
+        <li><strong>21</strong> = fiche a haon</li>
+        <li><strong>47</strong> = daichead a seacht</li>
+        <li><strong>99</strong> = nócha a naoi</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22, 58, 86?</summary>
+        <p><strong>22</strong> fiche a dó &middot; <strong>58</strong> caoga a hocht &middot; <strong>86</strong> ochtó a sé</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hundreds: lenition &amp; eclipsis</h2>
+      <p>
+        The word for 100 is <strong>céad</strong>. Multipliers 1&ndash;6 trigger
+        <strong>lenition</strong> (c &rarr; ch); 7&ndash;9 trigger <strong>eclipsis</strong> (c &rarr; gc):
+      </p>
+      <ul>
+        <li><strong>100</strong> = céad</li>
+        <li><strong>200</strong> = dhá chéad <em>(lenited)</em></li>
+        <li><strong>300</strong> = trí chéad</li>
+        <li><strong>400</strong> = ceithre chéad</li>
+        <li><strong>500</strong> = cúig chéad</li>
+        <li><strong>600</strong> = sé chéad</li>
+        <li><strong>700</strong> = seacht gcéad <em>(eclipsed)</em></li>
+        <li><strong>800</strong> = ocht gcéad</li>
+        <li><strong>900</strong> = naoi gcéad</li>
+      </ul>
+      <p>Combine with tens and units the usual way:</p>
+      <ul>
+        <li><strong>134</strong> = céad tríocha a ceathair</li>
+        <li><strong>365</strong> = trí chéad seasca a cúig</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Thousands &amp; millions</h2>
+      <p>
+        <strong>Míle</strong> (1000) and <strong>milliún</strong> (1,000,000) follow the same lenition
+        pattern as <em>céad</em>. <em>m</em> isn&rsquo;t affected by eclipsis, so 7&ndash;9 stay as plain
+        <em>míle</em>/<em>milliún</em>:
+      </p>
+      <ul>
+        <li><strong>1,000</strong> = míle</li>
+        <li><strong>2,000</strong> = dhá mhíle</li>
+        <li><strong>3,000</strong> = trí mhíle</li>
+        <li><strong>5,000</strong> = cúig mhíle</li>
+        <li><strong>7,000</strong> = seacht míle <em>(no mutation)</em></li>
+        <li><strong>10,000</strong> = deich míle</li>
+        <li><strong>100,000</strong> = céad míle</li>
+        <li><strong>1,000,000</strong> = milliún</li>
+        <li><strong>5,000,000</strong> = cúig mhilliún</li>
+      </ul>
+      <p>Larger compounds simply chain together:</p>
+      <ul>
+        <li><strong>1,234</strong> = míle dhá chéad tríocha a ceathair</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>Where the <em>a</em> goes</strong>: 1&ndash;19 begin with <em>a</em>; 20+ don&rsquo;t.
+          But <em>a</em> reappears between tens and units in compounds: <em>fiche a haon</em>, not
+          &ldquo;fiche haon&rdquo;.</li>
+        <li><strong>Lenition vs. eclipsis on <em>céad</em></strong>: 1&ndash;6 lenite (<em>dhá chéad</em>),
+          7&ndash;9 eclipse (<em>seacht gcéad</em>). Same pattern for <em>míle</em>/<em>milliún</em>,
+          except <em>m</em> doesn&rsquo;t take eclipsis &mdash; so <em>seacht míle</em>, not
+          &ldquo;seacht <em>bp</em>&hellip;&rdquo;.</li>
+        <li><strong>Don&rsquo;t use <em>beirt</em>/<em>triúr</em></strong>: those are for counting
+          <em>people</em>, not for abstract numbers. The quiz uses the abstract form (<em>a haon</em>,
+          <em>a dó</em>&hellip;).</li>
+        <li><strong>Lenited <em>déag</em> only after <em>dó</em></strong>: it&rsquo;s
+          <em>a dó dhéag</em> (12), but <em>a trí déag</em> (13) without lenition.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

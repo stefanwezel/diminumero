@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Learn Welsh Numbers</h1>
+      <p>
+        This page covers <strong>modern decimal Welsh</strong> (<em>Cyfrif degol y Gymraeg</em>) &mdash;
+        the system taught in primary schools today. The traditional vigesimal system
+        (<em>deugain</em>, <em>hanner cant</em>) is still used for time, dates and age, but the decimal
+        system is what learners memorise first and what the quiz tests.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">1&ndash;10: the building blocks</a></li>
+        <li><a href="#teens">11&ndash;19: <em>un deg X</em></a></li>
+        <li><a href="#tens">20&ndash;99: tens with mutations</a></li>
+        <li><a href="#hundreds">Hundreds</a></li>
+        <li><a href="#thousands">Thousands &amp; millions</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>1&ndash;10: the building blocks</h2>
+      <p>Memorise these &mdash; everything else is built from them:</p>
+      <ul>
+        <li><strong>1</strong> = un</li>
+        <li><strong>2</strong> = dau</li>
+        <li><strong>3</strong> = tri</li>
+        <li><strong>4</strong> = pedwar</li>
+        <li><strong>5</strong> = pump</li>
+        <li><strong>6</strong> = chwech</li>
+        <li><strong>7</strong> = saith</li>
+        <li><strong>8</strong> = wyth</li>
+        <li><strong>9</strong> = naw</li>
+        <li><strong>10</strong> = deg</li>
+      </ul>
+      <p>
+        Two of these shorten before another number word: <strong>pump &rarr; pum</strong> and
+        <strong>chwech &rarr; chwe</strong> (apocope) before <em>deg</em>, <em>cant</em> or <em>mil</em>.
+      </p>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>11&ndash;19: <em>un deg X</em></h2>
+      <p>The decimal system uses <strong>un deg</strong> (&ldquo;one ten&rdquo;) plus the digit:</p>
+      <ul>
+        <li><strong>11</strong> = un deg un</li>
+        <li><strong>12</strong> = un deg dau</li>
+        <li><strong>13</strong> = un deg tri</li>
+        <li><strong>14</strong> = un deg pedwar</li>
+        <li><strong>15</strong> = un deg pump</li>
+        <li><strong>16</strong> = un deg chwech</li>
+        <li><strong>17</strong> = un deg saith</li>
+        <li><strong>18</strong> = un deg wyth</li>
+        <li><strong>19</strong> = un deg naw</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: tens with mutations</h2>
+      <p>Each tens word is the digit + <em>deg</em>, but <strong>2 triggers a soft mutation</strong>
+        (<em>d &rarr; dd</em>) and <strong>5 and 6 apocopate</strong>:</p>
+      <ul>
+        <li><strong>20</strong> = dau ddeg <em>(soft mutation: d &rarr; dd)</em></li>
+        <li><strong>30</strong> = tri deg</li>
+        <li><strong>40</strong> = pedwar deg</li>
+        <li><strong>50</strong> = pum deg <em>(pump &rarr; pum)</em></li>
+        <li><strong>60</strong> = chwe deg <em>(chwech &rarr; chwe)</em></li>
+        <li><strong>70</strong> = saith deg</li>
+        <li><strong>80</strong> = wyth deg</li>
+        <li><strong>90</strong> = naw deg</li>
+      </ul>
+      <p>Compounds add the unit after a space:</p>
+      <ul>
+        <li><strong>21</strong> = dau ddeg un</li>
+        <li><strong>47</strong> = pedwar deg saith</li>
+        <li><strong>99</strong> = naw deg naw</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22, 56, 88?</summary>
+        <p><strong>22</strong> dau ddeg dau &middot; <strong>56</strong> pum deg chwech &middot; <strong>88</strong> wyth deg wyth</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Hundreds</h2>
+      <p>The word for 100 is <strong>cant</strong>. Multipliers trigger different mutations:</p>
+      <ul>
+        <li><strong>100</strong> = cant</li>
+        <li><strong>200</strong> = dau gant <em>(soft mutation: c &rarr; g)</em></li>
+        <li><strong>300</strong> = tri chant <em>(aspirate mutation: c &rarr; ch)</em></li>
+        <li><strong>400</strong> = pedwar cant</li>
+        <li><strong>500</strong> = pum cant</li>
+        <li><strong>600</strong> = chwe chant <em>(aspirate mutation)</em></li>
+        <li><strong>700</strong> = saith cant</li>
+        <li><strong>800</strong> = wyth cant</li>
+        <li><strong>900</strong> = naw cant</li>
+      </ul>
+      <p>Combine with tens and units after a space:</p>
+      <ul>
+        <li><strong>134</strong> = cant tri deg pedwar</li>
+        <li><strong>365</strong> = tri chant chwe deg pump</li>
+      </ul>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Thousands &amp; millions</h2>
+      <p><em>Mil</em> is a feminine noun, so 2&ndash;4 use the <strong>feminine forms</strong>
+        (<em>dwy</em>, <em>tair</em>, <em>pedair</em>) and trigger soft mutation:</p>
+      <ul>
+        <li><strong>1,000</strong> = mil</li>
+        <li><strong>2,000</strong> = dwy fil</li>
+        <li><strong>3,000</strong> = tair mil</li>
+        <li><strong>4,000</strong> = pedair mil</li>
+        <li><strong>5,000</strong> = pum mil</li>
+        <li><strong>6,000</strong> = chwe mil</li>
+        <li><strong>10,000</strong> = deg mil</li>
+        <li><strong>100,000</strong> = can mil <em>(cant &rarr; can before mil)</em></li>
+        <li><strong>1,000,000</strong> = miliwn</li>
+      </ul>
+      <p>Larger compounds chain together:</p>
+      <ul>
+        <li><strong>1,234</strong> = mil dau gant tri deg pedwar</li>
+        <li><strong>5,000,000</strong> = pum miliwn</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>Forgetting apocope</strong>: it&rsquo;s <em>pum deg</em> not &ldquo;pump deg&rdquo;,
+          and <em>chwe deg</em> not &ldquo;chwech deg&rdquo;.</li>
+        <li><strong>Soft vs. aspirate mutation</strong>: <em>dau</em> triggers soft (<em>dau gant</em>),
+          but <em>tri</em> and <em>chwe</em> trigger aspirate (<em>tri chant</em>, <em>chwe chant</em>).</li>
+        <li><strong>Feminine concord with mil</strong>: use <em>dwy</em>/<em>tair</em>/<em>pedair</em>
+          before <em>mil</em>, not <em>dau</em>/<em>tri</em>/<em>pedwar</em>.</li>
+        <li><strong>Decimal vs. vigesimal</strong>: in this quiz, <em>dau ddeg</em> = 20, not <em>ugain</em>.
+          The vigesimal system you may hear in older speech (<em>deugain</em> = 40, <em>hanner cant</em> = 50)
+          isn&rsquo;t used here.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

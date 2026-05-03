@@ -394,6 +394,66 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Riktig!",
     },
+    "cy": {
+        "name": "Welsh",
+        "native_name": "Cymraeg",
+        "flag": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+        "ready": True,
+        "has_learn_materials": True,
+        "description": "Learn Welsh numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {
+            "en": "Welsh",
+            "de": "Walisisch",
+            "es": "Galés",
+            "it": "Gallese",
+            "fr": "Gallois",
+            "pt": "Galês",
+            "ar": "الويلزية",
+            "uk": "Валлійська",
+        },
+        "ui_descriptions": {
+            "en": "Learn Welsh numbers from 1 to 10 million",
+            "de": "Lerne Walisische Zahlen von 1 bis 10 Millionen",
+            "es": "Aprende los números en galés del 1 al 10 millones",
+            "it": "Impara i numeri in gallese da 1 a 10 milioni",
+            "fr": "Apprenez les nombres en gallois de 1 à 10 millions",
+            "pt": "Aprenda os números em galês de 1 a 10 milhões",
+            "ar": "تعلم الأرقام بالويلزية من 1 إلى 10 ملايين",
+            "uk": "Вивчайте валлійські числа від 1 до 10 мільйонів",
+        },
+        "feedback_expression": "Da iawn!",
+    },
+    "ga": {
+        "name": "Irish",
+        "native_name": "Gaeilge",
+        "flag": "🇮🇪",
+        "ready": True,
+        "has_learn_materials": True,
+        "description": "Learn Irish numbers from 1 to 10 million",
+        "validation_strategy": "word_based",
+        "ui_names": {
+            "en": "Irish",
+            "de": "Irisch",
+            "es": "Irlandés",
+            "it": "Irlandese",
+            "fr": "Irlandais",
+            "pt": "Irlandês",
+            "ar": "الأيرلندية",
+            "uk": "Ірландська",
+        },
+        "ui_descriptions": {
+            "en": "Learn Irish numbers from 1 to 10 million",
+            "de": "Lerne Irische Zahlen von 1 bis 10 Millionen",
+            "es": "Aprende los números en irlandés del 1 al 10 millones",
+            "it": "Impara i numeri in irlandese da 1 a 10 milioni",
+            "fr": "Apprenez les nombres en irlandais de 1 à 10 millions",
+            "pt": "Aprenda os números em irlandês de 1 a 10 milhões",
+            "ar": "تعلم الأرقام بالأيرلندية من 1 إلى 10 ملايين",
+            "uk": "Вивчайте ірландські числа від 1 до 10 мільйонів",
+        },
+        "feedback_expression": "Maith thú!",
+    },
 }
 
 
@@ -449,6 +509,10 @@ def get_language_numbers(lang_code):
             from .ja import NUMBERS
         elif lang_code == "zh":
             from .zh import NUMBERS
+        elif lang_code == "cy":
+            from .cy import NUMBERS
+        elif lang_code == "ga":
+            from .ga import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 
