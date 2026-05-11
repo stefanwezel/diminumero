@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_progress_ring.html" import progress_ring %}
 
 {% block title %}{{ get_text('cards_title') }} - diminumero{% endblock %}
 {% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
@@ -99,6 +100,17 @@
                         <span>{{ get_text('cards_direction_random') }}</span>
                     </label>
                 </fieldset>
+                <fieldset class="cards-direction-fieldset cards-sampling-fieldset">
+                    <legend>{{ get_text('cards_sampling_label') }}</legend>
+                    <label class="cards-radio">
+                        <input type="radio" name="sampling_mode" value="random" checked>
+                        <span>{{ get_text('cards_sampling_random') }}</span>
+                    </label>
+                    <label class="cards-radio">
+                        <input type="radio" name="sampling_mode" value="prioritized">
+                        <span>{{ get_text('cards_sampling_prioritized') }}</span>
+                    </label>
+                </fieldset>
                 <label class="cards-count-input">
                     <span class="cards-count-input-label">{{ get_text('cards_count_label') }}</span>
                     <input type="number" name="count" value="10"
@@ -122,6 +134,7 @@
                             <span class="cards-list-back">{{ card.back }}</span>
                         </div>
                     </div>
+                    {{ progress_ring(card) }}
                     <div class="cards-list-actions">
                         <a href="{{ url_for('cards', edit=card.id) }}#edit"
                            class="btn btn-secondary cards-list-btn">

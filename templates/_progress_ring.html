@@ -1,0 +1,33 @@
+{# Circular score badge shown on each card in /cards. Renders a gray track
+   plus a colored progress arc whose hue interpolates from red (0%) to green
+   (100%). Unpracticed cards (score is None) show only the track + an em-dash.
+   The radius 15.9155 makes the circle's circumference ≈ 100, so the
+   stroke-dasharray maps 1:1 to the percentage. #}
+{% macro progress_ring(card) -%}
+{%- if card.score is not none -%}
+{%- set pct = (card.score * 100)|round(0, 'common')|int -%}
+{%- set hue = (120 * card.score)|round(1) -%}
+<div class="cards-progress"
+     data-score="{{ card.score }}"
+     data-practiced="{{ card.times_practiced }}"
+     style="--progress-color: hsl({{ hue }}, 70%, 42%);"
+     aria-label="{{ pct }}% correct ({{ card.times_correct }}/{{ card.times_practiced }})">
+  <svg class="cards-progress-svg" viewBox="0 0 36 36" aria-hidden="true">
+    <circle class="cards-progress-track" cx="18" cy="18" r="15.9155"></circle>
+    <circle class="cards-progress-bar" cx="18" cy="18" r="15.9155"
+            stroke-dasharray="{{ pct }} 100"></circle>
+  </svg>
+  <span class="cards-progress-text">{{ pct }}%</span>
+</div>
+{%- else -%}
+<div class="cards-progress cards-progress-empty"
+     data-score=""
+     data-practiced="0"
+     aria-label="No practice attempts yet">
+  <svg class="cards-progress-svg" viewBox="0 0 36 36" aria-hidden="true">
+    <circle class="cards-progress-track" cx="18" cy="18" r="15.9155"></circle>
+  </svg>
+  <span class="cards-progress-text">—</span>
+</div>
+{%- endif -%}
+{%- endmacro %}
