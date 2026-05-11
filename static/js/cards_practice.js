@@ -1,22 +1,51 @@
 /**
- * Index-card practice — live word-by-word validation, auto-advance on correct.
- * Mirrors static/js/quiz_advanced.js but hits /api/cards/validate.
+ * Index-card practice — two flavors:
+ *
+ *   advanced (default): live word-by-word validation via /api/cards/validate,
+ *     auto-advance on a complete correct answer. Mirrors quiz_advanced.js.
+ *
+ *   hardcore: no live feedback. On Enter, normalize the input client-side and
+ *     compare to the correct answer (leaked into a data attribute by the
+ *     server only when difficulty=hardcore). The input flashes green or red
+ *     before submitting. Mirrors quiz_hardcore.js, with explicit red feedback
+ *     for wrong answers.
  */
 
 document.addEventListener('DOMContentLoaded', function () {
     const answerInput = document.getElementById('answerInput');
     const validationFeedback = document.getElementById('validationFeedback');
     const answerForm = document.getElementById('answerForm');
-    let isSubmitting = false;
-    let validationTimer = null;
-
     if (!answerInput || !validationFeedback || !answerForm) return;
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    const isHardcore = answerInput.getAttribute('data-difficulty') === 'hardcore';
+
+    if (isHardcore) {
+        setupHardcore(answerInput, answerForm);
+    } else {
+        setupAdvanced(answerInput, validationFeedback, answerForm);
     }
+});
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function normalizeText(text) {
+    text = text.toLowerCase().trim();
+    text = text.replace(/ü/g, 'ue');
+    text = text.replace(/ö/g, 'oe');
+    text = text.replace(/ä/g, 'ae');
+    text = text.replace(/ß/g, 'ss');
+    text = text.replace(/\s+/g, ' ');
+    text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return text;
+}
+
+function setupAdvanced(answerInput, validationFeedback, answerForm) {
+    let isSubmitting = false;
+    let validationTimer = null;
 
     function displayValidation(validation) {
         if (!validation.words || validation.words.length === 0) {
@@ -75,4 +104,33 @@ document.addEventListener('DOMContentLoaded', function () {
             return false;
         }
     });
-});
+}
+
+function setupHardcore(answerInput, answerForm) {
+    const correctAnswer = answerInput.getAttribute('data-correct-answer') || '';
+    const normalizedCorrect = normalizeText(correctAnswer);
+    let isSubmitting = false;
+
+    answerInput.focus();
+
+    // Strip any prior color while typing so the previous round's feedback
+    // doesn't bleed into the next attempt.
+    answerInput.addEventListener('input', function () {
+        answerInput.classList.remove('input-correct', 'input-incorrect');
+    });
+
+    answerForm.addEventListener('submit', function (e) {
+        if (e.submitter && e.submitter.name === 'reveal') return true;
+        if (isSubmitting) return true;
+
+        e.preventDefault();
+        const userAnswer = (answerInput.value || '').trim();
+        if (!userAnswer) return;
+
+        const isCorrect = normalizeText(userAnswer) === normalizedCorrect;
+        answerInput.classList.remove('input-correct', 'input-incorrect');
+        answerInput.classList.add(isCorrect ? 'input-correct' : 'input-incorrect');
+        isSubmitting = true;
+        setTimeout(() => answerForm.submit(), 700);
+    });
+}

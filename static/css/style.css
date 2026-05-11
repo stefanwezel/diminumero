@@ -683,6 +683,14 @@ body {
     box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3), 0 0 15px rgba(16, 185, 129, 0.2);
 }
 
+/* Hardcore card practice — flash red on wrong final submit. */
+.answer-input.input-incorrect {
+    background: linear-gradient(135deg, #FBD5D5 0%, #F8B4B4 100%);
+    color: #9B1C1C;
+    border: 3px solid #E02424;
+    box-shadow: 0 4px 20px rgba(224, 36, 36, 0.3), 0 0 15px rgba(224, 36, 36, 0.2);
+}
+
 /* Validation Feedback */
 .validation-feedback {
     margin-top: 15px;
@@ -2731,6 +2739,63 @@ html {
     margin: 0;
 }
 
+/* Score badge — anchored to the bottom-right of each card row so it
+ * doesn't fight the Edit/Delete actions in the top-right corner. The
+ * --progress-color CSS variable is set inline per card by the renderer
+ * (Jinja macro / buildProgress in cards.js) and interpolates from red
+ * to green based on the card's correct-answer ratio. */
+.cards-progress {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cards-progress-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+}
+
+.cards-progress-track {
+    fill: none;
+    stroke: #e5e7eb;
+    stroke-width: 4;
+}
+
+.cards-progress-bar {
+    fill: none;
+    stroke: var(--progress-color, #FC9E4F);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.4s ease;
+}
+
+.cards-progress-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--progress-color, #6B7280);
+    letter-spacing: -0.5px;
+}
+
+.cards-progress-empty .cards-progress-text {
+    color: #9CA3AF;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
 .cards-empty {
     color: #6B7280;
     font-style: italic;
@@ -2799,7 +2864,7 @@ html {
         grid-template-columns: 1fr;
     }
     .cards-list-item {
-        padding: 38px 16px 20px 16px;
+        padding: 38px 16px 72px 16px;
         min-height: 100px;
     }
     .cards-list-text {
@@ -2808,6 +2873,12 @@ html {
     .cards-list-actions {
         top: 6px;
         right: 6px;
+    }
+    .cards-progress {
+        width: 46px;
+        height: 46px;
+        bottom: 12px;
+        right: 12px;
     }
     .cards-practice-prompt {
         font-size: 1.8rem;

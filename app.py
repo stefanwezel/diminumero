@@ -942,6 +942,11 @@ def api_cards_delete(card_id: int):
 
 # ----- Practice session ----------------------------------------------------
 
+# Floor weight for the prioritized sampling strategy: a card with a perfect
+# score still gets sampled with non-zero probability so review sessions don't
+# completely exclude mastered vocabulary.
+PRIORITIZED_EPSILON = 0.1
+
 
 def _pick_prompt_side(direction: str) -> str:
     """Return 'front' or 'back' as the side to *show* the user as the prompt."""
@@ -950,6 +955,15 @@ def _pick_prompt_side(direction: str) -> str:
     if direction == "back_to_front":
         return "back"
     return "front" if secrets.randbelow(2) == 0 else "back"
+
+
+def _pick_weighted_card(candidates: list[Card]) -> Card:
+    """Pick a card weighted toward low scores; unpracticed cards get max weight."""
+    weights = [
+        (1.0 - (card.score if card.score is not None else 0.0)) + PRIORITIZED_EPSILON
+        for card in candidates
+    ]
+    return secrets.SystemRandom().choices(candidates, weights=weights, k=1)[0]
 
 
 def _load_next_card(state: dict) -> Card | None:
@@ -963,7 +977,10 @@ def _load_next_card(state: dict) -> Card | None:
     )
     if not candidates:
         return None
-    card = candidates[secrets.randbelow(len(candidates))]
+    if state.get("sampling_mode") == "prioritized":
+        card = _pick_weighted_card(candidates)
+    else:
+        card = candidates[secrets.randbelow(len(candidates))]
     state["current_card_id"] = card.id
     state["current_prompt_side"] = _pick_prompt_side(state["direction"])
     state["current_revealed"] = False
@@ -977,6 +994,12 @@ def cards_practice_start():
     direction = request.form.get("direction", "front_to_back")
     if direction not in ("front_to_back", "back_to_front", "random"):
         direction = "front_to_back"
+    sampling_mode = request.form.get("sampling_mode", "random")
+    if sampling_mode not in ("random", "prioritized"):
+        sampling_mode = "random"
+    difficulty = request.form.get("difficulty", "hardcore")
+    if difficulty not in ("advanced", "hardcore"):
+        difficulty = "hardcore"
     try:
         count = int(request.form.get("count", 10))
     except (TypeError, ValueError):
@@ -991,6 +1014,8 @@ def cards_practice_start():
         return redirect(url_for("cards"))
     session["card_practice"] = {
         "direction": direction,
+        "sampling_mode": sampling_mode,
+        "difficulty": difficulty,
         "count": count,
         "asked_ids": [],
         "score": 0,
@@ -1038,6 +1063,7 @@ def cards_practice():
                 "info",
             )
             state["total"] += 1
+            card.times_practiced += 1
         else:
             user_answer = (request.form.get("answer") or "").strip()
             if user_answer and quiz_logic.check_answer_advanced(
@@ -1045,6 +1071,8 @@ def cards_practice():
             ):
                 state["score"] += 1
                 state["total"] += 1
+                card.times_practiced += 1
+                card.times_correct += 1
                 flash(get_text("cards_flash_correct"), "success")
             else:
                 # Wrong final submit: count as attempted, show correct answer.
@@ -1053,7 +1081,9 @@ def cards_practice():
                     "error",
                 )
                 state["total"] += 1
+                card.times_practiced += 1
 
+        db.session.commit()
         state["asked_ids"].append(card.id)
         state["current_card_id"] = None
         _save_practice_state(state)
@@ -1081,15 +1111,21 @@ def cards_practice():
 
     prompt_side = state["current_prompt_side"]
     prompt_text = card.front if prompt_side == "front" else card.back
+    correct_answer = card.back if prompt_side == "front" else card.front
 
     total_cards = (
         db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).count()
     )
 
+    difficulty = state.get("difficulty", "advanced")
+    # Only leak the correct answer to the page in hardcore mode, where the
+    # JS needs it for client-side green/red feedback on submit.
     return render_template(
         "cards_practice.html",
         user=session["user"],
         prompt_text=prompt_text,
+        correct_answer=correct_answer if difficulty == "hardcore" else None,
+        difficulty=difficulty,
         score=state["score"],
         total=state["total"],
         max_questions=min(count, total_cards),
@@ -1124,6 +1160,10 @@ def cards_validate_api():
     state = _get_practice_state()
     if state is None or not state.get("current_card_id"):
         return jsonify({"error": "No active practice card"}), 400
+    # Hardcore mode deliberately withholds intermediate feedback — refuse the
+    # call so an inspect-and-fetch workaround can't bypass it.
+    if state.get("difficulty") == "hardcore":
+        return jsonify({"error": "Validation disabled in hardcore mode"}), 400
 
     card = db.session.get(Card, state["current_card_id"])
     if card is None or card.user_sub != _current_user_sub():

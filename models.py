@@ -25,14 +25,27 @@ class Card(db.Model):
     user_sub = db.Column(db.String(255), nullable=False, index=True)
     front = db.Column(db.Text, nullable=False)
     back = db.Column(db.Text, nullable=False)
+    times_practiced = db.Column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
+    times_correct = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
     updated_at = db.Column(
         db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
     )
+
+    @property
+    def score(self) -> float | None:
+        if not self.times_practiced:
+            return None
+        return self.times_correct / self.times_practiced
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
             "front": self.front,
             "back": self.back,
+            "times_practiced": self.times_practiced,
+            "times_correct": self.times_correct,
+            "score": self.score,
         }

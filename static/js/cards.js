@@ -84,11 +84,64 @@
         text.appendChild(lineFront);
         text.appendChild(lineBack);
 
+        const progress = buildProgress(card);
         const actions = buildActions(card.id);
 
         li.appendChild(text);
+        li.appendChild(progress);
         li.appendChild(actions);
         return li;
+    }
+
+    function buildProgress(card) {
+        const wrap = document.createElement('div');
+        wrap.className = 'cards-progress';
+        wrap.setAttribute('data-practiced', String(card.times_practiced || 0));
+
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('class', 'cards-progress-svg');
+        svg.setAttribute('viewBox', '0 0 36 36');
+        svg.setAttribute('aria-hidden', 'true');
+
+        const track = document.createElementNS(svgNS, 'circle');
+        track.setAttribute('class', 'cards-progress-track');
+        track.setAttribute('cx', '18');
+        track.setAttribute('cy', '18');
+        track.setAttribute('r', '15.9155');
+        svg.appendChild(track);
+
+        const text = document.createElement('span');
+        text.className = 'cards-progress-text';
+
+        const hasScore = typeof card.score === 'number';
+        if (hasScore) {
+            const pct = Math.round(card.score * 100);
+            const hue = Math.round(120 * card.score * 10) / 10;
+            wrap.setAttribute('data-score', String(card.score));
+            wrap.style.setProperty('--progress-color', 'hsl(' + hue + ', 70%, 42%)');
+            wrap.setAttribute(
+                'aria-label',
+                pct + '% correct (' + (card.times_correct || 0) + '/' + (card.times_practiced || 0) + ')'
+            );
+            const bar = document.createElementNS(svgNS, 'circle');
+            bar.setAttribute('class', 'cards-progress-bar');
+            bar.setAttribute('cx', '18');
+            bar.setAttribute('cy', '18');
+            bar.setAttribute('r', '15.9155');
+            bar.setAttribute('stroke-dasharray', pct + ' 100');
+            svg.appendChild(bar);
+            text.textContent = pct + '%';
+        } else {
+            wrap.classList.add('cards-progress-empty');
+            wrap.setAttribute('data-score', '');
+            wrap.setAttribute('aria-label', 'No practice attempts yet');
+            text.textContent = '—';
+        }
+
+        wrap.appendChild(svg);
+        wrap.appendChild(text);
+        return wrap;
     }
 
     function buildActions(cardId) {
