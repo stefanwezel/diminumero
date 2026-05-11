@@ -683,6 +683,14 @@ body {
     box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3), 0 0 15px rgba(16, 185, 129, 0.2);
 }
 
+/* Hardcore card practice — flash red on wrong final submit. */
+.answer-input.input-incorrect {
+    background: linear-gradient(135deg, #FBD5D5 0%, #F8B4B4 100%);
+    color: #9B1C1C;
+    border: 3px solid #E02424;
+    box-shadow: 0 4px 20px rgba(224, 36, 36, 0.3), 0 0 15px rgba(224, 36, 36, 0.2);
+}
+
 /* Validation Feedback */
 .validation-feedback {
     margin-top: 15px;

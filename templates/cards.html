@@ -111,6 +111,17 @@
                         <span>{{ get_text('cards_sampling_prioritized') }}</span>
                     </label>
                 </fieldset>
+                <fieldset class="cards-direction-fieldset cards-difficulty-fieldset">
+                    <legend>{{ get_text('cards_difficulty_label') }}</legend>
+                    <label class="cards-radio">
+                        <input type="radio" name="difficulty" value="advanced" checked>
+                        <span>{{ get_text('cards_difficulty_advanced') }}</span>
+                    </label>
+                    <label class="cards-radio">
+                        <input type="radio" name="difficulty" value="hardcore">
+                        <span>{{ get_text('cards_difficulty_hardcore') }}</span>
+                    </label>
+                </fieldset>
                 <label class="cards-count-input">
                     <span class="cards-count-input-label">{{ get_text('cards_count_label') }}</span>
                     <input type="number" name="count" value="10"

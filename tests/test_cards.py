@@ -467,6 +467,64 @@ class TestCardScoring:
         with client.session_transaction() as sess:
             assert sess["card_practice"]["sampling_mode"] == "random"
 
+    def test_difficulty_stored_in_session(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "hardcore"},
+        )
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["difficulty"] == "hardcore"
+
+    def test_difficulty_defaults_invalid_to_advanced(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "nope"},
+        )
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["difficulty"] == "advanced"
+        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["difficulty"] == "advanced"
+
+    def test_hardcore_leaks_correct_answer_to_template(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "hardcore"},
+        )
+        response = client.get("/cards/practice")
+        body = response.data.decode("utf-8")
+        assert 'data-difficulty="hardcore"' in body
+        assert 'data-correct-answer="table"' in body
+
+    def test_advanced_does_not_leak_correct_answer(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "advanced"},
+        )
+        response = client.get("/cards/practice")
+        body = response.data.decode("utf-8")
+        assert 'data-difficulty="advanced"' in body
+        assert "data-correct-answer" not in body
+
+    def test_validate_api_disabled_in_hardcore(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "hardcore"},
+        )
+        client.get("/cards/practice")  # pin the current card
+        response = client.post("/api/cards/validate", json={"input": "tab"})
+        assert response.status_code == 400
+
     def test_prioritized_sampling_favors_low_score_cards(self, client):
         from flask import session as flask_session
 

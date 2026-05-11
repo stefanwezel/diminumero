@@ -47,6 +47,8 @@
                 placeholder="{{ get_text('cards_practice_input_placeholder') }}"
                 autocomplete="off"
                 autofocus
+                data-difficulty="{{ difficulty }}"
+                {% if correct_answer is not none %}data-correct-answer="{{ correct_answer }}"{% endif %}
             >
             <div id="validationFeedback" class="validation-feedback"></div>
         </div>
