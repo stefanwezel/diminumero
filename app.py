@@ -994,9 +994,9 @@ def cards_practice_start():
     direction = request.form.get("direction", "front_to_back")
     if direction not in ("front_to_back", "back_to_front", "random"):
         direction = "front_to_back"
-    sampling_mode = request.form.get("sampling_mode", "random")
+    sampling_mode = request.form.get("sampling_mode", "prioritized")
     if sampling_mode not in ("random", "prioritized"):
-        sampling_mode = "random"
+        sampling_mode = "prioritized"
     difficulty = request.form.get("difficulty", "hardcore")
     if difficulty not in ("advanced", "hardcore"):
         difficulty = "hardcore"

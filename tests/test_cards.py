@@ -456,7 +456,7 @@ class TestCardScoring:
         with client.session_transaction() as sess:
             assert sess["card_practice"]["sampling_mode"] == "prioritized"
 
-    def test_sampling_mode_defaults_invalid_to_random(self, client):
+    def test_sampling_mode_defaults_invalid_to_prioritized(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")
         login(client)
         client.post(
@@ -464,11 +464,11 @@ class TestCardScoring:
             data={"direction": "front_to_back", "sampling_mode": "nonsense"},
         )
         with client.session_transaction() as sess:
-            assert sess["card_practice"]["sampling_mode"] == "random"
-        # Missing field also falls back to random.
+            assert sess["card_practice"]["sampling_mode"] == "prioritized"
+        # Missing field also falls back to prioritized.
         client.post("/cards/practice/start", data={"direction": "front_to_back"})
         with client.session_transaction() as sess:
-            assert sess["card_practice"]["sampling_mode"] == "random"
+            assert sess["card_practice"]["sampling_mode"] == "prioritized"
 
     def test_difficulty_stored_in_session(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")

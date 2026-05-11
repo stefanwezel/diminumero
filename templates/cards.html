@@ -103,12 +103,12 @@
                 <fieldset class="cards-direction-fieldset cards-sampling-fieldset">
                     <legend>{{ get_text('cards_sampling_label') }}</legend>
                     <label class="cards-radio">
-                        <input type="radio" name="sampling_mode" value="random" checked>
-                        <span>{{ get_text('cards_sampling_random') }}</span>
+                        <input type="radio" name="sampling_mode" value="prioritized" checked>
+                        <span>{{ get_text('cards_sampling_prioritized') }}</span>
                     </label>
                     <label class="cards-radio">
-                        <input type="radio" name="sampling_mode" value="prioritized">
-                        <span>{{ get_text('cards_sampling_prioritized') }}</span>
+                        <input type="radio" name="sampling_mode" value="random">
+                        <span>{{ get_text('cards_sampling_random') }}</span>
                     </label>
                 </fieldset>
                 <fieldset class="cards-direction-fieldset cards-difficulty-fieldset">
@@ -168,4 +168,5 @@
     </section>
 </div>
 <script src="{{ url_for('static', filename='js/cards.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/cards_practice_prefs.js') }}" defer></script>
 {% endblock %}
