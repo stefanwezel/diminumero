@@ -997,9 +997,9 @@ def cards_practice_start():
     sampling_mode = request.form.get("sampling_mode", "random")
     if sampling_mode not in ("random", "prioritized"):
         sampling_mode = "random"
-    difficulty = request.form.get("difficulty", "advanced")
+    difficulty = request.form.get("difficulty", "hardcore")
     if difficulty not in ("advanced", "hardcore"):
-        difficulty = "advanced"
+        difficulty = "hardcore"
     try:
         count = int(request.form.get("count", 10))
     except (TypeError, ValueError):

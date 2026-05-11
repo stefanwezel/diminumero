@@ -269,7 +269,10 @@ class TestPracticeFlow:
     def test_validate_api_returns_word_feedback(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "small table")
         login(client)
-        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "advanced"},
+        )
         client.get("/cards/practice")  # Pin a current card
         response = client.post(
             "/api/cards/validate",
@@ -477,7 +480,7 @@ class TestCardScoring:
         with client.session_transaction() as sess:
             assert sess["card_practice"]["difficulty"] == "hardcore"
 
-    def test_difficulty_defaults_invalid_to_advanced(self, client):
+    def test_difficulty_defaults_invalid_to_hardcore(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")
         login(client)
         client.post(
@@ -485,10 +488,10 @@ class TestCardScoring:
             data={"direction": "front_to_back", "difficulty": "nope"},
         )
         with client.session_transaction() as sess:
-            assert sess["card_practice"]["difficulty"] == "advanced"
+            assert sess["card_practice"]["difficulty"] == "hardcore"
         client.post("/cards/practice/start", data={"direction": "front_to_back"})
         with client.session_transaction() as sess:
-            assert sess["card_practice"]["difficulty"] == "advanced"
+            assert sess["card_practice"]["difficulty"] == "hardcore"
 
     def test_hardcore_leaks_correct_answer_to_template(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")
