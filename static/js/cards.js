@@ -55,6 +55,10 @@
         const li = document.createElement('li');
         li.className = 'cards-list-item';
         li.setAttribute('data-card-id', String(card.id));
+        li.setAttribute(
+            'data-created-at',
+            card.created_at || new Date().toISOString()
+        );
 
         const text = document.createElement('div');
         text.className = 'cards-list-text';
@@ -236,6 +240,9 @@
             }
             const li = buildCardLi(data.card);
             list.insertBefore(li, list.firstChild);
+            if (typeof window.diminumeroCardsApplySort === 'function') {
+                window.diminumeroCardsApplySort();
+            }
             frontIn.value = '';
             backIn.value = '';
             frontIn.focus();
