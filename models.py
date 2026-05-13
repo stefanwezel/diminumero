@@ -6,6 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+SCORE_WINDOW_SIZE = 10
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -29,6 +31,12 @@ class Card(db.Model):
         db.Integer, nullable=False, default=0, server_default="0"
     )
     times_correct = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    recent_results = db.Column(
+        db.String(SCORE_WINDOW_SIZE),
+        nullable=False,
+        default="",
+        server_default="",
+    )
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
     updated_at = db.Column(
         db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
@@ -36,9 +44,14 @@ class Card(db.Model):
 
     @property
     def score(self) -> float | None:
-        if not self.times_practiced:
+        history = self.recent_results or ""
+        if not history:
             return None
-        return self.times_correct / self.times_practiced
+        return history.count("1") / len(history)
+
+    def record_attempt(self, correct: bool) -> None:
+        history = (self.recent_results or "") + ("1" if correct else "0")
+        self.recent_results = history[-SCORE_WINDOW_SIZE:]
 
     def to_dict(self) -> dict:
         return {

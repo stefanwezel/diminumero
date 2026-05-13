@@ -393,6 +393,19 @@ def _answer_one(client, response_text=None):
         return db.session.get(Card, card_id)
 
 
+def _drive_one_attempt(client, response_text=None):
+    """Start a single-card practice session, answer one question, then clear.
+
+    Each practice session asks any card at most once, so multi-attempt tests
+    on a single card need to start a fresh session per attempt.
+    """
+    client.post("/cards/practice/start", data={"direction": "front_to_back"})
+    client.get("/cards/practice")
+    card = _answer_one(client, response_text=response_text)
+    client.get("/cards/practice/results")
+    return card
+
+
 class TestCardScoring:
     def test_correct_answer_increments_both_counters(self, client):
         card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
@@ -424,6 +437,8 @@ class TestCardScoring:
             card = db.session.get(Card, card_id)
         assert card.times_practiced == 1
         assert card.times_correct == 0
+        # Reveal is graded as a wrong attempt in the rolling window.
+        assert card.recent_results == "0"
 
     def test_to_dict_exposes_score_fields(self, client):
         with flask_app.app_context():
@@ -433,6 +448,7 @@ class TestCardScoring:
                 back="table",
                 times_practiced=4,
                 times_correct=3,
+                recent_results="1110",
             )
             db.session.add(card)
             db.session.commit()
@@ -449,23 +465,68 @@ class TestCardScoring:
             assert card.score is None
             assert card.to_dict()["score"] is None
 
-    def test_score_is_ratio_after_mixed_attempts(self, client):
+    def test_score_is_rolling_average_after_mixed_attempts(self, client):
         # A practice session asks each card at most once, so to exercise the
-        # ratio we drive a card across two separate sessions: one correct,
-        # one wrong submission.
+        # rolling window we drive a card across two separate sessions: one
+        # correct, one wrong submission.
         card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
         login(client)
-        client.post("/cards/practice/start", data={"direction": "front_to_back"})
-        client.get("/cards/practice")
-        _answer_one(client)  # correct
-        client.get("/cards/practice/results")  # clear session
-        client.post("/cards/practice/start", data={"direction": "front_to_back"})
-        client.get("/cards/practice")
-        card = _answer_one(client, response_text="wrong")
+        _drive_one_attempt(client)  # correct
+        card = _drive_one_attempt(client, response_text="wrong")
         assert card.id == card_id
         assert card.times_practiced == 2
         assert card.times_correct == 1
+        assert card.recent_results == "10"
         assert card.score == pytest.approx(0.5)
+
+    def test_recent_results_caps_at_window_size(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        # First two attempts are wrong; the next 10 are correct. After 12
+        # attempts the rolling window should only retain the last 10
+        # (all "1"s), so the early wrongs have fallen out.
+        _drive_one_attempt(client, response_text="wrong")
+        _drive_one_attempt(client, response_text="wrong")
+        for _ in range(10):
+            _drive_one_attempt(client)
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+        assert card.times_practiced == 12
+        assert card.times_correct == 10
+        assert card.recent_results == "1" * 10
+        assert card.score == pytest.approx(1.0)
+
+    def test_score_recovers_to_one_after_ten_correct(self, client):
+        # Headline behaviour: a card that's been wrong many times can still
+        # reach a 100% score if the last 10 attempts are all correct.
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+            card.times_practiced = 10
+            card.times_correct = 0
+            card.recent_results = "0" * 10
+            db.session.commit()
+        login(client)
+        for _ in range(10):
+            _drive_one_attempt(client)
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+        assert card.recent_results == "1" * 10
+        assert card.score == pytest.approx(1.0)
+        # Lifetime counters keep accumulating past the window.
+        assert card.times_practiced == 20
+        assert card.times_correct == 10
+
+    def test_lifetime_counters_unchanged_by_rolling_window(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        for _ in range(12):
+            _drive_one_attempt(client)
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+        assert card.times_practiced == 12
+        assert card.times_correct == 12
+        assert len(card.recent_results) == 10
 
     def test_sampling_mode_stored_in_session(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")
@@ -560,6 +621,7 @@ class TestCardScoring:
             mastered = db.session.get(Card, high_id)
             mastered.times_practiced = 10
             mastered.times_correct = 10
+            mastered.recent_results = "1" * 10
             db.session.commit()
 
         # Weights: low card ≈ 1.1, high card ≈ 0.1 (11:1 expected).
@@ -579,3 +641,232 @@ class TestCardScoring:
         # 70% lower bound: well below the ~92% expectation but high enough
         # to fail a uniform-sampling regression (50%).
         assert low_count >= 140, f"low-score card was picked only {low_count}/200 times"
+
+
+class TestPrioritizedSamplingHttp:
+    """End-to-end check that prioritized sampling biases picks under the
+    real HTTP/cookie round-trip.
+
+    The unit test in TestCardScoring proves the weight math; this proves
+    the Flask session plumbing (asked_ids persistence across redirects,
+    re-fetching card.score between requests) actually applies it.
+    """
+
+    def _seed_deck(self):
+        """Create 3 mastered + 3 weak cards. Returns (high_ids, low_ids)."""
+        high_ids = []
+        low_ids = []
+        with flask_app.app_context():
+            for i in range(3):
+                card = Card(
+                    user_sub=SAMPLE_USER["sub"],
+                    front=f"hi{i}",
+                    back=f"HI{i}",
+                    times_practiced=10,
+                    times_correct=10,
+                    recent_results="1" * 10,
+                )
+                db.session.add(card)
+                db.session.flush()
+                high_ids.append(card.id)
+            for i in range(3):
+                card = Card(
+                    user_sub=SAMPLE_USER["sub"],
+                    front=f"lo{i}",
+                    back=f"LO{i}",
+                    times_practiced=10,
+                    times_correct=0,
+                    recent_results="0" * 10,
+                )
+                db.session.add(card)
+                db.session.flush()
+                low_ids.append(card.id)
+            db.session.commit()
+        return high_ids, low_ids
+
+    def _reset_scores(self, high_ids, low_ids):
+        """Restore the seeded scores so each session starts from the same
+        weight distribution. Without this, repeated correct answers would
+        drift low-score cards up toward 1.0 over the run."""
+        with flask_app.app_context():
+            for cid in high_ids:
+                db.session.get(Card, cid).recent_results = "1" * 10
+            for cid in low_ids:
+                db.session.get(Card, cid).recent_results = "0" * 10
+            db.session.commit()
+
+    def test_low_score_cards_dominate_across_sessions(self, client):
+        high_ids, low_ids = self._seed_deck()
+        login(client)
+
+        sessions = 30
+        per_session = 3
+        all_picks = []
+        for _ in range(sessions):
+            self._reset_scores(high_ids, low_ids)
+            client.post(
+                "/cards/practice/start",
+                data={
+                    "direction": "front_to_back",
+                    "sampling_mode": "prioritized",
+                    "count": str(per_session),
+                },
+            )
+            picked_in_session = []
+            for _ in range(per_session):
+                response = client.get("/cards/practice", follow_redirects=False)
+                if response.status_code == 302:
+                    break
+                with client.session_transaction() as sess:
+                    state = sess["card_practice"]
+                    cid = state["current_card_id"]
+                    prompt_side = state["current_prompt_side"]
+                with flask_app.app_context():
+                    card = db.session.get(Card, cid)
+                    answer = card.back if prompt_side == "front" else card.front
+                client.post("/cards/practice", data={"answer": answer})
+                picked_in_session.append(cid)
+            client.get("/cards/practice/results")  # clear session
+
+            assert len(set(picked_in_session)) == len(picked_in_session), (
+                f"asked_ids did not exclude within session: {picked_in_session}"
+            )
+            all_picks.extend(picked_in_session)
+
+        low_picks = sum(1 for cid in all_picks if cid in low_ids)
+        high_picks = sum(1 for cid in all_picks if cid in high_ids)
+        # Expected ratio is ~11:1 (low weight 1.1 vs high weight 0.1), so over
+        # 90 picks we'd expect roughly 82 low / 8 high. Assert a much weaker
+        # bound (3:1) so the test is robust against random variance but still
+        # catches a regression to uniform sampling (which would give 1:1).
+        assert low_picks > high_picks * 3, (
+            f"prioritized sampling not biased through HTTP: "
+            f"low={low_picks} high={high_picks} of {len(all_picks)}"
+        )
+
+
+class TestSiblingAnswers:
+    """Accept any sibling card's answer when multiple cards share a prompt.
+
+    Real-world case: a user has both ("sometimes", "a veces") and
+    ("sometimes", "algunas veces"). Regardless of which one the sampler
+    pinned, either translation should be accepted at submit time, and live
+    word-by-word feedback should follow the sibling that best matches what
+    the user is typing.
+    """
+
+    def _start_and_pin(self, client, pinned_id, direction):
+        """Start a practice session and overwrite current_card_id so the
+        test knows exactly which sibling is being asked.
+
+        Reassigns the top-level session key — Flask doesn't always detect
+        deep mutations of nested dicts.
+        """
+        client.post("/cards/practice/start", data={"direction": direction})
+        client.get("/cards/practice")  # populate state with some card
+        prompt_side = "front" if direction == "front_to_back" else "back"
+        with client.session_transaction() as sess:
+            state = dict(sess["card_practice"])
+            state["current_card_id"] = pinned_id
+            state["current_prompt_side"] = prompt_side
+            state["current_revealed"] = False
+            sess["card_practice"] = state
+
+    def test_sibling_answer_accepted_front_to_back(self, client):
+        chosen_id = make_card(SAMPLE_USER["sub"], "sometimes", "a veces")
+        sibling_id = make_card(SAMPLE_USER["sub"], "sometimes", "algunas veces")
+        login(client)
+        self._start_and_pin(client, chosen_id, "front_to_back")
+
+        client.post("/cards/practice", data={"answer": "algunas veces"})
+
+        with flask_app.app_context():
+            chosen = db.session.get(Card, chosen_id)
+            sibling = db.session.get(Card, sibling_id)
+        # Score lands on the originally picked card, not the matched sibling.
+        assert chosen.recent_results == "1"
+        assert chosen.times_correct == 1
+        assert chosen.times_practiced == 1
+        assert sibling.recent_results == ""
+        assert sibling.times_practiced == 0
+
+    def test_sibling_answer_accepted_back_to_front(self, client):
+        chosen_id = make_card(SAMPLE_USER["sub"], "morning", "day")
+        sibling_id = make_card(SAMPLE_USER["sub"], "noon", "day")
+        login(client)
+        self._start_and_pin(client, chosen_id, "back_to_front")
+
+        client.post("/cards/practice", data={"answer": "noon"})
+
+        with flask_app.app_context():
+            chosen = db.session.get(Card, chosen_id)
+            sibling = db.session.get(Card, sibling_id)
+        assert chosen.recent_results == "1"
+        assert sibling.recent_results == ""
+
+    def test_sibling_match_is_normalized(self, client):
+        # Different casing on the prompts: they should still be siblings.
+        chosen_id = make_card(SAMPLE_USER["sub"], "Sometimes", "a veces")
+        make_card(SAMPLE_USER["sub"], "sometimes", "algunas veces")
+        login(client)
+        self._start_and_pin(client, chosen_id, "front_to_back")
+
+        client.post("/cards/practice", data={"answer": "algunas veces"})
+
+        with flask_app.app_context():
+            chosen = db.session.get(Card, chosen_id)
+        assert chosen.recent_results == "1"
+
+    def test_no_siblings_unchanged(self, client):
+        # Single-card path must still grade wrong answers as wrong.
+        chosen_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        self._start_and_pin(client, chosen_id, "front_to_back")
+
+        client.post("/cards/practice", data={"answer": "chair"})
+
+        with flask_app.app_context():
+            chosen = db.session.get(Card, chosen_id)
+        assert chosen.recent_results == "0"
+        assert chosen.times_correct == 0
+        assert chosen.times_practiced == 1
+
+    def test_unrelated_answer_still_wrong(self, client):
+        # Even with siblings, a totally unrelated answer is still wrong.
+        chosen_id = make_card(SAMPLE_USER["sub"], "sometimes", "a veces")
+        make_card(SAMPLE_USER["sub"], "sometimes", "algunas veces")
+        login(client)
+        self._start_and_pin(client, chosen_id, "front_to_back")
+
+        client.post("/cards/practice", data={"answer": "completely-wrong"})
+
+        with flask_app.app_context():
+            chosen = db.session.get(Card, chosen_id)
+        assert chosen.recent_results == "0"
+        assert chosen.times_correct == 0
+
+    def test_validate_api_picks_best_sibling(self, client):
+        chosen_id = make_card(SAMPLE_USER["sub"], "sometimes", "a veces")
+        make_card(SAMPLE_USER["sub"], "sometimes", "algunas veces")
+        login(client)
+        # Advanced mode is required: the validate endpoint refuses hardcore.
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "difficulty": "advanced"},
+        )
+        client.get("/cards/practice")
+        with client.session_transaction() as sess:
+            state = dict(sess["card_practice"])
+            state["current_card_id"] = chosen_id
+            state["current_prompt_side"] = "front"
+            state["current_revealed"] = False
+            sess["card_practice"] = state
+
+        response = client.post("/api/cards/validate", json={"input": "algun"})
+        assert response.status_code == 200
+        data = response.get_json()
+        # "algun" can't match "a veces" but is a valid prefix of
+        # "algunas veces". The endpoint should pick the better-fitting
+        # sibling so the user sees correct/incomplete feedback rather than
+        # the all-wrong feedback they'd get against "a veces".
+        assert data["words"][0]["status"] in ("correct", "incomplete")

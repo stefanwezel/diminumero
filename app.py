@@ -101,6 +101,7 @@ def handle_unhandled_exception(e):
     app.logger.exception("Unhandled exception on %s %s", request.method, request.path)
     return ("Internal Server Error", 500)
 
+
 # Auth0 OIDC client (Authlib).
 # AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET must be set in the env;
 # see .env.example. The /login, /callback, /logout, /cards routes depend on this.
@@ -988,13 +989,57 @@ def _pick_prompt_side(direction: str) -> str:
     return "front" if secrets.randbelow(2) == 0 else "back"
 
 
+def _acceptable_answers(card: Card, prompt_side: str) -> list[str]:
+    """Every answer-side string accepted for the prompt of `card`.
+
+    Includes the card itself plus any sibling owned by the same user
+    whose prompt-side text normalizes to the same value. This lets two
+    cards that share a prompt (e.g. "sometimes" → "a veces" and
+    "sometimes" → "algunas veces") accept either back as a correct
+    answer regardless of which one the sampler picked.
+    """
+    prompt_text = card.front if prompt_side == "front" else card.back
+    target = quiz_logic.normalize_text(prompt_text)
+    siblings = db.session.query(Card).filter_by(user_sub=card.user_sub).all()
+    accepted = []
+    for c in siblings:
+        sib_prompt = c.front if prompt_side == "front" else c.back
+        if quiz_logic.normalize_text(sib_prompt) == target:
+            accepted.append(c.back if prompt_side == "front" else c.front)
+    return accepted
+
+
+def _pick_best_validation(results: list[dict]) -> dict:
+    """Choose the partial-answer feedback that best fits what the user is
+    typing. Prefer a complete-and-correct match; otherwise maximise the
+    count of words marked correct/incomplete and minimise incorrect ones.
+    """
+
+    def key(r):
+        words = r.get("words", [])
+        correct = sum(1 for w in words if w["status"] == "correct")
+        incomplete = sum(1 for w in words if w["status"] == "incomplete")
+        incorrect = sum(1 for w in words if w["status"] == "incorrect")
+        return (
+            1 if r.get("is_correct") else 0,
+            correct + incomplete,
+            -incorrect,
+        )
+
+    return max(results, key=key)
+
+
 def _pick_weighted_card(candidates: list[Card]) -> Card:
     """Pick a card weighted toward low scores; unpracticed cards get max weight."""
     weights = [
         (1.0 - (card.score if card.score is not None else 0.0)) + PRIORITIZED_EPSILON
         for card in candidates
     ]
-    return secrets.SystemRandom().choices(candidates, weights=weights, k=1)[0]
+    chosen = secrets.SystemRandom().choices(candidates, weights=weights, k=1)[0]
+    if os.environ.get("LOG_CARD_SAMPLING"):
+        breakdown = ", ".join(f"{c.id}:{w:.2f}" for c, w in zip(candidates, weights))
+        app.logger.info("card_sampling chosen=%s from {%s}", chosen.id, breakdown)
+    return chosen
 
 
 def _load_next_card(state: dict) -> Card | None:
@@ -1095,15 +1140,18 @@ def cards_practice():
             )
             state["total"] += 1
             card.times_practiced += 1
+            card.record_attempt(False)
         else:
             user_answer = (request.form.get("answer") or "").strip()
-            if user_answer and quiz_logic.check_answer_advanced(
-                user_answer, correct_answer
+            acceptable = _acceptable_answers(card, prompt_side)
+            if user_answer and any(
+                quiz_logic.check_answer_advanced(user_answer, a) for a in acceptable
             ):
                 state["score"] += 1
                 state["total"] += 1
                 card.times_practiced += 1
                 card.times_correct += 1
+                card.record_attempt(True)
                 flash(get_text("cards_flash_correct"), "success")
             else:
                 # Wrong final submit: count as attempted, show correct answer.
@@ -1113,6 +1161,7 @@ def cards_practice():
                 )
                 state["total"] += 1
                 card.times_practiced += 1
+                card.record_attempt(False)
 
         db.session.commit()
         state["asked_ids"].append(card.id)
@@ -1201,12 +1250,15 @@ def cards_validate_api():
         return jsonify({"error": "Card not found"}), 404
 
     prompt_side = state["current_prompt_side"]
-    correct_answer = card.back if prompt_side == "front" else card.front
 
     user_input = (request.json or {}).get("input", "")
     # `lang_code="es"` forces the word_based strategy regardless of the card's
     # actual language — fine for free-form vocabulary.
-    return jsonify(quiz_logic.validate_partial_answer(user_input, correct_answer, "es"))
+    acceptable = _acceptable_answers(card, prompt_side)
+    results = [
+        quiz_logic.validate_partial_answer(user_input, a, "es") for a in acceptable
+    ]
+    return jsonify(_pick_best_validation(results))
 
 
 @app.route("/robots.txt")
