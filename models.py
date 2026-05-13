@@ -48,4 +48,5 @@ class Card(db.Model):
             "times_practiced": self.times_practiced,
             "times_correct": self.times_correct,
             "score": self.score,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }

@@ -13,15 +13,6 @@
             ← {{ get_text('cards_practice_numbers_btn') }}
         </a>
     </div>
-    <header class="cards-page-header">
-        <h1 class="title">{{ get_text('cards_title') }}</h1>
-        <p class="subtitle">
-            {{ get_text('cards_signed_in_as') }}
-            <strong>{{ user.name or user.nickname or user.email }}</strong>
-        </p>
-        <p class="description">{{ get_text('cards_intro_body') }}</p>
-    </header>
-
     <section class="cards-create-section">
         <h2 class="cards-section-heading">
             {% if edit_card %}
@@ -79,7 +70,7 @@
              data-i18n-created="{{ get_text('cards_flash_created') }}"
              data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
         <h2 class="cards-section-heading">
-            {{ get_text('cards_your_cards_heading') }}
+            {{ get_text('cards_title') }}
             <span class="cards-count" id="cards-count">({{ cards|length }})</span>
         </h2>
         {% if cards %}
@@ -130,11 +121,22 @@
                 <button type="submit" class="btn btn-primary">
                     {{ get_text('cards_start_practice_btn') }}
                 </button>
+                <div class="cards-sort">
+                    <label class="cards-sort-label" for="cards-sort-select">
+                        {{ get_text('cards_sort_label') }}
+                    </label>
+                    <select id="cards-sort-select" class="cards-sort-select" autocomplete="off">
+                        <option value="created_desc">{{ get_text('cards_sort_created') }}</option>
+                        <option value="times_practiced_desc">{{ get_text('cards_sort_times_practiced') }}</option>
+                        <option value="score_asc">{{ get_text('cards_sort_score') }}</option>
+                    </select>
+                </div>
             </form>
             <ul class="cards-list" data-cards-list>
             {% for card in cards %}
                 <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}"
-                    data-card-id="{{ card.id }}">
+                    data-card-id="{{ card.id }}"
+                    data-created-at="{{ card.created_at.isoformat() }}">
                     <div class="cards-list-text">
                         <div class="cards-list-line">
                             <span class="cards-list-label cards-list-label-front">{{ get_text('cards_front_label') }}</span>
@@ -169,4 +171,5 @@
 </div>
 <script src="{{ url_for('static', filename='js/cards.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_practice_prefs.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/cards_sort.js') }}" defer></script>
 {% endblock %}

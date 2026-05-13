@@ -66,6 +66,23 @@ class TestCardsList:
         assert "OTHER_BACK_XYZ" not in body
         assert my_id is not None
 
+    def test_sort_control_rendered_when_cards_exist(self, client):
+        # The sort dropdown is the entry point for the client-side sorter;
+        # each card row must carry data-created-at for the JS to compare on.
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-sort-select"' in body
+        assert 'value="created_desc"' in body
+        assert 'value="times_practiced_desc"' in body
+        assert 'value="score_asc"' in body
+        assert "data-created-at=" in body
+
+    def test_sort_control_hidden_when_no_cards(self, client):
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-sort-select"' not in body
+
 
 class TestCardsCreate:
     def test_creates_card(self, client):
@@ -138,6 +155,10 @@ class TestCardsApi:
         assert data["card"]["front"] == "silla"
         assert data["card"]["back"] == "chair"
         assert isinstance(data["card"]["id"], int)
+        # cards.js stamps the new <li> with data-created-at so the sorter can
+        # place it correctly — the payload must include it.
+        assert isinstance(data["card"]["created_at"], str)
+        assert data["card"]["created_at"]
         with flask_app.app_context():
             assert db.session.query(Card).count() == 1
 
