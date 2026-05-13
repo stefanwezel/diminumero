@@ -18,11 +18,14 @@ from flask import (
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask_migrate import Migrate
+from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 import jinja2
+import logging
 import quiz_logic
 import os
 import secrets
+import sys
 import time
 
 from models import Card, db
@@ -67,8 +70,36 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     f"sqlite:///{os.path.join(app.instance_path, 'diminumero.db')}",
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# pool_pre_ping issues a cheap SELECT 1 before handing out a pooled connection,
+# so a dropped Postgres connection (host NAT/firewall idle timeout) is detected
+# and replaced instead of raising on the next real query. pool_recycle forces
+# connections younger than 280s, staying under typical 300s idle cutoffs.
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+}
 db.init_app(app)
 migrate = Migrate(app, db)
+
+
+# Send app.logger output to stdout so `docker logs` captures it. Without this,
+# uncaught exceptions disappear and 500s are impossible to diagnose.
+if not app.logger.handlers:
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    )
+    app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
+
+
+@app.errorhandler(Exception)
+def handle_unhandled_exception(e):
+    """Log every unhandled exception so 500s show up in container logs."""
+    if isinstance(e, HTTPException):
+        return e
+    app.logger.exception("Unhandled exception on %s %s", request.method, request.path)
+    return ("Internal Server Error", 500)
 
 # Auth0 OIDC client (Authlib).
 # AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET must be set in the env;
@@ -1229,6 +1260,3 @@ def sitemap_xml():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-# Enable debug mode by default
-app.config["DEBUG"] = True
