@@ -28,7 +28,7 @@ import secrets
 import sys
 import time
 
-from models import Card, db
+from models import Card, PollResponse, db
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
@@ -968,6 +968,43 @@ def api_cards_update(card_id: int):
 def api_cards_delete(card_id: int):
     card = _user_card_or_404(card_id)
     db.session.delete(card)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# ----- Feedback poll -------------------------------------------------------
+
+_POLL_COLOR_SCHEMES = {"dark", "light", "no_preference"}
+_POLL_AWARE = {"yes", "no"}
+_POLL_DEVICES = {"mobile", "desktop"}
+_POLL_FREEFORM_MAX = 2000
+
+
+@app.route("/api/poll", methods=["POST"])
+def api_poll_submit():
+    payload = request.get_json(silent=True) or {}
+    color = payload.get("color_scheme_pref")
+    aware = payload.get("cards_aware")
+    device = payload.get("device")
+    if (
+        color not in _POLL_COLOR_SCHEMES
+        or aware not in _POLL_AWARE
+        or device not in _POLL_DEVICES
+    ):
+        return jsonify({"ok": False, "error": "invalid"}), 400
+    freeform = (payload.get("freeform") or "").strip()[:_POLL_FREEFORM_MAX] or None
+    user = session.get("user") or {}
+    user_sub = user.get("sub") if isinstance(user, dict) else None
+    ua = (request.headers.get("User-Agent") or "")[:512] or None
+    response = PollResponse(
+        user_sub=user_sub,
+        color_scheme_pref=color,
+        cards_aware=aware,
+        device=device,
+        freeform=freeform,
+        user_agent=ua,
+    )
+    db.session.add(response)
     db.session.commit()
     return jsonify({"ok": True})
 

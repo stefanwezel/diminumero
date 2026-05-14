@@ -157,22 +157,48 @@ Key options:
 Print a terminal report for one or more result files:
 
 ```bash
-uv run tools/analyze_results.py /tmp/result.json
+uv run tools/analyze_stress_test.py /tmp/result.json
 ```
 
 Generate an HTML report with charts:
 
 ```bash
-uv run tools/analyze_results.py /tmp/result.json --html /tmp/report.html
+uv run tools/analyze_stress_test.py /tmp/result.json --html /tmp/report.html
 ```
 
 Pass multiple files to get a side-by-side comparison table:
 
 ```bash
-uv run tools/analyze_results.py result_a.json result_b.json --html /tmp/compare.html
+uv run tools/analyze_stress_test.py result_a.json result_b.json --html /tmp/compare.html
 ```
 
 The HTML report includes a response-time timeline, a success/failure doughnut chart, and a per-endpoint detail table.
+
+## 📊 Feedback Poll
+
+The site greets visitors with a short poll (color-scheme preference, awareness of the index-cards feature, mobile vs desktop, free-form feedback). Responses are written to the `poll_responses` table.
+
+To inspect the results, point the analysis script at the database. By default it targets **production** — it reads `DATABASE_URL` from `.env.prod` (gitignored) so you never have to paste the URL on the command line:
+
+```bash
+# Production (default; reads DATABASE_URL from .env.prod)
+uv run tools/analyze_poll.py
+
+# Custom output directory
+uv run tools/analyze_poll.py --out /tmp/poll
+
+# Local dev SQLite (override the prod default)
+uv run tools/analyze_poll.py --db sqlite:///instance/diminumero.db
+
+# Any other DB
+uv run tools/analyze_poll.py --db "postgresql+psycopg://user:pw@host/db"
+# or
+DATABASE_URL="..." uv run tools/analyze_poll.py
+```
+
+Resolution order: `--db` flag → `$DATABASE_URL` env var → `DATABASE_URL` in `.env.prod` → fallback to local SQLite. Contributors who don't have `.env.prod` automatically get the local SQLite path.
+
+You get a terminal summary (counts + percentages per question, all free-form responses) plus one PNG per question and a combined `poll_summary.png` written to `--out` (default `./poll_charts/`, which is gitignored).
 
 ## 🎨 Customization
 

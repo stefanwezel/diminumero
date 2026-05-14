@@ -63,3 +63,21 @@ class Card(db.Model):
             "score": self.score,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class PollResponse(db.Model):
+    """A single submission of the in-app feedback poll.
+
+    `user_sub` is nullable — anonymous visitors may also respond.
+    """
+
+    __tablename__ = "poll_responses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_sub = db.Column(db.String(255), nullable=True, index=True)
+    color_scheme_pref = db.Column(db.String(16), nullable=False)
+    cards_aware = db.Column(db.String(16), nullable=False)
+    device = db.Column(db.String(16), nullable=False)
+    freeform = db.Column(db.Text, nullable=True)
+    user_agent = db.Column(db.String(512), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)

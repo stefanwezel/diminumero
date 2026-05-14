@@ -204,6 +204,9 @@
     </div>
     
     <script src="{{ url_for('static', filename='js/cookie-banner.js') }}"></script>
+
+    {% include "_poll_modal.html" %}
+    <script src="{{ url_for('static', filename='js/poll.js') }}"></script>
     <script>
     (function(){
         var btn=document.getElementById('langGlobeBtn');
