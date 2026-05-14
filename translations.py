@@ -240,6 +240,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Optional — what would you change, add, or fix?",
         "poll_submit_btn": "Send feedback",
         "poll_submit_error": "Could not submit. Please try again.",
+        "poll_close_btn": "Close",
         # Email subject
         "feedback_subject": "diminumero Feedback",
         # SEO meta descriptions
@@ -504,6 +505,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Optional — was würdest du ändern, hinzufügen oder verbessern?",
         "poll_submit_btn": "Feedback senden",
         "poll_submit_error": "Senden fehlgeschlagen. Bitte erneut versuchen.",
+        "poll_close_btn": "Schließen",
         # Email subject
         "feedback_subject": "diminumero Feedback",
         # SEO meta descriptions
@@ -752,6 +754,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Opcional — ¿qué cambiarías, añadirías o arreglarías?",
         "poll_submit_btn": "Enviar comentarios",
         "poll_submit_error": "No se pudo enviar. Inténtalo de nuevo.",
+        "poll_close_btn": "Cerrar",
         "feedback_subject": "diminumero Feedback",
         "meta_desc_index": "Practica números en español, francés, alemán, italiano, danés, nepalés, turco, coreano, noruego, portugués, sueco, japonés, chino, galés e irlandés con cuestionarios interactivos gratuitos. Múltiples modos de dificultad para todos los niveles.",
         "meta_desc_mode_selection": "Practica los números en LANGUAGE_NAME_PLACEHOLDER con cuestionarios gratuitos. Elige el modo fácil, avanzado o extremo y empieza a aprender hoy.",
@@ -997,6 +1000,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Facoltativo — cosa cambieresti, aggiungeresti o correggeresti?",
         "poll_submit_btn": "Invia feedback",
         "poll_submit_error": "Invio non riuscito. Riprova.",
+        "poll_close_btn": "Chiudi",
         "feedback_subject": "diminumero Feedback",
         "meta_desc_index": "Pratica i numeri in spagnolo, francese, tedesco, italiano, danese, nepalese, turco, coreano, norvegese, portoghese, svedese, giapponese, cinese, gallese e irlandese con quiz interattivi gratuiti. Più livelli di difficoltà per tutti i livelli.",
         "meta_desc_mode_selection": "Pratica i numeri in LANGUAGE_NAME_PLACEHOLDER con quiz gratuiti. Scegli la modalità facile, avanzata o hardcore e inizia ad imparare oggi.",
@@ -1242,6 +1246,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Optionnel — que changeriez-vous, ajouteriez-vous ou corrigeriez-vous ?",
         "poll_submit_btn": "Envoyer l'avis",
         "poll_submit_error": "L'envoi a échoué. Veuillez réessayer.",
+        "poll_close_btn": "Fermer",
         "feedback_subject": "diminumero Feedback",
         "meta_desc_index": "Pratiquez les chiffres en espagnol, français, allemand, italien, danois, népalais, turc, coréen, norvégien, portugais, suédois, japonais, chinois, gallois et irlandais avec des quiz interactifs gratuits. Plusieurs niveaux de difficulté pour tous les niveaux.",
         "meta_desc_mode_selection": "Pratiquez les chiffres en LANGUAGE_NAME_PLACEHOLDER avec des quiz gratuits. Choisissez le mode facile, avancé ou hardcore et commencez à apprendre aujourd'hui.",
@@ -1487,6 +1492,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Opcional — o que mudarias, acrescentarias ou corrigirias?",
         "poll_submit_btn": "Enviar feedback",
         "poll_submit_error": "Não foi possível enviar. Tenta novamente.",
+        "poll_close_btn": "Fechar",
         "feedback_subject": "diminumero Feedback",
         "meta_desc_index": "Pratique números em espanhol, francês, alemão, italiano, dinamarquês, nepalês, turco, coreano, norueguês, português, sueco, japonês, chinês, galês e irlandês com quizzes interativos gratuitos. Múltiplos modos de dificuldade para todos os níveis.",
         "meta_desc_mode_selection": "Pratique os números em LANGUAGE_NAME_PLACEHOLDER com quizzes gratuitos. Escolha o modo fácil, avançado ou hardcore e comece a aprender hoje.",
@@ -1732,6 +1738,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "اختياري — ما الذي ستغيره أو تضيفه أو تصلحه؟",
         "poll_submit_btn": "إرسال التعليقات",
         "poll_submit_error": "تعذر الإرسال. حاول مرة أخرى.",
+        "poll_close_btn": "إغلاق",
         "feedback_subject": "diminumero Feedback",
         "meta_desc_index": "تدرب على الأرقام باللغات الإسبانية والفرنسية والألمانية والإيطالية والدنماركية والنيبالية والتركية والكورية والنرويجية والبرتغالية والسويدية واليابانية والصينية والويلزية والأيرلندية مع اختبارات تفاعلية مجانية. أوضاع صعوبة متعددة لجميع المستويات.",
         "meta_desc_mode_selection": "تدرب على الأرقام باللغة LANGUAGE_NAME_PLACEHOLDER مع اختبارات مجانية. اختر الوضع السهل أو المتقدم أو هاردكور وابدأ التعلم اليوم.",
@@ -1977,6 +1984,7 @@ TRANSLATIONS = {
         "poll_freeform_placeholder": "Необов'язково — що б ви змінили, додали чи виправили?",
         "poll_submit_btn": "Надіслати відгук",
         "poll_submit_error": "Не вдалося надіслати. Спробуйте ще раз.",
+        "poll_close_btn": "Закрити",
         "feedback_subject": "diminumero Feedback",
         "meta_desc_index": "Практикуйте числа іспанською, французькою, німецькою, італійською, данською, непальською, турецькою, корейською, норвезькою, португальською, шведською, японською, китайською, валлійською та ірландською мовами за допомогою безкоштовних інтерактивних тестів. Кілька рівнів складності для всіх рівнів.",
         "meta_desc_mode_selection": "Практикуйте числа LANGUAGE_NAME_PLACEHOLDER за допомогою безкоштовних тестів. Виберіть легкий, складний або хардкор режим і починайте навчання сьогодні.",

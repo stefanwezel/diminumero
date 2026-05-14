@@ -1,4 +1,4 @@
-// Feedback poll modal — shown on every visit until the user submits.
+// Feedback poll modal — shown on every visit until the user submits or dismisses it.
 (function () {
     'use strict';
 
@@ -14,8 +14,19 @@
     const form = document.getElementById('poll-form');
     const errorEl = document.getElementById('poll-error');
     const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const closeBtn = document.getElementById('poll-close-btn');
 
     setTimeout(() => modal.classList.add('show'), 1500);
+
+    function dismissPoll() {
+        localStorage.setItem(POLL_DONE_KEY, '1');
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 300);
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', dismissPoll);
+    }
 
     if (!form) return;
 
@@ -43,9 +54,7 @@
             const data = await res.json().catch(() => ({}));
             if (!res.ok || !data.ok) throw new Error('submit failed');
 
-            localStorage.setItem(POLL_DONE_KEY, '1');
-            modal.classList.remove('show');
-            setTimeout(() => modal.remove(), 300);
+            dismissPoll();
         } catch (err) {
             if (errorEl) errorEl.hidden = false;
             if (submitBtn) submitBtn.disabled = false;

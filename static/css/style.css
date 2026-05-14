@@ -1612,6 +1612,7 @@ body {
 }
 
 .poll-modal-content {
+    position: relative;
     background: rgba(46, 26, 60, 0.98);
     border-radius: 15px;
     padding: 28px;
@@ -1623,6 +1624,33 @@ body {
     transition: transform 0.3s ease-in-out;
     max-height: calc(100vh - 40px);
     overflow-y: auto;
+}
+
+.poll-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #C8BCD8;
+    font-size: 1.6rem;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.poll-close-btn:hover,
+.poll-close-btn:focus {
+    background: rgba(168, 155, 184, 0.15);
+    color: #FFFFFF;
+    outline: none;
 }
 
 .poll-modal.show .poll-modal-content {
