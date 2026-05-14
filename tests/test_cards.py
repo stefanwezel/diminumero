@@ -5,7 +5,7 @@ import json
 import pytest
 
 from app import _build_cards_dashboard_stats, app as flask_app
-from models import Card, db
+from models import Card, DeckShare, db
 
 
 @pytest.fixture
@@ -1205,3 +1205,185 @@ class TestPracticeWeakOnly:
         assert response.status_code == 302
         with client.session_transaction() as sess:
             assert "card_practice" not in sess
+
+
+class TestDeckShareCreate:
+    def test_share_requires_login(self, client):
+        response = client.post("/api/cards/share")
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
+
+    def test_share_rejects_empty_deck(self, client):
+        login(client)
+        response = client.post("/api/cards/share")
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["ok"] is False
+        with flask_app.app_context():
+            assert db.session.query(DeckShare).count() == 0
+
+    def test_share_snapshots_deck(self, client):
+        make_card(SAMPLE_USER["sub"], "uno", "one")
+        make_card(SAMPLE_USER["sub"], "dos", "two")
+        login(client)
+        response = client.post("/api/cards/share")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["ok"] is True
+        assert data["count"] == 2
+        assert "/cards/import/" in data["url"]
+        with flask_app.app_context():
+            share = db.session.query(DeckShare).one()
+            assert share.owner_sub == SAMPLE_USER["sub"]
+            assert share.owner_name == SAMPLE_USER["name"]
+            pairs = {(c["front"], c["back"]) for c in share.cards}
+            assert pairs == {("uno", "one"), ("dos", "two")}
+
+    def test_share_does_not_leak_other_users_cards(self, client):
+        make_card(OTHER_USER["sub"], "secret", "hidden")
+        make_card(SAMPLE_USER["sub"], "uno", "one")
+        login(client)
+        response = client.post("/api/cards/share")
+        assert response.status_code == 200
+        with flask_app.app_context():
+            share = db.session.query(DeckShare).one()
+            pairs = {(c["front"], c["back"]) for c in share.cards}
+            assert pairs == {("uno", "one")}
+
+    def test_share_snapshot_unaffected_by_later_edits(self, client):
+        card_id = make_card(SAMPLE_USER["sub"], "uno", "one")
+        login(client)
+        client.post("/api/cards/share")
+        # Owner edits the card after sharing — snapshot must not change.
+        client.patch(f"/api/cards/{card_id}", json={"front": "uno", "back": "ONE!"})
+        with flask_app.app_context():
+            share = db.session.query(DeckShare).one()
+            pairs = {(c["front"], c["back"]) for c in share.cards}
+            assert pairs == {("uno", "one")}
+
+
+def _make_share(owner_sub, owner_name, cards):
+    with flask_app.app_context():
+        share = DeckShare(
+            token="t" + "0" * 31,
+            owner_sub=owner_sub,
+            owner_name=owner_name,
+            cards_json=json.dumps([{"front": f, "back": b} for f, b in cards]),
+        )
+        db.session.add(share)
+        db.session.commit()
+        return share.token
+
+
+class TestDeckImportPreview:
+    def test_preview_redirects_logged_out_user_to_login(self, client):
+        token = _make_share(OTHER_USER["sub"], "Grace", [("uno", "one")])
+        response = client.get(f"/cards/import/{token}")
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
+        with client.session_transaction() as sess:
+            assert sess.get("pending_import_token") == token
+
+    def test_preview_renders_when_logged_in(self, client):
+        token = _make_share(
+            OTHER_USER["sub"], "Grace", [("uno", "one"), ("dos", "two")]
+        )
+        login(client)
+        response = client.get(f"/cards/import/{token}")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        # Owner name and count both surface on the page.
+        assert "Grace" in body
+        assert "2" in body
+
+    def test_preview_unknown_token_404s(self, client):
+        login(client)
+        response = client.get("/cards/import/does-not-exist")
+        assert response.status_code == 404
+
+
+class TestDeckImportApply:
+    def test_import_requires_login(self, client):
+        token = _make_share(OTHER_USER["sub"], "Grace", [("uno", "one")])
+        response = client.post(f"/cards/import/{token}")
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
+
+    def test_import_copies_cards_into_recipient(self, client):
+        token = _make_share(
+            OTHER_USER["sub"], "Grace", [("uno", "one"), ("dos", "two")]
+        )
+        login(client)
+        response = client.post(f"/cards/import/{token}", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/cards")
+        with flask_app.app_context():
+            mine = (
+                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
+            )
+            pairs = {(c.front, c.back) for c in mine}
+            assert pairs == {("uno", "one"), ("dos", "two")}
+
+    def test_import_skips_duplicates(self, client):
+        # Recipient already has "uno"→"one"; import has 2 cards, one is dup.
+        make_card(SAMPLE_USER["sub"], "uno", "one")
+        token = _make_share(
+            OTHER_USER["sub"], "Grace", [("uno", "one"), ("dos", "two")]
+        )
+        login(client)
+        client.post(f"/cards/import/{token}")
+        with flask_app.app_context():
+            mine = (
+                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
+            )
+            pairs = {(c.front, c.back) for c in mine}
+            # No duplicate "uno"→"one" — count stays at 2 total.
+            assert pairs == {("uno", "one"), ("dos", "two")}
+            assert len(mine) == 2
+
+    def test_import_dedupe_is_normalized(self, client):
+        # Recipient has "Uno" with trailing whitespace; share has "uno".
+        make_card(SAMPLE_USER["sub"], " Uno ", "One")
+        token = _make_share(OTHER_USER["sub"], "Grace", [("uno", "one")])
+        login(client)
+        client.post(f"/cards/import/{token}")
+        with flask_app.app_context():
+            mine = (
+                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
+            )
+            assert len(mine) == 1  # the import was skipped as a duplicate
+
+    def test_import_within_share_dedupes(self, client):
+        # The shared deck itself contains duplicates — only one copy lands.
+        token = _make_share(
+            OTHER_USER["sub"],
+            "Grace",
+            [("uno", "one"), ("uno", "one"), ("dos", "two")],
+        )
+        login(client)
+        client.post(f"/cards/import/{token}")
+        with flask_app.app_context():
+            mine = (
+                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
+            )
+            pairs = {(c.front, c.back) for c in mine}
+            assert pairs == {("uno", "one"), ("dos", "two")}
+
+    def test_import_unknown_token_redirects_with_flash(self, client):
+        login(client)
+        response = client.post("/cards/import/does-not-exist", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/cards")
+        with flask_app.app_context():
+            assert db.session.query(Card).count() == 0
+
+    def test_share_button_rendered_when_cards_exist(self, client):
+        make_card(SAMPLE_USER["sub"], "uno", "one")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-share-btn"' in body
+
+    def test_share_button_hidden_when_no_cards(self, client):
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-share-btn"' not in body

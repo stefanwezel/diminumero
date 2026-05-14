@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('cards_import_title') }} - diminumero{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block og_title %}{{ get_text('cards_import_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('cards_import_title') }} - diminumero{% endblock %}
+
+{% block content %}
+<div class="cards-import-page">
+    {% if share is none %}
+        <h2>{{ get_text('cards_import_not_found_title') }}</h2>
+        <p>{{ get_text('cards_import_not_found_desc') }}</p>
+        <div class="cards-import-actions">
+            <a href="{{ url_for('cards') }}" class="btn btn-primary">
+                {{ get_text('cards_import_back_btn') }}
+            </a>
+        </div>
+    {% else %}
+        <h2>{{ get_text('cards_import_title') }}</h2>
+        <p>
+            {% if share.owner_name %}
+                {{ get_text('cards_import_prompt_named').format(card_count, share.owner_name) }}
+            {% else %}
+                {{ get_text('cards_import_prompt').format(card_count) }}
+            {% endif %}
+        </p>
+        {% if is_own %}
+            <p class="cards-import-own-note">{{ get_text('cards_import_own_note') }}</p>
+        {% endif %}
+        <p class="cards-import-dedupe-note">{{ get_text('cards_import_dedupe_note') }}</p>
+        <form method="POST" action="{{ url_for('cards_import_apply', token=share.token) }}"
+              class="cards-import-actions">
+            <button type="submit" class="btn btn-primary">
+                {{ get_text('cards_import_confirm_btn').format(card_count) }}
+            </button>
+            <a href="{{ url_for('cards') }}" class="btn btn-secondary">
+                {{ get_text('cards_import_cancel_btn') }}
+            </a>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

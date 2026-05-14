@@ -65,6 +65,35 @@ class Card(db.Model):
         }
 
 
+class DeckShare(db.Model):
+    """A shareable snapshot of one user's deck.
+
+    Created on demand when a user clicks "Share". The snapshot of
+    (front, back) pairs is frozen at creation time so the recipient
+    sees the deck as it existed when shared — later edits or deletes
+    by the owner don't affect what gets imported.
+    """
+
+    __tablename__ = "deck_shares"
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    owner_sub = db.Column(db.String(255), nullable=False, index=True)
+    owner_name = db.Column(db.String(255), nullable=True)
+    cards_json = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+
+    @property
+    def cards(self) -> list[dict]:
+        import json as _json
+
+        try:
+            data = _json.loads(self.cards_json or "[]")
+        except ValueError:
+            return []
+        return [c for c in data if isinstance(c, dict) and "front" in c and "back" in c]
+
+
 class PollResponse(db.Model):
     """A single submission of the in-app feedback poll.
 

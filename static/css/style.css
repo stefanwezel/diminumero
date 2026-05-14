@@ -3262,6 +3262,125 @@ html {
     border-color: rgba(255, 77, 109, 0.6);
 }
 
+.cards-heading-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cards-share-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background-color: rgba(229, 79, 109, 0.12);
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: 1px solid rgba(229, 79, 109, 0.6);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cards-share-toggle:hover,
+.cards-share-toggle:focus {
+    background-color: rgba(229, 79, 109, 0.22);
+    border-color: #E54F6D;
+    outline: none;
+}
+
+.cards-share-toggle[disabled] {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.cards-share-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.cards-share-modal {
+    background-color: #2E1A3C;
+    border: 1px solid rgba(229, 79, 109, 0.6);
+    border-radius: 14px;
+    padding: 22px 24px;
+    max-width: 520px;
+    width: 100%;
+    color: #FFFFFF;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cards-share-modal-title {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.cards-share-modal-desc {
+    margin: 0;
+    font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+.cards-share-modal-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cards-share-modal-url {
+    flex: 1 1 240px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(229, 79, 109, 0.45);
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.cards-share-modal-copy {
+    white-space: nowrap;
+}
+
+.cards-share-modal-close {
+    align-self: flex-end;
+}
+
+.cards-import-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: stretch;
+    text-align: center;
+}
+
+.cards-import-page h2 {
+    margin: 0;
+}
+
+.cards-import-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
 .cards-dashboard-cta {
     display: flex;
     justify-content: center;
