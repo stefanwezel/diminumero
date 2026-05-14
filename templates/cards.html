@@ -69,10 +69,149 @@
              data-i18n-back-placeholder="{{ get_text('cards_back_placeholder') }}"
              data-i18n-created="{{ get_text('cards_flash_created') }}"
              data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
-        <h2 class="cards-section-heading">
-            {{ get_text('cards_title') }}
-            <span class="cards-count" id="cards-count">({{ cards|length }})</span>
-        </h2>
+        <div class="cards-list-heading-row">
+            <h2 class="cards-section-heading">
+                {{ get_text('cards_title') }}
+                <span class="cards-count" id="cards-count">({{ cards|length }})</span>
+            </h2>
+            {% if cards %}
+            <button type="button"
+                    class="cards-dashboard-toggle"
+                    id="cards-dashboard-toggle"
+                    aria-expanded="false"
+                    aria-controls="cards-dashboard-panel">
+                <span class="cards-dashboard-toggle-label">{{ get_text('cards_dashboard_toggle') }}</span>
+                <span class="cards-dashboard-toggle-chevron" aria-hidden="true">▾</span>
+                <span class="new-feature-badge cards-dashboard-toggle-badge" aria-hidden="true">NEW</span>
+            </button>
+            {% endif %}
+        </div>
+        {% if cards %}
+        <section class="cards-dashboard-section"
+                 id="cards-dashboard-panel"
+                 aria-labelledby="cards-dashboard-toggle"
+                 hidden>
+            <div class="cards-dashboard-tiles">
+                <div class="stat-tile">
+                    <span class="stat-tile-value">{{ stats.total_cards }}</span>
+                    <span class="stat-tile-label">{{ get_text('cards_dashboard_total_cards') }}</span>
+                </div>
+                <div class="stat-tile">
+                    <span class="stat-tile-value">{{ stats.total_attempts }}</span>
+                    <span class="stat-tile-label">{{ get_text('cards_dashboard_total_attempts') }}</span>
+                </div>
+                <div class="stat-tile">
+                    <span class="stat-tile-value">
+                        {%- if stats.overall_accuracy is not none -%}
+                            {{ (stats.overall_accuracy * 100)|round(0, 'common')|int }}%
+                        {%- else -%}—{%- endif -%}
+                    </span>
+                    <span class="stat-tile-label">{{ get_text('cards_dashboard_overall_accuracy') }}</span>
+                </div>
+                <div class="stat-tile stat-tile-weak">
+                    <span class="stat-tile-value">{{ stats.buckets.weak }}</span>
+                    <span class="stat-tile-label">{{ get_text('cards_dashboard_weak') }}</span>
+                </div>
+                <div class="stat-tile">
+                    <span class="stat-tile-value">{{ stats.unpracticed }}</span>
+                    <span class="stat-tile-label">{{ get_text('cards_dashboard_unpracticed') }}</span>
+                </div>
+            </div>
+
+            {% if stats.total_attempts > 0 %}
+            <div class="cards-dashboard-charts"
+                 data-i18n-bucket-weak="{{ get_text('cards_dashboard_bucket_weak') }}"
+                 data-i18n-bucket-medium="{{ get_text('cards_dashboard_bucket_medium') }}"
+                 data-i18n-bucket-strong="{{ get_text('cards_dashboard_bucket_strong') }}"
+                 data-i18n-bucket-unpracticed="{{ get_text('cards_dashboard_bucket_unpracticed') }}"
+                 data-i18n-top-weak="{{ get_text('cards_dashboard_top_weak') }}">
+                <div class="cards-dashboard-chart">
+                    <h3 class="cards-dashboard-chart-title">{{ get_text('cards_dashboard_distribution') }}</h3>
+                    <div class="cards-dashboard-chart-canvas-wrap">
+                        <canvas id="cards-distribution-chart"></canvas>
+                    </div>
+                </div>
+                <div class="cards-dashboard-chart">
+                    <h3 class="cards-dashboard-chart-title">{{ get_text('cards_dashboard_top_weak') }}</h3>
+                    <div class="cards-dashboard-chart-canvas-wrap">
+                        <canvas id="cards-weakest-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cards-dashboard-toplists">
+                {% if stats.weak_cards %}
+                <div class="cards-dashboard-toplist cards-dashboard-toplist-weak">
+                    <h3 class="cards-dashboard-toplist-title">
+                        {{ get_text('cards_dashboard_weak') }}
+                        <span class="cards-dashboard-toplist-count">({{ stats.buckets.weak }})</span>
+                    </h3>
+                    <ul class="cards-dashboard-toplist-list">
+                        {% for card in stats.weak_cards %}
+                        <li class="cards-dashboard-toplist-item">
+                            <div class="cards-dashboard-toplist-text">
+                                <span class="cards-dashboard-toplist-front">{{ card.front }}</span>
+                                <span class="cards-dashboard-toplist-back">{{ card.back }}</span>
+                            </div>
+                            {{ progress_ring(card) }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if stats.weakest %}
+                <div class="cards-dashboard-toplist">
+                    <h3 class="cards-dashboard-toplist-title">{{ get_text('cards_dashboard_top_weak') }}</h3>
+                    <ul class="cards-dashboard-toplist-list">
+                        {% for card in stats.weakest %}
+                        <li class="cards-dashboard-toplist-item">
+                            <div class="cards-dashboard-toplist-text">
+                                <span class="cards-dashboard-toplist-front">{{ card.front }}</span>
+                                <span class="cards-dashboard-toplist-back">{{ card.back }}</span>
+                            </div>
+                            {{ progress_ring(card) }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if stats.strongest %}
+                <div class="cards-dashboard-toplist">
+                    <h3 class="cards-dashboard-toplist-title">{{ get_text('cards_dashboard_top_strong') }}</h3>
+                    <ul class="cards-dashboard-toplist-list">
+                        {% for card in stats.strongest %}
+                        <li class="cards-dashboard-toplist-item">
+                            <div class="cards-dashboard-toplist-text">
+                                <span class="cards-dashboard-toplist-front">{{ card.front }}</span>
+                                <span class="cards-dashboard-toplist-back">{{ card.back }}</span>
+                            </div>
+                            {{ progress_ring(card) }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            <script type="application/json" id="cards-stats-data">{{ stats_json|safe }}</script>
+            {% else %}
+            <p class="cards-dashboard-empty-hint">{{ get_text('cards_dashboard_empty_practice_hint') }}</p>
+            {% endif %}
+
+            {% if stats.buckets.weak > 0 %}
+            <form method="POST" action="{{ url_for('cards_practice_start') }}"
+                  class="cards-dashboard-cta">
+                <input type="hidden" name="weak_only" value="1">
+                <input type="hidden" name="direction" value="back_to_front">
+                <input type="hidden" name="sampling_mode" value="prioritized">
+                <input type="hidden" name="difficulty" value="hardcore">
+                <button type="submit" class="btn btn-primary">
+                    {{ get_text('cards_dashboard_practice_weak_btn') }}
+                    <span class="cards-dashboard-cta-count">({{ stats.buckets.weak }})</span>
+                </button>
+            </form>
+            {% endif %}
+        </section>
+        {% endif %}
         {% if cards %}
             <form method="POST" action="{{ url_for('cards_practice_start') }}"
                   class="cards-practice-form">
@@ -172,4 +311,34 @@
 <script src="{{ url_for('static', filename='js/cards.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_practice_prefs.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_sort.js') }}" defer></script>
+{% if cards and stats.total_attempts > 0 %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/cards_dashboard.js') }}" defer></script>
+{% endif %}
+{% if cards %}
+<script>
+(function(){
+    var btn=document.getElementById('cards-dashboard-toggle');
+    var panel=document.getElementById('cards-dashboard-panel');
+    if(!btn||!panel)return;
+    btn.addEventListener('click',function(){
+        var open=btn.getAttribute('aria-expanded')==='true';
+        if(open){
+            btn.setAttribute('aria-expanded','false');
+            panel.hidden=true;
+            btn.classList.remove('cards-dashboard-toggle-open');
+        }else{
+            btn.setAttribute('aria-expanded','true');
+            panel.hidden=false;
+            btn.classList.add('cards-dashboard-toggle-open');
+            if(typeof window.__initCardsDashboardCharts==='function'){
+                // Defer one frame so the panel has real dimensions before
+                // Chart.js measures the canvas.
+                requestAnimationFrame(function(){window.__initCardsDashboardCharts();});
+            }
+        }
+    });
+}());
+</script>
+{% endif %}
 {% endblock %}
