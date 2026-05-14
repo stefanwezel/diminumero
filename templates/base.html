@@ -138,7 +138,15 @@
         <div class="language-switcher">
         <button class="lang-globe-btn" id="langGlobeBtn"
                 aria-label="Switch UI language"
-                aria-expanded="false" aria-haspopup="listbox">🌐</button>
+                aria-expanded="false" aria-haspopup="listbox">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"
+                 fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <ellipse cx="12" cy="12" rx="4" ry="9"/>
+            </svg>
+        </button>
         <div class="lang-dropdown" id="langDropdown" role="listbox" aria-label="UI language">
             {% set ui_langs = [
                 ('en', '🇬🇧', 'English'),

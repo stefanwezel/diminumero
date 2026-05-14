@@ -234,7 +234,7 @@ body {
 /* Magnitude Dial */
 .magnitude-dial-section {
     background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
-    border: 2px solid rgba(229, 79, 109, 0.45);
+    border: 1px solid rgba(168, 155, 184, 0.18);
     border-radius: 15px;
     padding: 20px 25px;
     margin-bottom: 40px;
@@ -269,9 +269,9 @@ body {
     appearance: none;
     width: 100%;
     max-width: 300px;
-    height: 8px;
+    height: 6px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #C2F970 0%, #E54F6D 50%, #724E91 100%);
+    background: linear-gradient(90deg, #6B8CB8 0%, #8DB39A 100%);
     outline: none;
     transition: opacity 0.2s;
 }
@@ -279,41 +279,41 @@ body {
 .magnitude-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: #2E1A3C;
-    border: 3px solid #E54F6D;
+    background: #A89BB8;
+    border: 2px solid #2E1A3C;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s, box-shadow 0.2s;
 }
 
 .magnitude-slider::-webkit-slider-thumb:hover {
-    border-color: #724E91;
-    box-shadow: 0 2px 10px rgba(114, 78, 145, 0.3);
+    background: #C8BCD8;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .magnitude-slider::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: #2E1A3C;
-    border: 3px solid #E54F6D;
+    background: #A89BB8;
+    border: 2px solid #2E1A3C;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s, box-shadow 0.2s;
 }
 
 .magnitude-slider::-moz-range-thumb:hover {
-    border-color: #724E91;
-    box-shadow: 0 2px 10px rgba(114, 78, 145, 0.3);
+    background: #C8BCD8;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .magnitude-slider::-moz-range-track {
-    height: 8px;
+    height: 6px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #C2F970 0%, #E54F6D 50%, #724E91 100%);
+    background: linear-gradient(90deg, #6B8CB8 0%, #8DB39A 100%);
 }
 
 .magnitude-level-desc {
@@ -1837,13 +1837,14 @@ html {
 
 .learn-card {
     display: block;
-    background: linear-gradient(135deg, #724E91 0%, #E54F6D 100%);
+    background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
+    border: 1px solid rgba(168, 155, 184, 0.18);
     border-radius: 15px;
     padding: 30px;
     text-decoration: none;
-    color: white;
+    color: #E8DFF0;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 25px rgba(114, 78, 145, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     text-align: center;
     max-width: 500px;
     margin: 0 auto;
@@ -1851,8 +1852,9 @@ html {
 
 @media (hover: hover) {
     .learn-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(114, 78, 145, 0.5);
+        transform: translateY(-3px);
+        border-color: rgba(168, 155, 184, 0.35);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
     }
 }
 .learn-icon {
@@ -2739,16 +2741,26 @@ html {
     font-weight: 600;
     text-transform: none;
     letter-spacing: normal;
-    background: rgba(46, 26, 60, 0.85);
-    color: #555;
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: #fffaeb;
+    color: #22162B;
+    border: 1px solid rgba(34, 22, 43, 0.35);
     border-radius: 6px;
-    backdrop-filter: blur(2px);
+}
+
+.cards-list-btn:hover {
+    background: #ffffff;
+    border-color: #22162B;
 }
 
 .cards-list-btn-delete {
-    color: #b00020;
-    border-color: rgba(176, 0, 32, 0.25);
+    background: #fde8ec;
+    color: #8a1a2b;
+    border-color: rgba(138, 26, 43, 0.4);
+}
+
+.cards-list-btn-delete:hover {
+    background: #f9d4dc;
+    border-color: #8a1a2b;
 }
 
 .cards-delete-form {
