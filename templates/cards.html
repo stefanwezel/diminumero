@@ -75,15 +75,29 @@
                 <span class="cards-count" id="cards-count">({{ cards|length }})</span>
             </h2>
             {% if cards %}
-            <button type="button"
-                    class="cards-dashboard-toggle"
-                    id="cards-dashboard-toggle"
-                    aria-expanded="false"
-                    aria-controls="cards-dashboard-panel">
-                <span class="cards-dashboard-toggle-label">{{ get_text('cards_dashboard_toggle') }}</span>
-                <span class="cards-dashboard-toggle-chevron" aria-hidden="true">▾</span>
-                <span class="new-feature-badge cards-dashboard-toggle-badge" aria-hidden="true">NEW</span>
-            </button>
+            <div class="cards-heading-actions">
+                <button type="button"
+                        class="cards-share-toggle"
+                        id="cards-share-btn"
+                        data-i18n-copy="{{ get_text('cards_share_copy_btn') }}"
+                        data-i18n-copied="{{ get_text('cards_share_copied') }}"
+                        data-i18n-error="{{ get_text('cards_share_error') }}"
+                        data-i18n-modal-title="{{ get_text('cards_share_modal_title') }}"
+                        data-i18n-modal-desc="{{ get_text('cards_share_modal_desc') }}"
+                        data-i18n-close="{{ get_text('cards_share_close_btn') }}">
+                    <span aria-hidden="true">↗</span>
+                    <span>{{ get_text('cards_share_btn') }}</span>
+                </button>
+                <button type="button"
+                        class="cards-dashboard-toggle"
+                        id="cards-dashboard-toggle"
+                        aria-expanded="false"
+                        aria-controls="cards-dashboard-panel">
+                    <span class="cards-dashboard-toggle-label">{{ get_text('cards_dashboard_toggle') }}</span>
+                    <span class="cards-dashboard-toggle-chevron" aria-hidden="true">▾</span>
+                    <span class="new-feature-badge cards-dashboard-toggle-badge" aria-hidden="true">NEW</span>
+                </button>
+            </div>
             {% endif %}
         </div>
         {% if cards %}
@@ -311,6 +325,7 @@
 <script src="{{ url_for('static', filename='js/cards.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_practice_prefs.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_sort.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/cards_share.js') }}" defer></script>
 {% if cards and stats.total_attempts > 0 %}
 <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_dashboard.js') }}" defer></script>

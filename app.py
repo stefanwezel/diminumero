@@ -29,7 +29,7 @@ import secrets
 import sys
 import time
 
-from models import Card, PollResponse, db
+from models import Card, DeckShare, PollResponse, db
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
@@ -817,6 +817,10 @@ def callback():
     """Handle the Auth0 OIDC callback and store the user on the session."""
     token = oauth.auth0.authorize_access_token()
     session["user"] = token["userinfo"]
+    # If the user was sent to /login from a share URL, route them back to it.
+    pending_token = session.pop("pending_import_token", None)
+    if pending_token:
+        return redirect(url_for("cards_import", token=pending_token))
     return redirect(url_for("cards"))
 
 
@@ -1040,6 +1044,109 @@ def api_cards_delete(card_id: int):
     db.session.delete(card)
     db.session.commit()
     return jsonify({"ok": True})
+
+
+# ----- Deck sharing --------------------------------------------------------
+
+# Token length is 32 hex chars (128 bits of entropy) — long enough that
+# guessing a valid share is computationally infeasible, short enough to
+# paste into a chat.
+SHARE_TOKEN_BYTES = 16
+
+
+def _generate_share_token() -> str:
+    return secrets.token_hex(SHARE_TOKEN_BYTES)
+
+
+@app.route("/api/cards/share", methods=["POST"])
+@login_required
+def api_cards_share():
+    """Snapshot the user's deck into a DeckShare and return its public URL."""
+    user_sub = _current_user_sub()
+    cards = (
+        db.session.query(Card)
+        .filter_by(user_sub=user_sub)
+        .order_by(Card.created_at.asc())
+        .all()
+    )
+    if not cards:
+        return jsonify(
+            {"ok": False, "error": get_text("cards_share_flash_empty_deck")}
+        ), 400
+    snapshot = [{"front": c.front, "back": c.back} for c in cards]
+    user = session.get("user") or {}
+    owner_name = user.get("name") or user.get("nickname") or user.get("email")
+    share = DeckShare(
+        token=_generate_share_token(),
+        owner_sub=user_sub,
+        owner_name=owner_name,
+        cards_json=json.dumps(snapshot),
+    )
+    db.session.add(share)
+    db.session.commit()
+    url = url_for("cards_import", token=share.token, _external=True)
+    return jsonify({"ok": True, "url": url, "count": len(snapshot)})
+
+
+@app.route("/cards/import/<token>", methods=["GET"])
+def cards_import(token: str):
+    """Show a preview of a shared deck and offer to import it."""
+    share = db.session.query(DeckShare).filter_by(token=token).first()
+    if share is None:
+        return render_template(
+            "cards_import.html",
+            share=None,
+            get_text=get_text,
+        ), 404
+    if "user" not in session:
+        # Stash the import target on the session so post-login we can route back.
+        session["pending_import_token"] = token
+        return redirect(url_for("login"))
+    return render_template(
+        "cards_import.html",
+        share=share,
+        card_count=len(share.cards),
+        is_own=share.owner_sub == _current_user_sub(),
+        get_text=get_text,
+    )
+
+
+@app.route("/cards/import/<token>", methods=["POST"])
+@login_required
+def cards_import_apply(token: str):
+    """Copy the shared deck into the recipient's account, skipping duplicates."""
+    share = db.session.query(DeckShare).filter_by(token=token).first()
+    if share is None:
+        flash(get_text("cards_share_flash_not_found"), "error")
+        return redirect(url_for("cards"))
+    user_sub = _current_user_sub()
+    existing = (
+        db.session.query(Card.front, Card.back).filter_by(user_sub=user_sub).all()
+    )
+    seen = {
+        (quiz_logic.normalize_text(f), quiz_logic.normalize_text(b))
+        for f, b in existing
+    }
+    imported = 0
+    skipped = 0
+    for entry in share.cards:
+        front = (entry.get("front") or "").strip()
+        back = (entry.get("back") or "").strip()
+        if not front or not back:
+            continue
+        key = (quiz_logic.normalize_text(front), quiz_logic.normalize_text(back))
+        if key in seen:
+            skipped += 1
+            continue
+        seen.add(key)
+        db.session.add(Card(user_sub=user_sub, front=front, back=back))
+        imported += 1
+    db.session.commit()
+    flash(
+        get_text("cards_share_flash_imported").format(imported, skipped),
+        "success",
+    )
+    return redirect(url_for("cards"))
 
 
 # ----- Feedback poll -------------------------------------------------------
@@ -1406,6 +1513,7 @@ def robots_txt():
         "Disallow: /logout",
         "Disallow: /cards",
         "Disallow: /cards/",
+        "Disallow: /cards/import/",
         "",
         f"Sitemap: {SITE_URL.rstrip('/')}/sitemap.xml",
     ]
