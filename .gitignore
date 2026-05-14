@@ -15,6 +15,9 @@ wheels/
 # Flask instance folder (SQLite DB lives here)
 instance/
 
+# Poll analysis output (tools/analyze_poll.py)
+poll_charts/
+
 # Testing
 .pytest_cache/
 .coverage

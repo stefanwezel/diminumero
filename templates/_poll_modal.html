@@ -1,0 +1,63 @@
+<div id="poll-modal" class="poll-modal" role="dialog" aria-modal="true" aria-labelledby="poll-modal-title">
+    <div class="poll-modal-content">
+        <h2 id="poll-modal-title" class="poll-modal-title">{{ get_text('poll_heading') }}</h2>
+        <p class="poll-modal-intro">{{ get_text('poll_intro') }}</p>
+
+        <form id="poll-form" class="poll-form" novalidate>
+            <fieldset class="poll-field">
+                <legend class="poll-question">{{ get_text('poll_q_color') }}</legend>
+                <label class="poll-option">
+                    <input type="radio" name="color_scheme_pref" value="dark" required>
+                    <span>{{ get_text('poll_color_dark') }}</span>
+                </label>
+                <label class="poll-option">
+                    <input type="radio" name="color_scheme_pref" value="light">
+                    <span>{{ get_text('poll_color_light') }}</span>
+                </label>
+                <label class="poll-option">
+                    <input type="radio" name="color_scheme_pref" value="no_preference">
+                    <span>{{ get_text('poll_color_no_preference') }}</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="poll-field">
+                <legend class="poll-question">{{ get_text('poll_q_cards') }}</legend>
+                <label class="poll-option">
+                    <input type="radio" name="cards_aware" value="yes" required>
+                    <span>{{ get_text('poll_cards_yes') }}</span>
+                </label>
+                <label class="poll-option">
+                    <input type="radio" name="cards_aware" value="no">
+                    <span>{{ get_text('poll_cards_no') }}</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="poll-field">
+                <legend class="poll-question">{{ get_text('poll_q_device') }}</legend>
+                <label class="poll-option">
+                    <input type="radio" name="device" value="mobile" required>
+                    <span>{{ get_text('poll_device_mobile') }}</span>
+                </label>
+                <label class="poll-option">
+                    <input type="radio" name="device" value="desktop">
+                    <span>{{ get_text('poll_device_desktop') }}</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="poll-field">
+                <legend class="poll-question">{{ get_text('poll_q_freeform') }}</legend>
+                <textarea name="freeform" class="poll-textarea"
+                          maxlength="2000" rows="3"
+                          placeholder="{{ get_text('poll_freeform_placeholder') }}"></textarea>
+            </fieldset>
+
+            <p id="poll-error" class="poll-error" role="alert" hidden>{{ get_text('poll_submit_error') }}</p>
+
+            <div class="poll-actions">
+                <button type="submit" class="btn btn-primary poll-submit-btn">
+                    {{ get_text('poll_submit_btn') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

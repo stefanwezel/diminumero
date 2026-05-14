@@ -50,7 +50,34 @@
     <meta name="twitter:image:alt" content="diminumero — practice numbers in foreign languages">
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+    (function(){
+        var newHref="{{ url_for('static', filename='css/style.css') }}";
+        var classicHref="{{ url_for('static', filename='css/style-classic.css') }}";
+        var href=newHref;
+        try{ if(localStorage.getItem('theme')==='classic') href=classicHref; }catch(e){}
+        document.write('<link rel="stylesheet" id="theme-stylesheet" href="'+href+'">');
+    })();
+    </script>
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></noscript>
+    <style>
+        .theme-toggle-wrap { position: relative; display: inline-flex; }
+        .theme-toggle-btn svg { display: block; }
+        .theme-toggle-badge {
+            position: absolute;
+            top: -8px;
+            right: -14px;
+            pointer-events: none;
+            transform-origin: center;
+        }
+        @keyframes themeBadgePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.12); opacity: 0.85; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .new-feature-badge { animation: none; }
+        }
+    </style>
 
     <!-- GoatCounter Analytics -->
     <script data-goatcounter="https://stefanwezel.goatcounter.com/count"
@@ -96,10 +123,30 @@
         {% else %}
             <a class="btn-auth" href="{{ url_for('login') }}">{{ get_text('nav_login') }}</a>
         {% endif %}
+        <span class="theme-toggle-wrap">
+            <button class="lang-globe-btn theme-toggle-btn" id="themeToggleBtn"
+                    type="button"
+                    aria-label="Toggle color scheme"
+                    title="Toggle color scheme">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/>
+                </svg>
+            </button>
+            <span class="new-feature-badge theme-toggle-badge" id="themeToggleBadge" aria-hidden="true">NEW</span>
+        </span>
         <div class="language-switcher">
         <button class="lang-globe-btn" id="langGlobeBtn"
                 aria-label="Switch UI language"
-                aria-expanded="false" aria-haspopup="listbox">🌐</button>
+                aria-expanded="false" aria-haspopup="listbox">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"
+                 fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <ellipse cx="12" cy="12" rx="4" ry="9"/>
+            </svg>
+        </button>
         <div class="lang-dropdown" id="langDropdown" role="listbox" aria-label="UI language">
             {% set ui_langs = [
                 ('en', '🇬🇧', 'English'),
@@ -157,6 +204,9 @@
     </div>
     
     <script src="{{ url_for('static', filename='js/cookie-banner.js') }}"></script>
+
+    {% include "_poll_modal.html" %}
+    <script src="{{ url_for('static', filename='js/poll.js') }}"></script>
     <script>
     (function(){
         var btn=document.getElementById('langGlobeBtn');
@@ -172,6 +222,20 @@
             if(!btn.contains(e.target)&&!dd.contains(e.target))close();
         });
         document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+    }());
+    (function(){
+        var btn=document.getElementById('themeToggleBtn');
+        if(!btn)return;
+        var newHref="{{ url_for('static', filename='css/style.css') }}";
+        var classicHref="{{ url_for('static', filename='css/style-classic.css') }}";
+        btn.addEventListener('click',function(){
+            var current='new';
+            try{ if(localStorage.getItem('theme')==='classic') current='classic'; }catch(e){}
+            var next=current==='classic'?'new':'classic';
+            try{ localStorage.setItem('theme',next); }catch(e){}
+            var link=document.getElementById('theme-stylesheet');
+            if(link) link.href=next==='classic'?classicHref:newHref;
+        });
     }());
     (function(){
         var btn=document.getElementById('authMenuBtn');
