@@ -9,15 +9,18 @@
 
 An interactive web application to practice number translations in multiple languages. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers per language from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
 
-**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian
+**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian, Welsh, Irish
 
 ## ✨ Features
 
-- **Multi-Language Support**: Practice numbers in Spanish, German, and more (see [Adding Languages](ADD_LANGUAGE.md))
+- **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Languages](ADD_LANGUAGE.md))
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
 - **Three Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), and Hardcore
-- **Index Cards**: Sign in with Auth0 to create your own free-form vocabulary cards and practice them with the same word-by-word validator the number quiz uses
+- **Index Cards**: Sign in with Auth0 to create your own free-form vocabulary cards, practice them with the same word-by-word validator the number quiz uses, sort and edit them in place, and share whole decks via a link (recipients see a dedup preview before importing)
+- **Per-Card Scoring & Dashboard**: A rolling 10-attempt score per card powers a foldable performance dashboard (totals, accuracy, distribution chart, weakest cards) plus a one-click "Practice weak cards" CTA that pre-fills a hardcore back→front session over cards scoring below 50%
+- **Theme Toggle**: Default dark-purple palette plus a classic light theme, toggled from the header and persisted in `localStorage`
+- **Feedback Poll**: In-app modal collects colour-scheme preference, cards-awareness, device, and free-form feedback; responses land in the `poll_responses` table and can be analysed via `tools/analyze_poll.py`
 - **Multilingual UI**: Interface available in English, German, Spanish, Italian, French, Portuguese, Arabic, and Ukrainian
 - **Responsive Design**: Works seamlessly on desktop and mobile, with touch-friendly interactions
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
@@ -59,33 +62,43 @@ The container applies pending Alembic migrations on startup and then serves via 
 
 ```
 diminumero/
-├── app.py                 # Flask application & routes (quiz, auth, cards)
+├── app.py                 # Flask application & routes (quiz, auth, cards, share, poll)
 ├── quiz_logic.py          # Quiz generation & weighting logic
-├── models.py              # SQLAlchemy models (Card)
+├── models.py              # SQLAlchemy models (Card, DeckShare, PollResponse)
 ├── migrations/            # Alembic migrations (Flask-Migrate)
 ├── languages/             # Multi-language support
-│   ├── config.py          # Language registry & metadata
+│   ├── config.py          # Language registry & metadata (incl. has_learn_materials)
 │   ├── es/                # Spanish (numbers.py, generate_numbers.py)
 │   └── ...                # Additional languages
 ├── templates/             # HTML templates
 │   ├── base.html
 │   ├── index.html
+│   ├── language_selection.html
 │   ├── quiz_easy.html
 │   ├── quiz_advanced.html
 │   ├── quiz_hardcore.html
 │   ├── results.html
-│   ├── cards.html
+│   ├── cards.html              # List + create + foldable dashboard
 │   ├── cards_practice.html
-│   └── cards_results.html
+│   ├── cards_results.html
+│   ├── cards_import.html       # Shared-deck import preview
+│   ├── _poll_modal.html        # Feedback poll modal
+│   └── _progress_ring.html     # Reusable score ring partial
 └── static/
     ├── css/
-    │   └── style.css      # Styling & animations
+    │   ├── style.css            # Default dark-purple palette
+    │   └── style-classic.css    # Classic light theme
     └── js/
         ├── quiz.js              # Easy mode interactions
         ├── quiz_advanced.js     # Live validation logic
         ├── quiz_hardcore.js     # Hardcore mode logic
-        ├── cards.js             # Card CRUD (in-place via JSON API)
-        └── cards_practice.js    # Card practice live validation
+        ├── cards.js              # Card CRUD (in-place via JSON API)
+        ├── cards_practice.js     # Card practice live validation
+        ├── cards_practice_prefs.js  # Persist practice preferences
+        ├── cards_sort.js         # Client-side card sorting
+        ├── cards_share.js        # Share-link modal + clipboard
+        ├── cards_dashboard.js    # Foldable performance panel + Chart.js
+        └── poll.js               # Feedback poll modal
 ```
 
 ## 🎯 How It Works
@@ -109,8 +122,10 @@ Same as Advanced mode but with stricter validation requirements for an extra cha
 
 ### Index Cards (Auth required)
 1. **Sign In**: Click "Login" — you're bounced to Auth0's Universal Login
-2. **Create Cards**: On `/cards`, add front/back pairs (e.g. `el perro` / `the dog`); edit and delete in place
-3. **Practice**: Pick a direction (front→back, back→front, or random) and a card count, then answer with the same live word-by-word validator the number quiz uses
+2. **Create & Organise Cards**: On `/cards`, add front/back pairs (e.g. `el perro` / `the dog`); edit and delete in place; sort the list client-side
+3. **Practice**: Pick a direction (back→front by default, also front→back or random), a sampling mode (prioritized by weakness or uniform random), a difficulty (hardcore by default, also advanced), and a card count. Answer with the same live word-by-word validator the number quiz uses; per-attempt outcomes feed each card's rolling 10-attempt score
+4. **Dashboard**: A foldable panel on `/cards` shows totals, overall accuracy, a distribution chart (unpracticed/weak/medium/strong), the top weak and strong cards, and a one-click **"Practice weak cards"** CTA that pre-fills a hardcore back→front session over cards scoring below 50%
+5. **Share a Deck**: Click "Share" to mint a tokenised public URL that snapshots your current deck. The recipient sees a preview at `/cards/import/<token>` and any cards whose normalised (front, back) pair already exists in their deck are skipped on import
 
 ## 🛠️ Technologies
 
