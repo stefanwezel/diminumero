@@ -1,5 +1,6 @@
 """Flask application for diminumero."""
 
+import json
 from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import quote_plus, urlencode
@@ -873,6 +874,7 @@ def cards():
         practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
     else:
         practice_numbers_url = url_for("index")
+    stats, stats_json = _build_cards_dashboard_stats(user_cards)
     return render_template(
         "cards.html",
         user=session["user"],
@@ -880,7 +882,75 @@ def cards():
         edit_card=edit_card,
         practice_numbers_url=practice_numbers_url,
         get_text=get_text,
+        stats=stats,
+        stats_json=stats_json,
     )
+
+
+def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
+    """Derive aggregate dashboard stats from a user's cards.
+
+    Returns (stats_dict_for_jinja, json_blob_for_chart_js). The JSON blob is
+    safe to drop into a <script type="application/json"> tag — Jinja's default
+    autoescaping is bypassed for that element type, so we emit it ourselves
+    with HTML-safe escaping.
+    """
+    total_cards = len(user_cards)
+    total_attempts = sum(c.times_practiced for c in user_cards)
+    total_correct = sum(c.times_correct for c in user_cards)
+    overall_accuracy = total_correct / total_attempts if total_attempts else None
+
+    buckets = {"unpracticed": 0, "weak": 0, "medium": 0, "strong": 0}
+    for c in user_cards:
+        s = c.score
+        if s is None:
+            buckets["unpracticed"] += 1
+        elif s < 0.5:
+            buckets["weak"] += 1
+        elif s < 0.8:
+            buckets["medium"] += 1
+        else:
+            buckets["strong"] += 1
+
+    practiced = [c for c in user_cards if c.score is not None]
+    weakest = sorted(practiced, key=lambda c: (c.score, -c.times_practiced))[:5]
+    strongest = sorted(practiced, key=lambda c: (-c.score, -c.times_practiced))[:5]
+    # Strict "weak" filter: only cards under 50% accuracy. Same threshold as
+    # the buckets["weak"] count and the weak_only practice CTA, so this column
+    # always lines up with the (N) badge on the button.
+    weak_cards = sorted(
+        [c for c in practiced if c.score < 0.5],
+        key=lambda c: (c.score, -c.times_practiced),
+    )[:5]
+
+    stats = {
+        "total_cards": total_cards,
+        "total_attempts": total_attempts,
+        "total_correct": total_correct,
+        "overall_accuracy": overall_accuracy,
+        "unpracticed": buckets["unpracticed"],
+        "buckets": buckets,
+        "weak_cards": weak_cards,
+        "weakest": weakest,
+        "strongest": strongest,
+    }
+
+    # Chart.js payload — keep it minimal and JSON-safe.
+    json_payload = {
+        "buckets": buckets,
+        "weakest": [
+            {
+                "id": c.id,
+                "front": c.front,
+                "back": c.back,
+                "score": c.score,
+                "times_practiced": c.times_practiced,
+            }
+            for c in weakest
+        ],
+    }
+    stats_json = json.dumps(json_payload).replace("</", "<\\/")
+    return stats, stats_json
 
 
 @app.route("/cards", methods=["POST"])
@@ -1088,6 +1158,11 @@ def _load_next_card(state: dict) -> Card | None:
         .filter(~Card.id.in_(asked) if asked else db.true())
         .all()
     )
+    if state.get("weak_only"):
+        # Score is a Python property, so filter in memory. Weak == practiced
+        # cards with sub-50% accuracy in the rolling window; unpracticed cards
+        # are excluded because they aren't "weak" — they're untouched.
+        candidates = [c for c in candidates if c.score is not None and c.score < 0.5]
     if not candidates:
         return None
     if state.get("sampling_mode") == "prioritized":
@@ -1118,18 +1193,34 @@ def cards_practice_start():
     except (TypeError, ValueError):
         count = 10
     count = max(1, min(count, 100))
-    have_any = (
-        db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).first()
-        is not None
-    )
-    if not have_any:
-        flash(get_text("cards_flash_need_cards"), "info")
-        return redirect(url_for("cards"))
+    weak_only = request.form.get("weak_only") in ("1", "true", "on")
+    if weak_only:
+        weak_cards = [
+            c
+            for c in db.session.query(Card)
+            .filter_by(user_sub=_current_user_sub())
+            .all()
+            if c.score is not None and c.score < 0.5
+        ]
+        if not weak_cards:
+            flash(get_text("cards_flash_no_weak_cards"), "info")
+            return redirect(url_for("cards"))
+        # Pick a session length that exhausts the weak pool (capped at 100).
+        count = min(len(weak_cards), 100)
+    else:
+        have_any = (
+            db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).first()
+            is not None
+        )
+        if not have_any:
+            flash(get_text("cards_flash_need_cards"), "info")
+            return redirect(url_for("cards"))
     session["card_practice"] = {
         "direction": direction,
         "sampling_mode": sampling_mode,
         "difficulty": difficulty,
         "count": count,
+        "weak_only": weak_only,
         "asked_ids": [],
         "score": 0,
         "total": 0,

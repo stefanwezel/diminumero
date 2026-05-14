@@ -1,8 +1,10 @@
 """Tests for the index-card CRUD and practice flow."""
 
+import json
+
 import pytest
 
-from app import app as flask_app
+from app import _build_cards_dashboard_stats, app as flask_app
 from models import Card, db
 
 
@@ -870,3 +872,336 @@ class TestSiblingAnswers:
         # sibling so the user sees correct/incomplete feedback rather than
         # the all-wrong feedback they'd get against "a veces".
         assert data["words"][0]["status"] in ("correct", "incomplete")
+
+
+def _make_card_with_history(front, back, recent_results, times_practiced=None):
+    """Persist a card with a hand-set practice history.
+
+    Lets dashboard tests bypass the practice loop and land cards in
+    specific score buckets directly.
+    """
+    correct = recent_results.count("1")
+    practiced = times_practiced if times_practiced is not None else len(recent_results)
+    with flask_app.app_context():
+        card = Card(
+            user_sub=SAMPLE_USER["sub"],
+            front=front,
+            back=back,
+            recent_results=recent_results,
+            times_practiced=practiced,
+            times_correct=correct,
+        )
+        db.session.add(card)
+        db.session.commit()
+        return card.id
+
+
+class TestCardsDashboard:
+    def test_dashboard_hidden_when_no_cards(self, client):
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert "cards-dashboard-section" not in body
+
+    def test_dashboard_shown_with_zero_attempts_hint(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert "cards-dashboard-section" in body
+        assert "cards-dashboard-empty-hint" in body
+        # No charts when there are no attempts yet.
+        assert 'id="cards-distribution-chart"' not in body
+        assert 'id="cards-weakest-chart"' not in body
+        # Chart.js bundle should not be loaded yet either.
+        assert "chart.umd.min.js" not in body
+
+    def test_dashboard_renders_charts_after_practice(self, client):
+        _make_card_with_history("weak1", "back1", "0000000000")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-distribution-chart"' in body
+        assert 'id="cards-weakest-chart"' in body
+        assert "chart.umd.min.js" in body
+        assert "cards_dashboard.js" in body
+        assert 'id="cards-stats-data"' in body
+
+    def test_tiles_show_aggregate_counts(self, client):
+        # 4 correct out of 5 → 80% accuracy.
+        _make_card_with_history("a", "A", "11110")
+        # Unpracticed card.
+        make_card(SAMPLE_USER["sub"], "b", "B")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        # The tiles render the raw integers and a percent. We don't depend on
+        # exact whitespace, just that the values land in the dashboard block.
+        dashboard = body.split("cards-dashboard-section", 1)[1].split(
+            "cards-list-section", 1
+        )[0]
+        assert ">2<" in dashboard  # total cards
+        assert ">5<" in dashboard  # total attempts
+        assert "80%" in dashboard  # overall accuracy
+        # One card is unpracticed.
+        assert ">1<" in dashboard
+
+    def test_buckets_classify_scores_correctly(self, client):
+        with flask_app.app_context():
+            cards = [
+                Card(  # weak: 0%
+                    user_sub=SAMPLE_USER["sub"],
+                    front="w",
+                    back="W",
+                    recent_results="0000000000",
+                    times_practiced=10,
+                    times_correct=0,
+                ),
+                Card(  # medium: 50% (>= 0.5, < 0.8)
+                    user_sub=SAMPLE_USER["sub"],
+                    front="m",
+                    back="M",
+                    recent_results="1111100000",
+                    times_practiced=10,
+                    times_correct=5,
+                ),
+                Card(  # strong: 80% (>= 0.8)
+                    user_sub=SAMPLE_USER["sub"],
+                    front="s",
+                    back="S",
+                    recent_results="1111111100",
+                    times_practiced=10,
+                    times_correct=8,
+                ),
+                Card(  # unpracticed
+                    user_sub=SAMPLE_USER["sub"],
+                    front="u",
+                    back="U",
+                    recent_results="",
+                    times_practiced=0,
+                    times_correct=0,
+                ),
+            ]
+        stats, _ = _build_cards_dashboard_stats(cards)
+        assert stats["buckets"] == {
+            "weak": 1,
+            "medium": 1,
+            "strong": 1,
+            "unpracticed": 1,
+        }
+        assert stats["unpracticed"] == 1
+
+    def test_weakest_and_strongest_ordering(self, client):
+        with flask_app.app_context():
+            # Six practiced cards spanning the full score range, plus one
+            # unpracticed (which should appear in none of the ranked lists).
+            cards = []
+            for i, (results, practiced) in enumerate(
+                [
+                    ("0000000000", 10),  # 0% — weakest
+                    ("1000000000", 10),  # 10%
+                    ("1110000000", 10),  # 30%
+                    ("1111100000", 10),  # 50%
+                    ("1111111100", 10),  # 80%
+                    ("1111111111", 50),  # 100%
+                ]
+            ):
+                cards.append(
+                    Card(
+                        user_sub=SAMPLE_USER["sub"],
+                        front=f"c{i}",
+                        back=f"C{i}",
+                        recent_results=results,
+                        times_practiced=practiced,
+                        times_correct=results.count("1"),
+                    )
+                )
+            cards.append(
+                Card(
+                    user_sub=SAMPLE_USER["sub"],
+                    front="u",
+                    back="U",
+                    recent_results="",
+                    times_practiced=0,
+                    times_correct=0,
+                )
+            )
+        stats, stats_json = _build_cards_dashboard_stats(cards)
+
+        # Weakest: ascending score, capped at 5.
+        weak_scores = [c.score for c in stats["weakest"]]
+        assert len(weak_scores) == 5
+        assert weak_scores == sorted(weak_scores)
+        assert weak_scores[0] == 0.0
+
+        # Strongest: descending score, capped at 5.
+        strong_scores = [c.score for c in stats["strongest"]]
+        assert len(strong_scores) == 5
+        assert strong_scores == sorted(strong_scores, reverse=True)
+        assert strong_scores[0] == 1.0
+
+        # JSON payload is valid and only includes the trimmed weakest list.
+        payload = json.loads(stats_json)
+        assert set(payload.keys()) == {"buckets", "weakest"}
+        assert len(payload["weakest"]) == 5
+
+    def test_stats_json_escapes_closing_script_tag(self, client):
+        # A card front containing "</script>" must not be able to break out
+        # of the <script type="application/json"> block.
+        _make_card_with_history("</script><b>x</b>", "back", "0000000000")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        # Inside the JSON block, the slash should be escaped.
+        json_block = body.split('id="cards-stats-data">', 1)[1].split("</script>", 1)[0]
+        assert "</script" not in json_block
+        assert "<\\/script" in json_block or "<\\/" in json_block
+
+    def test_toggle_button_rendered_when_cards_exist(self, client):
+        # Toggle sits in the "My Cards (n)" heading row and controls the
+        # dashboard panel.
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-dashboard-toggle"' in body
+        assert 'aria-controls="cards-dashboard-panel"' in body
+        assert 'id="cards-dashboard-panel"' in body
+
+    def test_dashboard_panel_hidden_by_default(self, client):
+        # The panel must render with the `hidden` attribute so it stays
+        # collapsed until the user clicks the toggle.
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        panel_open = body.find('id="cards-dashboard-panel"')
+        assert panel_open != -1
+        panel_tag = body[panel_open : body.find(">", panel_open) + 1]
+        assert " hidden" in panel_tag
+        # And the toggle starts in the collapsed (aria-expanded="false") state.
+        assert 'aria-expanded="false"' in body
+
+    def test_toggle_button_hidden_when_no_cards(self, client):
+        # With no cards there's nothing to chart; the toggle should not show.
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert 'id="cards-dashboard-toggle"' not in body
+        assert 'id="cards-dashboard-panel"' not in body
+
+    def test_toggle_button_has_new_badge(self, client):
+        # The dashboard is a recent addition — surface a NEW badge on the
+        # toggle so existing users notice it. Pattern matches the theme
+        # toggle's badge (see base.html).
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        toggle_html = body.split('id="cards-dashboard-toggle"', 1)[1].split(
+            "</button>", 1
+        )[0]
+        assert "new-feature-badge" in toggle_html
+        assert "cards-dashboard-toggle-badge" in toggle_html
+        assert "NEW" in toggle_html
+
+    def test_practice_weak_cta_hidden_without_weak_cards(self, client):
+        # All-strong deck — the CTA should not render.
+        _make_card_with_history("strong", "STRONG", "1111111111")
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert "cards-dashboard-cta" not in body
+        assert 'name="weak_only"' not in body
+
+    def test_practice_weak_cta_rendered_when_weak_cards_exist(self, client):
+        _make_card_with_history("w1", "W1", "0000000000")  # weak
+        _make_card_with_history("s1", "S1", "1111111111")  # strong
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert "cards-dashboard-cta" in body
+        assert 'name="weak_only"' in body
+        # The button surfaces the weak count next to its label.
+        assert "(1)" in body.split("cards-dashboard-cta", 1)[1].split("</form>", 1)[0]
+
+    def test_weak_cards_column_lists_only_sub_50_percent(self, client):
+        # Strictly under-50% cards land in the Weak column; cards at exactly
+        # 50% (medium bucket) do NOT, even though they'd show up in the
+        # broader "Needs work" (weakest) column.
+        _make_card_with_history("noche", "nacht", "0000000000")  # 0% → weak
+        _make_card_with_history("examen", "exam", "1111100000")  # 50% → medium
+        _make_card_with_history("libro", "book", "1111111111")  # 100% → strong
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        # The Weak column renders with its strict count.
+        assert "cards-dashboard-toplist-weak" in body
+        weak_col = body.split("cards-dashboard-toplist-weak", 1)[1].split(
+            "</ul>", 1
+        )[0]
+        assert "noche" in weak_col
+        assert "examen" not in weak_col  # 50% is medium, not weak
+        assert "libro" not in weak_col
+
+    def test_weak_cards_column_hidden_when_no_weak_cards(self, client):
+        # Only medium/strong/unpracticed cards → the Weak column should not
+        # render at all.
+        _make_card_with_history("examen", "exam", "1111100000")  # 50% medium
+        _make_card_with_history("libro", "book", "1111111111")  # strong
+        make_card(SAMPLE_USER["sub"], "untouched", "card")  # unpracticed
+        login(client)
+        body = client.get("/cards").data.decode("utf-8")
+        assert "cards-dashboard-toplist-weak" not in body
+
+
+class TestPracticeWeakOnly:
+    def test_weak_only_practice_only_serves_weak_cards(self, client):
+        weak_id = _make_card_with_history("w", "W", "0000000000")
+        strong_id = _make_card_with_history("s", "S", "1111111111")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={
+                "weak_only": "1",
+                "direction": "back_to_front",
+                "sampling_mode": "prioritized",
+                "difficulty": "hardcore",
+            },
+        )
+        client.get("/cards/practice")
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["weak_only"] is True
+        # Only the weak card may appear.
+        assert state["current_card_id"] == weak_id
+        assert state["current_card_id"] != strong_id
+
+    def test_weak_only_count_matches_weak_pool_size(self, client):
+        # Three weak cards + a strong one → session count clamps to 3.
+        for i in range(3):
+            _make_card_with_history(f"w{i}", f"W{i}", "0000000000")
+        _make_card_with_history("s", "S", "1111111111")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"weak_only": "1", "direction": "back_to_front"},
+        )
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["count"] == 3
+
+    def test_weak_only_redirects_with_flash_when_no_weak_cards(self, client):
+        _make_card_with_history("s", "S", "1111111111")
+        login(client)
+        response = client.post(
+            "/cards/practice/start",
+            data={"weak_only": "1", "direction": "back_to_front"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/cards")
+        # No practice session was created.
+        with client.session_transaction() as sess:
+            assert "card_practice" not in sess
+
+    def test_weak_only_excludes_unpracticed_cards(self, client):
+        # Unpracticed cards aren't "weak" — they're untouched. With only an
+        # unpracticed card present, the CTA should bail out.
+        make_card(SAMPLE_USER["sub"], "untouched", "card")
+        login(client)
+        response = client.post(
+            "/cards/practice/start",
+            data={"weak_only": "1", "direction": "back_to_front"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with client.session_transaction() as sess:
+            assert "card_practice" not in sess
