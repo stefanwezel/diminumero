@@ -1096,23 +1096,24 @@ class TestCardsDashboard:
         assert "cards-dashboard-toggle-badge" in toggle_html
         assert "NEW" in toggle_html
 
-    def test_practice_weak_cta_hidden_without_weak_cards(self, client):
-        # All-strong deck — the CTA should not render.
+    def test_recap_weak_button_hidden_without_weak_cards(self, client):
+        # All-strong deck — no weak-section recap button. Other sections
+        # (weakest/strongest) still render their own recap buttons.
         _make_card_with_history("strong", "STRONG", "1111111111")
         login(client)
         body = client.get("/cards").data.decode("utf-8")
-        assert "cards-dashboard-cta" not in body
-        assert 'name="weak_only"' not in body
+        assert 'value="weak"' not in body
 
-    def test_practice_weak_cta_rendered_when_weak_cards_exist(self, client):
+    def test_recap_buttons_rendered_per_section(self, client):
         _make_card_with_history("w1", "W1", "0000000000")  # weak
         _make_card_with_history("s1", "S1", "1111111111")  # strong
         login(client)
         body = client.get("/cards").data.decode("utf-8")
-        assert "cards-dashboard-cta" in body
-        assert 'name="weak_only"' in body
-        # The button surfaces the weak count next to its label.
-        assert "(1)" in body.split("cards-dashboard-cta", 1)[1].split("</form>", 1)[0]
+        # One recap form per section (Weak / weakest / strongest).
+        assert 'name="recap" value="weak"' in body
+        assert 'name="recap" value="weakest"' in body
+        assert 'name="recap" value="strongest"' in body
+        assert body.count("cards-dashboard-recap-form") == 3
 
     def test_weak_cards_column_lists_only_sub_50_percent(self, client):
         # Strictly under-50% cards land in the Weak column; cards at exactly
@@ -1200,6 +1201,87 @@ class TestPracticeWeakOnly:
         response = client.post(
             "/cards/practice/start",
             data={"weak_only": "1", "direction": "back_to_front"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with client.session_transaction() as sess:
+            assert "card_practice" not in sess
+
+
+class TestRecapModes:
+    def test_recap_weakest_snapshots_lowest_five(self, client):
+        # 6 practiced cards: the bottom 5 should be the snapshot pool.
+        ids_by_score = []
+        for pct in (0, 10, 20, 30, 40, 50):
+            history = ("1" * (pct // 10)) + ("0" * (10 - pct // 10))
+            ids_by_score.append(
+                (pct, _make_card_with_history(f"f{pct}", f"b{pct}", history))
+            )
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"recap": "weakest", "direction": "back_to_front"},
+        )
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["count"] == 5
+        # The 50%-score card is the only one excluded.
+        excluded = ids_by_score[-1][1]
+        assert excluded not in state["allowed_card_ids"]
+        assert len(state["allowed_card_ids"]) == 5
+
+    def test_recap_strongest_snapshots_highest_five(self, client):
+        ids_by_score = []
+        for pct in (40, 50, 60, 70, 80, 90):
+            history = ("1" * (pct // 10)) + ("0" * (10 - pct // 10))
+            ids_by_score.append(
+                (pct, _make_card_with_history(f"f{pct}", f"b{pct}", history))
+            )
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"recap": "strongest", "direction": "back_to_front"},
+        )
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["count"] == 5
+        # The 40%-score card is the only one excluded.
+        excluded = ids_by_score[0][1]
+        assert excluded not in state["allowed_card_ids"]
+        assert len(state["allowed_card_ids"]) == 5
+
+    def test_recap_only_serves_snapshotted_cards(self, client):
+        weak_id = _make_card_with_history("w", "W", "0000000000")
+        _make_card_with_history("s", "S", "1111111111")  # strong, excluded
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"recap": "weakest", "direction": "back_to_front"},
+        )
+        client.get("/cards/practice")
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["current_card_id"] == weak_id
+
+    def test_recap_weak_behaves_like_weak_only(self, client):
+        _make_card_with_history("w", "W", "0000000000")
+        _make_card_with_history("s", "S", "1111111111")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"recap": "weak", "direction": "back_to_front"},
+        )
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["weak_only"] is True
+        assert state["count"] == 1
+
+    def test_recap_weakest_redirects_when_no_practiced_cards(self, client):
+        make_card(SAMPLE_USER["sub"], "untouched", "card")
+        login(client)
+        response = client.post(
+            "/cards/practice/start",
+            data={"recap": "weakest", "direction": "back_to_front"},
             follow_redirects=False,
         )
         assert response.status_code == 302

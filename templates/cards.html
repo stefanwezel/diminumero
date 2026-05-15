@@ -171,6 +171,16 @@
                         </li>
                         {% endfor %}
                     </ul>
+                    <form method="POST" action="{{ url_for('cards_practice_start') }}"
+                          class="cards-dashboard-recap-form">
+                        <input type="hidden" name="recap" value="weak">
+                        <input type="hidden" name="direction" value="back_to_front">
+                        <input type="hidden" name="sampling_mode" value="prioritized">
+                        <input type="hidden" name="difficulty" value="hardcore">
+                        <button type="submit" class="btn btn-primary cards-dashboard-recap-btn">
+                            {{ get_text('cards_dashboard_recap_btn') }}
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
                 {% if stats.weakest %}
@@ -187,6 +197,16 @@
                         </li>
                         {% endfor %}
                     </ul>
+                    <form method="POST" action="{{ url_for('cards_practice_start') }}"
+                          class="cards-dashboard-recap-form">
+                        <input type="hidden" name="recap" value="weakest">
+                        <input type="hidden" name="direction" value="back_to_front">
+                        <input type="hidden" name="sampling_mode" value="prioritized">
+                        <input type="hidden" name="difficulty" value="hardcore">
+                        <button type="submit" class="btn btn-primary cards-dashboard-recap-btn">
+                            {{ get_text('cards_dashboard_recap_btn') }}
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
                 {% if stats.strongest %}
@@ -203,26 +223,22 @@
                         </li>
                         {% endfor %}
                     </ul>
+                    <form method="POST" action="{{ url_for('cards_practice_start') }}"
+                          class="cards-dashboard-recap-form">
+                        <input type="hidden" name="recap" value="strongest">
+                        <input type="hidden" name="direction" value="back_to_front">
+                        <input type="hidden" name="sampling_mode" value="prioritized">
+                        <input type="hidden" name="difficulty" value="hardcore">
+                        <button type="submit" class="btn btn-primary cards-dashboard-recap-btn">
+                            {{ get_text('cards_dashboard_recap_btn') }}
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
             </div>
             <script type="application/json" id="cards-stats-data">{{ stats_json|safe }}</script>
             {% else %}
             <p class="cards-dashboard-empty-hint">{{ get_text('cards_dashboard_empty_practice_hint') }}</p>
-            {% endif %}
-
-            {% if stats.buckets.weak > 0 %}
-            <form method="POST" action="{{ url_for('cards_practice_start') }}"
-                  class="cards-dashboard-cta">
-                <input type="hidden" name="weak_only" value="1">
-                <input type="hidden" name="direction" value="back_to_front">
-                <input type="hidden" name="sampling_mode" value="prioritized">
-                <input type="hidden" name="difficulty" value="hardcore">
-                <button type="submit" class="btn btn-primary">
-                    {{ get_text('cards_dashboard_practice_weak_btn') }}
-                    <span class="cards-dashboard-cta-count">({{ stats.buckets.weak }})</span>
-                </button>
-            </form>
             {% endif %}
         </section>
         {% endif %}

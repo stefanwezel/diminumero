@@ -1270,6 +1270,10 @@ def _load_next_card(state: dict) -> Card | None:
         # cards with sub-50% accuracy in the rolling window; unpracticed cards
         # are excluded because they aren't "weak" — they're untouched.
         candidates = [c for c in candidates if c.score is not None and c.score < 0.5]
+    allowed_ids = state.get("allowed_card_ids")
+    if allowed_ids:
+        allowed = set(allowed_ids)
+        candidates = [c for c in candidates if c.id in allowed]
     if not candidates:
         return None
     if state.get("sampling_mode") == "prioritized":
@@ -1300,8 +1304,15 @@ def cards_practice_start():
     except (TypeError, ValueError):
         count = 10
     count = max(1, min(count, 100))
-    weak_only = request.form.get("weak_only") in ("1", "true", "on")
-    if weak_only:
+    recap = request.form.get("recap")
+    if recap not in ("weak", "weakest", "strongest"):
+        recap = None
+    # Legacy: weak_only=1 maps onto recap=weak so older callers keep working.
+    if recap is None and request.form.get("weak_only") in ("1", "true", "on"):
+        recap = "weak"
+    weak_only = recap == "weak"
+    allowed_card_ids: list[int] = []
+    if recap == "weak":
         weak_cards = [
             c
             for c in db.session.query(Card)
@@ -1314,6 +1325,24 @@ def cards_practice_start():
             return redirect(url_for("cards"))
         # Pick a session length that exhausts the weak pool (capped at 100).
         count = min(len(weak_cards), 100)
+    elif recap in ("weakest", "strongest"):
+        practiced = [
+            c
+            for c in db.session.query(Card)
+            .filter_by(user_sub=_current_user_sub())
+            .all()
+            if c.score is not None
+        ]
+        if recap == "weakest":
+            ordered = sorted(practiced, key=lambda c: (c.score, -c.times_practiced))
+        else:
+            ordered = sorted(practiced, key=lambda c: (-c.score, -c.times_practiced))
+        top = ordered[:5]
+        if not top:
+            flash(get_text("cards_flash_need_cards"), "info")
+            return redirect(url_for("cards"))
+        allowed_card_ids = [c.id for c in top]
+        count = len(allowed_card_ids)
     else:
         have_any = (
             db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).first()
@@ -1328,6 +1357,7 @@ def cards_practice_start():
         "difficulty": difficulty,
         "count": count,
         "weak_only": weak_only,
+        "allowed_card_ids": allowed_card_ids,
         "asked_ids": [],
         "score": 0,
         "total": 0,
