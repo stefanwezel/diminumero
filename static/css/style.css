@@ -3507,7 +3507,12 @@ html {
 }
 
 .cards-dashboard-toplist-item .cards-progress {
-    position: static;
+    /* `relative` (not `static`) keeps the ring inline in the flex row while
+     * still establishing a positioning context for its absolutely-positioned
+     * `.cards-progress-text` child — otherwise the text inherits the page as
+     * its containing block and inset:0 turns it into an invisible page-sized
+     * overlay that swallows clicks. */
+    position: relative;
 }
 
 .cards-dashboard-toplist-text {

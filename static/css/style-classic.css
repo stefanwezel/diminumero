@@ -3195,7 +3195,9 @@ html {
 }
 
 .cards-dashboard-toplist-item .cards-progress {
-    position: static;
+    /* See style.css — relative keeps the inline flex layout while still
+     * containing the absolutely-positioned `.cards-progress-text` child. */
+    position: relative;
 }
 
 .cards-dashboard-toplist-text {
