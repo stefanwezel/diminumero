@@ -3076,6 +3076,128 @@ html {
     word-break: break-word;
 }
 
+/* Reveal modal — full-viewport overlay that pops up over the practice page so
+   the answer is the only thing the user can study. The dim backdrop keeps the
+   prompt visible behind it for context. Mirrors the poll modal's geometry and
+   scale-in animation. */
+.reveal-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    overflow-y: auto;
+    animation: revealModalFadeIn 0.25s ease forwards;
+}
+
+@keyframes revealModalFadeIn {
+    to { opacity: 1; visibility: visible; }
+}
+
+.reveal-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.reveal-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    padding: 56px 36px 40px;
+    background-color: #fffaeb;
+    background-image:
+        linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 44px,
+            #d4524a 44px,
+            #d4524a 45px,
+            transparent 45px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 35px,
+            #a8c5e4 35px,
+            #a8c5e4 36px
+        );
+    background-position: 0 0, 0 56px;
+    background-repeat: no-repeat, repeat;
+    background-size: 100% 100%, 100% calc(100% - 56px);
+    border: 2px solid rgba(229, 79, 109, 0.55);
+    border-radius: 12px;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.25),
+        0 24px 56px rgba(229, 79, 109, 0.35);
+    transform: scale(0.92);
+    animation: revealModalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    text-align: center;
+}
+
+@keyframes revealModalPop {
+    to { transform: scale(1); }
+}
+
+.reveal-modal-prompt {
+    font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: 1.6rem;
+    line-height: 1.3;
+    color: #5a6f8a;
+    word-break: break-word;
+    margin-bottom: 14px;
+}
+
+.reveal-modal-divider {
+    font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: rgba(212, 82, 74, 0.55);
+    margin-bottom: 14px;
+    user-select: none;
+}
+
+.reveal-modal-label {
+    font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #d4524a;
+    margin-bottom: 16px;
+}
+
+.reveal-modal-answer {
+    font-family: "Patrick Hand", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: 2.8rem;
+    line-height: 40px;
+    color: #1a3a5c;
+    word-break: break-word;
+    margin-bottom: 32px;
+}
+
+.reveal-modal-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.reveal-modal-next {
+    min-width: 200px;
+    font-size: 1.1rem;
+    padding: 14px 32px;
+}
+
 .cards-results-percent {
     color: #A89BB8;
     font-size: 1rem;
@@ -3111,6 +3233,16 @@ html {
         font-size: 1.8rem;
         padding: 48px 20px 28px;
         min-height: 160px;
+    }
+    .reveal-modal-content {
+        padding: 48px 20px 28px;
+    }
+    .reveal-modal-prompt {
+        font-size: 1.3rem;
+    }
+    .reveal-modal-answer {
+        font-size: 2rem;
+        line-height: 34px;
     }
 }
 

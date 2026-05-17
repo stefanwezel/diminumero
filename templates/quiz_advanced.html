@@ -22,33 +22,36 @@
             <form action="{{ url_for('results', lang_code=lang_code) }}" method="GET" class="quiz-header-form">
                 <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
             </form>
+            {% if not revealed %}
             <form action="{{ url_for('quiz_advanced', lang_code=lang_code) }}" method="POST" class="quiz-header-form">
-                <button type="submit" name="give_up" value="1" class="btn btn-secondary btn-quiz-header" title="{{ get_text('quiz_skip_tooltip') }}">
-                    {{ get_text('quiz_skip') }}
+                <button type="submit" name="reveal" value="1" class="btn btn-secondary btn-quiz-header" title="{{ get_text('cards_reveal_tooltip') }}">
+                    {{ get_text('cards_reveal_btn') }}
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
-    
+
     <!-- Progress bar -->
     <div class="progress-bar">
         <div class="progress-fill" style="width: {{ (total / max_questions * 100) }}%"></div>
     </div>
-    
+
     <!-- Question -->
     <div class="question-container">
         <h2 class="question-label">{{ get_text('quiz_advanced_prompt') }}</h2>
         <div class="number-display">{{ number }}</div>
     </div>
-    
+
+    {% if not revealed %}
     <!-- Text input for answer -->
     <form action="{{ url_for('quiz_advanced', lang_code=lang_code) }}" method="POST" class="answer-form" id="answerForm">
         <div class="text-input-container">
-            <input 
-                type="text" 
-                name="answer" 
-                id="answerInput" 
-                class="answer-input" 
+            <input
+                type="text"
+                name="answer"
+                id="answerInput"
+                class="answer-input"
                 placeholder="{{ get_text('quiz_advanced_placeholder') }}"
                 autocomplete="off"
                 autofocus
@@ -56,7 +59,24 @@
             <div id="validationFeedback" class="validation-feedback"></div>
         </div>
     </form>
+    {% endif %}
 </div>
 
+{% if revealed %}
+<div class="reveal-modal show" role="dialog" aria-modal="true" aria-labelledby="reveal-modal-title">
+    <div class="reveal-modal-content">
+        <div class="reveal-modal-prompt">{{ number }}</div>
+        <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
+        <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
+        <div class="reveal-modal-answer">{{ correct_answer }}</div>
+        <form action="{{ url_for('quiz_advanced', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions">
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
+                {{ get_text('cards_reveal_next_btn') }}
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
 <script src="{{ url_for('static', filename='js/quiz_advanced.js') }}"></script>
+{% endif %}
 {% endblock %}

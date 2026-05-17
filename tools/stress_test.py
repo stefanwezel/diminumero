@@ -298,7 +298,7 @@ class VirtualUser:
         return r is not None
 
     async def do_advanced_question(self, lang: str) -> bool:
-        """GET quiz page, validate endpoint, sleep, POST give_up."""
+        """GET quiz page, validate endpoint, sleep, POST reveal + next."""
         r = await self._get(f"/{lang}/quiz/advanced")
         if r is None:
             return False
@@ -310,7 +310,11 @@ class VirtualUser:
 
         await asyncio.sleep(self.think_time)
 
-        r = await self._post(f"/{lang}/quiz/advanced", {"give_up": "1"})
+        # Two-step reveal: open the answer modal, then advance.
+        r = await self._post(f"/{lang}/quiz/advanced", {"reveal": "1"})
+        if r is None:
+            return False
+        r = await self._post(f"/{lang}/quiz/advanced", {"next": "1"})
         return r is not None
 
     async def do_hardcore_question(self, lang: str) -> bool:

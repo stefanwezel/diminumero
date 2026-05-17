@@ -488,20 +488,21 @@ def quiz_advanced(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     if request.method == "POST":
-        # Check if user gave up
-        if "give_up" in request.form:
-            correct_answer = session.get("correct_answer")
-            flash(get_text("flash_gave_up").format(correct_answer), "info")
+        # Two-step reveal: mark the question as revealed and re-render the same
+        # question so the modal can show the answer. Counts as a wrong attempt.
+        if "reveal" in request.form:
             session["total_questions"] = session.get("total_questions", 0) + 1
+            session["current_revealed"] = True
+            return redirect(url_for("quiz_advanced", lang_code=lang_code))
 
-            # Clear current question so next GET generates a new one
+        # Advance from a revealed question. The wrong attempt was already
+        # recorded; just clear the current question + reveal flag.
+        if "next" in request.form:
+            session["current_revealed"] = False
             session.pop("current_number", None)
             session.pop("correct_answer", None)
-
-            # Check if quiz is complete
             if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
-                return redirect(url_for("results", lang_code=lang_code))
-
+                return _results_redirect(lang_code)
             return redirect(url_for("quiz_advanced", lang_code=lang_code))
 
         # Process the submitted answer
@@ -528,6 +529,7 @@ def quiz_advanced(lang_code):
         # Clear current question so next GET generates a new one
         session.pop("current_number", None)
         session.pop("correct_answer", None)
+        session["current_revealed"] = False
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
@@ -569,6 +571,7 @@ def quiz_advanced(lang_code):
         "quiz_advanced.html",
         number=number,
         correct_answer=correct_answer,
+        revealed=bool(session.get("current_revealed")),
         score=score,
         total=total,
         max_questions=QUESTIONS_PER_QUIZ,
@@ -617,20 +620,21 @@ def quiz_hardcore(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     if request.method == "POST":
-        # Check if user gave up
-        if "give_up" in request.form:
-            correct_answer = session.get("correct_answer")
-            flash(get_text("flash_gave_up").format(correct_answer), "info")
+        # Two-step reveal: mark the question as revealed and re-render the same
+        # question so the modal can show the answer. Counts as a wrong attempt.
+        if "reveal" in request.form:
             session["total_questions"] = session.get("total_questions", 0) + 1
+            session["current_revealed"] = True
+            return redirect(url_for("quiz_hardcore", lang_code=lang_code))
 
-            # Clear current question so next GET generates a new one
+        # Advance from a revealed question. The wrong attempt was already
+        # recorded; just clear the current question + reveal flag.
+        if "next" in request.form:
+            session["current_revealed"] = False
             session.pop("current_number", None)
             session.pop("correct_answer", None)
-
-            # Check if quiz is complete
             if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
-                return redirect(url_for("results", lang_code=lang_code))
-
+                return _results_redirect(lang_code)
             return redirect(url_for("quiz_hardcore", lang_code=lang_code))
 
         # Process the submitted answer
@@ -657,6 +661,7 @@ def quiz_hardcore(lang_code):
         # Clear current question so next GET generates a new one
         session.pop("current_number", None)
         session.pop("correct_answer", None)
+        session["current_revealed"] = False
 
         # Check if quiz is complete
         if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
@@ -698,6 +703,7 @@ def quiz_hardcore(lang_code):
         "quiz_hardcore.html",
         number=number,
         correct_answer=correct_answer,
+        revealed=bool(session.get("current_revealed")),
         score=score,
         total=total,
         max_questions=QUESTIONS_PER_QUIZ,
@@ -1432,34 +1438,45 @@ def cards_practice():
         correct_answer = card.back if prompt_side == "front" else card.front
 
         if "reveal" in request.form:
+            # Two-step reveal: record the wrong attempt now, but keep the card
+            # mounted so the next GET can render the answer prominently. The
+            # user explicitly clicks Next to advance.
+            state["total"] += 1
+            card.times_practiced += 1
+            card.record_attempt(False)
+            state["current_revealed"] = True
+            db.session.commit()
+            _save_practice_state(state)
+            return redirect(url_for("cards_practice"))
+
+        if "next" in request.form:
+            # Advance from a revealed card. DB writes already happened on reveal.
+            state["current_revealed"] = False
+            state["asked_ids"].append(card.id)
+            state["current_card_id"] = None
+            _save_practice_state(state)
+            return redirect(url_for("cards_practice"))
+
+        user_answer = (request.form.get("answer") or "").strip()
+        acceptable = _acceptable_answers(card, prompt_side)
+        if user_answer and any(
+            quiz_logic.check_answer_advanced(user_answer, a) for a in acceptable
+        ):
+            state["score"] += 1
+            state["total"] += 1
+            card.times_practiced += 1
+            card.times_correct += 1
+            card.record_attempt(True)
+            flash(get_text("cards_flash_correct"), "success")
+        else:
+            # Wrong final submit: count as attempted, show correct answer.
             flash(
-                get_text("cards_flash_revealed").format(correct_answer),
-                "info",
+                get_text("cards_flash_incorrect").format(correct_answer),
+                "error",
             )
             state["total"] += 1
             card.times_practiced += 1
             card.record_attempt(False)
-        else:
-            user_answer = (request.form.get("answer") or "").strip()
-            acceptable = _acceptable_answers(card, prompt_side)
-            if user_answer and any(
-                quiz_logic.check_answer_advanced(user_answer, a) for a in acceptable
-            ):
-                state["score"] += 1
-                state["total"] += 1
-                card.times_practiced += 1
-                card.times_correct += 1
-                card.record_attempt(True)
-                flash(get_text("cards_flash_correct"), "success")
-            else:
-                # Wrong final submit: count as attempted, show correct answer.
-                flash(
-                    get_text("cards_flash_incorrect").format(correct_answer),
-                    "error",
-                )
-                state["total"] += 1
-                card.times_practiced += 1
-                card.record_attempt(False)
 
         db.session.commit()
         state["asked_ids"].append(card.id)
@@ -1496,14 +1513,19 @@ def cards_practice():
     )
 
     difficulty = state.get("difficulty", "advanced")
-    # Only leak the correct answer to the page in hardcore mode, where the
-    # JS needs it for client-side green/red feedback on submit.
+    revealed = bool(state.get("current_revealed"))
+    # Only leak the correct answer to the page in hardcore mode (JS needs it
+    # for client-side green/red feedback) or when the card has been revealed
+    # (template renders it as the prominent study display).
     return render_template(
         "cards_practice.html",
         user=session["user"],
         prompt_text=prompt_text,
-        correct_answer=correct_answer if difficulty == "hardcore" else None,
+        correct_answer=correct_answer
+        if (revealed or difficulty == "hardcore")
+        else None,
         difficulty=difficulty,
+        revealed=revealed,
         score=state["score"],
         total=state["total"],
         max_questions=min(count, total_cards),

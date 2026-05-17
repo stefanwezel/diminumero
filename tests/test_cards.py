@@ -378,10 +378,61 @@ class TestPracticeFlow:
         login(client)
         client.post("/cards/practice/start", data={"direction": "front_to_back"})
         client.get("/cards/practice")
+        with client.session_transaction() as sess:
+            pinned_card_id = sess["card_practice"]["current_card_id"]
+
+        # Reveal records the attempt but keeps the card mounted so the
+        # answer-display page can render.
         client.post("/cards/practice", data={"reveal": "1"})
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["current_revealed"] is True
+        assert state["current_card_id"] == pinned_card_id
+        assert state["total"] == 1
+        assert state["score"] == 0
+        assert pinned_card_id not in state["asked_ids"]
+
+        # Explicit Next advances and clears the revealed flag.
+        client.post("/cards/practice", data={"next": "1"})
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["current_revealed"] is False
+        assert state["current_card_id"] is None
+        assert pinned_card_id in state["asked_ids"]
+
         results = client.get("/cards/practice/results")
         body = results.data.decode("utf-8")
         assert "0 / 1" in body
+
+    def test_reveal_renders_answer_and_next_form(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "tablecloth-distinct-answer")
+        login(client)
+        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        client.get("/cards/practice")
+        client.post("/cards/practice", data={"reveal": "1"})
+
+        page = client.get("/cards/practice")
+        body = page.data.decode("utf-8")
+        # Answer is rendered prominently (in the reveal modal) and a
+        # Next-submit form is present.
+        assert "tablecloth-distinct-answer" in body
+        assert "reveal-modal" in body
+        assert 'name="next"' in body
+        # The input form and Reveal button are hidden while revealed.
+        assert 'id="answerInput"' not in body
+        assert 'name="reveal"' not in body
+
+        # Posting Next loads a fresh card view (or redirects to results when
+        # the deck/count is exhausted).
+        client.post("/cards/practice", data={"next": "1"})
+        page = client.get("/cards/practice", follow_redirects=False)
+        # Either the session is done (302 to results) or we're on a new card
+        # with the input form back. Both are valid; the key invariant is that
+        # we're no longer in the revealed state.
+        with client.session_transaction() as sess:
+            state = sess.get("card_practice")
+        if state is not None:
+            assert state["current_revealed"] is False
 
     def test_validate_api_returns_word_feedback(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "small table")

@@ -18,6 +18,7 @@
             <form action="{{ url_for('cards_practice_results') }}" method="GET" class="quiz-header-form">
                 <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
             </form>
+            {% if not revealed %}
             <form action="{{ url_for('cards_practice') }}" method="POST" class="quiz-header-form">
                 <button type="submit" name="reveal" value="1"
                         class="btn btn-secondary btn-quiz-header"
@@ -25,6 +26,7 @@
                     {{ get_text('cards_reveal_btn') }}
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
 
@@ -37,6 +39,7 @@
         <div class="cards-practice-prompt">{{ prompt_text }}</div>
     </div>
 
+    {% if not revealed %}
     <form action="{{ url_for('cards_practice') }}" method="POST" class="answer-form" id="answerForm">
         <div class="text-input-container">
             <input
@@ -53,7 +56,24 @@
             <div id="validationFeedback" class="validation-feedback"></div>
         </div>
     </form>
+    {% endif %}
 </div>
 
+{% if revealed %}
+<div class="reveal-modal show" role="dialog" aria-modal="true" aria-labelledby="reveal-modal-title">
+    <div class="reveal-modal-content">
+        <div class="reveal-modal-prompt">{{ prompt_text }}</div>
+        <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
+        <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
+        <div class="reveal-modal-answer">{{ correct_answer }}</div>
+        <form action="{{ url_for('cards_practice') }}" method="POST" class="reveal-modal-actions">
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
+                {{ get_text('cards_reveal_next_btn') }}
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
 <script src="{{ url_for('static', filename='js/cards_practice.js') }}"></script>
+{% endif %}
 {% endblock %}

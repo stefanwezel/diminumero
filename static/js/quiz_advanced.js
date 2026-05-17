@@ -120,11 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
      * Prevent form submission if already submitting
      */
     answerForm.addEventListener('submit', function(e) {
-        // Allow Give Up button to work
-        if (e.submitter && e.submitter.name === 'give_up') {
-            return true;
-        }
-
         // Prevent double submission
         if (isSubmitting) {
             e.preventDefault();
