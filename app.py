@@ -857,6 +857,26 @@ def _user_card_or_404(card_id: int) -> Card:
     return card
 
 
+def _find_duplicate_card(
+    user_sub: str, front: str, back: str, exclude_id: int | None = None
+) -> Card | None:
+    """Return the user's existing card whose normalized (front, back) matches, or None.
+
+    Mirrors the dedup used by the deck-import flow so all write paths share one rule.
+    """
+    target = (quiz_logic.normalize_text(front), quiz_logic.normalize_text(back))
+    query = db.session.query(Card).filter(Card.user_sub == user_sub)
+    if exclude_id is not None:
+        query = query.filter(Card.id != exclude_id)
+    for card in query.all():
+        if (
+            quiz_logic.normalize_text(card.front),
+            quiz_logic.normalize_text(card.back),
+        ) == target:
+            return card
+    return None
+
+
 @app.route("/cards")
 @login_required
 def cards():
@@ -966,7 +986,11 @@ def cards_create():
     if not front or not back:
         flash(get_text("cards_flash_both_sides_required"), "error")
         return redirect(url_for("cards"))
-    card = Card(user_sub=_current_user_sub(), front=front, back=back)
+    user_sub = _current_user_sub()
+    if _find_duplicate_card(user_sub, front, back) is not None:
+        flash(get_text("cards_flash_duplicate_create"), "info")
+        return redirect(url_for("cards"))
+    card = Card(user_sub=user_sub, front=front, back=back)
     db.session.add(card)
     db.session.commit()
     flash(get_text("cards_flash_created"), "success")
@@ -983,6 +1007,9 @@ def cards_edit(card_id: int):
     if not front or not back:
         flash(get_text("cards_flash_both_sides_required"), "error")
         return redirect(url_for("cards", edit=card_id))
+    if _find_duplicate_card(card.user_sub, front, back, exclude_id=card_id) is not None:
+        flash(get_text("cards_flash_duplicate_edit"), "info")
+        return redirect(url_for("cards"))
     card.front = front
     card.back = back
     db.session.commit()
@@ -1014,7 +1041,11 @@ def api_cards_create():
         return jsonify(
             {"ok": False, "error": get_text("cards_flash_both_sides_required")}
         ), 400
-    card = Card(user_sub=_current_user_sub(), front=front, back=back)
+    user_sub = _current_user_sub()
+    existing = _find_duplicate_card(user_sub, front, back)
+    if existing is not None:
+        return jsonify({"ok": True, "duplicate": True, "card": existing.to_dict()})
+    card = Card(user_sub=user_sub, front=front, back=back)
     db.session.add(card)
     db.session.commit()
     return jsonify({"ok": True, "card": card.to_dict()})
@@ -1031,6 +1062,8 @@ def api_cards_update(card_id: int):
         return jsonify(
             {"ok": False, "error": get_text("cards_flash_both_sides_required")}
         ), 400
+    if _find_duplicate_card(card.user_sub, front, back, exclude_id=card_id) is not None:
+        return jsonify({"ok": True, "duplicate": True, "card": card.to_dict()})
     card.front = front
     card.back = back
     db.session.commit()

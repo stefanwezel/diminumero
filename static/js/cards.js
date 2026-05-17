@@ -24,7 +24,9 @@
         cancel: section.getAttribute('data-i18n-cancel') || 'Cancel',
         frontPh: section.getAttribute('data-i18n-front-placeholder') || '',
         backPh: section.getAttribute('data-i18n-back-placeholder') || '',
-        created: section.getAttribute('data-i18n-created') || 'Card added.'
+        created: section.getAttribute('data-i18n-created') || 'Card added.',
+        duplicate: section.getAttribute('data-i18n-duplicate') || 'That card is already in your deck — nothing added.',
+        duplicateEdit: section.getAttribute('data-i18n-duplicate-edit') || 'Another card already matches those sides — change not applied.'
     };
     const toastIcon = section.getAttribute('data-toast-icon') || '';
 
@@ -238,6 +240,22 @@
                 location.reload();
                 return;
             }
+            if (data.duplicate) {
+                // Server detected a normalized match; highlight the existing row
+                // instead of inserting a new one.
+                const existing = list.querySelector(
+                    '[data-card-id="' + String(data.card.id) + '"]'
+                );
+                if (existing) {
+                    existing.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    flash(existing);
+                }
+                frontIn.value = '';
+                backIn.value = '';
+                frontIn.focus();
+                showToast(i18n.duplicate);
+                return;
+            }
             const li = buildCardLi(data.card);
             list.insertBefore(li, list.firstChild);
             if (typeof window.diminumeroCardsApplySort === 'function') {
@@ -386,6 +404,13 @@
                     saveBtn.disabled = false;
                     errEl.textContent = data.error || 'Could not save';
                     errEl.style.display = '';
+                    return;
+                }
+                if (data.duplicate) {
+                    // Server kept the original card unchanged; close the edit
+                    // row and let the user know nothing was applied.
+                    restoreView(data.card.front, data.card.back);
+                    showToast(i18n.duplicateEdit);
                     return;
                 }
                 restoreView(data.card.front, data.card.back);

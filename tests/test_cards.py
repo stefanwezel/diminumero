@@ -106,6 +106,30 @@ class TestCardsCreate:
         with flask_app.app_context():
             assert db.session.query(Card).count() == 0
 
+    def test_duplicate_create_is_skipped(self, client):
+        make_card(SAMPLE_USER["sub"], "silla", "chair")
+        login(client)
+        response = client.post(
+            "/cards",
+            data={"front": "silla", "back": "chair"},
+            follow_redirects=True,
+        )
+        body = response.data.decode("utf-8")
+        assert "already in your deck" in body
+        with flask_app.app_context():
+            assert db.session.query(Card).count() == 1
+
+    def test_duplicate_create_is_normalized(self, client):
+        make_card(SAMPLE_USER["sub"], "Silla", "chair")
+        login(client)
+        client.post(
+            "/cards",
+            data={"front": "  silla ", "back": "Chair"},
+            follow_redirects=True,
+        )
+        with flask_app.app_context():
+            assert db.session.query(Card).count() == 1
+
 
 class TestCardsEdit:
     def test_updates_card(self, client):
@@ -128,6 +152,42 @@ class TestCardsEdit:
         assert response.status_code == 404
         with flask_app.app_context():
             assert db.session.get(Card, card_id).front == "secret"
+
+    def test_edit_into_duplicate_is_rejected(self, client):
+        a_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        make_card(SAMPLE_USER["sub"], "silla", "chair")
+        login(client)
+        response = client.post(
+            f"/cards/{a_id}/edit",
+            data={"front": "silla", "back": "chair"},
+            follow_redirects=True,
+        )
+        body = response.data.decode("utf-8")
+        assert "Another card already matches" in body
+        with flask_app.app_context():
+            unchanged = db.session.get(Card, a_id)
+            assert unchanged.front == "mesa"
+            assert unchanged.back == "table"
+            matches = (
+                db.session.query(Card)
+                .filter_by(user_sub=SAMPLE_USER["sub"], front="silla", back="chair")
+                .count()
+            )
+            assert matches == 1
+
+    def test_edit_no_self_collision(self, client):
+        # A card whose new sides match its own current sides (after normalization)
+        # must still save — the dedup helper excludes the row being edited.
+        card_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            f"/cards/{card_id}/edit",
+            data={"front": "  Mesa ", "back": "table"},
+        )
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+            assert card.front == "Mesa"
+            assert card.back == "table"
 
 
 class TestCardsDelete:
@@ -202,6 +262,40 @@ class TestCardsApi:
         assert response.get_json()["ok"] is False
         with flask_app.app_context():
             assert db.session.get(Card, card_id).back == "table"
+
+    def test_api_create_duplicate_returns_duplicate_flag(self, client):
+        existing_id = make_card(SAMPLE_USER["sub"], "silla", "chair")
+        login(client)
+        response = client.post(
+            "/api/cards", json={"front": "  Silla", "back": "Chair "}
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["ok"] is True
+        assert data["duplicate"] is True
+        assert data["card"]["id"] == existing_id
+        with flask_app.app_context():
+            assert db.session.query(Card).count() == 1
+
+    def test_api_update_duplicate_returns_duplicate_flag(self, client):
+        a_id = make_card(SAMPLE_USER["sub"], "mesa", "table")
+        make_card(SAMPLE_USER["sub"], "silla", "chair")
+        login(client)
+        response = client.patch(
+            f"/api/cards/{a_id}", json={"front": "silla", "back": "chair"}
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["ok"] is True
+        assert data["duplicate"] is True
+        # Returned card payload is the unchanged original.
+        assert data["card"]["id"] == a_id
+        assert data["card"]["front"] == "mesa"
+        assert data["card"]["back"] == "table"
+        with flask_app.app_context():
+            unchanged = db.session.get(Card, a_id)
+            assert unchanged.front == "mesa"
+            assert unchanged.back == "table"
 
     def test_update_other_users_card_404(self, client):
         card_id = make_card(OTHER_USER["sub"], "secret", "hidden")
@@ -1126,9 +1220,7 @@ class TestCardsDashboard:
         body = client.get("/cards").data.decode("utf-8")
         # The Weak column renders with its strict count.
         assert "cards-dashboard-toplist-weak" in body
-        weak_col = body.split("cards-dashboard-toplist-weak", 1)[1].split(
-            "</ul>", 1
-        )[0]
+        weak_col = body.split("cards-dashboard-toplist-weak", 1)[1].split("</ul>", 1)[0]
         assert "noche" in weak_col
         assert "examen" not in weak_col  # 50% is medium, not weak
         assert "libro" not in weak_col
@@ -1400,9 +1492,7 @@ class TestDeckImportApply:
         assert response.status_code == 302
         assert response.headers["Location"].endswith("/cards")
         with flask_app.app_context():
-            mine = (
-                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
-            )
+            mine = db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
             pairs = {(c.front, c.back) for c in mine}
             assert pairs == {("uno", "one"), ("dos", "two")}
 
@@ -1415,9 +1505,7 @@ class TestDeckImportApply:
         login(client)
         client.post(f"/cards/import/{token}")
         with flask_app.app_context():
-            mine = (
-                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
-            )
+            mine = db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
             pairs = {(c.front, c.back) for c in mine}
             # No duplicate "uno"→"one" — count stays at 2 total.
             assert pairs == {("uno", "one"), ("dos", "two")}
@@ -1430,9 +1518,7 @@ class TestDeckImportApply:
         login(client)
         client.post(f"/cards/import/{token}")
         with flask_app.app_context():
-            mine = (
-                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
-            )
+            mine = db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
             assert len(mine) == 1  # the import was skipped as a duplicate
 
     def test_import_within_share_dedupes(self, client):
@@ -1445,9 +1531,7 @@ class TestDeckImportApply:
         login(client)
         client.post(f"/cards/import/{token}")
         with flask_app.app_context():
-            mine = (
-                db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
-            )
+            mine = db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).all()
             pairs = {(c.front, c.back) for c in mine}
             assert pairs == {("uno", "one"), ("dos", "two")}
 
