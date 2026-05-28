@@ -41,6 +41,22 @@
             {{ get_text('home_hero_description') }}
         </p>
 
+        {% if has_audio_mode %}
+        <aside class="new-feature-callout" aria-label="{{ get_text('home_audio_mode_title') }}">
+            <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
+            <div class="new-feature-text">
+                <h2 class="new-feature-title">{{ get_text('home_audio_mode_title') }}</h2>
+                <p class="new-feature-body">{{ get_text('home_audio_mode_body') }}</p>
+            </div>
+            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="new-feature-cta-form">
+                <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
+                <button type="submit" class="btn btn-primary new-feature-cta">
+                    {{ get_text('home_audio_mode_cta') }}
+                </button>
+            </form>
+        </aside>
+        {% endif %}
+
         <aside class="new-feature-callout" aria-label="{{ get_text('home_new_feature_title') }}">
             <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
             <div class="new-feature-text">
