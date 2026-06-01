@@ -193,8 +193,8 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "Hardcore mode is coming soon! Try Easy or Advanced mode.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorrect. The answer was: {}",
-        # Hear & Type (audio listening) mode
-        "home_audio_mode_title": "Hear & Type",
+        # Listening (audio) mode
+        "home_audio_mode_title": "Listening",
         "home_audio_mode_body": "Listen to a Spanish number spoken aloud and type the digits.",
         "home_audio_mode_cta": "Start listening",
         "audio_play_label": "Play audio",
@@ -204,7 +204,7 @@ TRANSLATIONS = {
         "audio_numpad_submit": "Submit answer",
         "flash_incorrect_audio": "Incorrect. It was {0} ({1}).",
         "flash_audio_missing": "Audio files for this language are not available yet.",
-        "seo_title_listen": "Hear & Type - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
+        "seo_title_listen": "Listening - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
         # Imprint page
         "imprint_title": "Imprint - diminumero",
         "imprint_heading": "Imprint",
@@ -490,7 +490,7 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "Hardcore-Modus kommt bald! Probiere den einfachen oder fortgeschrittenen Modus.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Falsch. Die Antwort war: {}",
-        # Hear & Type (audio listening) mode
+        # Listening (audio) mode
         "home_audio_mode_title": "Hör & Tipp",
         "home_audio_mode_body": "Höre eine gesprochene spanische Zahl und tippe die Ziffern.",
         "home_audio_mode_cta": "Hörmodus starten",
@@ -775,7 +775,7 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "¡El modo extremo llega pronto! Prueba el modo fácil o avanzado.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorrecto. La respuesta era: {}",
-        # Hear & Type (audio listening) mode
+        # Listening (audio) mode
         "home_audio_mode_title": "Escucha y escribe",
         "home_audio_mode_body": "Escucha un número en español y escribe las cifras.",
         "home_audio_mode_cta": "Empezar a escuchar",
@@ -1053,7 +1053,7 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "La modalità hardcore arriverà presto! Prova la modalità facile o avanzata.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Sbagliato. La risposta era: {}",
-        # Hear & Type (audio listening) mode
+        # Listening (audio) mode
         "home_audio_mode_title": "Ascolta e scrivi",
         "home_audio_mode_body": "Ascolta un numero in spagnolo e scrivi le cifre.",
         "home_audio_mode_cta": "Inizia ad ascoltare",
@@ -1331,7 +1331,7 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "Le mode hardcore arrive bientôt ! Essayez le mode facile ou avancé.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorrect. La réponse était : {}",
-        # Hear & Type (audio listening) mode
+        # Listening (audio) mode
         "home_audio_mode_title": "Écouter et taper",
         "home_audio_mode_body": "Écoutez un nombre prononcé en espagnol et tapez les chiffres.",
         "home_audio_mode_cta": "Commencer à écouter",
@@ -1609,7 +1609,7 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "O modo hardcore chegará em breve! Tente o modo fácil ou avançado.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Incorreto. A resposta era: {}",
-        # Hear & Type (audio listening) mode
+        # Listening (audio) mode
         "home_audio_mode_title": "Ouvir e escrever",
         "home_audio_mode_body": "Ouça um número em espanhol e escreva os dígitos.",
         "home_audio_mode_cta": "Começar a ouvir",
@@ -1887,8 +1887,8 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "وضع هاردكور قادم قريباً! جرب الوضع السهل أو المتقدم.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "خطأ. كانت الإجابة: {}",
-        # Hear & Type (audio listening) mode
-        "home_audio_mode_title": "Hear & Type",
+        # Listening (audio) mode
+        "home_audio_mode_title": "Listening",
         "home_audio_mode_body": "Listen to a Spanish number spoken aloud and type the digits.",
         "home_audio_mode_cta": "Start listening",
         "audio_play_label": "Play audio",
@@ -1900,7 +1900,7 @@ TRANSLATIONS = {
         "audio_numpad_submit": "Submit answer",
         "flash_incorrect_audio": "Incorrect. It was {0} ({1}).",
         "flash_audio_missing": "Audio files for this language are not available yet.",
-        "seo_title_listen": "Hear & Type - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
+        "seo_title_listen": "Listening - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
         "imprint_title": "بيانات الشركة - diminumero",
         "imprint_heading": "بيانات الشركة",
         "imprint_legal_info": "معلومات وفقاً للمادة § 5 TMG",
@@ -2167,8 +2167,8 @@ TRANSLATIONS = {
         "flash_hardcore_soon": "Режим хардкор незабаром! Спробуйте легкий або складний режим.",
         "flash_correct": "{}! 🎉",
         "flash_incorrect": "Неправильно. Відповідь була: {}",
-        # Hear & Type (audio listening) mode
-        "home_audio_mode_title": "Hear & Type",
+        # Listening (audio) mode
+        "home_audio_mode_title": "Listening",
         "home_audio_mode_body": "Listen to a Spanish number spoken aloud and type the digits.",
         "home_audio_mode_cta": "Start listening",
         "audio_play_label": "Play audio",
@@ -2180,7 +2180,7 @@ TRANSLATIONS = {
         "audio_numpad_submit": "Submit answer",
         "flash_incorrect_audio": "Incorrect. It was {0} ({1}).",
         "flash_audio_missing": "Audio files for this language are not available yet.",
-        "seo_title_listen": "Hear & Type - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
+        "seo_title_listen": "Listening - LANGUAGE_NAME_PLACEHOLDER Number Quiz | diminumero",
         "imprint_title": "Вихідні дані - diminumero",
         "imprint_heading": "Вихідні дані",
         "imprint_legal_info": "Інформація відповідно до § 5 TMG",

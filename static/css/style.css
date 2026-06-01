@@ -3327,7 +3327,7 @@ html {
     flex-shrink: 0;
 }
 
-/* ----- Hear & Type audio quiz ----- */
+/* ----- Listening audio quiz ----- */
 .audio-play-btn {
     display: inline-flex;
     align-items: center;
@@ -3499,11 +3499,6 @@ html {
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
     overflow: visible;
-}
-
-.cards-dashboard-toggle-badge {
-    top: -10px;
-    right: -14px;
 }
 
 .cards-dashboard-toggle:hover,

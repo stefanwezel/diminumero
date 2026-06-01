@@ -734,7 +734,7 @@ def _available_audio_numbers(lang_code):
 
 @app.route("/<lang_code>/listen/start", methods=["POST"])
 def listen_start(lang_code):
-    """Initialize a new Hear & Type listening session."""
+    """Initialize a new Listening session."""
     if not is_language_ready(lang_code) or lang_code not in get_languages_with_audio_mode():
         flash(get_text("flash_invalid_language"), "error")
         return redirect(url_for("index"))
@@ -765,7 +765,7 @@ def listen_start(lang_code):
 
 @app.route("/<lang_code>/listen", methods=["GET", "POST"])
 def listen_quiz(lang_code):
-    """Hear & Type quiz: play a number, user types the digits."""
+    """Listening quiz: play a number, user types the digits."""
     if not is_language_ready(lang_code) or lang_code not in get_languages_with_audio_mode():
         return redirect(url_for("index"))
 
