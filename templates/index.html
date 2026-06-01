@@ -48,7 +48,7 @@
                 <h2 class="new-feature-title">{{ get_text('home_audio_mode_title') }}</h2>
                 <p class="new-feature-body">{{ get_text('home_audio_mode_body') }}</p>
             </div>
-            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="new-feature-cta-form">
+            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="new-feature-cta-form" data-listen-pjax>
                 <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                 <button type="submit" class="btn btn-primary new-feature-cta">
                     {{ get_text('home_audio_mode_cta') }}
@@ -193,4 +193,8 @@ if (window.innerWidth <= 768) {
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
 }
 </script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
 {% endblock %}
