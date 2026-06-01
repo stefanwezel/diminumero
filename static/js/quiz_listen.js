@@ -16,9 +16,13 @@
         var audio = document.getElementById('audio-el');
         if (!audio) return;
         var doPlay = function () {
-            try { audio.currentTime = 0; } catch (e) {}
-            var p = audio.play();
-            if (p && typeof p.catch === 'function') p.catch(function () {});
+            // tiny lag so the audio doesn't start the very instant the
+            // question appears
+            setTimeout(function () {
+                try { audio.currentTime = 0; } catch (e) {}
+                var p = audio.play();
+                if (p && typeof p.catch === 'function') p.catch(function () {});
+            }, 50);
         };
         if (audio.readyState >= 2) {
             doPlay();
