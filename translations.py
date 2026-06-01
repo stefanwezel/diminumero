@@ -29,6 +29,7 @@ TRANSLATIONS = {
         "home_hero_description": "Practice translating numbers from digits to LANGUAGE_NAME_PLACEHOLDER words. Choose your difficulty mode and start learning!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "New · Listening",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
@@ -326,6 +327,7 @@ TRANSLATIONS = {
         "home_hero_description": "Übe die Übersetzung von Zahlen in LANGUAGE_NAME_PLACEHOLDERe Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!",
         # New feature callout (home page)
         "home_new_feature_badge": "Neu",
+        "language_card_audio_sticker": "Neu · Hören",
         "home_new_feature_title": "Deine eigenen Vokabelkarten",
         "home_new_feature_body": "Melde dich an, um persönliche Karteikarten anzulegen und sie wie die Zahlenübungen zu üben.",
         "home_new_feature_cta_login": "Anmelden und ausprobieren",
@@ -620,6 +622,7 @@ TRANSLATIONS = {
         "home_hero_description": "Practica la traducción de números a palabras en LANGUAGE_NAME_PLACEHOLDER. ¡Elige tu nivel de dificultad y comienza a aprender!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "Nuevo · Escucha",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
@@ -898,6 +901,7 @@ TRANSLATIONS = {
         "home_hero_description": "Pratica la traduzione dei numeri in parole in LANGUAGE_NAME_PLACEHOLDER. Scegli il tuo livello di difficoltà e inizia ad imparare!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "Nuovo · Ascolto",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
@@ -1176,6 +1180,7 @@ TRANSLATIONS = {
         "home_hero_description": "Pratiquez la traduction de chiffres en mots en LANGUAGE_NAME_PLACEHOLDER. Choisissez votre niveau de difficulté et commencez à apprendre !",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "Nouveau · Écoute",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
@@ -1454,6 +1459,7 @@ TRANSLATIONS = {
         "home_hero_description": "Pratique a tradução de números para palavras em LANGUAGE_NAME_PLACEHOLDER. Escolha o seu nível de dificuldade e comece a aprender!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "Novo · Escuta",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
@@ -1732,6 +1738,7 @@ TRANSLATIONS = {
         "home_hero_description": "تدرب على ترجمة الأرقام إلى كلمات باللغة LANGUAGE_NAME_PLACEHOLDER. اختر مستوى الصعوبة وابدأ التعلم!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "جديد · استماع",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
@@ -2012,6 +2019,7 @@ TRANSLATIONS = {
         "home_hero_description": "Практикуйте переклад чисел у слова LANGUAGE_NAME_PLACEHOLDER. Оберіть рівень складності та починайте навчання!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_audio_sticker": "Нове · Аудіо",
         "home_new_feature_title": "Your own vocabulary cards",
         "home_new_feature_body": "Sign in to create personal index cards and practice them like the number drills.",
         "home_new_feature_cta_login": "Log in to try it",
