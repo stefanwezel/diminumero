@@ -3315,6 +3315,205 @@ html {
         align-self: stretch;
         text-align: center;
     }
+    .new-feature-cta-form {
+        align-self: stretch;
+    }
+}
+
+/* The CTA form wraps the button so it submits a POST; we want it to behave
+   exactly like the bare <a> sibling does in the flex layout. */
+.new-feature-cta-form {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* ----- Listening audio quiz ----- */
+.audio-play-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 140px;
+    height: 140px;
+    margin: 20px auto 10px;
+    padding: 0;
+    background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
+    border: 3px solid rgba(194, 249, 112, 0.55);
+    border-radius: 50%;
+    color: #C2F970;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(194, 249, 112, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.audio-play-btn:hover,
+.audio-play-btn:focus-visible {
+    transform: scale(1.04);
+    border-color: rgba(194, 249, 112, 0.85);
+    box-shadow: 0 10px 28px rgba(194, 249, 112, 0.28);
+    outline: none;
+}
+
+.audio-play-btn:active {
+    transform: scale(0.97);
+}
+
+/* Subtle pulsating glow to draw the eye to the main play button (not the
+   smaller replay button). Pauses on interaction and respects reduced motion. */
+@keyframes audio-play-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 8px 30px rgba(194, 249, 112, 0.9),
+                    0 0 0 0 rgba(194, 249, 112, 1);
+    }
+    50% {
+        transform: scale(1.09);
+        box-shadow: 0 12px 50px rgba(194, 249, 112, 1),
+                    0 0 0 25px rgba(194, 249, 112, 0.85);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 8px 30px rgba(194, 249, 112, 0.9),
+                    0 0 0 50px rgba(194, 249, 112, 0.4);
+    }
+}
+
+.audio-play-btn:not(.audio-play-btn-small) {
+    animation: audio-play-pulse 2.4s ease-in-out infinite;
+}
+
+.audio-play-btn:not(.audio-play-btn-small):hover,
+.audio-play-btn:not(.audio-play-btn-small):focus-visible {
+    animation-play-state: paused;
+}
+
+/* Reduced-motion users: skip the scale/expanding-ring movement but keep a
+   stationary glow pulse so the button still draws attention. */
+@keyframes audio-play-glow {
+    0%, 100% {
+        box-shadow: 0 0 28px 4px rgba(194, 249, 112, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 60px 16px rgba(194, 249, 112, 1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .audio-play-btn:not(.audio-play-btn-small) {
+        animation: audio-play-glow 3.2s ease-in-out infinite;
+    }
+}
+
+.audio-play-icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    margin-left: 8px; /* optical centering of the play triangle */
+}
+
+.audio-play-btn-small {
+    width: 88px;
+    height: 88px;
+    margin: 0 auto;
+}
+
+.audio-play-btn-small .audio-play-icon {
+    font-size: 2rem;
+    margin-left: 5px;
+}
+
+.answer-input-numeric {
+    text-align: center;
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+}
+
+.numpad-form {
+    max-width: 360px;
+    margin: 24px auto 0;
+}
+
+.numpad-display {
+    min-height: 64px;
+    margin-bottom: 18px;
+    padding: 14px 18px;
+    text-align: center;
+    font-size: 2.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.14em;
+    color: #C2F970;
+    background: rgba(46, 26, 60, 0.55);
+    border: 2px solid rgba(194, 249, 112, 0.45);
+    border-radius: 14px;
+    text-shadow: 0 0 12px rgba(194, 249, 112, 0.35);
+    white-space: pre;
+}
+
+.numpad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.numpad-btn {
+    aspect-ratio: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.9rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
+    border: 2px solid rgba(194, 249, 112, 0.35);
+    border-radius: 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.08s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.numpad-btn:hover,
+.numpad-btn:focus-visible {
+    border-color: rgba(194, 249, 112, 0.75);
+    box-shadow: 0 6px 18px rgba(194, 249, 112, 0.18);
+    outline: none;
+}
+
+.numpad-btn:active {
+    transform: scale(0.95);
+}
+
+.numpad-btn-action {
+    color: #E54F6D;
+    border-color: rgba(229, 79, 109, 0.45);
+}
+
+.numpad-btn-action:hover,
+.numpad-btn-action:focus-visible {
+    border-color: rgba(229, 79, 109, 0.85);
+    box-shadow: 0 6px 18px rgba(229, 79, 109, 0.22);
+}
+
+.numpad-btn-submit {
+    color: #1a0e26;
+    background: linear-gradient(135deg, #C2F970 0%, #9DD649 100%);
+    border-color: rgba(194, 249, 112, 0.85);
+}
+
+.numpad-btn-submit:hover,
+.numpad-btn-submit:focus-visible {
+    box-shadow: 0 6px 22px rgba(194, 249, 112, 0.45);
+}
+
+@media (max-width: 480px) {
+    .numpad-grid { gap: 10px; }
+    .numpad-btn { font-size: 1.6rem; border-radius: 14px; }
+    .numpad-display { font-size: 2rem; min-height: 56px; }
+}
+
+.reveal-modal-subanswer {
+    margin-top: 6px;
+    font-size: 1.1rem;
+    color: #A89BB8;
+    font-style: italic;
 }
 
 /* ----- Cards dashboard ----- */
@@ -3346,11 +3545,6 @@ html {
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
     overflow: visible;
-}
-
-.cards-dashboard-toggle-badge {
-    top: -10px;
-    right: -14px;
 }
 
 .cards-dashboard-toggle:hover,

@@ -8,6 +8,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇪🇸",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn Spanish numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         # UI display names keyed by UI language code
@@ -41,6 +42,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇫🇷",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn French numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
         "ui_names": {
@@ -71,6 +73,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇯🇵",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn Japanese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
@@ -463,6 +466,15 @@ def get_languages_with_learn_materials():
         code
         for code, info in AVAILABLE_LANGUAGES.items()
         if info.get("has_learn_materials", False) and info.get("ready", False)
+    ]
+
+
+def get_languages_with_audio_mode():
+    """Return language codes that have a pronunciation audio quiz available."""
+    return [
+        code
+        for code, info in AVAILABLE_LANGUAGES.items()
+        if info.get("has_audio_mode", False) and info.get("ready", False)
     ]
 
 

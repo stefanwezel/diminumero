@@ -25,9 +25,11 @@ import jinja2
 import logging
 import quiz_logic
 import os
+import re
 import secrets
 import sys
 import time
+from pathlib import Path
 
 from models import Card, DeckShare, PollResponse, db
 from config import (
@@ -46,6 +48,7 @@ from languages import (
     get_language_numbers,
     get_language_ui_description,
     get_language_ui_name,
+    get_languages_with_audio_mode,
     get_languages_with_learn_materials,
     is_language_ready,
 )
@@ -273,6 +276,7 @@ def mode_selection(lang_code):
         return redirect(url_for("index"))
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
+    has_audio_mode = lang_code in get_languages_with_audio_mode()
 
     return render_template(
         "index.html",
@@ -281,6 +285,7 @@ def mode_selection(lang_code):
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
+        has_audio_mode=has_audio_mode,
         magnitude_level=session.get("magnitude_level", 1),
     )
 
@@ -303,6 +308,7 @@ def _results_redirect(lang_code):
         "easy": SPEED_BONUS_TIME_EASY,
         "advanced": SPEED_BONUS_TIME_ADVANCED,
         "hardcore": SPEED_BONUS_TIME_HARDCORE,
+        "audio": SPEED_BONUS_TIME_ADVANCED,
     }
     speed_limit = speed_limits.get(mode, SPEED_BONUS_TIME_EASY)
 
@@ -712,6 +718,153 @@ def quiz_hardcore(lang_code):
     )
 
 
+def _available_audio_numbers(lang_code):
+    """Return the set of numbers (ints) we have a pre-generated MP3 for."""
+    audio_dir = Path(app.static_folder) / "audio" / lang_code
+    if not audio_dir.is_dir():
+        return set()
+    numbers = set()
+    for path in audio_dir.glob("*.mp3"):
+        try:
+            numbers.add(int(path.stem))
+        except ValueError:
+            continue
+    return numbers
+
+
+@app.route("/<lang_code>/listen/start", methods=["POST"])
+def listen_start(lang_code):
+    """Initialize a new Listening session."""
+    if not is_language_ready(lang_code) or lang_code not in get_languages_with_audio_mode():
+        flash(get_text("flash_invalid_language"), "error")
+        return redirect(url_for("index"))
+
+    try:
+        magnitude_level = int(request.form.get("magnitude_level", 1))
+    except (TypeError, ValueError):
+        magnitude_level = 1
+    if magnitude_level not in range(1, 6):
+        magnitude_level = 1
+
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    saved_user = session.get("user")
+    session.clear()
+    session["language"] = ui_language
+    if saved_user is not None:
+        session["user"] = saved_user
+    session["learn_language"] = lang_code
+    session["score"] = 0
+    session["total_questions"] = 0
+    session["asked_numbers"] = []
+    session["mode"] = "audio"
+    session["magnitude_level"] = magnitude_level
+    session["quiz_start_time"] = time.time()
+
+    return redirect(url_for("listen_quiz", lang_code=lang_code))
+
+
+@app.route("/<lang_code>/listen", methods=["GET", "POST"])
+def listen_quiz(lang_code):
+    """Listening quiz: play a number, user types the digits."""
+    if not is_language_ready(lang_code) or lang_code not in get_languages_with_audio_mode():
+        return redirect(url_for("index"))
+
+    if session.get("learn_language") != lang_code or session.get("mode") != "audio":
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    available = _available_audio_numbers(lang_code)
+    playable_numbers = {n: word for n, word in numbers.items() if n in available}
+    if not playable_numbers:
+        flash(get_text("flash_audio_missing"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    if request.method == "POST":
+        if "reveal" in request.form:
+            session["total_questions"] = session.get("total_questions", 0) + 1
+            session["current_revealed"] = True
+            return redirect(url_for("listen_quiz", lang_code=lang_code))
+
+        if "next" in request.form:
+            session["current_revealed"] = False
+            session.pop("current_number", None)
+            session.pop("correct_answer", None)
+            if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+                return _results_redirect(lang_code)
+            return redirect(url_for("listen_quiz", lang_code=lang_code))
+
+        raw_answer = request.form.get("answer", "")
+        digits = re.sub(r"\D", "", raw_answer)
+        current_number = session.get("current_number")
+        correct_word = session.get("correct_answer")
+
+        if digits and current_number is not None:
+            if int(digits) == current_number:
+                session["score"] = session.get("score", 0) + 1
+                flash(
+                    get_text("flash_correct").format(
+                        get_feedback_expression(lang_code)
+                    ),
+                    "success",
+                )
+            else:
+                flash(
+                    get_text("flash_incorrect_audio").format(
+                        current_number, correct_word or ""
+                    ),
+                    "error",
+                )
+            session["total_questions"] = session.get("total_questions", 0) + 1
+
+        session.pop("current_number", None)
+        session.pop("correct_answer", None)
+        session["current_revealed"] = False
+
+        if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+            return _results_redirect(lang_code)
+
+        return redirect(url_for("listen_quiz", lang_code=lang_code))
+
+    if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+        return redirect(url_for("results", lang_code=lang_code))
+
+    if "current_number" in session and "correct_answer" in session:
+        number = session["current_number"]
+        correct_answer = session["correct_answer"]
+    else:
+        asked_numbers = session.get("asked_numbers", [])
+        number, correct_answer = quiz_logic.get_random_question(
+            playable_numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+        )
+        session["current_number"] = number
+        session["correct_answer"] = correct_answer
+        if "asked_numbers" not in session:
+            session["asked_numbers"] = []
+        session["asked_numbers"].append(number)
+
+    audio_url = url_for("static", filename=f"audio/{lang_code}/{number}.mp3")
+
+    return render_template(
+        "quiz_listen.html",
+        number=number,
+        correct_answer=correct_answer,
+        audio_url=audio_url,
+        revealed=bool(session.get("current_revealed")),
+        score=session.get("score", 0),
+        total=session.get("total_questions", 0),
+        max_questions=QUESTIONS_PER_QUIZ,
+        lang_code=lang_code,
+        get_text=get_text,
+    )
+
+
 @app.route("/<lang_code>/results")
 def results(lang_code):
     """Display final quiz results."""
@@ -731,6 +884,7 @@ def results(lang_code):
         "easy": SPEED_BONUS_TIME_EASY,
         "advanced": SPEED_BONUS_TIME_ADVANCED,
         "hardcore": SPEED_BONUS_TIME_HARDCORE,
+        "audio": SPEED_BONUS_TIME_ADVANCED,
     }
     quiz_start_time = session.get("quiz_start_time")
     elapsed = time.time() - quiz_start_time if quiz_start_time else None

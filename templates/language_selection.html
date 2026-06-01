@@ -46,7 +46,6 @@
         </p>
 
         <aside class="new-feature-callout" aria-label="{{ get_text('home_new_feature_title') }}">
-            <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
             <div class="new-feature-text">
                 <h2 class="new-feature-title">{{ get_text('home_new_feature_title') }}</h2>
                 <p class="new-feature-body">{{ get_text('home_new_feature_body') }}</p>
@@ -65,6 +64,11 @@
         <div class="mode-selection">
             {% for lang_code, lang_info in languages.items() %}
             <div class="mode-card {% if not lang_info.ready %}mode-disabled{% endif %}">
+                {% if lang_info.has_audio_mode %}
+                <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="audio-sticker-form">
+                    <button type="submit" class="audio-sticker">{{ get_text('language_card_audio_sticker') }}</button>
+                </form>
+                {% endif %}
                 <div class="language-flag">{{ lang_info.flag }}</div>
                 <h3 class="mode-title">{{ lang_info.name }}</h3>
                 <p class="language-native-name">{{ lang_info.native_name }}</p>
@@ -118,6 +122,46 @@
     color: #666;
     margin: 0.25rem 0 0.75rem 0;
     font-weight: 500;
+}
+
+/* "New · Listening" sticker on language cards that have the audio mode. */
+.mode-card {
+    position: relative;
+    overflow: visible;
+}
+
+.audio-sticker-form {
+    position: absolute;
+    top: -12px;
+    right: -10px;
+    z-index: 3;
+    margin: 0;
+}
+
+.audio-sticker {
+    display: inline-block;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #FF4D5E 0%, #E54F6D 100%);
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 999px;
+    box-shadow: 0 6px 16px rgba(229, 79, 109, 0.5), 0 0 0 3px rgba(46, 26, 60, 0.9);
+    transform: rotate(7deg);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.audio-sticker:hover,
+.audio-sticker:focus-visible {
+    transform: rotate(7deg) scale(1.08);
+    box-shadow: 0 8px 22px rgba(229, 79, 109, 0.65), 0 0 0 3px rgba(46, 26, 60, 0.9);
+    outline: none;
 }
 
 </style>

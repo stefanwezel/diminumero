@@ -63,13 +63,6 @@
     <style>
         .theme-toggle-wrap { position: relative; display: inline-flex; }
         .theme-toggle-btn svg { display: block; }
-        .theme-toggle-badge {
-            position: absolute;
-            top: -8px;
-            right: -14px;
-            pointer-events: none;
-            transform-origin: center;
-        }
         @keyframes themeBadgePulse {
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.12); opacity: 0.85; }
@@ -133,7 +126,6 @@
                     <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/>
                 </svg>
             </button>
-            <span class="new-feature-badge theme-toggle-badge" id="themeToggleBadge" aria-hidden="true">NEW</span>
         </span>
         <div class="language-switcher">
         <button class="lang-globe-btn" id="langGlobeBtn"
@@ -253,5 +245,6 @@
         document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
     }());
     </script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

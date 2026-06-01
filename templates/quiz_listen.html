@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_listen') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_listen') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_listen') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_quiz') }}">{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+    <div class="quiz-header">
+        <div class="progress-info">
+            {{ get_text('quiz_question') }} {{ total + 1 }} / {{ max_questions }}
+        </div>
+        <div class="score-display">
+            {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
+        </div>
+        <div class="quiz-header-buttons">
+            <form action="{{ url_for('results', lang_code=lang_code) }}" method="GET" class="quiz-header-form">
+                <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
+            </form>
+            {% if not revealed %}
+            <form action="{{ url_for('listen_quiz', lang_code=lang_code) }}" method="POST" class="quiz-header-form" data-listen-pjax>
+                <button type="submit" name="reveal" value="1" class="btn btn-secondary btn-quiz-header" title="{{ get_text('cards_reveal_tooltip') }}">
+                    {{ get_text('cards_reveal_btn') }}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (total / max_questions * 100) }}%"></div>
+    </div>
+
+    <div class="question-container">
+        <h2 class="question-label">{{ get_text('quiz_listen_prompt') }}</h2>
+        <button type="button" id="audio-play-btn" class="audio-play-btn" aria-label="{{ get_text('audio_play_label') }}">
+            <span class="audio-play-icon" aria-hidden="true">▶</span>
+        </button>
+        <audio id="audio-el" src="{{ audio_url }}" preload="auto" autoplay></audio>
+    </div>
+
+    {% if not revealed %}
+    <form action="{{ url_for('listen_quiz', lang_code=lang_code) }}" method="POST" class="answer-form numpad-form" id="answerForm" data-listen-pjax>
+        <div class="numpad-display" id="numpadDisplay" aria-live="polite" aria-label="{{ get_text('quiz_listen_prompt') }}">&nbsp;</div>
+        <input type="hidden" name="answer" id="answerInput" value="">
+        <div class="numpad-grid">
+            <button type="button" class="numpad-btn" data-digit="1">1</button>
+            <button type="button" class="numpad-btn" data-digit="2">2</button>
+            <button type="button" class="numpad-btn" data-digit="3">3</button>
+            <button type="button" class="numpad-btn" data-digit="4">4</button>
+            <button type="button" class="numpad-btn" data-digit="5">5</button>
+            <button type="button" class="numpad-btn" data-digit="6">6</button>
+            <button type="button" class="numpad-btn" data-digit="7">7</button>
+            <button type="button" class="numpad-btn" data-digit="8">8</button>
+            <button type="button" class="numpad-btn" data-digit="9">9</button>
+            <button type="button" class="numpad-btn numpad-btn-action" id="numpadBack" aria-label="{{ get_text('audio_numpad_back') }}">⌫</button>
+            <button type="button" class="numpad-btn" data-digit="0">0</button>
+            <button type="submit" class="numpad-btn numpad-btn-submit" id="numpadSubmit" aria-label="{{ get_text('audio_numpad_submit') }}">↵</button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% if revealed %}
+<div class="reveal-modal show" role="dialog" aria-modal="true" aria-labelledby="reveal-modal-title">
+    <div class="reveal-modal-content">
+        <div class="reveal-modal-prompt">
+            <button type="button" id="audio-replay-btn" class="audio-play-btn audio-play-btn-small" aria-label="{{ get_text('audio_replay') }}">
+                <span class="audio-play-icon" aria-hidden="true">▶</span>
+            </button>
+        </div>
+        <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
+        <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
+        <div class="reveal-modal-answer">{{ number }}</div>
+        <div class="reveal-modal-subanswer">{{ correct_answer }}</div>
+        <form action="{{ url_for('listen_quiz', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions" data-listen-pjax>
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
+                {{ get_text('cards_reveal_next_btn') }}
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% endblock %}

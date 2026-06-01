@@ -3154,11 +3154,6 @@ html {
     overflow: visible;
 }
 
-.cards-dashboard-toggle-badge {
-    top: -10px;
-    right: -14px;
-}
-
 .cards-dashboard-toggle:hover,
 .cards-dashboard-toggle:focus {
     background-color: #e2e8f0;
