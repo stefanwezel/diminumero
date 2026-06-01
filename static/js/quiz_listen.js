@@ -22,7 +22,7 @@
                 try { audio.currentTime = 0; } catch (e) {}
                 var p = audio.play();
                 if (p && typeof p.catch === 'function') p.catch(function () {});
-            }, 50);
+            }, 100);
         };
         if (audio.readyState >= 2) {
             doPlay();
