@@ -80,12 +80,21 @@
 
         <!-- Action buttons -->
         <div class="results-actions">
+            {% if session.get('mode') == 'audio' %}
+            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST">
+                <input type="hidden" name="magnitude_level" value="{{ session.get('magnitude_level', 1) }}">
+                <button type="submit" class="btn-try-again">
+                    <img src="{{ url_for('static', filename='icons/icon-tryagain.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('results_try_again') }}
+                </button>
+            </form>
+            {% else %}
             <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                 <input type="hidden" name="mode" value="{{ session.get('mode', 'easy') }}">
                 <button type="submit" class="btn-try-again">
                     <img src="{{ url_for('static', filename='icons/icon-tryagain.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('results_try_again') }}
                 </button>
             </form>
+            {% endif %}
 
             {% if has_learn_materials %}
             <a href="{{ url_for('learn', lang_code=lang_code) }}" class="btn btn-primary btn-large">

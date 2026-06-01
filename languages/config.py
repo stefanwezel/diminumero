@@ -42,6 +42,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇫🇷",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn French numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
         "ui_names": {
@@ -72,6 +73,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇯🇵",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn Japanese numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {

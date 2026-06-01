@@ -6,25 +6,28 @@
 # ]
 # ///
 """
-Generate pronunciation MP3s for Spanish numbers used by the Listening quiz.
+Generate pronunciation MP3s for number decks used by the Listening quiz.
 
-Each entry in languages/es/numbers.py is synthesized with ElevenLabs'
-eleven_turbo_v2_5 cloud model and written to static/audio/es/<n>.mp3 at
-mp3_44100_64 (~64 kbps mono). No local model is downloaded; synthesis happens
-in the cloud, so an API key is required.
+For the chosen language (--lang, default "es"), each entry in
+languages/<lang>/numbers.py is synthesized with ElevenLabs' eleven_turbo_v2_5
+cloud model and written to static/audio/<lang>/<n>.mp3 at mp3_44100_64
+(~64 kbps mono). No local model is downloaded; synthesis happens in the cloud,
+so an API key is required.
 
 Set API_KEY_11_LABS in .env (loaded via python-dotenv). Each number is voiced
-by a speaker drawn at random from the built-in VOICE_IDS pool, so the generated
-deck mixes voices instead of using a single speaker.
+by a speaker drawn at random from the language's VOICE_POOLS entry, so the
+generated deck mixes voices instead of using a single speaker.
 
 Usage:
-    uv run tools/generate_audio.py                    # generate everything (skips existing)
+    uv run tools/generate_audio.py                    # Spanish, generate everything (skips existing)
+    uv run tools/generate_audio.py --lang ja          # Japanese deck
     uv run tools/generate_audio.py --force            # re-render even if file exists
     uv run tools/generate_audio.py --only 42          # synthesize just one number
     uv run tools/generate_audio.py --limit 10         # cap the run for quick testing
 """
 
 import argparse
+import importlib
 import os
 import random
 import sys
@@ -35,30 +38,57 @@ from elevenlabs.client import ElevenLabs
 from elevenlabs.core.api_error import ApiError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = REPO_ROOT / "static" / "audio" / "es"
 
 MODEL_ID = "eleven_turbo_v2_5"
 OUTPUT_FORMAT = "mp3_44100_64"
 
-# Speaker pool sampled per number. Duplicates are intentional: they bias the
-# random draw toward those voices.
-VOICE_IDS = [
-    "ckoC20vA7eZDdCGKkIRK",
-    "n5Et1BZxBTTgPqtFr6AC",
-    "n5Et1BZxBTTgPqtFr6AC",
-    "n4GNpJP6Y2Nd09pDtetA",
-    "nTkjq09AuYgsNR8E4sDe",
-    "v4b4rQBhckrIsOHsrbub",
-    "kVp3G6YINMUwOL7ROfIF",
-    "kVp3G6YINMUwOL7ROfIF",
-]
+# Per-language speaker pools, sampled at random per number. Duplicates are
+# intentional: they bias the random draw toward those voices.
+VOICE_POOLS = {
+    "es": [
+        "ckoC20vA7eZDdCGKkIRK",
+        "n5Et1BZxBTTgPqtFr6AC",
+        "n5Et1BZxBTTgPqtFr6AC",
+        "n4GNpJP6Y2Nd09pDtetA",
+        "nTkjq09AuYgsNR8E4sDe",
+        "v4b4rQBhckrIsOHsrbub",
+        "kVp3G6YINMUwOL7ROfIF",
+        "kVp3G6YINMUwOL7ROfIF",
+    ],
+    "ja": [
+        "IIUvcn96WSMnC5WxNypI",
+        "MXKtCrra8fvlDUbfKUT1",
+        "urE3OJfJRxJuk9kAMN0Y",
+        "urE3OJfJRxJuk9kAMN0Y",
+        "4oeIbMTUt5QeJy4ZX1FC",
+        "G3EZ8O36A0x9lmeOtr0f",
+        "pUgmTF2V1ptIKsYb6qON",
+        "8PfKHL4nZToWC3pbz9U9",
+    ],
+    "fr": [
+        "eOwAMwUJEGkP44SKOXIH",
+        "OhWejZm6c7D8CIm5epRM",
+        "F1toM6PcP54s45kOOAyV",
+        "ZLI7yULK3cOkcZl6GABN",
+        "HuLbOdhRlvQQN8oPP0AJ",
+        "gidGFDFyCSnGFnZ9hK7l",
+        "bts16wA7hWMfnlEIHuRo",
+        "WQKwBV2Uzw1gSGr69N8I",
+    ],
+}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate Spanish number pronunciation MP3s.",
+        description="Generate number pronunciation MP3s via ElevenLabs.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
+    )
+    parser.add_argument(
+        "--lang",
+        default="es",
+        choices=sorted(VOICE_POOLS),
+        help="Language code to synthesize (default: es).",
     )
     parser.add_argument(
         "--force",
@@ -80,9 +110,11 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    voice_ids = VOICE_POOLS[args.lang]
+    out_dir = REPO_ROOT / "static" / "audio" / args.lang
 
     sys.path.insert(0, str(REPO_ROOT))
-    from languages.es import NUMBERS
+    NUMBERS = importlib.import_module(f"languages.{args.lang}").NUMBERS
 
     load_dotenv()
     api_key = os.getenv("API_KEY_11_LABS")
@@ -91,12 +123,12 @@ def main() -> None:
         sys.exit(1)
 
     print(
-        f"Synthesizing with ElevenLabs {MODEL_ID}, "
-        f"sampling from {len(set(VOICE_IDS))} voices..."
+        f"Synthesizing {args.lang} with ElevenLabs {MODEL_ID}, "
+        f"sampling from {len(set(voice_ids))} voices..."
     )
     client = ElevenLabs(api_key=api_key)
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     if args.only is not None:
         if args.only not in NUMBERS:
@@ -116,12 +148,12 @@ def main() -> None:
             print(f"Hit --limit={args.limit}, stopping.")
             break
 
-        out_path = OUT_DIR / f"{n}.mp3"
+        out_path = out_dir / f"{n}.mp3"
         if out_path.exists() and not args.force:
             skipped += 1
             continue
 
-        voice_id = random.choice(VOICE_IDS)
+        voice_id = random.choice(voice_ids)
         try:
             audio = client.text_to_speech.convert(
                 voice_id=voice_id,
@@ -149,7 +181,7 @@ def main() -> None:
 
     print()
     print(f"Done. generated={generated} skipped={skipped} failed={failed}")
-    print(f"Output: {OUT_DIR}")
+    print(f"Output: {out_dir}")
 
 
 if __name__ == "__main__":

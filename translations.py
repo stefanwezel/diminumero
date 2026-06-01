@@ -195,7 +195,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Incorrect. The answer was: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Listening",
-        "home_audio_mode_body": "Listen to a Spanish number spoken aloud and type the digits.",
+        "home_audio_mode_body": "Listen to a LANGUAGE_NAME_PLACEHOLDER number spoken aloud and type the digits.",
         "home_audio_mode_cta": "Start listening",
         "audio_play_label": "Play audio",
         "audio_replay": "Play again",
@@ -492,7 +492,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Falsch. Die Antwort war: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Hör & Tipp",
-        "home_audio_mode_body": "Höre eine gesprochene spanische Zahl und tippe die Ziffern.",
+        "home_audio_mode_body": "Höre eine gesprochene LANGUAGE_NAME_PLACEHOLDERe Zahl und tippe die Ziffern.",
         "home_audio_mode_cta": "Hörmodus starten",
         "audio_play_label": "Audio abspielen",
         "audio_replay": "Nochmal abspielen",
@@ -777,7 +777,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Incorrecto. La respuesta era: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Escucha y escribe",
-        "home_audio_mode_body": "Escucha un número en español y escribe las cifras.",
+        "home_audio_mode_body": "Escucha un número en LANGUAGE_NAME_PLACEHOLDER y escribe las cifras.",
         "home_audio_mode_cta": "Empezar a escuchar",
         "audio_play_label": "Reproducir audio",
         "audio_replay": "Reproducir otra vez",
@@ -1055,7 +1055,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Sbagliato. La risposta era: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Ascolta e scrivi",
-        "home_audio_mode_body": "Ascolta un numero in spagnolo e scrivi le cifre.",
+        "home_audio_mode_body": "Ascolta un numero in LANGUAGE_NAME_PLACEHOLDER e scrivi le cifre.",
         "home_audio_mode_cta": "Inizia ad ascoltare",
         "audio_play_label": "Riproduci audio",
         "audio_replay": "Riproduci di nuovo",
@@ -1333,7 +1333,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Incorrect. La réponse était : {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Écouter et taper",
-        "home_audio_mode_body": "Écoutez un nombre prononcé en espagnol et tapez les chiffres.",
+        "home_audio_mode_body": "Écoutez un nombre prononcé en LANGUAGE_NAME_PLACEHOLDER et tapez les chiffres.",
         "home_audio_mode_cta": "Commencer à écouter",
         "audio_play_label": "Lire l'audio",
         "audio_replay": "Rejouer",
@@ -1611,7 +1611,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Incorreto. A resposta era: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Ouvir e escrever",
-        "home_audio_mode_body": "Ouça um número em espanhol e escreva os dígitos.",
+        "home_audio_mode_body": "Ouça um número em LANGUAGE_NAME_PLACEHOLDER e escreva os dígitos.",
         "home_audio_mode_cta": "Começar a ouvir",
         "audio_play_label": "Reproduzir áudio",
         "audio_replay": "Reproduzir novamente",
@@ -1889,7 +1889,7 @@ TRANSLATIONS = {
         "flash_incorrect": "خطأ. كانت الإجابة: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Listening",
-        "home_audio_mode_body": "Listen to a Spanish number spoken aloud and type the digits.",
+        "home_audio_mode_body": "Listen to a LANGUAGE_NAME_PLACEHOLDER number spoken aloud and type the digits.",
         "home_audio_mode_cta": "Start listening",
         "audio_play_label": "Play audio",
         "audio_replay": "Play again",
@@ -2169,7 +2169,7 @@ TRANSLATIONS = {
         "flash_incorrect": "Неправильно. Відповідь була: {}",
         # Listening (audio) mode
         "home_audio_mode_title": "Listening",
-        "home_audio_mode_body": "Listen to a Spanish number spoken aloud and type the digits.",
+        "home_audio_mode_body": "Listen to a LANGUAGE_NAME_PLACEHOLDER number spoken aloud and type the digits.",
         "home_audio_mode_cta": "Start listening",
         "audio_play_label": "Play audio",
         "audio_replay": "Play again",
