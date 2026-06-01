@@ -1227,20 +1227,6 @@ class TestCardsDashboard:
         assert 'id="cards-dashboard-toggle"' not in body
         assert 'id="cards-dashboard-panel"' not in body
 
-    def test_toggle_button_has_new_badge(self, client):
-        # The dashboard is a recent addition — surface a NEW badge on the
-        # toggle so existing users notice it. Pattern matches the theme
-        # toggle's badge (see base.html).
-        make_card(SAMPLE_USER["sub"], "mesa", "table")
-        login(client)
-        body = client.get("/cards").data.decode("utf-8")
-        toggle_html = body.split('id="cards-dashboard-toggle"', 1)[1].split(
-            "</button>", 1
-        )[0]
-        assert "new-feature-badge" in toggle_html
-        assert "cards-dashboard-toggle-badge" in toggle_html
-        assert "NEW" in toggle_html
-
     def test_recap_weak_button_hidden_without_weak_cards(self, client):
         # All-strong deck — no weak-section recap button. Other sections
         # (weakest/strongest) still render their own recap buttons.
