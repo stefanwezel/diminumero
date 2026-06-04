@@ -104,6 +104,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇩🇪",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn German numbers from 1 to 10 million",
         "validation_strategy": "component_based",  # Compound words
         "ui_names": {
