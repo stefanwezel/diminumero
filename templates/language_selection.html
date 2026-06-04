@@ -65,7 +65,7 @@
             {% for lang_code, lang_info in languages.items() %}
             <div class="mode-card {% if not lang_info.ready %}mode-disabled{% endif %}">
                 {% if lang_info.has_audio_mode %}
-                <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="audio-sticker-form">
+                <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="audio-sticker-form" data-listen-pjax>
                     <button type="submit" class="audio-sticker">{{ get_text('language_card_audio_sticker') }}</button>
                 </form>
                 {% endif %}
@@ -165,4 +165,8 @@
 }
 
 </style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
 {% endblock %}

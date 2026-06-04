@@ -83,10 +83,18 @@
         playAudio();
     }
 
-    function pjaxSubmit(form) {
+    function pjaxSubmit(form, submitter) {
         var method = (form.method || 'GET').toUpperCase();
         var opts = { method: method, headers: { 'X-Requested-With': 'fetch' } };
-        if (method === 'POST') opts.body = new FormData(form);
+        if (method === 'POST') {
+            // FormData doesn't include the submit button's name/value on its
+            // own, so the reveal/next buttons (which signal intent via their
+            // name) would otherwise be lost and the POST would fall through to
+            // the answer branch. Append the submitter explicitly.
+            var fd = new FormData(form);
+            if (submitter && submitter.name) fd.append(submitter.name, submitter.value);
+            opts.body = fd;
+        }
         fetch(form.action, opts)
             .then(function (resp) {
                 return resp.text().then(function (text) { return { url: resp.url, text: text }; });
@@ -117,7 +125,7 @@
             if (!el || !el.value) { e.preventDefault(); return; }
         }
         e.preventDefault();
-        pjaxSubmit(form);
+        pjaxSubmit(form, e.submitter);
     });
 
     document.addEventListener('keydown', function (e) {
