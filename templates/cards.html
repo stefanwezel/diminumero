@@ -91,9 +91,9 @@
                     <span>{{ get_text('cards_share_btn') }}</span>
                 </button>
                 <button type="button"
-                        class="cards-dashboard-toggle"
+                        class="cards-dashboard-toggle cards-dashboard-toggle-open"
                         id="cards-dashboard-toggle"
-                        aria-expanded="false"
+                        aria-expanded="true"
                         aria-controls="cards-dashboard-panel">
                     <span class="cards-dashboard-toggle-label">{{ get_text('cards_dashboard_toggle') }}</span>
                     <span class="cards-dashboard-toggle-chevron" aria-hidden="true">▾</span>
@@ -104,8 +104,7 @@
         {% if cards %}
         <section class="cards-dashboard-section"
                  id="cards-dashboard-panel"
-                 aria-labelledby="cards-dashboard-toggle"
-                 hidden>
+                 aria-labelledby="cards-dashboard-toggle">
             <div class="cards-dashboard-tiles">
                 <div class="stat-tile">
                     <span class="stat-tile-value">{{ stats.total_cards }}</span>
@@ -155,15 +154,27 @@
             </div>
 
             <div class="cards-dashboard-toplists">
-                {% if stats.weak_cards %}
-                <div class="cards-dashboard-toplist cards-dashboard-toplist-weak">
+                {# Strongest is only shown once the user has cleared at least one
+                   of the earlier sections (new / weak / needs work). #}
+                {% set show_strongest = stats.strongest and not (stats.new_cards and stats.weak_cards and stats.needs_work) %}
+                {% set recap_sections = [
+                    ('new', '', get_text('cards_dashboard_new'), stats.new_cards, stats.buckets.unpracticed),
+                    ('weak', 'cards-dashboard-toplist-weak', get_text('cards_dashboard_weak'), stats.weak_cards, stats.buckets.weak),
+                    ('needs_work', '', get_text('cards_dashboard_top_weak'), stats.needs_work, stats.buckets.medium),
+                ] %}
+                {% if show_strongest %}
+                {% set recap_sections = recap_sections + [('strongest', '', get_text('cards_dashboard_top_strong'), stats.strongest, stats.buckets.strong)] %}
+                {% endif %}
+                {% for recap_value, extra_class, title, section_cards, total in recap_sections %}
+                {% if section_cards %}
+                <div class="cards-dashboard-toplist {{ extra_class }}">
                     <h3 class="cards-dashboard-toplist-title">
-                        {{ get_text('cards_dashboard_weak') }}
-                        <span class="cards-dashboard-toplist-count">({{ stats.buckets.weak }})</span>
+                        {{ title }}
+                        <span class="cards-dashboard-toplist-count">({{ total }})</span>
                     </h3>
                     <ul class="cards-dashboard-toplist-list">
-                        {% for card in stats.weak_cards %}
-                        <li class="cards-dashboard-toplist-item">
+                        {% for card in section_cards %}
+                        <li class="cards-dashboard-toplist-item{% if loop.index > 10 %} cards-dashboard-toplist-item-extra{% endif %}">
                             <div class="cards-dashboard-toplist-text">
                                 <span class="cards-dashboard-toplist-front">{{ card.front }}</span>
                                 <span class="cards-dashboard-toplist-back">{{ card.back }}</span>
@@ -172,70 +183,27 @@
                         </li>
                         {% endfor %}
                     </ul>
+                    {% if total > 10 %}
+                    <button type="button" class="cards-dashboard-expand"
+                            aria-expanded="false"
+                            aria-label="{{ get_text('cards_dashboard_show_all') }}">
+                        <span class="cards-dashboard-expand-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    {% endif %}
                     <form method="POST" action="{{ url_for('cards_practice_start') }}"
                           class="cards-dashboard-recap-form">
-                        <input type="hidden" name="recap" value="weak">
+                        <input type="hidden" name="recap" value="{{ recap_value }}">
                         <input type="hidden" name="direction" value="back_to_front">
-                        <input type="hidden" name="sampling_mode" value="prioritized">
+                        <input type="hidden" name="sampling_mode" value="random">
                         <input type="hidden" name="difficulty" value="hardcore">
+                        <input type="hidden" name="count" value="10">
                         <button type="submit" class="btn btn-primary cards-dashboard-recap-btn">
                             {{ get_text('cards_dashboard_recap_btn') }}
                         </button>
                     </form>
                 </div>
                 {% endif %}
-                {% if stats.weakest %}
-                <div class="cards-dashboard-toplist">
-                    <h3 class="cards-dashboard-toplist-title">{{ get_text('cards_dashboard_top_weak') }}</h3>
-                    <ul class="cards-dashboard-toplist-list">
-                        {% for card in stats.weakest %}
-                        <li class="cards-dashboard-toplist-item">
-                            <div class="cards-dashboard-toplist-text">
-                                <span class="cards-dashboard-toplist-front">{{ card.front }}</span>
-                                <span class="cards-dashboard-toplist-back">{{ card.back }}</span>
-                            </div>
-                            {{ progress_ring(card) }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    <form method="POST" action="{{ url_for('cards_practice_start') }}"
-                          class="cards-dashboard-recap-form">
-                        <input type="hidden" name="recap" value="weakest">
-                        <input type="hidden" name="direction" value="back_to_front">
-                        <input type="hidden" name="sampling_mode" value="prioritized">
-                        <input type="hidden" name="difficulty" value="hardcore">
-                        <button type="submit" class="btn btn-primary cards-dashboard-recap-btn">
-                            {{ get_text('cards_dashboard_recap_btn') }}
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
-                {% if stats.strongest %}
-                <div class="cards-dashboard-toplist">
-                    <h3 class="cards-dashboard-toplist-title">{{ get_text('cards_dashboard_top_strong') }}</h3>
-                    <ul class="cards-dashboard-toplist-list">
-                        {% for card in stats.strongest %}
-                        <li class="cards-dashboard-toplist-item">
-                            <div class="cards-dashboard-toplist-text">
-                                <span class="cards-dashboard-toplist-front">{{ card.front }}</span>
-                                <span class="cards-dashboard-toplist-back">{{ card.back }}</span>
-                            </div>
-                            {{ progress_ring(card) }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    <form method="POST" action="{{ url_for('cards_practice_start') }}"
-                          class="cards-dashboard-recap-form">
-                        <input type="hidden" name="recap" value="strongest">
-                        <input type="hidden" name="direction" value="back_to_front">
-                        <input type="hidden" name="sampling_mode" value="prioritized">
-                        <input type="hidden" name="difficulty" value="hardcore">
-                        <button type="submit" class="btn btn-primary cards-dashboard-recap-btn">
-                            {{ get_text('cards_dashboard_recap_btn') }}
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
             <script type="application/json" id="cards-stats-data">{{ stats_json|safe }}</script>
             {% else %}
@@ -353,6 +321,21 @@
     var btn=document.getElementById('cards-dashboard-toggle');
     var panel=document.getElementById('cards-dashboard-panel');
     if(!btn||!panel)return;
+    // The panel is open by default, so draw the charts on load. Wait for
+    // DOMContentLoaded so the deferred cards_dashboard.js has registered
+    // window.__initCardsDashboardCharts before we call it.
+    if(btn.getAttribute('aria-expanded')==='true'){
+        var drawCharts=function(){
+            if(typeof window.__initCardsDashboardCharts==='function'){
+                window.__initCardsDashboardCharts();
+            }
+        };
+        if(document.readyState==='loading'){
+            document.addEventListener('DOMContentLoaded',drawCharts);
+        }else{
+            drawCharts();
+        }
+    }
     btn.addEventListener('click',function(){
         var open=btn.getAttribute('aria-expanded')==='true';
         if(open){
@@ -370,6 +353,33 @@
             }
         }
     });
+
+    // Fold-out: each "show all" chevron reveals the hidden extra rows.
+    document.querySelectorAll('.cards-dashboard-expand').forEach(function(b){
+        b.addEventListener('click',function(){
+            var list=b.closest('.cards-dashboard-toplist');
+            if(!list)return;
+            var open=b.getAttribute('aria-expanded')==='true';
+            b.setAttribute('aria-expanded',open?'false':'true');
+            list.classList.toggle('cards-dashboard-toplist-expanded',!open);
+        });
+    });
+
+    // Recap submits use the live Direction/Difficulty/count from the practice
+    // form (sampling is fixed to random server-side).
+    var practiceForm=document.querySelector('.cards-practice-form');
+    if(practiceForm){
+        document.querySelectorAll('.cards-dashboard-recap-form').forEach(function(f){
+            f.addEventListener('submit',function(){
+                var dir=practiceForm.querySelector('input[name="direction"]:checked');
+                var diff=practiceForm.querySelector('input[name="difficulty"]:checked');
+                var cnt=practiceForm.querySelector('input[name="count"]');
+                if(dir)f.querySelector('input[name="direction"]').value=dir.value;
+                if(diff)f.querySelector('input[name="difficulty"]').value=diff.value;
+                if(cnt)f.querySelector('input[name="count"]').value=cnt.value;
+            });
+        });
+    }
 }());
 </script>
 {% endif %}

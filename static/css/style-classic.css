@@ -3337,17 +3337,22 @@ html {
 .cards-dashboard-toplist-front {
     color: #1e293b;
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .cards-dashboard-toplist-back {
     color: #475569;
     font-size: 0.9rem;
+}
+
+/* Long card text fades out towards the score ring instead of being clipped
+ * abruptly behind it. The mask is a no-op for text that doesn't reach the
+ * fade zone, so short cards render normally. */
+.cards-dashboard-toplist-front,
+.cards-dashboard-toplist-back {
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
 }
 
 .cards-dashboard-toplist-count {
@@ -3370,6 +3375,39 @@ html {
     width: 100%;
     padding: 8px 12px;
     font-size: 0.9rem;
+}
+
+.cards-dashboard-toplist-item-extra {
+    display: none;
+}
+
+.cards-dashboard-toplist-expanded .cards-dashboard-toplist-item-extra {
+    display: flex;
+}
+
+.cards-dashboard-expand {
+    width: 100%;
+    margin-top: 10px;
+    padding: 4px 12px;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.cards-dashboard-expand:hover {
+    color: #1e293b;
+}
+
+.cards-dashboard-expand-chevron {
+    display: inline-block;
+    font-size: 1.1rem;
+    transition: transform 0.2s ease;
+}
+
+.cards-dashboard-toplist-expanded .cards-dashboard-expand-chevron {
+    transform: rotate(180deg);
 }
 
 @media (max-width: 1100px) {

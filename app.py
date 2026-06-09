@@ -735,7 +735,10 @@ def _available_audio_numbers(lang_code):
 @app.route("/<lang_code>/listen/start", methods=["POST"])
 def listen_start(lang_code):
     """Initialize a new Listening session."""
-    if not is_language_ready(lang_code) or lang_code not in get_languages_with_audio_mode():
+    if (
+        not is_language_ready(lang_code)
+        or lang_code not in get_languages_with_audio_mode()
+    ):
         flash(get_text("flash_invalid_language"), "error")
         return redirect(url_for("index"))
 
@@ -766,7 +769,10 @@ def listen_start(lang_code):
 @app.route("/<lang_code>/listen", methods=["GET", "POST"])
 def listen_quiz(lang_code):
     """Listening quiz: play a number, user types the digits."""
-    if not is_language_ready(lang_code) or lang_code not in get_languages_with_audio_mode():
+    if (
+        not is_language_ready(lang_code)
+        or lang_code not in get_languages_with_audio_mode()
+    ):
         return redirect(url_for("index"))
 
     if session.get("learn_language") != lang_code or session.get("mode") != "audio":
@@ -1097,15 +1103,23 @@ def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
             buckets["strong"] += 1
 
     practiced = [c for c in user_cards if c.score is not None]
-    weakest = sorted(practiced, key=lambda c: (c.score, -c.times_practiced))[:5]
-    strongest = sorted(practiced, key=lambda c: (-c.score, -c.times_practiced))[:5]
-    # Strict "weak" filter: only cards under 50% accuracy. Same threshold as
-    # the buckets["weak"] count and the weak_only practice CTA, so this column
-    # always lines up with the (N) badge on the button.
-    weak_cards = sorted(
-        [c for c in practiced if c.score < 0.5],
-        key=lambda c: (c.score, -c.times_practiced),
-    )[:5]
+    # The three dashboard lists map to the three non-unpracticed buckets so each
+    # is a well-defined, disjoint category (a card lives in exactly one). Each
+    # list is shuffled so the on-page preview shows a *random* sample of the
+    # category; the template caps the visible rows and folds out the rest.
+    rng = secrets.SystemRandom()
+    new_cards = [c for c in user_cards if c.score is None]
+    weak_cards = [c for c in practiced if c.score < 0.5]
+    needs_work = [c for c in practiced if 0.5 <= c.score < 0.8]
+    strongest = [c for c in practiced if c.score >= 0.8]
+    rng.shuffle(new_cards)
+    rng.shuffle(weak_cards)
+    rng.shuffle(needs_work)
+    rng.shuffle(strongest)
+
+    # The "Top weak" bar chart stays a genuine ranking of the lowest scorers,
+    # independent of the shuffled preview lists above.
+    chart_weakest = sorted(practiced, key=lambda c: (c.score, -c.times_practiced))[:5]
 
     stats = {
         "total_cards": total_cards,
@@ -1114,8 +1128,9 @@ def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
         "overall_accuracy": overall_accuracy,
         "unpracticed": buckets["unpracticed"],
         "buckets": buckets,
+        "new_cards": new_cards,
         "weak_cards": weak_cards,
-        "weakest": weakest,
+        "needs_work": needs_work,
         "strongest": strongest,
     }
 
@@ -1130,7 +1145,7 @@ def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
                 "score": c.score,
                 "times_practiced": c.times_practiced,
             }
-            for c in weakest
+            for c in chart_weakest
         ],
     }
     stats_json = json.dumps(json_payload).replace("</", "<\\/")
@@ -1498,44 +1513,41 @@ def cards_practice_start():
         count = 10
     count = max(1, min(count, 100))
     recap = request.form.get("recap")
-    if recap not in ("weak", "weakest", "strongest"):
+    # "weakest" is the legacy name for the "needs work" (medium) bucket.
+    if recap == "weakest":
+        recap = "needs_work"
+    if recap not in ("new", "weak", "needs_work", "strongest"):
         recap = None
     # Legacy: weak_only=1 maps onto recap=weak so older callers keep working.
     if recap is None and request.form.get("weak_only") in ("1", "true", "on"):
         recap = "weak"
     weak_only = recap == "weak"
     allowed_card_ids: list[int] = []
-    if recap == "weak":
-        weak_cards = [
-            c
-            for c in db.session.query(Card)
-            .filter_by(user_sub=_current_user_sub())
-            .all()
-            if c.score is not None and c.score < 0.5
-        ]
-        if not weak_cards:
-            flash(get_text("cards_flash_no_weak_cards"), "info")
+    if recap is not None:
+        all_cards = db.session.query(Card).filter_by(user_sub=_current_user_sub()).all()
+        if recap == "new":
+            pool = [c for c in all_cards if c.score is None]
+            empty_flash = "cards_flash_need_cards"
+        elif recap == "weak":
+            pool = [c for c in all_cards if c.score is not None and c.score < 0.5]
+            empty_flash = "cards_flash_no_weak_cards"
+        elif recap == "needs_work":
+            pool = [
+                c for c in all_cards if c.score is not None and 0.5 <= c.score < 0.8
+            ]
+            empty_flash = "cards_flash_need_cards"
+        else:  # strongest
+            pool = [c for c in all_cards if c.score is not None and c.score >= 0.8]
+            empty_flash = "cards_flash_need_cards"
+        if not pool:
+            flash(get_text(empty_flash), "info")
             return redirect(url_for("cards"))
-        # Pick a session length that exhausts the weak pool (capped at 100).
-        count = min(len(weak_cards), 100)
-    elif recap in ("weakest", "strongest"):
-        practiced = [
-            c
-            for c in db.session.query(Card)
-            .filter_by(user_sub=_current_user_sub())
-            .all()
-            if c.score is not None
-        ]
-        if recap == "weakest":
-            ordered = sorted(practiced, key=lambda c: (c.score, -c.times_practiced))
-        else:
-            ordered = sorted(practiced, key=lambda c: (-c.score, -c.times_practiced))
-        top = ordered[:5]
-        if not top:
-            flash(get_text("cards_flash_need_cards"), "info")
-            return redirect(url_for("cards"))
-        allowed_card_ids = [c.id for c in top]
-        count = len(allowed_card_ids)
+        # Recap draws a random sample from the whole category. The session size
+        # comes from the "Cards per round" setting (clamped to the pool), and
+        # sampling is forced to random so every card in the bucket is fair game.
+        allowed_card_ids = [c.id for c in pool]
+        sampling_mode = "random"
+        count = min(count, len(allowed_card_ids))
     else:
         have_any = (
             db.session.query(Card.id).filter_by(user_sub=_current_user_sub()).first()
