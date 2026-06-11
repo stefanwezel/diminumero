@@ -84,6 +84,25 @@ class TestCallback:
         with client.session_transaction() as sess:
             assert sess["user"] == SAMPLE_USER
 
+    def test_callback_oauth_error_redirects_to_index(self, client, monkeypatch):
+        from authlib.integrations.base_client.errors import MismatchingStateError
+
+        def fake_authorize_access_token():
+            raise MismatchingStateError()
+
+        monkeypatch.setattr(
+            app_module.oauth.auth0,
+            "authorize_access_token",
+            fake_authorize_access_token,
+        )
+        response = client.get("/callback")
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/"
+        with client.session_transaction() as sess:
+            assert "user" not in sess
+            flashes = sess.get("_flashes", [])
+        assert any("Login failed" in message for _, message in flashes)
+
 
 class TestLogout:
     def test_logout_clears_user_and_redirects_to_auth0(self, client):

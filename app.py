@@ -16,6 +16,7 @@ from flask import (
     flash,
     jsonify,
 )
+from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask_migrate import Migrate
@@ -981,7 +982,16 @@ def login():
 @app.route("/callback")
 def callback():
     """Handle the Auth0 OIDC callback and store the user on the session."""
-    token = oauth.auth0.authorize_access_token()
+    # OAuthError covers both upstream errors relayed by Auth0 (?error=...) and
+    # Authlib's state mismatch (double login tabs, back button, lost session
+    # cookie). Redirect to the index rather than /login: with an active Auth0
+    # SSO session a persistent failure would otherwise redirect-loop.
+    try:
+        token = oauth.auth0.authorize_access_token()
+    except OAuthError as exc:
+        app.logger.warning("Auth0 callback failed: %s", exc)
+        flash(get_text("flash_login_failed"), "error")
+        return redirect(url_for("index"))
     session["user"] = token["userinfo"]
     # If the user was sent to /login from a share URL, route them back to it.
     pending_token = session.pop("pending_import_token", None)
