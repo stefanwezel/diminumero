@@ -1069,24 +1069,6 @@ class TestCardsDashboard:
         assert "cards_dashboard.js" in body
         assert 'id="cards-stats-data"' in body
 
-    def test_tiles_show_aggregate_counts(self, client):
-        # 4 correct out of 5 → 80% accuracy.
-        _make_card_with_history("a", "A", "11110")
-        # Unpracticed card.
-        make_card(SAMPLE_USER["sub"], "b", "B")
-        login(client)
-        body = client.get("/cards").data.decode("utf-8")
-        # The tiles render the raw integers and a percent. We don't depend on
-        # exact whitespace, just that the values land in the dashboard block.
-        dashboard = body.split("cards-dashboard-section", 1)[1].split(
-            "cards-list-section", 1
-        )[0]
-        assert ">2<" in dashboard  # total cards
-        assert ">5<" in dashboard  # total attempts
-        assert "80%" in dashboard  # overall accuracy
-        # One card is unpracticed.
-        assert ">1<" in dashboard
-
     def test_buckets_classify_scores_correctly(self, client):
         with flask_app.app_context():
             cards = [

@@ -3183,18 +3183,6 @@ html {
     display: none;
 }
 
-.cards-dashboard-tiles {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-    margin: 16px 0 24px;
-}
-
-.stat-tile-weak {
-    background-color: #fef2f2;
-    border-color: #fca5a5;
-}
-
 .cards-dashboard-cta {
     display: flex;
     justify-content: center;
@@ -3212,30 +3200,6 @@ html {
     font-weight: 700;
     opacity: 0.7;
     font-size: 0.9em;
-}
-
-.stat-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 16px 18px;
-    background-color: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-}
-
-.stat-tile-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #1e293b;
-    line-height: 1.1;
-}
-
-.stat-tile-label {
-    font-size: 0.85rem;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .cards-dashboard-charts {
@@ -3419,9 +3383,6 @@ html {
 }
 
 @media (max-width: 800px) {
-    .cards-dashboard-tiles {
-        grid-template-columns: repeat(2, 1fr);
-    }
     .cards-dashboard-charts {
         grid-template-columns: 1fr;
     }

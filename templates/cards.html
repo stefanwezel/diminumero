@@ -105,33 +105,6 @@
         <section class="cards-dashboard-section"
                  id="cards-dashboard-panel"
                  aria-labelledby="cards-dashboard-toggle">
-            <div class="cards-dashboard-tiles">
-                <div class="stat-tile">
-                    <span class="stat-tile-value">{{ stats.total_cards }}</span>
-                    <span class="stat-tile-label">{{ get_text('cards_dashboard_total_cards') }}</span>
-                </div>
-                <div class="stat-tile">
-                    <span class="stat-tile-value">{{ stats.total_attempts }}</span>
-                    <span class="stat-tile-label">{{ get_text('cards_dashboard_total_attempts') }}</span>
-                </div>
-                <div class="stat-tile">
-                    <span class="stat-tile-value">
-                        {%- if stats.overall_accuracy is not none -%}
-                            {{ (stats.overall_accuracy * 100)|round(0, 'common')|int }}%
-                        {%- else -%}—{%- endif -%}
-                    </span>
-                    <span class="stat-tile-label">{{ get_text('cards_dashboard_overall_accuracy') }}</span>
-                </div>
-                <div class="stat-tile stat-tile-weak">
-                    <span class="stat-tile-value">{{ stats.buckets.weak }}</span>
-                    <span class="stat-tile-label">{{ get_text('cards_dashboard_weak') }}</span>
-                </div>
-                <div class="stat-tile">
-                    <span class="stat-tile-value">{{ stats.unpracticed }}</span>
-                    <span class="stat-tile-label">{{ get_text('cards_dashboard_unpracticed') }}</span>
-                </div>
-            </div>
-
             {% if stats.total_attempts > 0 %}
             <div class="cards-dashboard-charts"
                  data-i18n-bucket-weak="{{ get_text('cards_dashboard_bucket_weak') }}"
