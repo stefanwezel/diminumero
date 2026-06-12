@@ -93,6 +93,15 @@ VOICE_POOLS = {
         "7iqXtOF3wl3pomwXFY7G",
         "tZ2oxQJXfOrGrN7iKnta",
     ],
+    "sv": [
+        "kPdGSxhZAqy4bmPAf9iJ",
+        "4xkUqaR9MYOJHoaC1Nak",
+        "UzJFCns81AYkRdrnw0ql",
+        "1Iztu4UHnTb9SUjJcpS1",
+        "tomkxGQGz4b1kE0EM722",
+        "HqmZnnvy6tCQd8EGWKRT",
+        "DSL3PSQNPbkOavwmnYl1",
+    ],
 }
 
 

@@ -315,6 +315,7 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇸🇪",
         "ready": True,
         "has_learn_materials": True,
+        "has_audio_mode": True,
         "description": "Learn Swedish numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
