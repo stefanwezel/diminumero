@@ -1462,9 +1462,18 @@ def _pick_best_validation(results: list[dict]) -> dict:
 
 
 def _pick_weighted_card(candidates: list[Card]) -> Card:
-    """Pick a card weighted toward low scores; unpracticed cards get max weight."""
+    """Pick a card weighted toward low scores and few practice attempts.
+
+    Weight = (1 - score) + 1/(1 + times_practiced) + epsilon. The scarcity
+    term keeps lightly-practiced cards in rotation: without it, a card
+    answered correctly once (score 1.0) would drop to the epsilon floor and
+    effectively never resurface, since its score can only change when it is
+    sampled again. Unpracticed cards get the maximum weight (2 + epsilon).
+    """
     weights = [
-        (1.0 - (card.score if card.score is not None else 0.0)) + PRIORITIZED_EPSILON
+        (1.0 - (card.score if card.score is not None else 0.0))
+        + 1.0 / (1.0 + card.times_practiced)
+        + PRIORITIZED_EPSILON
         for card in candidates
     ]
     chosen = secrets.SystemRandom().choices(candidates, weights=weights, k=1)[0]

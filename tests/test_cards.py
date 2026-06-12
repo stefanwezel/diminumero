@@ -771,7 +771,7 @@ class TestCardScoring:
             mastered.recent_results = "1" * 10
             db.session.commit()
 
-        # Weights: low card ≈ 1.1, high card ≈ 0.1 (11:1 expected).
+        # Weights: unpracticed card ≈ 2.1, mastered card ≈ 0.19 (~11:1).
         picks = []
         for _ in range(200):
             with flask_app.test_request_context():
@@ -788,6 +788,48 @@ class TestCardScoring:
         # 70% lower bound: well below the ~92% expectation but high enough
         # to fail a uniform-sampling regression (50%).
         assert low_count >= 140, f"low-score card was picked only {low_count}/200 times"
+
+    def test_prioritized_sampling_favors_rarely_practiced_cards(self, client):
+        """Same score, different practice counts: the rarely practiced card
+        must be sampled more often. Guards the scarcity term — without it a
+        card answered correctly once would weigh the same as a 50-attempt
+        veteran and effectively never resurface."""
+        from flask import session as flask_session
+
+        from app import _load_next_card
+
+        veteran_id = make_card(SAMPLE_USER["sub"], "veteran", "card")
+        rookie_id = make_card(SAMPLE_USER["sub"], "rookie", "card")
+        with flask_app.app_context():
+            veteran = db.session.get(Card, veteran_id)
+            veteran.times_practiced = 50
+            veteran.times_correct = 50
+            veteran.recent_results = "1" * 10
+            rookie = db.session.get(Card, rookie_id)
+            rookie.times_practiced = 1
+            rookie.times_correct = 1
+            rookie.recent_results = "1"
+            db.session.commit()
+
+        # Both have score 1.0. Weights: rookie ≈ 0.6, veteran ≈ 0.12 (~5:1).
+        picks = []
+        for _ in range(200):
+            with flask_app.test_request_context():
+                flask_session["user"] = SAMPLE_USER
+                state = {
+                    "direction": "front_to_back",
+                    "sampling_mode": "prioritized",
+                    "asked_ids": [],
+                    "current_card_id": None,
+                }
+                card = _load_next_card(state)
+                picks.append(card.id)
+        rookie_count = picks.count(rookie_id)
+        # ~83% expected; 65% bound is robust to variance but fails a
+        # regression to score-only weighting (50%).
+        assert rookie_count >= 130, (
+            f"rarely-practiced card was picked only {rookie_count}/200 times"
+        )
 
 
 class TestPrioritizedSamplingHttp:
@@ -882,10 +924,11 @@ class TestPrioritizedSamplingHttp:
 
         low_picks = sum(1 for cid in all_picks if cid in low_ids)
         high_picks = sum(1 for cid in all_picks if cid in high_ids)
-        # Expected ratio is ~11:1 (low weight 1.1 vs high weight 0.1), so over
-        # 90 picks we'd expect roughly 82 low / 8 high. Assert a much weaker
-        # bound (3:1) so the test is robust against random variance but still
-        # catches a regression to uniform sampling (which would give 1:1).
+        # Both groups start at 10 practices, so the scarcity terms cancel and
+        # the weight ratio is ~1.19:0.19 (~6:1), drifting toward 11:1 as
+        # times_practiced grows over the run. Assert a much weaker bound (3:1)
+        # so the test is robust against random variance but still catches a
+        # regression to uniform sampling (which would give 1:1).
         assert low_picks > high_picks * 3, (
             f"prioritized sampling not biased through HTTP: "
             f"low={low_picks} high={high_picks} of {len(all_picks)}"
