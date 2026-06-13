@@ -16,12 +16,15 @@ An interactive web application to practice number translations in multiple langu
 - **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Languages](ADD_LANGUAGE.md))
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
-- **Three Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), and Hardcore
+- **Four Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), Hardcore (stricter validation), and Listening (hear a spoken number and type the digits)
+- **Listening Practice**: For audio-enabled languages (Spanish, German, French, Japanese, Portuguese, Swedish), each number is voiced by a pool of ElevenLabs voices; the quiz autoplays the clip and you type what you hear
+- **Speed Bonus & Splash Rewards**: Finishing fast (under a per-mode time threshold) or perfectly triggers a celebratory overlay on the results page
 - **Index Cards**: Sign in with Auth0 to create your own free-form vocabulary cards, practice them with the same word-by-word validator the number quiz uses, sort and edit them in place, and share whole decks via a link (recipients see a dedup preview before importing)
 - **Per-Card Scoring & Dashboard**: A rolling 10-attempt score per card powers a foldable performance dashboard (totals, accuracy, distribution chart, weakest cards) plus a one-click "Practice weak cards" CTA that pre-fills a hardcore back→front session over cards scoring below 50%
 - **Theme Toggle**: Default dark-purple palette plus a classic light theme, toggled from the header and persisted in `localStorage`
 - **Feedback Poll**: In-app modal collects colour-scheme preference, cards-awareness, device, and free-form feedback; responses land in the `poll_responses` table and can be analysed via `tools/analyze_poll.py`
 - **Multilingual UI**: Interface available in English, German, Spanish, Italian, French, Portuguese, Arabic, and Ukrainian
+- **Cookie Consent**: A consent banner discloses Google AdSense usage and remembers the choice in `localStorage`
 - **Responsive Design**: Works seamlessly on desktop and mobile, with touch-friendly interactions
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
 
@@ -77,6 +80,7 @@ diminumero/
 │   ├── quiz_easy.html
 │   ├── quiz_advanced.html
 │   ├── quiz_hardcore.html
+│   ├── quiz_listen.html         # Listening (audio) mode
 │   ├── results.html
 │   ├── cards.html              # List + create + foldable dashboard
 │   ├── cards_practice.html
@@ -84,7 +88,13 @@ diminumero/
 │   ├── cards_import.html       # Shared-deck import preview
 │   ├── _poll_modal.html        # Feedback poll modal
 │   └── _progress_ring.html     # Reusable score ring partial
+├── tools/
+│   ├── generate_audio.py       # ElevenLabs TTS → static/audio/<lang>/<n>.mp3
+│   ├── analyze_poll.py
+│   ├── stress_test.py
+│   └── analyze_stress_test.py
 └── static/
+    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv)
     ├── css/
     │   ├── style.css            # Default dark-purple palette
     │   └── style-classic.css    # Classic light theme
@@ -92,12 +102,14 @@ diminumero/
         ├── quiz.js              # Easy mode interactions
         ├── quiz_advanced.js     # Live validation logic
         ├── quiz_hardcore.js     # Hardcore mode logic
+        ├── quiz_listen.js       # Listening mode autoplay + reveal
         ├── cards.js              # Card CRUD (in-place via JSON API)
         ├── cards_practice.js     # Card practice live validation
         ├── cards_practice_prefs.js  # Persist practice preferences
         ├── cards_sort.js         # Client-side card sorting
         ├── cards_share.js        # Share-link modal + clipboard
         ├── cards_dashboard.js    # Foldable performance panel + Chart.js
+        ├── cookie-banner.js      # Cookie consent banner
         └── poll.js               # Feedback poll modal
 ```
 
@@ -120,6 +132,13 @@ diminumero/
 ### Hardcore Mode
 Same as Advanced mode but with stricter validation requirements for an extra challenge.
 
+### Listening Mode (Audio-enabled languages)
+1. **Start Listening**: Pick an audio-enabled language (Spanish, German, French, Japanese, Portuguese, Swedish) and choose Listening
+2. **Hear the Number**: A pre-generated clip autoplays, voiced by a rotating pool of ElevenLabs voices; replay it as often as you like
+3. **Type the Digits**: Enter what you heard as a number — your input is reduced to digits before checking
+4. **Reveal**: Stuck? Reveal the spelled-out answer, then advance to the next clip
+5. **Review Results**: View your final score, with a speed bonus if you finished quickly and accurately
+
 ### Index Cards (Auth required)
 1. **Sign In**: Click "Login" — you're bounced to Auth0's Universal Login
 2. **Create & Organise Cards**: On `/cards`, add front/back pairs (e.g. `el perro` / `the dog`); edit and delete in place; sort the list client-side
@@ -135,6 +154,7 @@ Same as Advanced mode but with stricter validation requirements for an extra cha
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
 - **Styling**: Custom CSS with responsive design
 - **Number Generation**: Algorithmic grammar rules per language
+- **Audio**: ElevenLabs cloud TTS (`eleven_turbo_v2_5`) for Listening-mode pronunciation
 
 ## 📝 Regenerating Numbers
 
@@ -145,6 +165,19 @@ python languages/<lang_code>/generate_numbers.py  # e.g., es, de, fr
 ```
 
 This creates a fresh `numbers.py` in the respective language directory with proper translations.
+
+## 🔊 Generating Listening Audio
+
+The Listening quiz plays pre-generated MP3s stored under `static/audio/<lang>/<n>.mp3`. To (re)generate them for a language, set `API_KEY_11_LABS` in `.env` and run:
+
+```bash
+uv run tools/generate_audio.py --lang es        # Spanish, skips files that already exist
+uv run tools/generate_audio.py --lang ja --force # re-render everything
+uv run tools/generate_audio.py --lang fr --only 42  # synthesize a single number
+uv run tools/generate_audio.py --lang pt --limit 10 # cap the run (quick test)
+```
+
+Each number is voiced by a speaker drawn at random from the language's `VOICE_POOLS` entry in `tools/generate_audio.py`, so a deck mixes voices instead of using one speaker. To enable Listening for a new language, add its `VOICE_POOLS` entry, generate the audio, and set `has_audio_mode: True` on its entry in `languages/config.py`.
 
 ## 🔥 Stress Testing
 
