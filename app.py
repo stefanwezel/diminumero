@@ -427,7 +427,13 @@ def quiz_easy(lang_code):
 
     # GET request - display question
     # Check if quiz should end
-    if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+    # End the quiz only once no question is still mounted. After a reveal the
+    # current question stays in the session (with total already incremented) so
+    # it must still render; the "next" POST is what clears it and ends the round.
+    if (
+        "current_number" not in session
+        and session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ
+    ):
         return redirect(url_for("results", lang_code=lang_code))
 
     # Check if we already have a current question (page refresh)
@@ -547,7 +553,13 @@ def quiz_advanced(lang_code):
 
     # GET request - display question
     # Check if quiz should end
-    if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+    # End the quiz only once no question is still mounted. After a reveal the
+    # current question stays in the session (with total already incremented) so
+    # it must still render; the "next" POST is what clears it and ends the round.
+    if (
+        "current_number" not in session
+        and session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ
+    ):
         return redirect(url_for("results", lang_code=lang_code))
 
     # Check if we already have a current question (page refresh)
@@ -679,7 +691,13 @@ def quiz_hardcore(lang_code):
 
     # GET request - display question
     # Check if quiz should end
-    if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+    # End the quiz only once no question is still mounted. After a reveal the
+    # current question stays in the session (with total already incremented) so
+    # it must still render; the "next" POST is what clears it and ends the round.
+    if (
+        "current_number" not in session
+        and session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ
+    ):
         return redirect(url_for("results", lang_code=lang_code))
 
     # Check if we already have a current question (page refresh)
@@ -837,7 +855,13 @@ def listen_quiz(lang_code):
 
         return redirect(url_for("listen_quiz", lang_code=lang_code))
 
-    if session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ:
+    # End the quiz only once no question is still mounted. After a reveal the
+    # current question stays in the session (with total already incremented) so
+    # it must still render; the "next" POST is what clears it and ends the round.
+    if (
+        "current_number" not in session
+        and session.get("total_questions", 0) >= QUESTIONS_PER_QUIZ
+    ):
         return redirect(url_for("results", lang_code=lang_code))
 
     if "current_number" in session and "correct_answer" in session:
@@ -1671,12 +1695,14 @@ def cards_practice():
 
     # GET: load (or re-load) current card.
     count = state.get("count", 10)
-    # End the round once the user has been asked `count` questions, even if
-    # more unseen cards exist in their deck.
-    if state["total"] >= count:
-        return redirect(url_for("cards_practice_results"))
 
     if state.get("current_card_id") is None:
+        # End the round once the user has been asked `count` questions, even if
+        # more unseen cards exist in their deck. Checked only when no card is
+        # mounted: after a reveal the card stays mounted (with total already
+        # incremented) so it must still render; the "next" POST clears it.
+        if state["total"] >= count:
+            return redirect(url_for("cards_practice_results"))
         next_card = _load_next_card(state)
         if next_card is None:
             _save_practice_state(state)
