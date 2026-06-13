@@ -376,7 +376,10 @@ class TestPracticeFlow:
     def test_reveal_counts_as_attempted_no_score(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")
         login(client)
-        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "reveal_mode": "click"},
+        )
         client.get("/cards/practice")
         with client.session_transaction() as sess:
             pinned_card_id = sess["card_practice"]["current_card_id"]
@@ -407,7 +410,10 @@ class TestPracticeFlow:
     def test_reveal_renders_answer_and_next_form(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "tablecloth-distinct-answer")
         login(client)
-        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "reveal_mode": "click"},
+        )
         client.get("/cards/practice")
         client.post("/cards/practice", data={"reveal": "1"})
 
@@ -433,6 +439,63 @@ class TestPracticeFlow:
             state = sess.get("card_practice")
         if state is not None:
             assert state["current_revealed"] is False
+
+    def test_reveal_mode_defaults_to_type(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["reveal_mode"] == "type"
+
+    def test_type_mode_reveal_input_rendered(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "reveal_mode": "type"},
+        )
+        client.get("/cards/practice")
+        client.post("/cards/practice", data={"reveal": "1"})
+        body = client.get("/cards/practice").data.decode("utf-8")
+        # Type mode shows a retype input inside the reveal modal.
+        assert 'id="revealInput"' in body
+        assert "cards_practice_reveal.js" in body
+
+    def test_type_mode_next_requires_correct_answer(self, client):
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "reveal_mode": "type"},
+        )
+        client.get("/cards/practice")
+        with client.session_transaction() as sess:
+            pinned_card_id = sess["card_practice"]["current_card_id"]
+        client.post("/cards/practice", data={"reveal": "1"})
+
+        # Next with a blank/wrong answer must NOT advance: the card stays
+        # mounted and revealed.
+        client.post("/cards/practice", data={"next": "1"})
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["current_revealed"] is True
+        assert state["current_card_id"] == pinned_card_id
+        assert pinned_card_id not in state["asked_ids"]
+
+        client.post("/cards/practice", data={"next": "1", "answer": "wrong"})
+        with client.session_transaction() as sess:
+            assert sess["card_practice"]["current_revealed"] is True
+
+        # The correct typed answer advances. Reveal already recorded the
+        # attempt, so retyping does not add to the score.
+        client.post("/cards/practice", data={"next": "1", "answer": "table"})
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["current_revealed"] is False
+        assert state["current_card_id"] is None
+        assert pinned_card_id in state["asked_ids"]
+        assert state["total"] == 1
+        assert state["score"] == 0
 
     def test_validate_api_returns_word_feedback(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "small table")
@@ -709,7 +772,7 @@ class TestCardScoring:
         with client.session_transaction() as sess:
             assert sess["card_practice"]["difficulty"] == "hardcore"
 
-    def test_difficulty_defaults_invalid_to_hardcore(self, client):
+    def test_difficulty_defaults_invalid_to_advanced(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")
         login(client)
         client.post(
@@ -717,10 +780,10 @@ class TestCardScoring:
             data={"direction": "front_to_back", "difficulty": "nope"},
         )
         with client.session_transaction() as sess:
-            assert sess["card_practice"]["difficulty"] == "hardcore"
+            assert sess["card_practice"]["difficulty"] == "advanced"
         client.post("/cards/practice/start", data={"direction": "front_to_back"})
         with client.session_transaction() as sess:
-            assert sess["card_practice"]["difficulty"] == "hardcore"
+            assert sess["card_practice"]["difficulty"] == "advanced"
 
     def test_hardcore_leaks_correct_answer_to_template(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "table")

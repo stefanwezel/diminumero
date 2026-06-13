@@ -2745,6 +2745,15 @@ html {
     box-shadow: 0 0 0 3px rgba(229, 79, 109, 0.18);
 }
 
+/* Compact secondary action — matches the small uppercase label font used by
+   the "Cards per round" control rather than the full-size .btn type. */
+.cards-practice-reset {
+    align-self: center;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
 .cards-create-form {
     display: flex;
     flex-direction: column;
@@ -3189,7 +3198,15 @@ html {
 
 .reveal-modal-actions {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.reveal-modal-input {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
 }
 
 .reveal-modal-next {

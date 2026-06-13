@@ -66,13 +66,33 @@
         <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
         <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
         <div class="reveal-modal-answer">{{ correct_answer }}</div>
-        <form action="{{ url_for('cards_practice') }}" method="POST" class="reveal-modal-actions">
+        <form action="{{ url_for('cards_practice') }}" method="POST" class="reveal-modal-actions" id="revealForm">
+            {% if reveal_mode == 'type' %}
+            <input
+                type="text"
+                name="answer"
+                id="revealInput"
+                class="answer-input reveal-modal-input"
+                placeholder="{{ get_text('cards_reveal_type_placeholder') }}"
+                autocomplete="off"
+                autocapitalize="off"
+                autofocus
+                data-correct-answer="{{ correct_answer }}"
+            >
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next">
+                {{ get_text('cards_reveal_next_btn') }}
+            </button>
+            {% else %}
             <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
                 {{ get_text('cards_reveal_next_btn') }}
             </button>
+            {% endif %}
         </form>
     </div>
 </div>
+{% if reveal_mode == 'type' %}
+<script src="{{ url_for('static', filename='js/cards_practice_reveal.js') }}"></script>
+{% endif %}
 {% else %}
 <script src="{{ url_for('static', filename='js/cards_practice.js') }}"></script>
 {% endif %}

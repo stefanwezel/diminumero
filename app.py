@@ -1541,15 +1541,18 @@ def _load_next_card(state: dict) -> Card | None:
 @login_required
 def cards_practice_start():
     """Initialize a new practice session and redirect to the first question."""
-    direction = request.form.get("direction", "front_to_back")
+    direction = request.form.get("direction", "back_to_front")
     if direction not in ("front_to_back", "back_to_front", "random"):
-        direction = "front_to_back"
+        direction = "back_to_front"
     sampling_mode = request.form.get("sampling_mode", "prioritized")
     if sampling_mode not in ("random", "prioritized"):
         sampling_mode = "prioritized"
-    difficulty = request.form.get("difficulty", "hardcore")
+    difficulty = request.form.get("difficulty", "advanced")
     if difficulty not in ("advanced", "hardcore"):
-        difficulty = "hardcore"
+        difficulty = "advanced"
+    reveal_mode = request.form.get("reveal_mode", "type")
+    if reveal_mode not in ("type", "click"):
+        reveal_mode = "type"
     try:
         count = int(request.form.get("count", 10))
     except (TypeError, ValueError):
@@ -1603,6 +1606,7 @@ def cards_practice_start():
         "direction": direction,
         "sampling_mode": sampling_mode,
         "difficulty": difficulty,
+        "reveal_mode": reveal_mode,
         "count": count,
         "weak_only": weak_only,
         "allowed_card_ids": allowed_card_ids,
@@ -1660,6 +1664,21 @@ def cards_practice():
 
         if "next" in request.form:
             # Advance from a revealed card. DB writes already happened on reveal.
+            # In "type" reveal mode the user must retype the shown answer before
+            # advancing, so gate the advance on a correct typed answer (the
+            # client enforces this too, but never trust the client). A wrong or
+            # empty answer keeps the card mounted and revealed.
+            if state.get("reveal_mode", "type") == "type":
+                user_answer = (request.form.get("answer") or "").strip()
+                acceptable = _acceptable_answers(card, prompt_side)
+                if not (
+                    user_answer
+                    and any(
+                        quiz_logic.check_answer_advanced(user_answer, a)
+                        for a in acceptable
+                    )
+                ):
+                    return redirect(url_for("cards_practice"))
             state["current_revealed"] = False
             state["asked_ids"].append(card.id)
             state["current_card_id"] = None
@@ -1737,6 +1756,7 @@ def cards_practice():
         else None,
         difficulty=difficulty,
         revealed=revealed,
+        reveal_mode=state.get("reveal_mode", "type"),
         score=state["score"],
         total=state["total"],
         max_questions=min(count, total_cards),

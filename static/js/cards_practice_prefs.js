@@ -5,6 +5,17 @@
     var DIRECTIONS = ['back_to_front', 'front_to_back', 'random'];
     var SAMPLING_MODES = ['prioritized', 'random'];
     var DIFFICULTIES = ['hardcore', 'advanced'];
+    var REVEAL_MODES = ['type', 'click'];
+    // Single source of truth for the form defaults, mirroring the `checked`
+    // radios / count in templates/cards.html and the server-side fallbacks in
+    // cards_practice_start().
+    var DEFAULTS = {
+        direction: 'back_to_front',
+        sampling_mode: 'prioritized',
+        difficulty: 'advanced',
+        reveal_mode: 'type',
+        count: '10'
+    };
 
     var form = document.querySelector('.cards-practice-form');
     if (!form) return;
@@ -38,6 +49,7 @@
         setRadio('direction', saved.direction, DIRECTIONS);
         setRadio('sampling_mode', saved.sampling_mode, SAMPLING_MODES);
         setRadio('difficulty', saved.difficulty, DIFFICULTIES);
+        setRadio('reveal_mode', saved.reveal_mode, REVEAL_MODES);
         setCount(saved.count);
     }
 
@@ -48,12 +60,26 @@
                 direction: data.get('direction'),
                 sampling_mode: data.get('sampling_mode'),
                 difficulty: data.get('difficulty'),
+                reveal_mode: data.get('reveal_mode'),
                 count: data.get('count')
             }));
         } catch (e) {
             // Storage unavailable (private mode, quota, etc.) — ignore.
         }
     }
+
+    function resetDefaults() {
+        setRadio('direction', DEFAULTS.direction, DIRECTIONS);
+        setRadio('sampling_mode', DEFAULTS.sampling_mode, SAMPLING_MODES);
+        setRadio('difficulty', DEFAULTS.difficulty, DIFFICULTIES);
+        setRadio('reveal_mode', DEFAULTS.reveal_mode, REVEAL_MODES);
+        setCount(DEFAULTS.count);
+        // Drop the saved prefs so a later visit falls back to these defaults.
+        try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+    }
+
+    var resetBtn = form.querySelector('.cards-practice-reset');
+    if (resetBtn) resetBtn.addEventListener('click', resetDefaults);
 
     applyPrefs();
     // pageshow fires on initial load AND when restored from Firefox bfcache.
