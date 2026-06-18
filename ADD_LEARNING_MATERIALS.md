@@ -6,7 +6,7 @@ This guide explains how to contribute learning/tutorial pages for a language tha
 
 Each language can optionally have a **Learn page** — a reference page that teaches users the number patterns for that language before (or alongside) quizzing.
 
-Languages that currently have learn pages: `es`, `fr`, `ja`, `de`, `ko`, `it`, `zh`, `pt`, `tr`, `sv`, `da`, `no`.
+Languages that currently have learn pages: `es`, `fr`, `ja`, `de`, `ko`, `it`, `zh`, `pt`, `tr`, `sv`, `da`, `no`, `cy`, `ga`.
 
 For each language the app looks for a UI-language-specific template first, then falls back to the English version:
 
@@ -42,38 +42,26 @@ cp templates/learn_es_de.html templates/learn_<lang_code>_de.html
 
 Then adapt the content for your language (see [Template Structure](#template-structure) below).
 
-### 2. Update app.py in Four Places
+### 2. Set the `has_learn_materials` Flag
 
-Search `app.py` for the `has_learn_materials` set (it appears in `mode_selection()` and `results()`) and the language guard in `learn()`, then add your language code to all four locations.
+There are **no `app.py` edits**. Set one flag on the language's entry in `languages/config.py`:
 
-**`mode_selection()` — `has_learn_materials`:**
 ```python
-has_learn_materials = lang_code in {
-    "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "<lang_code>",
+"<lang_code>": {
+    ...
+    "has_learn_materials": True,
+    ...
 }
 ```
 
-**`results()` — `has_learn_materials`** (same set, different function):
-```python
-has_learn_materials = lang_code in {
-    "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "<lang_code>",
-}
-```
+`get_languages_with_learn_materials()` derives the enabled list from that flag (combined with `ready: True`). Every consumer reads from it:
 
-**`learn()` — route guard:**
-```python
-if lang_code not in {
-    "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "<lang_code>",
-}:
-    flash(get_text("flash_learn_not_available"), "info")
-    return redirect(url_for("mode_selection", lang_code=lang_code))
-```
+- `mode_selection()` — shows the "Learn" button (`has_learn_materials = lang_code in get_languages_with_learn_materials()`)
+- `results()` — same check, to link the learn page from results
+- `learn()` — route guard redirects to mode selection if the code isn't in the list
+- `sitemap_xml()` — iterates `get_languages_with_learn_materials()` to emit `/<lang>/learn` URLs
 
-**`sitemap_xml()` — learn URL list:**
-```python
-for lc in ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "<lang_code>"]:
-    urls.append((f"{base}/{lc}/learn", "0.7"))
-```
+So flipping the flag wires up all four call sites at once.
 
 ## Template Structure
 
@@ -171,8 +159,7 @@ cp templates/learn_es_en.html templates/learn_tr_en.html
 
 # 2. Edit the file to replace Spanish content with Turkish number patterns
 
-# 3. In app.py, add "tr" to the has_learn_materials set in mode_selection() and results(),
-#    to the guard set in learn(), and to the list in sitemap_xml()
+# 3. In languages/config.py, set "has_learn_materials": True on the "tr" entry
 
 # 4. Run the dev server and navigate to /tr/learn to verify
 uv run flask --app app run --debug
@@ -196,7 +183,7 @@ Before submitting a pull request:
 - [ ] The back link and "Start Quiz" button both use `url_for()` (not hardcoded URLs)
 - [ ] All number examples are accurate (native speaker or authoritative source verified)
 - [ ] All number ranges present in the quiz are covered in the learn page
-- [ ] All four `app.py` locations updated: `mode_selection()`, `results()`, `learn()`, `sitemap_xml()`
+- [ ] `"has_learn_materials": True` set on the language's entry in `languages/config.py`
 - [ ] The "Learn" button appears on the mode selection page for the language
 - [ ] Navigating to `/<lang_code>/learn` renders without errors in each UI language (or gracefully falls back to `_en`)
 - [ ] Other languages' learn pages are unaffected

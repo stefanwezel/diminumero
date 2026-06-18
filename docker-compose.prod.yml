@@ -1,16 +1,10 @@
-version: '3.8'
-
 services:
   app:
     container_name: diminumero-prod
     build:
       context: .
-      args:
-        MODE: production
     ports:
       - "5005:5005"
-    environment:
-      - FLASK_ENV=production
     env_file:
       - .env.prod
     # Lets the container resolve the VPS host bridge so it can reach a

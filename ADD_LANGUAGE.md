@@ -7,7 +7,7 @@ This guide explains how to add support for a new learning language to diminumero
 diminumero supports multiple languages for number learning. Currently supported (all `ready: True`):
 - **Spanish (es)**, **French (fr)**, **Japanese (ja)**, **German (de)**, **Korean (ko)**
 - **Italian (it)**, **Chinese (zh)**, **Portuguese (pt)**, **Turkish (tr)**, **Nepalese (ne)**
-- **Swedish (sv)**, **Danish (da)**, **Norwegian (no)**
+- **Swedish (sv)**, **Danish (da)**, **Norwegian (no)**, **Welsh (cy)**, **Irish (ga)**
 
 
 ## Steps to Add a New Language
@@ -31,6 +31,8 @@ AVAILABLE_LANGUAGES = {
         'native_name': 'Native Name',
         'flag': '🏳️',  # Emoji flag
         'ready': False,  # Set to True when ready
+        'has_learn_materials': False,  # True once you add learn templates (step 6)
+        'has_audio_mode': False,       # True once you generate Listening MP3s (step 9)
         'description': 'Learn LanguageName numbers!',
         'validation_strategy': 'word_based',  # or 'component_based'
         # Display name in each supported UI language
@@ -125,27 +127,17 @@ templates/learn_<lang_code>_uk.html
 
 The `_en` template is the only required one — the app falls back to it when a UI-language-specific template doesn't exist.
 
-Then update `app.py` in **four** places (search for the `has_learn_materials` sets and the learn route guard):
+Then set **one flag** in `languages/config.py` — no `app.py` edits are needed:
 
-**`mode_selection()` and `results()`** — add your code to `has_learn_materials`:
 ```python
-has_learn_materials = lang_code in {
-    "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "xx",
+'xx': {
+    ...
+    'has_learn_materials': True,
+    ...
 }
 ```
 
-**`learn()`** — add your code to the route guard:
-```python
-if lang_code not in {
-    "es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "xx",
-}:
-```
-
-**`sitemap_xml()`** — add your code to the learn-URLs list:
-```python
-for lc in ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "sv", "da", "no", "xx"]:
-    urls.append((f"{base}/{lc}/learn", "0.7"))
-```
+`mode_selection()`, `results()`, `learn()`, and `sitemap_xml()` all consult `get_languages_with_learn_materials()`, which derives the list from that flag (plus `ready: True`). There are no hardcoded language sets in `app.py`.
 
 See [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md) for the full learn-page guide.
 
@@ -159,7 +151,7 @@ These are the only keys in `translations.py` that need updating for a new learni
 
 **`templates/language_selection.html`** — Add your language code to the JSON-LD `inLanguage` array:
 ```json
-"inLanguage": ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "ne", "sv", "da", "no", "xx"]
+"inLanguage": ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "ne", "sv", "da", "no", "cy", "ga", "xx"]
 ```
 
 ### 8. Enable the Language
@@ -169,6 +161,40 @@ Once everything is ready:
 1. Set `'ready': True` in `languages/config.py`
 2. Test thoroughly
 3. Deploy!
+
+### 9. Add Listening Audio (Optional)
+
+The Listening quiz plays a pre-generated MP3 of a number and asks the user to type
+the digits. It is gated by the `has_audio_mode` flag and the MP3s that actually
+exist under `static/audio/<lang_code>/`. To enable it:
+
+1. **Add a voice pool.** In `tools/generate_audio.py`, add a `VOICE_POOLS` entry for
+   your code — a list of ElevenLabs voice IDs. Numbers are voiced by a speaker drawn
+   at random from this list, so a deck mixes voices. Repeating an ID biases the draw
+   toward that voice.
+   ```python
+   VOICE_POOLS = {
+       ...
+       "xx": ["voiceId1", "voiceId2", "voiceId2", "voiceId3"],
+   }
+   ```
+
+2. **Generate the MP3s** via the ElevenLabs cloud API. Put `API_KEY_11_LABS` in `.env`
+   (loaded with python-dotenv), then run the PEP-723 script:
+   ```bash
+   uv run tools/generate_audio.py --lang xx
+   ```
+   Each number in `languages/xx/numbers.py` is synthesized with the `eleven_turbo_v2_5`
+   model at `mp3_44100_64` (~64 kbps mono) and written to `static/audio/xx/<n>.mp3`.
+   Synthesis happens in the cloud — no local model is downloaded, so the API key is
+   required and each call uses ElevenLabs credits. The run skips files that already
+   exist; use `--force` to re-render, `--only <n>` for a single number, or
+   `--limit <n>` for a quick test batch. Commit the generated MP3s.
+
+3. **Flip the flag.** Set `'has_audio_mode': True` on the language's entry in
+   `languages/config.py`. Both the index language cards and `mode_selection()` consult
+   `get_languages_with_audio_mode()`, and the route intersects the deck with the MP3s
+   actually present, so a half-generated deck still works.
 
 ## Example: Adding Quechua
 
@@ -240,7 +266,8 @@ Before marking a language as `ready: True`:
 - [ ] Mode selection works when accessed directly
 - [ ] Quiz modes function correctly
 - [ ] Results page displays properly
-- [ ] (Optional) Learn pages created and all 4 `app.py` locations updated
+- [ ] (Optional) Learn pages created and `has_learn_materials: True` set in `languages/config.py`
+- [ ] (Optional) Listening audio: `VOICE_POOLS` entry added, MP3s generated and committed, `has_audio_mode: True` set
 - [ ] `meta_desc_index` and `seo_title_index` updated in `translations.py` for all 8 UI languages
 - [ ] Language code added to JSON-LD `inLanguage` in `templates/language_selection.html`
 - [ ] Edge cases tested (very small/large numbers)
