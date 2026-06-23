@@ -73,6 +73,25 @@
             {% endif %}
         </aside>
 
+        {% if lang_code == 'es' %}
+        <aside class="new-feature-callout" aria-label="{{ get_text('conjugate_title') }}">
+            <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
+            <div class="new-feature-text">
+                <h2 class="new-feature-title">{{ get_text('conjugate_title') }}</h2>
+                <p class="new-feature-body">{{ get_text('conjugate_subtitle') }}</p>
+            </div>
+            {% if user %}
+                <a href="{{ url_for('conjugate') }}" class="btn btn-primary new-feature-cta">
+                    {{ get_text('conjugate_start_btn') }}
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary new-feature-cta">
+                    {{ get_text('home_new_feature_cta_login') }}
+                </a>
+            {% endif %}
+        </aside>
+        {% endif %}
+
         <div class="mode-selection" id="mode-selection">
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_easy') }}</h3>

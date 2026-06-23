@@ -3407,3 +3407,135 @@ html {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== Verb conjugation practice (classic theme) ===== */
+
+.conjugate-page .cards-subtitle {
+    color: #4a4a55;
+    margin-top: 4px;
+}
+
+.conjugate-add-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.conjugate-autocomplete {
+    position: relative;
+    flex: 1;
+}
+
+.conjugate-autocomplete .answer-input {
+    font-size: 1.15rem;
+    padding: 14px 16px;
+}
+
+.conjugate-suggestions {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 6px;
+    position: absolute;
+    z-index: 50;
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    border: 2px solid #EDD382;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.conjugate-suggestion {
+    padding: 9px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    color: #020122;
+}
+
+.conjugate-suggestion:hover,
+.conjugate-suggestion-active {
+    background: #F2F3AE;
+}
+
+.conjugate-tense-en {
+    color: #6a6a75;
+    font-size: 0.85em;
+}
+
+.conjugate-list-infinitive {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #020122;
+}
+
+.conjugate-tenses-fieldset .cards-input-hint {
+    margin: 0 0 8px;
+}
+
+.conjugate-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.conjugate-prompt-verb {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #020122;
+    letter-spacing: 0.5px;
+}
+
+.conjugate-prompt-pronoun {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #B5179E;
+}
+
+.conjugate-prompt-tense {
+    font-size: 1rem;
+    color: #4a4a55;
+    text-transform: lowercase;
+}
+
+.conjugate-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.conjugate-popup-overlay[hidden] {
+    display: none;
+}
+
+.conjugate-popup {
+    width: 100%;
+    max-width: 420px;
+    background: #FFFFFF;
+    border: 3px solid #EDD382;
+    border-radius: 14px;
+    padding: 28px 24px 24px;
+    text-align: center;
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.25);
+}
+
+.conjugate-popup-title {
+    margin: 0 0 10px;
+    color: #020122;
+    font-size: 1.3rem;
+}
+
+.conjugate-popup-body {
+    margin: 0 0 20px;
+    color: #4a4a55;
+    line-height: 1.45;
+}

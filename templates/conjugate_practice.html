@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('conjugate_practice_title') }} - diminumero{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block og_title %}{{ get_text('conjugate_practice_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('conjugate_practice_title') }} - diminumero{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+    <div class="quiz-header">
+        <div class="progress-info">
+            {{ get_text('cards_practice_progress') }} {{ total + 1 }} / {{ max_questions }}
+        </div>
+        <div class="score-display">
+            {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
+        </div>
+        <div class="quiz-header-buttons">
+            <form action="{{ url_for('conjugate_practice_results') }}" method="GET" class="quiz-header-form">
+                <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
+            </form>
+            {% if not revealed %}
+            <form action="{{ url_for('conjugate_practice') }}" method="POST" class="quiz-header-form">
+                <button type="submit" name="reveal" value="1"
+                        class="btn btn-secondary btn-quiz-header"
+                        title="{{ get_text('cards_reveal_tooltip') }}">
+                    {{ get_text('cards_reveal_btn') }}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ (total / max_questions * 100) if max_questions else 0 }}%"></div>
+    </div>
+
+    <div class="question-container">
+        <h2 class="question-label">{{ get_text('conjugate_practice_prompt') }}</h2>
+        <div class="conjugate-prompt">
+            <span class="conjugate-prompt-verb">{{ infinitive }}</span>
+            <span class="conjugate-prompt-pronoun">{{ pronoun }}</span>
+            <span class="conjugate-prompt-tense">
+                {{ get_text('conjugate_practice_tense_label') }}: {{ tense_label }}
+            </span>
+        </div>
+    </div>
+
+    {% if not revealed %}
+    <form action="{{ url_for('conjugate_practice') }}" method="POST" class="answer-form" id="answerForm">
+        <div class="text-input-container">
+            <input
+                type="text"
+                name="answer"
+                id="answerInput"
+                class="answer-input"
+                placeholder="{{ get_text('conjugate_practice_input_placeholder') }}"
+                autocomplete="off"
+                autocapitalize="off"
+                autofocus
+                data-difficulty="{{ difficulty }}"
+                {% if correct_answer is not none %}data-correct-answer="{{ correct_answer }}"{% endif %}
+            >
+            <div id="validationFeedback" class="validation-feedback"></div>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% if revealed %}
+<div class="reveal-modal show" role="dialog" aria-modal="true" aria-labelledby="reveal-modal-title">
+    <div class="reveal-modal-content">
+        <div class="reveal-modal-prompt">{{ infinitive }} · {{ pronoun }} · {{ tense_label }}</div>
+        <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
+        <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
+        <div class="reveal-modal-answer">{{ correct_answer }}</div>
+        <form action="{{ url_for('conjugate_practice') }}" method="POST" class="reveal-modal-actions" id="revealForm">
+            {% if reveal_mode == 'type' %}
+            <input
+                type="text"
+                name="answer"
+                id="revealInput"
+                class="answer-input reveal-modal-input"
+                placeholder="{{ get_text('cards_reveal_type_placeholder') }}"
+                autocomplete="off"
+                autocapitalize="off"
+                autofocus
+                data-correct-answer="{{ correct_answer }}"
+            >
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next">
+                {{ get_text('cards_reveal_next_btn') }}
+            </button>
+            {% else %}
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
+                {{ get_text('cards_reveal_next_btn') }}
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% if reveal_mode == 'type' %}
+<script src="{{ url_for('static', filename='js/cards_practice_reveal.js') }}"></script>
+{% endif %}
+{% else %}
+<script src="{{ url_for('static', filename='js/conjugate_practice.js') }}"></script>
+{% endif %}
+{% endblock %}

@@ -35,6 +35,10 @@ uv run flask --app app db upgrade
 # Generate pronunciation MP3s for the Listening quiz (needs API_KEY_11_LABS in .env)
 uv run tools/generate_audio.py --lang es
 
+# Regenerate the global Spanish verb-conjugation pool (uses the verbecc library;
+# generation-only dependency, declared inline in the PEP-723 script header)
+uv run tools/generate_conjugations.py
+
 # Production deployment (uses .env.prod, not .env)
 docker-compose -f docker-compose.prod.yml up --build
 ```
@@ -51,8 +55,9 @@ docker-compose -f docker-compose.prod.yml up --build
 
 - **translations.py** (project root): Contains the `TEXTS` dict used by `get_text()` in `app.py` for the multilingual UI.
 
-- **models.py**: SQLAlchemy models. Three entities:
+- **models.py**: SQLAlchemy models. Four entities:
   - `Card(user_sub, front, back, times_practiced, times_correct, recent_results, created_at, updated_at)` — user-owned vocabulary card, free-form text on both sides (no per-card language). `recent_results` is a 10-char `'1'`/`'0'` string; the `score` property is `recent_results.count('1') / len(recent_results)` or `None` if unpracticed. `record_attempt(correct)` appends and trims.
+  - `VerbCard(user_sub, infinitive, times_practiced, times_correct, recent_results, created_at, updated_at)` — a Spanish verb a user added to their conjugation-practice pool. Holds only the infinitive (conjugations come from the committed global pool, validated at add time). Same `score`/`record_attempt` scoring as `Card`.
   - `DeckShare(token, owner_sub, owner_name, cards_json, created_at)` — frozen snapshot of one user's deck used by the share-link import flow. The snapshot is set at share time so later owner edits don't affect imports.
   - `PollResponse(user_sub, color_scheme_pref, cards_aware, device, freeform, user_agent, created_at)` — single submission of the in-app feedback poll. `user_sub` is nullable (anonymous responses allowed).
 
@@ -68,6 +73,12 @@ docker-compose -f docker-compose.prod.yml up --build
 - **languages/**: Multi-language subsystem
   - `config.py`: Language registry (`AVAILABLE_LANGUAGES`) with metadata, validation strategies, and helper functions (`get_language_numbers()`, `get_validation_strategy()`, `get_component_decomposer()`, `get_languages_with_learn_materials()`, `get_languages_with_audio_mode()`, etc.). Per-language flags include `ready`, `has_learn_materials`, and `has_audio_mode`.
   - Each language directory (es/, de/, fr/, ne/, da/, it/, ja/, ko/, zh/, pt/, tr/, sv/, no/, cy/, ga/) contains `numbers.py` (number→translation dict) and `generate_numbers.py`
+
+- **conjugation_config.py** (project root): Config for the Spanish verb-conjugation section — `CONJ_TENSES` (the usefulness-ranked tense checklist; each `key` matches `languages/es/conjugations.json`), `CONJ_PERSONS` (the six pronoun slots; `vosotros` is `optional` and user-toggleable), `CONJ_QUESTIONS_DEFAULT = 10`, and the `tense_label()`/`person_label()` helpers.
+
+- **languages/es/conjugations.json** + **languages/es/conjugations.py**: The committed global Spanish verb pool (~840 popular verbs × the curated tenses; each tense → a 6-element list aligned to [yo, tú, él/ella/usted, nosotros, vosotros, ellos], `null` where a person has no form). The JSON is kept in frequency order so autocomplete ranks common verbs first. `conjugations.py` is the lazy loader exposing `verb_exists()`, `get_verb_forms()`, `search_verbs(prefix, limit, exclude)`, and (via PEP 562 `__getattr__`) `GLOBAL_VERBS`.
+
+- **tools/generate_conjugations.py**: PEP-723 script (`uv run tools/generate_conjugations.py`) that conjugates a frequency-ranked list of popular verbs with the `verbecc` library and writes `languages/es/conjugations.json`. `verbecc` is a **generation-only** dependency (declared inline, never in `pyproject.toml` — the app reads the committed JSON). The script monkeypatches a verbecc voseo bug and rebuilds a few verbecc-defective regular verbs (`pasar`, `resultar`, `suceder`) from a regular proxy; verbs verbecc can't conjugate correctly are auto-dropped.
 
 - **tools/generate_audio.py**: PEP-723 script (`uv run tools/generate_audio.py --lang <code>`) that synthesizes one MP3 per number with ElevenLabs' `eleven_turbo_v2_5` cloud model into `static/audio/<lang>/<n>.mp3`. Each number is voiced by a speaker drawn at random from the language's `VOICE_POOLS` entry so a deck mixes voices. Needs `API_KEY_11_LABS` in `.env`. Languages currently shipping audio (1000 MP3s each): es, de, fr, ja, pt, sv.
 
@@ -113,6 +124,14 @@ Cards (login required; ownership enforced by `Card.user_sub == session["user"]["
 - `/cards/practice/results` — Final score; clears practice state
 - `/api/cards/validate` — POST, JSON: word-by-word validation for the active practice card (forces word-based strategy regardless of card language)
 
+Verb conjugation (login required; Spanish only; ownership enforced by `VerbCard.user_sub`):
+- `/conjugate` — manage page: add-verb form with autocomplete, the user's verb list, and practice settings (tense checklist, vosotros toggle, difficulty, sampling, count) + Start. Wired by `static/js/conjugate.js`.
+- `/api/verbs/search?q=` — GET: autocomplete from the global pool, excluding owned verbs.
+- `/api/verbs` (POST) — add a verb; rejects verbs not in the global pool with `{"unsupported": true}` (JS shows a popup). `/api/verbs/<id>` (DELETE) and `/conjugate/<id>/delete` (POST fallback) remove a verb.
+- `/conjugate/practice/start` — POST: builds a session from selected `tenses`, `include_vosotros`, `difficulty` (advanced/hardcore), `sampling_mode`, `count` (default 10). Question space = user's verbs × selected tenses × selected persons.
+- `/conjugate/practice` — GET/POST: prompt is verb + pronoun + tense; typed answer checked with `check_answer_advanced`; reveal/next with type-to-continue (reuses `cards_practice_reveal.js`); advanced mode highlights words live. Per attempt updates the owning `VerbCard`.
+- `/conjugate/practice/results` — final score, clears state. `/api/conjugate/validate` — POST: word-by-word feedback (disabled in hardcore).
+
 Feedback poll:
 - `/api/poll` — POST, JSON: stores a `PollResponse` row (anonymous allowed). The modal is rendered by `templates/_poll_modal.html` and wired by `static/js/poll.js`.
 
@@ -157,7 +176,7 @@ Tests live in `tests/` with a shared `tests/conftest.py` that:
 - sets dummy `AUTH0_*` env vars so `oauth.register("auth0", ...)` runs in CI (otherwise auth tests would hit `No such client: auth0`);
 - creates/drops all tables around every test via an autouse fixture.
 
-Test files: `test_app.py` (quiz routes/session), `test_quiz_logic.py` (engine in isolation), `test_auth.py` (Auth0 login/callback/logout, mocked), `test_cards.py` (card CRUD, practice flow, scoring, sharing/import dedup, dashboard stats), `test_poll.py` (feedback poll endpoint and storage). Each test file still defines its own `app`/`client` fixtures.
+Test files: `test_app.py` (quiz routes/session), `test_quiz_logic.py` (engine in isolation), `test_auth.py` (Auth0 login/callback/logout, mocked), `test_cards.py` (card CRUD, practice flow, scoring, sharing/import dedup, dashboard stats), `test_conjugate.py` (verb add/validate-against-pool/reject-unknown, autocomplete, practice flow + scoring, vosotros toggle, validate API), `test_poll.py` (feedback poll endpoint and storage). Each test file still defines its own `app`/`client` fixtures.
 
 ## Adding Languages
 
