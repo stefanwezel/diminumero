@@ -9,6 +9,7 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
+        "has_conjugation": True,
         "description": "Learn Spanish numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         # UI display names keyed by UI language code
