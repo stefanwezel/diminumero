@@ -2314,6 +2314,32 @@ def api_verbs_create():
     return jsonify({"ok": True, "verb": verb.to_dict()})
 
 
+@app.route("/conjugate/add", methods=["POST"])
+@login_required
+def conjugate_verb_add():
+    """Form fallback for adding a verb (no-JS path, and the JS error fallback).
+
+    Mirrors the cards `/cards` POST route: reads the form field, flashes, and
+    redirects back to /conjugate. The JS add flow uses the JSON `/api/verbs`.
+    """
+    infinitive = _normalize_infinitive(request.form.get("infinitive"))
+    if not infinitive:
+        flash(get_text("conjugate_flash_verb_required"), "error")
+        return redirect(url_for("conjugate"))
+    if not es_conjugations.verb_exists(infinitive):
+        flash(get_text("conjugate_flash_unsupported").format(infinitive), "error")
+        return redirect(url_for("conjugate"))
+    user_sub = _current_user_sub()
+    if _find_user_verb(user_sub, infinitive) is not None:
+        flash(get_text("conjugate_flash_verb_duplicate"), "info")
+        return redirect(url_for("conjugate"))
+    verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+    db.session.add(verb)
+    db.session.commit()
+    flash(get_text("conjugate_flash_verb_added"), "success")
+    return redirect(url_for("conjugate"))
+
+
 @app.route("/api/verbs/import-from-cards", methods=["POST"])
 @login_required
 def api_verbs_import_from_cards():
@@ -2480,6 +2506,20 @@ def _save_conjugate_state(state: dict) -> None:
     session.modified = True
 
 
+def _conj_asked_key(
+    tenses: list[str], verb_id: int, tense_key: str, person_index: int
+) -> str:
+    """Compact key for the per-session ``asked`` set.
+
+    Uses the tense's *index* within the session's selected tenses rather than the
+    full tense key (which can be ~40 chars, e.g. ``indicativo/
+    pretérito-perfecto-compuesto``). The state lives in the signed-cookie
+    session, so keeping each key to a few characters keeps the asked list well
+    under the ~4 KB cookie limit even at the maximum question count.
+    """
+    return f"{verb_id}:{tenses.index(tense_key)}:{person_index}"
+
+
 def _load_next_conjugation(state: dict) -> dict | None:
     """Pick the next unasked (verb, tense, person) question; advance state.
 
@@ -2501,7 +2541,7 @@ def _load_next_conjugation(state: dict) -> dict | None:
         out = []
         for tense_key in tenses:
             for person_index in persons:
-                key = f"{verb.id}:{tense_key}:{person_index}"
+                key = _conj_asked_key(tenses, verb.id, tense_key, person_index)
                 if key in asked:
                     continue
                 if _form_available(verb.infinitive, tense_key, person_index) is None:
@@ -2599,7 +2639,12 @@ def conjugate_practice():
                 ):
                     return redirect(url_for("conjugate_practice"))
             state["asked"].append(
-                f"{current['verb_id']}:{current['tense_key']}:{current['person_index']}"
+                _conj_asked_key(
+                    state["tenses"],
+                    current["verb_id"],
+                    current["tense_key"],
+                    current["person_index"],
+                )
             )
             state["current"] = None
             state["current_revealed"] = False
@@ -2641,7 +2686,12 @@ def conjugate_practice():
                 )
                 db.session.commit()
         state["asked"].append(
-            f"{current['verb_id']}:{current['tense_key']}:{current['person_index']}"
+            _conj_asked_key(
+                state["tenses"],
+                current["verb_id"],
+                current["tense_key"],
+                current["person_index"],
+            )
         )
         state["current"] = None
         _save_conjugate_state(state)

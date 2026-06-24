@@ -118,6 +118,37 @@ class TestAddVerb:
         assert resp.status_code == 404
 
 
+class TestAddVerbFormFallback:
+    """The no-JS / JS-error fallback posts form-encoded data to /conjugate/add,
+    which must add the verb and redirect (not return raw JSON)."""
+
+    def test_form_add_redirects_and_persists(self, client):
+        login(client)
+        resp = client.post("/conjugate/add", data={"infinitive": "comer"})
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/conjugate")
+        with flask_app.app_context():
+            rows = (
+                db.session.query(VerbCard).filter_by(user_sub=SAMPLE_USER["sub"]).all()
+            )
+            assert [r.infinitive for r in rows] == ["comer"]
+
+    def test_form_add_unsupported_does_not_persist(self, client):
+        login(client)
+        resp = client.post("/conjugate/add", data={"infinitive": "xyzzyfoo"})
+        assert resp.status_code == 302
+        with flask_app.app_context():
+            assert db.session.query(VerbCard).count() == 0
+
+    def test_form_add_duplicate_does_not_duplicate(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        resp = client.post("/conjugate/add", data={"infinitive": "Comer"})
+        assert resp.status_code == 302
+        with flask_app.app_context():
+            assert db.session.query(VerbCard).count() == 1
+
+
 class TestSearch:
     def test_search_returns_matches(self, client):
         login(client)

@@ -29,7 +29,7 @@
              data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
         <h3 class="cards-section-heading">{{ get_text('conjugate_add_heading') }}</h3>
         <form class="cards-create-form" id="conjugate-add-form" autocomplete="off"
-              method="POST" action="{{ url_for('api_verbs_create') }}">
+              method="POST" action="{{ url_for('conjugate_verb_add') }}">
             <div class="conjugate-add-row">
                 <div class="conjugate-autocomplete">
                     <input type="text" name="infinitive" id="conjugate-verb-input"
