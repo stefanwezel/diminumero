@@ -180,9 +180,18 @@ Tests live in `tests/` with a shared `tests/conftest.py` that:
 
 Test files: `test_app.py` (quiz routes/session), `test_quiz_logic.py` (engine in isolation), `test_auth.py` (Auth0 login/callback/logout, mocked), `test_cards.py` (card CRUD, practice flow, scoring, sharing/import dedup, dashboard stats), `test_conjugate.py` (verb add/validate-against-pool/reject-unknown, autocomplete, practice flow + scoring, vosotros toggle, validate API, insights dashboard + `ConjugationStat` recording), `test_poll.py` (feedback poll endpoint and storage). Each test file still defines its own `app`/`client` fixtures.
 
-## Adding Languages
+## Contributor Guides
 
-This is the most common recurring task in this repository. See ADD_LANGUAGE.md for the complete guide. Key steps:
+Each kind of content has a dedicated top-level guide. Point to these (and keep them in sync) rather than duplicating their detail here:
+- **ADD_NUMBERS.md** — add number practice for a new language (the most common recurring task; the starting point for any new language).
+- **ADD_LISTENING_EXERCISES.md** — add the spoken-number Listening quiz to a language.
+- **ADD_LEARNING_MATERIALS.md** — add Learn/tutorial pages for a language.
+- **ADD_CONJUGATING_PRACTICE.md** — the Spanish verb-conjugation section (regenerating the pool, tense checklist, extending it).
+- **ADD_UI_LANGUAGE.md** — add a new UI/interface translation.
+
+## Adding Number Practice (a new language)
+
+This is the most common recurring task in this repository. See ADD_NUMBERS.md for the complete guide. Key steps:
 1. Create `languages/{code}/` directory with `numbers.py` and `generate_numbers.py`
 2. Register in `languages/config.py` with `ready: False` initially; add import to `get_language_numbers()`
 3. Update SEO strings in `translations.py` and JSON-LD in `templates/language_selection.html`
@@ -194,9 +203,13 @@ See ADD_LEARNING_MATERIALS.md for the complete guide. Key steps:
 1. Create `templates/learn_{code}_<ui_lang>.html` per UI language (the `learn()` route falls back to `_en.html`)
 2. Set `has_learn_materials: True` on the language's entry in `languages/config.py` — no `app.py` edits needed (both `mode_selection()` and `learn()` consult `get_languages_with_learn_materials()`)
 
-## Adding Listening Audio
+## Adding Listening Exercises
 
-To enable the Listening quiz for a language:
+See ADD_LISTENING_EXERCISES.md for the complete guide. Key steps:
 1. Add the language's `VOICE_POOLS` entry in `tools/generate_audio.py` (a list of ElevenLabs voice IDs, sampled at random per number).
 2. Run `uv run tools/generate_audio.py --lang <code>` with `API_KEY_11_LABS` set in `.env` to render `static/audio/<code>/<n>.mp3`.
 3. Set `has_audio_mode: True` on the language's entry in `languages/config.py` — both the index language cards and `mode_selection()` consult `get_languages_with_audio_mode()`.
+
+## Verb-Conjugation Practice
+
+See ADD_CONJUGATING_PRACTICE.md for the complete guide. The Spanish conjugation section reads a committed global pool (`languages/es/conjugations.json`); regenerate it offline with `uv run tools/generate_conjugations.py` (`verbecc` is a generation-only dependency). Tenses/pronouns are configured in `conjugation_config.py`.

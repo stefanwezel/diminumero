@@ -45,7 +45,7 @@ CONJ_TENSES = [
     },
     {
         "key": "indicativo/pretérito-perfecto-compuesto",
-        "label_es": "Pretérito perfecto compuesto",
+        "label_es": "Pretérito perfecto",
         "label_en": "Present perfect",
         "default_on": False,
     },

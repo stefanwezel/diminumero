@@ -116,6 +116,9 @@
             <button type="submit" class="btn btn-primary">
                 {{ get_text('conjugate_start_btn') }}
             </button>
+            <button type="button" class="btn btn-secondary conjugate-practice-reset">
+                {{ get_text('cards_reset_defaults_btn') }}
+            </button>
         </form>
 
         {% if dashboard.total_attempts > 0 %}
@@ -220,4 +223,5 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/conjugate.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/conjugate_practice_prefs.js') }}" defer></script>
 {% endblock %}

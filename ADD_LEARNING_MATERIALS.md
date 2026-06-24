@@ -25,7 +25,7 @@ Learn pages are accessible at `/<lang_code>/learn` and linked from the mode sele
 
 ## Prerequisites
 
-The target language must already be registered in `languages/config.py` with `'ready': True`. If you want to add a new language entirely, see [ADD_LANGUAGE.md](ADD_LANGUAGE.md) first.
+The target language must already be registered in `languages/config.py` with `'ready': True`. If you want to add a new language entirely, see [ADD_NUMBERS.md](ADD_NUMBERS.md) first.
 
 ## Steps to Add Learning Materials
 

@@ -1,0 +1,132 @@
+# Verb-Conjugation Practice in diminumero
+
+This guide explains how the Spanish verb-conjugation practice section works and how
+to maintain or extend it: regenerating the global verb pool, adjusting the tense
+checklist, and what it would take to support a second language.
+
+Related guides:
+- [ADD_NUMBERS.md](ADD_NUMBERS.md) — add a new language's number deck.
+- [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) — add the Listening quiz.
+
+## Overview
+
+The conjugation section (login required, Spanish only today) lets a user build a
+personal pool of Spanish verbs and drill conjugations across a curated set of
+tenses and the six pronoun slots. The question space for a practice session is
+**user's verbs × selected tenses × selected persons**.
+
+Conjugations are **not** computed at runtime. They come from a committed global
+pool generated offline with the `verbecc` library; the app only reads the committed
+JSON.
+
+## Moving Parts
+
+| File | Role |
+|------|------|
+| `conjugation_config.py` (project root) | `CONJ_TENSES` (usefulness-ranked tense checklist; each `key` matches the JSON), `CONJ_PERSONS` (six pronoun slots; `vosotros` is `optional`/user-toggleable, `VOSOTROS_INDEX = 4`), `CONJ_QUESTIONS_DEFAULT = 10`, and the `tense_label()`/`person_label()` helpers. |
+| `languages/es/conjugations.json` | The committed global pool (~840 popular verbs × the curated tenses). Each tense → a 6-element list aligned to `[yo, tú, él/ella/usted, nosotros, vosotros, ellos]`, with `null` where a person has no form. Kept in frequency order so autocomplete ranks common verbs first. |
+| `languages/es/conjugations.py` | Lazy loader over the JSON. Exposes `verb_exists()`, `get_verb_forms()`, `search_verbs(prefix, limit, exclude)`, and (via PEP 562 `__getattr__`) `GLOBAL_VERBS`. |
+| `tools/generate_conjugations.py` | PEP-723 generator that (re)builds `conjugations.json`. |
+| `models.py` | `VerbCard` (a user's verb + rolling score) and `ConjugationStat` (per-`(tense, person)` tally for the insights dashboard). |
+| `static/js/conjugate.js` | Wires the `/conjugate` manage page (autocomplete, settings, start). |
+
+## Data Model
+
+- **`VerbCard(user_sub, infinitive, times_practiced, times_correct, recent_results, ...)`** —
+  one Spanish verb a user added to their pool. Holds only the infinitive;
+  conjugations come from the global pool (validated at add time). Same
+  `score`/`record_attempt` scoring as `Card` (rolling 10-attempt history).
+- **`ConjugationStat(user_sub, tense_key, person_index, times_practiced, times_correct, ...)`** —
+  per-`(tense, person)` practice tally, one row per `(user_sub, tense_key, person_index)`
+  (unique constraint `uq_conjstat_dim`). `VerbCard` already scores the *verb*
+  dimension; this table adds the other two so the insights dashboard can rank which
+  tenses and pronouns to practice. Lifetime counters only; `score` =
+  `times_correct/times_practiced` or `None`. Rows are recorded per attempt by
+  `_record_conjugation_stat()`.
+
+## Routes
+
+- `/conjugate` — manage page: add-verb form with autocomplete, a foldable insights
+  dashboard (shown once any attempt exists), the user's verb list, and practice
+  settings (tense checklist, vosotros toggle, difficulty, sampling, count) + Start.
+  The dashboard is built by `_build_conjugate_dashboard_stats()` — three
+  weakest-first panels (tenses, verbs, pronouns), each rendered with the shared
+  `progress_ring` macro.
+- `/api/verbs/search?q=` — autocomplete from the global pool, excluding owned verbs.
+- `/api/verbs` (POST) — add a verb; rejects verbs not in the global pool with
+  `{"unsupported": true}` (JS shows a popup). `/api/verbs/<id>` (DELETE) and
+  `/conjugate/<id>/delete` (POST fallback) remove a verb.
+- `/conjugate/practice/start` (POST) — builds a session from selected `tenses`,
+  `include_vosotros`, `difficulty` (advanced/hardcore), `sampling_mode`, `count`
+  (default 10).
+- `/conjugate/practice` (GET/POST) — prompt is verb + pronoun + tense; typed answer
+  checked with `check_answer_advanced`; reveal/next with type-to-continue (reuses
+  `cards_practice_reveal.js`); advanced mode highlights words live. Each attempt
+  updates the owning `VerbCard` and the matching `ConjugationStat`.
+- `/conjugate/practice/results` — final score, clears state.
+- `/api/conjugate/validate` (POST) — word-by-word feedback (disabled in hardcore).
+
+## Regenerating the Global Verb Pool
+
+The pool is generated offline and committed; the app only reads it.
+
+```bash
+uv run tools/generate_conjugations.py
+```
+
+This conjugates a frequency-ranked list of popular verbs with the `verbecc` library
+and writes `languages/es/conjugations.json`.
+
+Notes:
+- **`verbecc` is a generation-only dependency.** It is declared inline in the
+  script's PEP-723 header, **never** in `pyproject.toml` — the running app reads the
+  committed JSON and does not import `verbecc`.
+- The script monkeypatches a `verbecc` voseo bug and rebuilds a few
+  verbecc-defective regular verbs (`pasar`, `resultar`, `suceder`) from a regular
+  proxy. Verbs `verbecc` can't conjugate correctly are auto-dropped.
+- The JSON is kept in frequency order so autocomplete ranks common verbs first.
+- After regenerating, run `uv run pytest tests/test_conjugate.py` and spot-check a
+  few verbs in the app.
+
+## Adjusting the Tense Checklist
+
+Edit `CONJ_TENSES` in `conjugation_config.py`. Each entry needs:
+- `key` — must match a tense key present in `conjugations.json` (e.g.
+  `"indicativo/presente"`). If you add a tense whose key isn't generated into the
+  JSON, the generator must be updated to emit it first.
+- `label_es` / `label_en` — display labels.
+- `default_on` — whether the checkbox starts ticked on the settings page.
+
+The pronoun slots live in `CONJ_PERSONS`; `vosotros` (index 4) is the only
+`optional` one, toggled by the user and controlled via `VOSOTROS_INDEX`.
+
+## Extending to Another Language
+
+The section is Spanish-only today and several pieces hardcode that assumption (the
+`/conjugate*` routes, the `es` JSON path, `verbecc` Spanish conjugation, the
+`CONJ_PERSONS` Spanish pronoun set). Adding another language would require, at
+minimum:
+1. A generator + committed `conjugations.json` for that language (a verbecc-style
+   source or another conjugation engine).
+2. A language-aware loader (parameterize `languages/<code>/conjugations.py`).
+3. A language-specific person/tense config (the current `CONJ_PERSONS`/`CONJ_TENSES`
+   are Spanish).
+4. Generalizing the `/conjugate*` routes and `VerbCard` to carry a language.
+
+This is a larger change than adding numbers or audio; open an issue to scope it
+before starting.
+
+## Tests
+
+`tests/test_conjugate.py` covers verb add / validate-against-pool / reject-unknown,
+autocomplete, the practice flow + scoring, the vosotros toggle, the validate API,
+and the insights dashboard + `ConjugationStat` recording. Run:
+
+```bash
+uv run pytest tests/test_conjugate.py
+```
+
+## Questions?
+
+Check `conjugation_config.py`, `languages/es/conjugations.py`, and
+`tools/generate_conjugations.py` for reference, or contact the maintainer.
