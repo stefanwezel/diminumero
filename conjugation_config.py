@@ -23,19 +23,19 @@ CONJ_TENSES = [
         "key": "indicativo/pretérito-perfecto-simple",
         "label_es": "Pretérito indefinido",
         "label_en": "Preterite (simple past)",
-        "default_on": True,
+        "default_on": False,
     },
     {
         "key": "indicativo/pretérito-imperfecto",
         "label_es": "Pretérito imperfecto",
         "label_en": "Imperfect",
-        "default_on": True,
+        "default_on": False,
     },
     {
         "key": "indicativo/futuro",
         "label_es": "Futuro",
         "label_en": "Future",
-        "default_on": True,
+        "default_on": False,
     },
     {
         "key": "condicional/presente",

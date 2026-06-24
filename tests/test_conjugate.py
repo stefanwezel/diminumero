@@ -67,9 +67,9 @@ class TestAddVerb:
         assert data["ok"] is True
         assert data["verb"]["infinitive"] == "comer"
         with flask_app.app_context():
-            rows = db.session.query(VerbCard).filter_by(
-                user_sub=SAMPLE_USER["sub"]
-            ).all()
+            rows = (
+                db.session.query(VerbCard).filter_by(user_sub=SAMPLE_USER["sub"]).all()
+            )
             assert [r.infinitive for r in rows] == ["comer"]
 
     def test_add_verb_case_insensitive(self, client):
@@ -262,6 +262,61 @@ class TestPracticeFlow:
         client.post("/conjugate/practice", data={"answer": ascii_answer})
         with client.session_transaction() as sess:
             assert sess["conjugate_practice"]["score"] == 1
+
+
+class TestDashboard:
+    def _start(self, client, tense="indicativo/presente"):
+        client.post(
+            "/conjugate/practice/start",
+            data={"tenses": [tense], "difficulty": "advanced", "count": "10"},
+        )
+
+    def _answer_one(self, client, correct):
+        client.get("/conjugate/practice")
+        with client.session_transaction() as sess:
+            current = sess["conjugate_practice"]["current"]
+            answer = current["correct_answer"] if correct else "zzzwrong"
+            tense = current["tense_key"]
+            person = current["person_index"]
+        client.post("/conjugate/practice", data={"answer": answer})
+        return tense, person
+
+    def test_attempt_records_conjugation_stat(self, client):
+        from models import ConjugationStat
+
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        tense, person = self._answer_one(client, correct=True)
+        with flask_app.app_context():
+            row = (
+                db.session.query(ConjugationStat)
+                .filter_by(
+                    user_sub=SAMPLE_USER["sub"],
+                    tense_key=tense,
+                    person_index=person,
+                )
+                .one()
+            )
+            assert row.times_practiced == 1
+            assert row.times_correct == 1
+            assert row.score == 1.0
+
+    def test_dashboard_renders_after_practice(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        self._answer_one(client, correct=False)
+        html = client.get("/conjugate").data.decode("utf-8")
+        assert "Your insights" in html
+        assert "Tenses to practice" in html
+        assert "Pronouns to practice" in html
+
+    def test_dashboard_hidden_without_practice(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        html = client.get("/conjugate").data.decode("utf-8")
+        assert "Your insights" not in html
 
 
 class TestValidateApi:

@@ -116,6 +116,42 @@ class VerbCard(db.Model):
         }
 
 
+class ConjugationStat(db.Model):
+    """Per-(tense, person) practice tally for a user's verb-conjugation drills.
+
+    `VerbCard` already scores each verb; this table adds the other two
+    dimensions so the /conjugate dashboard can show which tenses and which
+    pronouns a user should practice. One row per (user_sub, tense_key,
+    person_index); only lifetime counters are kept (accuracy = correct/practiced).
+    """
+
+    __tablename__ = "conjugation_stats"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_sub", "tense_key", "person_index", name="uq_conjstat_dim"
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_sub = db.Column(db.String(255), nullable=False, index=True)
+    tense_key = db.Column(db.String(64), nullable=False)
+    person_index = db.Column(db.Integer, nullable=False)
+    times_practiced = db.Column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
+    times_correct = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
+    )
+
+    @property
+    def score(self) -> float | None:
+        if not self.times_practiced:
+            return None
+        return self.times_correct / self.times_practiced
+
+
 class DeckShare(db.Model):
     """A shareable snapshot of one user's deck.
 

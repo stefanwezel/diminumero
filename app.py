@@ -32,7 +32,7 @@ import sys
 import time
 from pathlib import Path
 
-from models import Card, DeckShare, PollResponse, VerbCard, db
+from models import Card, ConjugationStat, DeckShare, PollResponse, VerbCard, db
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
@@ -156,6 +156,23 @@ def initialize_ui_language():
         session["language"] = DEFAULT_UI_LANGUAGE
 
 
+@app.url_defaults
+def add_static_cache_bust(endpoint, values):
+    """Append ?v=<file-mtime> to every static URL so an edited asset is fetched
+    immediately while the file itself can still be cached for a long time.
+
+    Costs one extra `stat` per asset — negligible, and the same stat Flask's
+    static handler does to serve the file anyway.
+    """
+    if endpoint != "static" or not values.get("filename"):
+        return
+    try:
+        mtime = os.stat(os.path.join(app.static_folder, values["filename"])).st_mtime
+    except OSError:
+        return
+    values["v"] = str(int(mtime))
+
+
 @app.after_request
 def set_cache_headers(response):
     """Set Cache-Control headers based on the route."""
@@ -175,6 +192,16 @@ def set_cache_headers(response):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
         )
+    elif path.startswith("/static/"):
+        # Versioned (?v=<mtime>) static URLs are safe to cache long-term: the
+        # URL changes whenever the file does, so an edit is fetched immediately.
+        # Unversioned direct hits keep the short, revalidating cache.
+        if request.args.get("v"):
+            response.headers["Cache-Control"] = (
+                "public, max-age=31536000, immutable"
+            )
+        else:
+            response.headers["Cache-Control"] = "public, max-age=600"
     elif "/learn" in path:
         response.headers["Cache-Control"] = "public, max-age=3600"
     else:
@@ -1875,6 +1902,75 @@ def _find_user_verb(user_sub: str, infinitive: str) -> VerbCard | None:
     return None
 
 
+def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> dict:
+    """Insights for the /conjugate dashboard: which tenses, verbs, and pronouns
+    a user should practice.
+
+    Verbs are scored from `VerbCard`; tenses and pronouns are aggregated from
+    `ConjugationStat` rows (per user/tense/person). Each insight list is ordered
+    weakest-first (lowest accuracy, ties broken by more attempts) so the top of
+    each panel is what needs work most. Items are plain dicts exposing
+    `score`/`times_practiced`/`times_correct`, so the `progress_ring` macro
+    renders them just like cards.
+    """
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+
+    total_attempts = sum(v.times_practiced for v in verbs)
+    total_correct = sum(v.times_correct for v in verbs)
+    overall_accuracy = total_correct / total_attempts if total_attempts else None
+
+    # Verbs to practice: practiced verbs, weakest first.
+    practiced_verbs = [v for v in verbs if v.score is not None]
+    verbs_to_practice = sorted(
+        practiced_verbs, key=lambda v: (v.score, -v.times_practiced)
+    )
+
+    stats_rows = db.session.query(ConjugationStat).filter_by(user_sub=user_sub).all()
+
+    # Aggregate by tense.
+    by_tense: dict[str, list[int]] = {}
+    by_person: dict[int, list[int]] = {}
+    for row in stats_rows:
+        t = by_tense.setdefault(row.tense_key, [0, 0])
+        t[0] += row.times_practiced
+        t[1] += row.times_correct
+        p = by_person.setdefault(row.person_index, [0, 0])
+        p[0] += row.times_practiced
+        p[1] += row.times_correct
+
+    def _insight(label: str, practiced: int, correct: int) -> dict:
+        return {
+            "label": label,
+            "times_practiced": practiced,
+            "times_correct": correct,
+            "score": (correct / practiced) if practiced else None,
+        }
+
+    tense_insights = [
+        _insight(tense_label(key, ui_lang), counts[0], counts[1])
+        for key, counts in by_tense.items()
+        if counts[0] > 0
+    ]
+    tense_insights.sort(key=lambda i: (i["score"], -i["times_practiced"]))
+
+    pronoun_insights = [
+        _insight(person_label(idx), counts[0], counts[1])
+        for idx, counts in by_person.items()
+        if counts[0] > 0
+    ]
+    pronoun_insights.sort(key=lambda i: (i["score"], -i["times_practiced"]))
+
+    return {
+        "total_verbs": len(verbs),
+        "total_attempts": total_attempts,
+        "total_correct": total_correct,
+        "overall_accuracy": overall_accuracy,
+        "verbs_to_practice": verbs_to_practice,
+        "tense_insights": tense_insights,
+        "pronoun_insights": pronoun_insights,
+    }
+
+
 @app.route("/conjugate")
 @login_required
 def conjugate():
@@ -1885,6 +1981,7 @@ def conjugate():
         practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
     else:
         practice_numbers_url = url_for("mode_selection", lang_code=CONJUGATION_LANG)
+    dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs)
     return render_template(
         "conjugate.html",
         user=session["user"],
@@ -1894,6 +1991,7 @@ def conjugate():
         vosotros_index=VOSOTROS_INDEX,
         default_count=CONJ_QUESTIONS_DEFAULT,
         practice_numbers_url=practice_numbers_url,
+        dashboard=dashboard,
         get_text=get_text,
     )
 
@@ -1967,6 +2065,29 @@ def _form_available(infinitive: str, tense_key: str, person_index: int) -> str |
     if not tense_forms or person_index >= len(tense_forms):
         return None
     return tense_forms[person_index]
+
+
+def _record_conjugation_stat(
+    user_sub: str, tense_key: str, person_index: int, correct: bool
+) -> None:
+    """Upsert the per-(tense, person) practice tally for the dashboard insights."""
+    stat = (
+        db.session.query(ConjugationStat)
+        .filter_by(user_sub=user_sub, tense_key=tense_key, person_index=person_index)
+        .first()
+    )
+    if stat is None:
+        stat = ConjugationStat(
+            user_sub=user_sub,
+            tense_key=tense_key,
+            person_index=person_index,
+            times_practiced=0,
+            times_correct=0,
+        )
+        db.session.add(stat)
+    stat.times_practiced += 1
+    if correct:
+        stat.times_correct += 1
 
 
 @app.route("/conjugate/practice/start", methods=["POST"])
@@ -2122,6 +2243,12 @@ def conjugate_practice():
             if owns_verb:
                 verb.times_practiced += 1
                 verb.record_attempt(False)
+                _record_conjugation_stat(
+                    verb.user_sub,
+                    current["tense_key"],
+                    current["person_index"],
+                    False,
+                )
                 db.session.commit()
             state["current_revealed"] = True
             _save_conjugate_state(state)
@@ -2155,6 +2282,12 @@ def conjugate_practice():
                 verb.times_practiced += 1
                 verb.times_correct += 1
                 verb.record_attempt(True)
+                _record_conjugation_stat(
+                    verb.user_sub,
+                    current["tense_key"],
+                    current["person_index"],
+                    True,
+                )
                 db.session.commit()
             flash(get_text("cards_flash_correct"), "success")
         else:
@@ -2166,6 +2299,12 @@ def conjugate_practice():
             if owns_verb:
                 verb.times_practiced += 1
                 verb.record_attempt(False)
+                _record_conjugation_stat(
+                    verb.user_sub,
+                    current["tense_key"],
+                    current["person_index"],
+                    False,
+                )
                 db.session.commit()
         state["asked"].append(
             f"{current['verb_id']}:{current['tense_key']}:{current['person_index']}"

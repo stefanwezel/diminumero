@@ -3982,7 +3982,7 @@ html {
 .conjugate-list-infinitive {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #FFFFFF;
+    color: #1a3a5c;
 }
 
 .conjugate-tenses-fieldset .cards-input-hint {
@@ -4055,4 +4055,44 @@ html {
     margin: 0 0 20px;
     color: #C9BBD9;
     line-height: 1.45;
+}
+
+/* ----- Practice insights dashboard ----- */
+.conjugate-stats-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    gap: 12px;
+}
+.conjugate-stats-summary::-webkit-details-marker { display: none; }
+.conjugate-stats-summary .cards-section-heading { margin: 0; }
+.conjugate-stats-chevron {
+    color: #A89BB8;
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+.conjugate-stats[open] .conjugate-stats-chevron { transform: rotate(180deg); }
+
+.conjugate-stats-overall {
+    color: #C9BBD9;
+    margin: 4px 0 18px;
+    font-size: 1rem;
+}
+.conjugate-stats-overall strong {
+    color: #FFFFFF;
+    font-size: 1.15rem;
+    margin-left: 4px;
+}
+.conjugate-stats-overall-sub {
+    color: #A89BB8;
+    font-size: 0.9rem;
+    margin-left: 4px;
+}
+
+/* Insight panels reuse the cards dashboard toplist styling (.cards-dashboard-*)
+   so they match the index-cards dashboard exactly; only the top margin differs. */
+.conjugate-stats-toplists {
+    margin-top: 4px;
 }
