@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj') }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende la conjugación de verbos en español</h1>
+      <p>
+        Esta página explica los patrones esenciales de los <strong>verbos en español</strong>: las
+        terminaciones regulares <em>-ar / -er / -ir</em>, los tiempos que vas a practicar aquí y los
+        verbos irregulares imprescindibles.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">Las seis personas</a></li>
+        <li><a href="#patterns">Patrones regulares: -ar / -er / -ir</a></li>
+        <li><a href="#tenses">Los tiempos que practicas</a></li>
+        <li><a href="#stem-changers">Verbos con cambio de raíz</a></li>
+        <li><a href="#irregular">Verbos irregulares</a></li>
+        <li><a href="#mistakes">Errores comunes</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>Las seis personas</h2>
+      <p>
+        Cada tiempo verbal tiene una forma por <strong>persona</strong>. La terminación ya indica
+        quién realiza la acción, por eso el pronombre suele omitirse al hablar.
+      </p>
+      <ul>
+        <li><strong>yo</strong></li>
+        <li><strong>tú</strong> — informal</li>
+        <li><strong>él / ella / usted</strong> — usted es formal</li>
+        <li><strong>nosotros</strong></li>
+        <li><strong>vosotros</strong> — España (opcional en los ajustes de práctica)</li>
+        <li><strong>ellos / ellas / ustedes</strong></li>
+      </ul>
+      <p>
+        En Hispanoamérica <em>vosotros</em> se sustituye por <em>ustedes</em>; por eso puedes
+        desactivarlo al practicar.
+      </p>
+    </section>
+
+    <section id="patterns" class="learn-section">
+      <h2>Patrones regulares: -ar / -er / -ir</h2>
+      <p>
+        Los infinitivos terminan en <strong>-ar</strong>, <strong>-er</strong> o <strong>-ir</strong>.
+        Quita la terminación para obtener la <strong>raíz</strong> y añade la terminación de la persona
+        y el tiempo. En el <strong>presente de indicativo</strong>:
+      </p>
+      <ul>
+        <li><strong>-ar</strong> (hablar → habl-): <em>-o, -as, -a, -amos, -áis, -an</em> → hablo, hablas, habla, hablamos, habláis, hablan</li>
+        <li><strong>-er</strong> (comer → com-): <em>-o, -es, -e, -emos, -éis, -en</em> → como, comes, come, comemos, coméis, comen</li>
+        <li><strong>-ir</strong> (vivir → viv-): <em>-o, -es, -e, -imos, -ís, -en</em> → vivo, vives, vive, vivimos, vivís, viven</li>
+      </ul>
+      <p>
+        Los verbos en <strong>-er</strong> e <strong>-ir</strong> comparten las terminaciones salvo en
+        <em>nosotros</em> y <em>vosotros</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: tú de <em>trabajar</em>, nosotros de <em>beber</em>, ellos de <em>escribir</em>?</summary>
+        <p><strong>trabajas</strong> · <strong>bebemos</strong> · <strong>escriben</strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>Los tiempos que practicas</h2>
+      <p>
+        En los ajustes puedes combinar estos tiempos. Un mapa rápido (con <em>hablar</em>,
+        <em>comer</em>, <em>vivir</em>):
+      </p>
+      <ul>
+        <li><strong>Presente</strong> — ahora / hábitos: <em>hablo, como, vivo</em>.</li>
+        <li><strong>Pretérito indefinido</strong> — acción terminada: <em>hablé, comí, viví</em>.</li>
+        <li><strong>Pretérito imperfecto</strong> — pasado continuo o repetido: <em>hablaba, comía, vivía</em>.</li>
+        <li><strong>Futuro</strong> — sobre el infinitivo completo: <em>hablaré, comeré, viviré</em>.</li>
+        <li><strong>Condicional</strong> — también sobre el infinitivo: <em>hablaría, comería, viviría</em>.</li>
+        <li><strong>Pretérito perfecto</strong> — <em>haber</em> + participio: <em>he hablado, he comido, he vivido</em>.</li>
+        <li><strong>Pluscuamperfecto</strong> — <em>haber</em> en imperfecto + participio: <em>había hablado…</em>.</li>
+        <li><strong>Presente de subjuntivo</strong> — deseos, duda, emoción: <em>(que) hable, coma, viva</em>.</li>
+        <li><strong>Imperfecto de subjuntivo</strong> — subjuntivo en pasado / cortesía: <em>hablara, comiera, viviera</em>.</li>
+        <li><strong>Imperativo afirmativo</strong> — órdenes: <em>¡habla!, ¡come!, ¡vive!</em>.</li>
+      </ul>
+      <p>
+        El <strong>futuro</strong> y el <strong>condicional</strong> son los más fáciles: las mismas
+        terminaciones se añaden al infinitivo entero de cualquier grupo.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: ¿qué tiempo es <em>comías</em>? ¿Y <em>comerás</em>?</summary>
+        <p><strong>comías</strong> = pretérito imperfecto · <strong>comerás</strong> = futuro</p>
+      </details>
+    </section>
+
+    <section id="stem-changers" class="learn-section">
+      <h2>Verbos con cambio de raíz</h2>
+      <p>
+        Muchos verbos frecuentes mantienen las terminaciones regulares pero cambian una vocal de la raíz
+        cuando va acentuada. El cambio ocurre en todas las personas <strong>menos nosotros y vosotros</strong>.
+      </p>
+      <ul>
+        <li><strong>e → ie</strong>: querer → quiero, quieres, quiere, queremos, queréis, quieren</li>
+        <li><strong>o → ue</strong>: poder → puedo, puedes, puede, podemos, podéis, pueden</li>
+        <li><strong>e → i</strong>: pedir → pido, pides, pide, pedimos, pedís, piden</li>
+      </ul>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Verbos irregulares</h2>
+      <p>
+        Los verbos más frecuentes también son los más irregulares; conviene aprenderlos primero porque
+        aparecen por todas partes.
+      </p>
+      <ul>
+        <li><strong>ser</strong>: soy, eres, es, somos, sois, son</li>
+        <li><strong>estar</strong>: estoy, estás, está, estamos, estáis, están</li>
+        <li><strong>ir</strong>: voy, vas, va, vamos, vais, van</li>
+        <li><strong>tener</strong>: tengo, tienes, tiene, tenemos, tenéis, tienen</li>
+        <li><strong>hacer</strong>: hago, haces, hace, hacemos, hacéis, hacen</li>
+      </ul>
+      <p>
+        Cuidado con la <strong>forma irregular de "yo"</strong>: muchos verbos son regulares salvo en
+        primera persona — <em>tener → tengo</em>, <em>hacer → hago</em>, <em>poner → pongo</em>,
+        <em>salir → salgo</em>, <em>conocer → conozco</em>.
+      </p>
+      <p>
+        Algunos tienen una <strong>raíz irregular en pretérito</strong> sin tilde:
+        <em>tener → tuve</em>, <em>estar → estuve</em>, <em>hacer → hice</em>,
+        <em>ir / ser → fui</em> (idénticos en el pretérito).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: yo de <em>tener</em> (presente) y yo de <em>hacer</em> (pretérito)?</summary>
+        <p><strong>tengo</strong> · <strong>hice</strong></p>
+      </details>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errores comunes</h2>
+      <ol>
+        <li><strong>-er vs. -ir</strong>: solo se diferencian en <em>nosotros/vosotros</em> (comemos vs. vivimos).</li>
+        <li><strong>Tildes</strong>: la tilde es la única diferencia entre <em>hablo</em> (yo) y <em>habló</em> (él).</li>
+        <li><strong>Futuro/condicional sobre el infinitivo</strong>: es <em>comeré</em>, nunca "comé".</li>
+        <li><strong>Formas irregulares de yo</strong>: <em>tengo</em>, no "teno"; <em>conozco</em>, no "conoco".</li>
+        <li><strong>ser vs. estar</strong>: ambos son "to be", pero nunca comparten formas.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate') }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

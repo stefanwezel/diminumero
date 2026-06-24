@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% from "_progress_ring.html" import progress_ring %}
+
+{% block title %}{{ get_text('conjugate_title') }} - diminumero{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block og_title %}{{ get_text('conjugate_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('conjugate_title') }} - diminumero{% endblock %}
+
+{% block content %}
+<div class="cards-page conjugate-page">
+    <div class="back-nav">
+        <a href="{{ practice_numbers_url }}" class="btn btn-secondary btn-back-nav">
+            ← {{ get_text('cards_practice_numbers_btn') }}
+        </a>
+    </div>
+
+    <section class="cards-create-section">
+        <h2 class="cards-section-heading">{{ get_text('conjugate_title') }}</h2>
+        <p class="cards-subtitle">{{ get_text('conjugate_subtitle') }}</p>
+    </section>
+
+    <section class="cards-create-section conjugate-add-section"
+             data-i18n-added="{{ get_text('conjugate_flash_verb_added') }}"
+             data-i18n-duplicate="{{ get_text('conjugate_flash_verb_duplicate') }}"
+             data-i18n-delete="{{ get_text('conjugate_delete_btn') }}"
+             data-i18n-popup-title="{{ get_text('conjugate_unsupported_popup_title') }}"
+             data-i18n-popup-close="{{ get_text('conjugate_unsupported_popup_close') }}"
+             data-i18n-add-to-cards="{{ get_text('conjugate_add_to_cards_btn') }}"
+             data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
+        <h3 class="cards-section-heading">{{ get_text('conjugate_add_heading') }}</h3>
+        <form class="cards-create-form" id="conjugate-add-form" autocomplete="off"
+              method="POST" action="{{ url_for('conjugate_verb_add') }}">
+            <div class="conjugate-add-row">
+                <div class="conjugate-autocomplete">
+                    <input type="text" name="infinitive" id="conjugate-verb-input"
+                           class="answer-input" maxlength="64" autocomplete="off"
+                           autocapitalize="off" spellcheck="false"
+                           aria-autocomplete="list"
+                           aria-controls="conjugate-suggestions"
+                           data-gramm="false" data-gramm_editor="false"
+                           data-enable-grammarly="false"
+                           data-lpignore="true" data-1p-ignore data-form-type="other"
+                           placeholder="{{ get_text('conjugate_add_placeholder') }}">
+                    <ul class="conjugate-suggestions" id="conjugate-suggestions" role="listbox" hidden></ul>
+                </div>
+                <button type="submit" class="btn btn-primary" id="conjugate-add-btn">
+                    {{ get_text('conjugate_add_btn') }}
+                </button>
+            </div>
+            <p class="cards-input-hint">{{ get_text('conjugate_add_hint') }}</p>
+        </form>
+
+        <div class="conjugate-sync-actions"
+             data-i18n-import-done="{{ get_text('conjugate_import_done_toast') }}"
+             data-i18n-import-none="{{ get_text('conjugate_import_none_toast') }}"
+             data-i18n-import-template="{{ get_text('conjugate_import_from_cards_btn') }}"
+             data-i18n-missing-template="{{ get_text('conjugate_missing_in_cards_btn') }}"
+             data-i18n-sync-done="{{ get_text('conjugate_sync_done_toast') }}">
+            <button type="button"
+                    class="btn btn-secondary conjugate-import-from-cards{% if not card_import_count %} conjugate-sync-hidden{% endif %}"
+                    id="conjugate-import-from-cards"
+                    data-count="{{ card_import_count }}">
+                {{ get_text('conjugate_import_from_cards_btn').format(n=card_import_count) }}
+            </button>
+            <button type="button"
+                    class="btn btn-secondary conjugate-missing-in-cards{% if not missing_in_cards_count %} conjugate-sync-hidden{% endif %}"
+                    id="conjugate-missing-in-cards"
+                    data-count="{{ missing_in_cards_count }}">
+                {{ get_text('conjugate_missing_in_cards_btn').format(n=missing_in_cards_count) }}
+            </button>
+        </div>
+        <script type="application/json" id="conjugate-missing-in-cards-data">{{ missing_in_cards_json|safe }}</script>
+    </section>
+
+    <section class="cards-list-section">
+        <div class="cards-list-heading-row">
+            <h2 class="cards-section-heading">
+                {{ get_text('conjugate_verbs_heading') }}
+                <span class="cards-count" id="conjugate-count">({{ verbs|length }})</span>
+            </h2>
+        </div>
+
+        {% if verbs %}
+        <form method="POST" action="{{ url_for('conjugate_practice_start') }}"
+              class="cards-practice-form conjugate-practice-form">
+            <fieldset class="cards-direction-fieldset conjugate-tenses-fieldset">
+                <legend>{{ get_text('conjugate_tenses_label') }}</legend>
+                <p class="cards-input-hint">{{ get_text('conjugate_tenses_hint') }}</p>
+                {% for tense in tenses %}
+                <label class="cards-radio conjugate-tense-check">
+                    <input type="checkbox" name="tenses" value="{{ tense.key }}"
+                           {% if tense.default_on %}checked{% endif %}>
+                    <span>{{ tense.label_es }}
+                        <span class="conjugate-tense-en">· {{ tense.label_en }}</span>
+                    </span>
+                </label>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="cards-direction-fieldset conjugate-vosotros-fieldset">
+                <legend>{{ get_text('conjugate_vosotros_label') }}</legend>
+                <label class="cards-radio">
+                    <input type="checkbox" name="include_vosotros" value="1">
+                    <span>{{ get_text('conjugate_vosotros_label') }}</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="cards-direction-fieldset cards-difficulty-fieldset">
+                <legend>{{ get_text('conjugate_difficulty_label') }}</legend>
+                <label class="cards-radio">
+                    <input type="radio" name="difficulty" value="advanced" checked>
+                    <span>{{ get_text('conjugate_difficulty_advanced') }}</span>
+                </label>
+                <label class="cards-radio">
+                    <input type="radio" name="difficulty" value="hardcore">
+                    <span>{{ get_text('conjugate_difficulty_hardcore') }}</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="cards-direction-fieldset cards-sampling-fieldset">
+                <legend>{{ get_text('conjugate_sampling_label') }}</legend>
+                <label class="cards-radio">
+                    <input type="radio" name="sampling_mode" value="prioritized" checked>
+                    <span>{{ get_text('conjugate_sampling_prioritized') }}</span>
+                </label>
+                <label class="cards-radio">
+                    <input type="radio" name="sampling_mode" value="random">
+                    <span>{{ get_text('conjugate_sampling_random') }}</span>
+                </label>
+            </fieldset>
+
+            <label class="cards-count-input">
+                <span class="cards-count-input-label">{{ get_text('conjugate_count_label') }}</span>
+                <input type="number" name="count" value="{{ default_count }}"
+                       min="1" max="100" step="1" inputmode="numeric">
+            </label>
+
+            <button type="submit" class="btn btn-primary">
+                {{ get_text('conjugate_start_btn') }}
+            </button>
+            <button type="button" class="btn btn-secondary conjugate-practice-reset">
+                {{ get_text('cards_reset_defaults_btn') }}
+            </button>
+        </form>
+
+        {% if dashboard.total_attempts > 0 %}
+        <details class="conjugate-stats conjugate-stats-section">
+            <summary class="conjugate-stats-summary">
+                <h3 class="cards-section-heading">{{ get_text('conjugate_stats_heading') }}</h3>
+                <span class="conjugate-stats-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <p class="cards-subtitle">{{ get_text('conjugate_stats_subtitle') }}</p>
+            <p class="conjugate-stats-overall">
+                {{ get_text('conjugate_stats_overall') }}
+                <strong>{{ (dashboard.overall_accuracy * 100)|round|int }}%</strong>
+                <span class="conjugate-stats-overall-sub">({{ dashboard.total_correct }}/{{ dashboard.total_attempts }})</span>
+            </p>
+
+            {% set category_labels = {
+                'unpracticed': get_text('cards_dashboard_bucket_unpracticed'),
+                'weak': get_text('cards_dashboard_weak'),
+                'needs_work': get_text('cards_dashboard_top_weak'),
+            } %}
+            <div class="conjugate-matrix" id="conjugate-matrix" role="table"
+                 aria-label="{{ get_text('conjugate_stats_heading') }}">
+                <div class="conjugate-matrix-row conjugate-matrix-head" role="row">
+                    <span class="conjugate-matrix-corner" role="columnheader"></span>
+                    {% for cat in dashboard.matrix_categories %}
+                    <span class="conjugate-matrix-colhead conjugate-matrix-colhead-{{ cat }}"
+                          role="columnheader">{{ category_labels[cat] }}</span>
+                    {% endfor %}
+                </div>
+                {% for dim in dashboard.matrix %}
+                <div class="conjugate-matrix-row" role="row">
+                    <span class="conjugate-matrix-rowhead" role="rowheader">{{ dim.label }}</span>
+                    {% for cat in dashboard.matrix_categories %}
+                    {% set cell = dim.cells[cat] %}
+                    <div class="conjugate-matrix-cell{% if cell.count == 0 %} conjugate-matrix-cell-empty{% endif %}"
+                         role="cell">
+                        <span class="conjugate-matrix-count">{{ cell.count }}</span>
+                        {% if cell.count > 0 %}
+                        <form method="POST" action="{{ url_for('conjugate_practice_start') }}"
+                              class="conjugate-matrix-recap-form">
+                            {% for t in cell.tenses %}
+                            <input type="hidden" name="tenses" value="{{ t }}">
+                            {% endfor %}
+                            {% for vid in cell.verb_ids %}
+                            <input type="hidden" name="verb_ids" value="{{ vid }}">
+                            {% endfor %}
+                            {% for pidx in cell.persons %}
+                            <input type="hidden" name="persons" value="{{ pidx }}">
+                            {% endfor %}
+                            <input type="hidden" name="difficulty" value="advanced">
+                            <input type="hidden" name="sampling_mode" value="prioritized">
+                            <input type="hidden" name="reveal_mode" value="type">
+                            <input type="hidden" name="count" value="{{ default_count }}">
+                            <button type="submit" class="btn btn-primary conjugate-matrix-recap-btn">
+                                {{ get_text('cards_dashboard_recap_btn') }}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <script type="application/json" id="conjugate-stats-data">{{ dashboard.data_json|safe }}</script>
+        </details>
+        {% endif %}
+
+        <ul class="cards-list conjugate-list" id="conjugate-list">
+            {% for verb in verbs %}
+            <li class="cards-list-item conjugate-list-item" data-verb-id="{{ verb.id }}">
+                <div class="cards-list-text">
+                    <span class="conjugate-list-infinitive">{{ verb.infinitive }}</span>
+                </div>
+                {{ progress_ring(verb) }}
+                <div class="cards-list-actions">
+                    {% if verb.infinitive in missing_infinitives %}
+                    <button type="button"
+                            class="btn btn-secondary cards-list-btn conjugate-verb-to-card-btn"
+                            data-infinitive="{{ verb.infinitive }}">
+                        {{ get_text('conjugate_add_to_cards_btn') }}
+                    </button>
+                    {% endif %}
+                    <form method="POST"
+                          action="{{ url_for('conjugate_verb_delete', verb_id=verb.id) }}"
+                          class="conjugate-delete-form">
+                        <button type="submit" class="btn btn-secondary cards-list-btn cards-list-btn-delete">
+                            {{ get_text('conjugate_delete_btn') }}
+                        </button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="cards-empty" id="conjugate-empty">{{ get_text('conjugate_verbs_empty') }}</p>
+        {% endif %}
+    </section>
+</div>
+
+<div class="conjugate-popup-overlay" id="conjugate-popup" hidden role="dialog" aria-modal="true"
+     aria-labelledby="conjugate-popup-title">
+    <div class="conjugate-popup">
+        <h3 class="conjugate-popup-title" id="conjugate-popup-title">{{ get_text('conjugate_unsupported_popup_title') }}</h3>
+        <p class="conjugate-popup-body" id="conjugate-popup-body"></p>
+        <button type="button" class="btn btn-primary" id="conjugate-popup-close">
+            {{ get_text('conjugate_unsupported_popup_close') }}
+        </button>
+    </div>
+</div>
+
+<div class="conjugate-popup-overlay" id="conjugate-sync-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="conjugate-sync-modal-title">
+    <div class="conjugate-popup conjugate-sync-popup">
+        <h3 class="conjugate-popup-title" id="conjugate-sync-modal-title">{{ get_text('conjugate_sync_modal_title') }}</h3>
+        <p class="conjugate-sync-progress" id="conjugate-sync-progress"></p>
+        <form id="conjugate-sync-form" autocomplete="off">
+            <div class="conjugate-sync-verb" id="conjugate-sync-verb"></div>
+            <input type="text" id="conjugate-sync-translation" class="answer-input"
+                   maxlength="500" autocomplete="off" autocapitalize="off"
+                   placeholder="{{ get_text('conjugate_sync_translation_placeholder') }}">
+            <div class="conjugate-sync-buttons">
+                <button type="button" class="btn btn-secondary" id="conjugate-sync-skip">
+                    {{ get_text('conjugate_sync_skip_btn') }}
+                </button>
+                <button type="submit" class="btn btn-primary" id="conjugate-sync-create">
+                    {{ get_text('conjugate_sync_create_btn') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/conjugate.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/conjugate_practice_prefs.js') }}" defer></script>
+{% endblock %}

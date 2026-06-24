@@ -32,7 +32,7 @@ import sys
 import time
 from pathlib import Path
 
-from models import Card, DeckShare, PollResponse, db
+from models import Card, ConjugationStat, DeckShare, PollResponse, VerbCard, db
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
@@ -50,10 +50,24 @@ from languages import (
     get_language_ui_description,
     get_language_ui_name,
     get_languages_with_audio_mode,
+    get_languages_with_conjugation_materials,
     get_languages_with_learn_materials,
     is_language_ready,
 )
 from translations import TRANSLATIONS
+from conjugation_config import (
+    CONJ_PERSONS,
+    CONJ_QUESTIONS_DEFAULT,
+    CONJ_TENSES,
+    CONJ_TENSE_KEYS,
+    VOSOTROS_INDEX,
+    person_label,
+    tense_label,
+)
+from languages.es import conjugations as es_conjugations
+
+# Language the conjugation section is offered for (Spanish only, for now).
+CONJUGATION_LANG = "es"
 
 # Load environment variables from .env file
 load_dotenv()
@@ -143,6 +157,23 @@ def initialize_ui_language():
         session["language"] = DEFAULT_UI_LANGUAGE
 
 
+@app.url_defaults
+def add_static_cache_bust(endpoint, values):
+    """Append ?v=<file-mtime> to every static URL so an edited asset is fetched
+    immediately while the file itself can still be cached for a long time.
+
+    Costs one extra `stat` per asset — negligible, and the same stat Flask's
+    static handler does to serve the file anyway.
+    """
+    if endpoint != "static" or not values.get("filename"):
+        return
+    try:
+        mtime = os.stat(os.path.join(app.static_folder, values["filename"])).st_mtime
+    except OSError:
+        return
+    values["v"] = str(int(mtime))
+
+
 @app.after_request
 def set_cache_headers(response):
     """Set Cache-Control headers based on the route."""
@@ -157,10 +188,19 @@ def set_cache_headers(response):
         or path.startswith("/api/")
         or path in ("/login", "/callback", "/logout")
         or path.startswith("/cards")
+        or path.startswith("/conjugate")
     ):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
         )
+    elif path.startswith("/static/"):
+        # Versioned (?v=<mtime>) static URLs are safe to cache long-term: the
+        # URL changes whenever the file does, so an edit is fetched immediately.
+        # Unversioned direct hits keep the short, revalidating cache.
+        if request.args.get("v"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "public, max-age=600"
     elif "/learn" in path:
         response.headers["Cache-Control"] = "public, max-age=3600"
     else:
@@ -232,7 +272,13 @@ def get_text(key):
         lang_code = key[5:-12]
         return get_language_ui_description(lang_code, ui_language)
 
-    text = TRANSLATIONS.get(ui_language, {}).get(key, key)
+    lang_texts = TRANSLATIONS.get(ui_language, {})
+    if key in lang_texts:
+        text = lang_texts[key]
+    else:
+        # Fall back to English for keys not translated in this UI language
+        # (e.g. newer features) rather than leaking the raw key to the page.
+        text = TRANSLATIONS.get(DEFAULT_UI_LANGUAGE, {}).get(key, key)
     text = text.replace(
         "LANGUAGE_NAME_PLACEHOLDER",
         get_language_ui_name(learn_language, ui_language),
@@ -278,6 +324,7 @@ def mode_selection(lang_code):
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
     has_audio_mode = lang_code in get_languages_with_audio_mode()
+    has_conjugation_materials = lang_code in get_languages_with_conjugation_materials()
 
     return render_template(
         "index.html",
@@ -287,6 +334,7 @@ def mode_selection(lang_code):
         get_text=get_text,
         has_learn_materials=has_learn_materials,
         has_audio_mode=has_audio_mode,
+        has_conjugation_materials=has_conjugation_materials,
         magnitude_level=session.get("magnitude_level", 1),
     )
 
@@ -995,6 +1043,27 @@ def learn(lang_code):
         return render_template(template, lang_code=lang_code, get_text=get_text)
 
 
+@app.route("/<lang_code>/learn/conjugations")
+def learn_conjugations(lang_code):
+    """Display the verb-conjugation learn page for a language (Spanish only today)."""
+    if not is_language_ready(lang_code):
+        return redirect(url_for("index"))
+
+    if lang_code not in get_languages_with_conjugation_materials():
+        flash(get_text("flash_learn_not_available"), "info")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    template = f"learn_conjugations_{lang_code}_{ui_lang}.html"
+
+    # Fallback to English if the UI-language variant doesn't exist.
+    try:
+        return render_template(template, lang_code=lang_code, get_text=get_text)
+    except jinja2.TemplateNotFound:
+        template = f"learn_conjugations_{lang_code}_en.html"
+        return render_template(template, lang_code=lang_code, get_text=get_text)
+
+
 @app.route("/login")
 def login():
     """Redirect the user to Auth0 Universal Login."""
@@ -1099,6 +1168,8 @@ def cards():
     else:
         practice_numbers_url = url_for("index")
     stats, stats_json = _build_cards_dashboard_stats(user_cards)
+    importable = _importable_card_verbs(_current_user_sub(), user_cards)
+    importable_verb_infinitives = {card.id: inf for card, inf in importable}
     return render_template(
         "cards.html",
         user=session["user"],
@@ -1108,6 +1179,8 @@ def cards():
         get_text=get_text,
         stats=stats,
         stats_json=stats_json,
+        importable_verb_infinitives=importable_verb_infinitives,
+        importable_verb_count=len(importable),
     )
 
 
@@ -1253,11 +1326,24 @@ def api_cards_create():
     user_sub = _current_user_sub()
     existing = _find_duplicate_card(user_sub, front, back)
     if existing is not None:
-        return jsonify({"ok": True, "duplicate": True, "card": existing.to_dict()})
+        return jsonify(
+            {
+                "ok": True,
+                "duplicate": True,
+                "card": existing.to_dict(),
+                "verb_infinitive": _importable_infinitive_for_card(user_sub, existing),
+            }
+        )
     card = Card(user_sub=user_sub, front=front, back=back)
     db.session.add(card)
     db.session.commit()
-    return jsonify({"ok": True, "card": card.to_dict()})
+    return jsonify(
+        {
+            "ok": True,
+            "card": card.to_dict(),
+            "verb_infinitive": _importable_infinitive_for_card(user_sub, card),
+        }
+    )
 
 
 @app.route("/api/cards/<int:card_id>", methods=["PATCH"])
@@ -1272,11 +1358,26 @@ def api_cards_update(card_id: int):
             {"ok": False, "error": get_text("cards_flash_both_sides_required")}
         ), 400
     if _find_duplicate_card(card.user_sub, front, back, exclude_id=card_id) is not None:
-        return jsonify({"ok": True, "duplicate": True, "card": card.to_dict()})
+        return jsonify(
+            {
+                "ok": True,
+                "duplicate": True,
+                "card": card.to_dict(),
+                "verb_infinitive": _importable_infinitive_for_card(
+                    card.user_sub, card
+                ),
+            }
+        )
     card.front = front
     card.back = back
     db.session.commit()
-    return jsonify({"ok": True, "card": card.to_dict()})
+    return jsonify(
+        {
+            "ok": True,
+            "card": card.to_dict(),
+            "verb_infinitive": _importable_infinitive_for_card(card.user_sub, card),
+        }
+    )
 
 
 @app.route("/api/cards/<int:card_id>", methods=["DELETE"])
@@ -1744,6 +1845,11 @@ def cards_practice():
 
     difficulty = state.get("difficulty", "advanced")
     revealed = bool(state.get("current_revealed"))
+    # If this card is a Spanish verb the user hasn't added to conjugation
+    # practice yet, expose its infinitive so the page can offer a one-click add.
+    verb_infinitive = _card_verb_infinitive(card)
+    if verb_infinitive and _find_user_verb(_current_user_sub(), verb_infinitive):
+        verb_infinitive = None
     # Only leak the correct answer to the page in hardcore mode (JS needs it
     # for client-side green/red feedback) or when the card has been revealed
     # (template renders it as the prominent study display).
@@ -1760,6 +1866,7 @@ def cards_practice():
         score=state["score"],
         total=state["total"],
         max_questions=min(count, total_cards),
+        verb_infinitive=verb_infinitive,
         get_text=get_text,
     )
 
@@ -1812,6 +1919,837 @@ def cards_validate_api():
     return jsonify(_pick_best_validation(results))
 
 
+# ----- Verb conjugation practice -------------------------------------------
+#
+# A third user-owned practice section (alongside cards) for conjugating Spanish
+# verbs. The user builds a personal pool of verbs drawn from the global pool
+# (languages/es/conjugations.json); a session asks them to conjugate
+# verb + pronoun + tense. Mirrors the cards subsystem: VerbCard model, advanced/
+# hardcore typed answers with live word highlighting, 10 questions by default.
+
+
+def _user_verb_or_404(verb_id: int) -> VerbCard:
+    """Fetch a VerbCard and 404 if it does not belong to the current user."""
+    verb = db.session.get(VerbCard, verb_id)
+    if verb is None or verb.user_sub != _current_user_sub():
+        from flask import abort
+
+        abort(404)
+    return verb
+
+
+def _user_verbs() -> list[VerbCard]:
+    return (
+        db.session.query(VerbCard)
+        .filter_by(user_sub=_current_user_sub())
+        .order_by(VerbCard.created_at.desc())
+        .all()
+    )
+
+
+def _normalize_infinitive(value: str) -> str:
+    return (value or "").strip().lower()
+
+
+def _find_user_verb(user_sub: str, infinitive: str) -> VerbCard | None:
+    """Return the user's VerbCard for an infinitive (case-insensitive), or None."""
+    key = _normalize_infinitive(infinitive)
+    if not key:
+        return None
+    for verb in db.session.query(VerbCard).filter_by(user_sub=user_sub).all():
+        if _normalize_infinitive(verb.infinitive) == key:
+            return verb
+    return None
+
+
+# ----- Cards <-> conjugation sync ------------------------------------------
+# An index card and a conjugation verb are linked purely by value: a card whose
+# front or back is a Spanish infinitive in the global pool can become a VerbCard,
+# and a VerbCard whose infinitive isn't yet a card side can become a card. The
+# sync is additive only — neither side is deleted when the other is.
+
+
+def _card_verb_infinitive(card: Card) -> str | None:
+    """Return the normalized pool infinitive matching this card, or None.
+
+    Either side may carry the Spanish verb (cards are free-form), so the front
+    is checked first, then the back. Matching is exact against the global pool.
+    """
+    for side in (card.front, card.back):
+        infinitive = _normalize_infinitive(side)
+        if infinitive and es_conjugations.verb_exists(infinitive):
+            return infinitive
+    return None
+
+
+def _owned_infinitives(user_sub: str) -> set[str]:
+    """Normalized infinitives already in the user's conjugation pool."""
+    return {
+        _normalize_infinitive(v.infinitive)
+        for v in db.session.query(VerbCard).filter_by(user_sub=user_sub).all()
+    }
+
+
+def _importable_card_verbs(user_sub: str, cards: list[Card]) -> list[tuple[Card, str]]:
+    """Cards whose verb side is a pool infinitive the user doesn't own yet.
+
+    De-duped by infinitive (the first card carrying it wins) so the same verb
+    appearing on two cards is only offered once.
+    """
+    owned = _owned_infinitives(user_sub)
+    seen: set[str] = set()
+    out: list[tuple[Card, str]] = []
+    for card in cards:
+        infinitive = _card_verb_infinitive(card)
+        if infinitive and infinitive not in owned and infinitive not in seen:
+            seen.add(infinitive)
+            out.append((card, infinitive))
+    return out
+
+
+def _verbs_missing_from_cards(
+    verbs: list[VerbCard], cards: list[Card]
+) -> list[VerbCard]:
+    """Owned verbs whose infinitive isn't a side of any of the user's cards."""
+    card_sides = set()
+    for card in cards:
+        card_sides.add(_normalize_infinitive(card.front))
+        card_sides.add(_normalize_infinitive(card.back))
+    return [v for v in verbs if _normalize_infinitive(v.infinitive) not in card_sides]
+
+
+def _importable_infinitive_for_card(user_sub: str, card: Card) -> str | None:
+    """The pool infinitive a single card could add to conjugation, or None.
+
+    Used by the JSON card API so the client can show the "verb" badge and
+    "add to conjugation" button on a freshly created/edited card without a
+    page reload. Returns None when the card isn't a verb or the user already
+    owns it.
+    """
+    infinitive = _card_verb_infinitive(card)
+    if not infinitive or _find_user_verb(user_sub, infinitive):
+        return None
+    return infinitive
+
+
+# Practice-category buckets shared by the conjugate insights matrix. Mirrors the
+# cards dashboard thresholds: unpracticed (no attempts), weak (<50%), needs work
+# (50–80%). The strong bucket (≥80%) is intentionally omitted from the matrix.
+CONJ_MATRIX_CATEGORIES = ("unpracticed", "weak", "needs_work")
+
+
+def _conj_category(score: float | None) -> str | None:
+    """Map a 0–1 accuracy (or None) onto a matrix category, or None if strong."""
+    if score is None:
+        return "unpracticed"
+    if score < 0.5:
+        return "weak"
+    if score < 0.8:
+        return "needs_work"
+    return None
+
+
+def _conj_build_matrix(
+    verbs: list[VerbCard],
+    by_tense: dict,
+    by_person: dict,
+    selected_tenses: list[str],
+    selected_persons: list[int],
+) -> list[dict]:
+    """Build the insights matrix scoped to the given practice selection.
+
+    Only the *selected* tenses and persons populate their dimension rows; the
+    verbs row always covers the user's whole verb list (verb scores are global —
+    `ConjugationStat` isn't keyed by verb, so they can't be sliced per tense).
+    Each cell carries the recap parameters for a focused session, where the two
+    "other" dimensions inherit the current selection.
+    """
+    sel_tenses = [t for t in selected_tenses if t in CONJ_TENSE_KEYS]
+    sel_persons = list(selected_persons)
+
+    def _empty_cells() -> dict:
+        return {cat: [] for cat in CONJ_MATRIX_CATEGORIES}
+
+    tense_members = _empty_cells()
+    for t in CONJ_TENSES:
+        if t["key"] not in sel_tenses:
+            continue
+        counts = by_tense.get(t["key"], [0, 0])
+        score = (counts[1] / counts[0]) if counts[0] else None
+        cat = _conj_category(score)
+        if cat is not None:
+            tense_members[cat].append(t["key"])
+
+    verb_members = _empty_cells()
+    for v in verbs:
+        cat = _conj_category(v.score)
+        if cat is not None:
+            verb_members[cat].append(v.id)
+
+    person_members = _empty_cells()
+    for p in CONJ_PERSONS:
+        if p["index"] not in sel_persons:
+            continue
+        counts = by_person.get(p["index"], [0, 0])
+        score = (counts[1] / counts[0]) if counts[0] else None
+        cat = _conj_category(score)
+        if cat is not None:
+            person_members[cat].append(p["index"])
+
+    def _cells(members: dict, *, tenses, verb_ids_for, persons_for) -> dict:
+        out = {}
+        for cat in CONJ_MATRIX_CATEGORIES:
+            ids = members[cat]
+            out[cat] = {
+                "count": len(ids),
+                "tenses": tenses(ids),
+                "verb_ids": verb_ids_for(ids),
+                "persons": persons_for(ids),
+            }
+        return out
+
+    return [
+        {
+            "key": "tenses",
+            "label": get_text("conjugate_stats_tenses"),
+            "cells": _cells(
+                tense_members,
+                tenses=lambda ids: ids,
+                verb_ids_for=lambda ids: [],
+                persons_for=lambda ids: sel_persons,
+            ),
+        },
+        {
+            "key": "verbs",
+            "label": get_text("conjugate_stats_verbs"),
+            "cells": _cells(
+                verb_members,
+                tenses=lambda ids: sel_tenses,
+                verb_ids_for=lambda ids: ids,
+                persons_for=lambda ids: sel_persons,
+            ),
+        },
+        {
+            "key": "pronouns",
+            "label": get_text("conjugate_stats_pronouns"),
+            "cells": _cells(
+                person_members,
+                tenses=lambda ids: sel_tenses,
+                verb_ids_for=lambda ids: [],
+                persons_for=lambda ids: ids,
+            ),
+        },
+    ]
+
+
+def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> dict:
+    """Insights for the /conjugate dashboard, rendered as a matrix of
+    dimensions (tenses, verbs, pronouns) × categories (unpracticed, weak,
+    needs work).
+
+    The matrix only reflects what's chosen in the practice settings below it:
+    the server renders the initial state for the form defaults (the `default_on`
+    tenses, vosotros off), and `conjugate.js` re-renders it live as the user
+    ticks tenses / toggles vosotros / changes difficulty. The per-tense and
+    per-person aggregates plus the verb list are emitted as JSON for that.
+
+    Verbs are scored from `VerbCard`; tenses and pronouns are aggregated from
+    `ConjugationStat` rows (per user/tense/person).
+    """
+    total_attempts = sum(v.times_practiced for v in verbs)
+    total_correct = sum(v.times_correct for v in verbs)
+    overall_accuracy = total_correct / total_attempts if total_attempts else None
+
+    stats_rows = db.session.query(ConjugationStat).filter_by(user_sub=user_sub).all()
+
+    # Aggregate [practiced, correct] by tense and by person.
+    by_tense: dict[str, list[int]] = {}
+    by_person: dict[int, list[int]] = {}
+    for row in stats_rows:
+        t = by_tense.setdefault(row.tense_key, [0, 0])
+        t[0] += row.times_practiced
+        t[1] += row.times_correct
+        p = by_person.setdefault(row.person_index, [0, 0])
+        p[0] += row.times_practiced
+        p[1] += row.times_correct
+
+    # Initial selection mirrors the practice form's defaults.
+    default_tenses = [t["key"] for t in CONJ_TENSES if t["default_on"]]
+    default_persons = [p["index"] for p in CONJ_PERSONS if not p["optional"]]
+    matrix = _conj_build_matrix(
+        verbs, by_tense, by_person, default_tenses, default_persons
+    )
+
+    # Client-side payload: full per-tense / per-person aggregates plus the verb
+    # list, so conjugate.js can rebuild the matrix for any selection.
+    data = {
+        "categories": list(CONJ_MATRIX_CATEGORIES),
+        "category_labels": {
+            "unpracticed": get_text("cards_dashboard_bucket_unpracticed"),
+            "weak": get_text("cards_dashboard_weak"),
+            "needs_work": get_text("cards_dashboard_top_weak"),
+        },
+        "dimension_labels": {
+            "tenses": get_text("conjugate_stats_tenses"),
+            "verbs": get_text("conjugate_stats_verbs"),
+            "pronouns": get_text("conjugate_stats_pronouns"),
+        },
+        "recap_label": get_text("cards_dashboard_recap_btn"),
+        "start_url": url_for("conjugate_practice_start"),
+        "default_count": CONJ_QUESTIONS_DEFAULT,
+        "tenses": [
+            {
+                "key": t["key"],
+                "practiced": by_tense.get(t["key"], [0, 0])[0],
+                "correct": by_tense.get(t["key"], [0, 0])[1],
+            }
+            for t in CONJ_TENSES
+        ],
+        "persons": [
+            {
+                "index": p["index"],
+                "optional": p["optional"],
+                "practiced": by_person.get(p["index"], [0, 0])[0],
+                "correct": by_person.get(p["index"], [0, 0])[1],
+            }
+            for p in CONJ_PERSONS
+        ],
+        "verbs": [
+            {
+                "id": v.id,
+                "score": v.score,
+                "practiced": v.times_practiced,
+                "correct": v.times_correct,
+            }
+            for v in verbs
+        ],
+    }
+    data_json = json.dumps(data).replace("</", "<\\/")
+
+    return {
+        "total_verbs": len(verbs),
+        "total_attempts": total_attempts,
+        "total_correct": total_correct,
+        "overall_accuracy": overall_accuracy,
+        "matrix": matrix,
+        "matrix_categories": list(CONJ_MATRIX_CATEGORIES),
+        "data_json": data_json,
+    }
+
+
+@app.route("/conjugate")
+@login_required
+def conjugate():
+    """Manage page: add verbs (autocomplete) + practice settings + start."""
+    verbs = _user_verbs()
+    practice_lang = session.get("learn_language")
+    if practice_lang and is_language_ready(practice_lang):
+        practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
+    else:
+        practice_numbers_url = url_for("mode_selection", lang_code=CONJUGATION_LANG)
+    dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs)
+    user_sub = _current_user_sub()
+    user_cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
+    card_import_count = len(_importable_card_verbs(user_sub, user_cards))
+    missing = _verbs_missing_from_cards(verbs, user_cards)
+    missing_infinitives = {v.infinitive for v in missing}
+    missing_in_cards_json = json.dumps(
+        [{"infinitive": v.infinitive} for v in missing]
+    ).replace("</", "<\\/")
+    return render_template(
+        "conjugate.html",
+        user=session["user"],
+        verbs=verbs,
+        tenses=CONJ_TENSES,
+        persons=CONJ_PERSONS,
+        vosotros_index=VOSOTROS_INDEX,
+        default_count=CONJ_QUESTIONS_DEFAULT,
+        practice_numbers_url=practice_numbers_url,
+        dashboard=dashboard,
+        get_text=get_text,
+        card_import_count=card_import_count,
+        missing_in_cards_count=len(missing),
+        missing_in_cards_json=missing_in_cards_json,
+        missing_infinitives=missing_infinitives,
+    )
+
+
+@app.route("/api/verbs/search")
+@login_required
+def api_verbs_search():
+    """Autocomplete: pool infinitives starting with ?q=, excluding owned verbs."""
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return jsonify({"ok": True, "results": []})
+    owned = {_normalize_infinitive(v.infinitive) for v in _user_verbs()}
+    results = es_conjugations.search_verbs(query, limit=8, exclude=owned)
+    return jsonify({"ok": True, "results": results})
+
+
+@app.route("/api/verbs", methods=["POST"])
+@login_required
+def api_verbs_create():
+    """Add a verb. Rejects verbs not in the global pool with an 'unsupported' flag."""
+    payload = request.get_json(silent=True) or {}
+    infinitive = _normalize_infinitive(payload.get("infinitive"))
+    if not infinitive:
+        return jsonify(
+            {"ok": False, "error": get_text("conjugate_flash_verb_required")}
+        ), 400
+    if not es_conjugations.verb_exists(infinitive):
+        return jsonify(
+            {
+                "ok": False,
+                "unsupported": True,
+                "error": get_text("conjugate_flash_unsupported").format(infinitive),
+            }
+        ), 400
+    user_sub = _current_user_sub()
+    existing = _find_user_verb(user_sub, infinitive)
+    if existing is not None:
+        return jsonify({"ok": True, "duplicate": True, "verb": existing.to_dict()})
+    verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+    db.session.add(verb)
+    db.session.commit()
+    return jsonify({"ok": True, "verb": verb.to_dict()})
+
+
+@app.route("/conjugate/add", methods=["POST"])
+@login_required
+def conjugate_verb_add():
+    """Form fallback for adding a verb (no-JS path, and the JS error fallback).
+
+    Mirrors the cards `/cards` POST route: reads the form field, flashes, and
+    redirects back to /conjugate. The JS add flow uses the JSON `/api/verbs`.
+    """
+    infinitive = _normalize_infinitive(request.form.get("infinitive"))
+    if not infinitive:
+        flash(get_text("conjugate_flash_verb_required"), "error")
+        return redirect(url_for("conjugate"))
+    if not es_conjugations.verb_exists(infinitive):
+        flash(get_text("conjugate_flash_unsupported").format(infinitive), "error")
+        return redirect(url_for("conjugate"))
+    user_sub = _current_user_sub()
+    if _find_user_verb(user_sub, infinitive) is not None:
+        flash(get_text("conjugate_flash_verb_duplicate"), "info")
+        return redirect(url_for("conjugate"))
+    verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+    db.session.add(verb)
+    db.session.commit()
+    flash(get_text("conjugate_flash_verb_added"), "success")
+    return redirect(url_for("conjugate"))
+
+
+@app.route("/api/verbs/import-from-cards", methods=["POST"])
+@login_required
+def api_verbs_import_from_cards():
+    """Add every index-card verb (front/back in the pool) not already owned."""
+    user_sub = _current_user_sub()
+    cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
+    importable = _importable_card_verbs(user_sub, cards)
+    added = []
+    for _card, infinitive in importable:
+        verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+        db.session.add(verb)
+        added.append(verb)
+    if added:
+        db.session.commit()
+    return jsonify(
+        {"ok": True, "added": len(added), "verbs": [v.to_dict() for v in added]}
+    )
+
+
+@app.route("/api/verbs/<int:verb_id>", methods=["DELETE"])
+@login_required
+def api_verbs_delete(verb_id: int):
+    verb = _user_verb_or_404(verb_id)
+    db.session.delete(verb)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/conjugate/<int:verb_id>/delete", methods=["POST"])
+@login_required
+def conjugate_verb_delete(verb_id: int):
+    """Form fallback for deleting a verb (no-JS path)."""
+    verb = _user_verb_or_404(verb_id)
+    db.session.delete(verb)
+    db.session.commit()
+    flash(get_text("conjugate_flash_verb_deleted"), "info")
+    return redirect(url_for("conjugate"))
+
+
+def _form_available(infinitive: str, tense_key: str, person_index: int) -> str | None:
+    """Return the conjugated form for a verb/tense/person, or None if absent."""
+    forms = es_conjugations.get_verb_forms(infinitive)
+    if not forms:
+        return None
+    tense_forms = forms.get(tense_key)
+    if not tense_forms or person_index >= len(tense_forms):
+        return None
+    return tense_forms[person_index]
+
+
+def _record_conjugation_stat(
+    user_sub: str, tense_key: str, person_index: int, correct: bool
+) -> None:
+    """Upsert the per-(tense, person) practice tally for the dashboard insights."""
+    stat = (
+        db.session.query(ConjugationStat)
+        .filter_by(user_sub=user_sub, tense_key=tense_key, person_index=person_index)
+        .first()
+    )
+    if stat is None:
+        stat = ConjugationStat(
+            user_sub=user_sub,
+            tense_key=tense_key,
+            person_index=person_index,
+            times_practiced=0,
+            times_correct=0,
+        )
+        db.session.add(stat)
+    stat.times_practiced += 1
+    if correct:
+        stat.times_correct += 1
+
+
+@app.route("/conjugate/practice/start", methods=["POST"])
+@login_required
+def conjugate_practice_start():
+    """Initialize a conjugation practice session and redirect to the first prompt."""
+    selected_tenses = [
+        t for t in request.form.getlist("tenses") if t in CONJ_TENSE_KEYS
+    ]
+    include_vosotros = request.form.get("include_vosotros") in ("1", "true", "on")
+    # An explicit `persons` list (used by the insights-matrix recap buttons)
+    # overrides the vosotros-toggle default. Values are validated against the
+    # known person slots.
+    valid_person_indices = {p["index"] for p in CONJ_PERSONS}
+    explicit_persons = []
+    for raw in request.form.getlist("persons"):
+        try:
+            idx = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if idx in valid_person_indices:
+            explicit_persons.append(idx)
+    if explicit_persons:
+        persons = sorted(set(explicit_persons))
+    else:
+        persons = [
+            p["index"]
+            for p in CONJ_PERSONS
+            if p["index"] != VOSOTROS_INDEX or include_vosotros
+        ]
+    # An explicit `verb_ids` list (also from recap buttons) restricts the verb
+    # pool to those verbs; empty means all of the user's verbs.
+    verb_ids = []
+    for raw in request.form.getlist("verb_ids"):
+        try:
+            verb_ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    difficulty = request.form.get("difficulty", "advanced")
+    if difficulty not in ("advanced", "hardcore"):
+        difficulty = "advanced"
+    sampling_mode = request.form.get("sampling_mode", "prioritized")
+    if sampling_mode not in ("random", "prioritized"):
+        sampling_mode = "prioritized"
+    reveal_mode = request.form.get("reveal_mode", "type")
+    if reveal_mode not in ("type", "click"):
+        reveal_mode = "type"
+    try:
+        count = int(request.form.get("count", CONJ_QUESTIONS_DEFAULT))
+    except (TypeError, ValueError):
+        count = CONJ_QUESTIONS_DEFAULT
+    count = max(1, min(count, 100))
+
+    user_verbs = _user_verbs()
+    if not user_verbs:
+        flash(get_text("conjugate_flash_need_verbs"), "info")
+        return redirect(url_for("conjugate"))
+    if not selected_tenses:
+        flash(get_text("conjugate_flash_need_tenses"), "info")
+        return redirect(url_for("conjugate"))
+    # If a recap restricted the verb pool, drop ids the user doesn't own and
+    # fall back to "need verbs" if nothing is left.
+    if verb_ids:
+        owned_ids = {v.id for v in user_verbs}
+        verb_ids = [vid for vid in verb_ids if vid in owned_ids]
+        if not verb_ids:
+            flash(get_text("conjugate_flash_need_verbs"), "info")
+            return redirect(url_for("conjugate"))
+
+    session["conjugate_practice"] = {
+        "tenses": selected_tenses,
+        "persons": persons,
+        "verb_ids": verb_ids,
+        "difficulty": difficulty,
+        "sampling_mode": sampling_mode,
+        "reveal_mode": reveal_mode,
+        "count": count,
+        "asked": [],
+        "score": 0,
+        "total": 0,
+        "current": None,
+        "current_revealed": False,
+    }
+    return redirect(url_for("conjugate_practice"))
+
+
+def _get_conjugate_state() -> dict | None:
+    return session.get("conjugate_practice")
+
+
+def _save_conjugate_state(state: dict) -> None:
+    session["conjugate_practice"] = state
+    session.modified = True
+
+
+def _conj_asked_key(
+    tenses: list[str], verb_id: int, tense_key: str, person_index: int
+) -> str:
+    """Compact key for the per-session ``asked`` set.
+
+    Uses the tense's *index* within the session's selected tenses rather than the
+    full tense key (which can be ~40 chars, e.g. ``indicativo/
+    pretérito-perfecto-compuesto``). The state lives in the signed-cookie
+    session, so keeping each key to a few characters keeps the asked list well
+    under the ~4 KB cookie limit even at the maximum question count.
+    """
+    return f"{verb_id}:{tenses.index(tense_key)}:{person_index}"
+
+
+def _load_next_conjugation(state: dict) -> dict | None:
+    """Pick the next unasked (verb, tense, person) question; advance state.
+
+    Samples a verb (weighted toward weak/unpracticed verbs in prioritized mode),
+    then a random available tense+person for that verb that hasn't been asked.
+    Verbs whose questions are all exhausted are dropped and another is tried.
+    """
+    asked = set(state.get("asked", []))
+    verbs = _user_verbs()
+    verb_ids = state.get("verb_ids")
+    if verb_ids:
+        allowed = set(verb_ids)
+        verbs = [v for v in verbs if v.id in allowed]
+    tenses = state["tenses"]
+    persons = state["persons"]
+
+    # Verbs that still have at least one unasked, non-null question.
+    def open_questions(verb: VerbCard) -> list[tuple[str, int]]:
+        out = []
+        for tense_key in tenses:
+            for person_index in persons:
+                key = _conj_asked_key(tenses, verb.id, tense_key, person_index)
+                if key in asked:
+                    continue
+                if _form_available(verb.infinitive, tense_key, person_index) is None:
+                    continue
+                out.append((tense_key, person_index))
+        return out
+
+    candidates = [v for v in verbs if open_questions(v)]
+    if not candidates:
+        return None
+    if state.get("sampling_mode") == "prioritized":
+        verb = _pick_weighted_card(candidates)
+    else:
+        verb = candidates[secrets.randbelow(len(candidates))]
+
+    options = open_questions(verb)
+    tense_key, person_index = options[secrets.randbelow(len(options))]
+    correct = _form_available(verb.infinitive, tense_key, person_index)
+    current = {
+        "verb_id": verb.id,
+        "infinitive": verb.infinitive,
+        "tense_key": tense_key,
+        "person_index": person_index,
+        "correct_answer": correct,
+    }
+    state["current"] = current
+    state["current_revealed"] = False
+    return current
+
+
+def _conjugate_question_view(state: dict, current: dict):
+    """Render the practice page for the current question."""
+    difficulty = state.get("difficulty", "advanced")
+    revealed = bool(state.get("current_revealed"))
+    correct = current["correct_answer"]
+    return render_template(
+        "conjugate_practice.html",
+        user=session["user"],
+        infinitive=current["infinitive"],
+        pronoun=person_label(current["person_index"]),
+        tense_label=tense_label(
+            current["tense_key"], session.get("language", DEFAULT_UI_LANGUAGE)
+        ),
+        correct_answer=correct if (revealed or difficulty == "hardcore") else None,
+        difficulty=difficulty,
+        revealed=revealed,
+        reveal_mode=state.get("reveal_mode", "type"),
+        score=state["score"],
+        total=state["total"],
+        max_questions=state.get("count", CONJ_QUESTIONS_DEFAULT),
+        get_text=get_text,
+    )
+
+
+@app.route("/conjugate/practice", methods=["GET", "POST"])
+@login_required
+def conjugate_practice():
+    """Show the current conjugation question or process an answer/reveal."""
+    state = _get_conjugate_state()
+    if state is None:
+        return redirect(url_for("conjugate"))
+
+    if request.method == "POST":
+        current = state.get("current")
+        if not current:
+            return redirect(url_for("conjugate_practice"))
+        verb = db.session.get(VerbCard, current["verb_id"])
+        owns_verb = verb is not None and verb.user_sub == _current_user_sub()
+        correct_answer = current["correct_answer"]
+
+        if "reveal" in request.form:
+            state["total"] += 1
+            if owns_verb:
+                verb.times_practiced += 1
+                verb.record_attempt(False)
+                _record_conjugation_stat(
+                    verb.user_sub,
+                    current["tense_key"],
+                    current["person_index"],
+                    False,
+                )
+                db.session.commit()
+            state["current_revealed"] = True
+            _save_conjugate_state(state)
+            return redirect(url_for("conjugate_practice"))
+
+        if "next" in request.form:
+            # Type-to-continue: in "type" reveal mode the user must retype the
+            # shown answer before advancing (client enforces too; never trust it).
+            if state.get("reveal_mode", "type") == "type":
+                user_answer = (request.form.get("answer") or "").strip()
+                if not (
+                    user_answer
+                    and quiz_logic.check_answer_advanced(user_answer, correct_answer)
+                ):
+                    return redirect(url_for("conjugate_practice"))
+            state["asked"].append(
+                _conj_asked_key(
+                    state["tenses"],
+                    current["verb_id"],
+                    current["tense_key"],
+                    current["person_index"],
+                )
+            )
+            state["current"] = None
+            state["current_revealed"] = False
+            _save_conjugate_state(state)
+            return redirect(url_for("conjugate_practice"))
+
+        user_answer = (request.form.get("answer") or "").strip()
+        if user_answer and quiz_logic.check_answer_advanced(
+            user_answer, correct_answer
+        ):
+            state["score"] += 1
+            state["total"] += 1
+            if owns_verb:
+                verb.times_practiced += 1
+                verb.times_correct += 1
+                verb.record_attempt(True)
+                _record_conjugation_stat(
+                    verb.user_sub,
+                    current["tense_key"],
+                    current["person_index"],
+                    True,
+                )
+                db.session.commit()
+            flash(get_text("cards_flash_correct"), "success")
+        else:
+            flash(
+                get_text("cards_flash_incorrect").format(correct_answer),
+                "error",
+            )
+            state["total"] += 1
+            if owns_verb:
+                verb.times_practiced += 1
+                verb.record_attempt(False)
+                _record_conjugation_stat(
+                    verb.user_sub,
+                    current["tense_key"],
+                    current["person_index"],
+                    False,
+                )
+                db.session.commit()
+        state["asked"].append(
+            _conj_asked_key(
+                state["tenses"],
+                current["verb_id"],
+                current["tense_key"],
+                current["person_index"],
+            )
+        )
+        state["current"] = None
+        _save_conjugate_state(state)
+        return redirect(url_for("conjugate_practice"))
+
+    # GET: render current question, or load the next one.
+    count = state.get("count", CONJ_QUESTIONS_DEFAULT)
+    if state.get("current") is None:
+        if state["total"] >= count:
+            return redirect(url_for("conjugate_practice_results"))
+        nxt = _load_next_conjugation(state)
+        if nxt is None:
+            _save_conjugate_state(state)
+            return redirect(url_for("conjugate_practice_results"))
+        _save_conjugate_state(state)
+        current = nxt
+    else:
+        current = state["current"]
+    return _conjugate_question_view(state, current)
+
+
+@app.route("/conjugate/practice/results")
+@login_required
+def conjugate_practice_results():
+    """Show the final conjugation score and clear session state."""
+    state = session.pop("conjugate_practice", None)
+    if state is None:
+        return redirect(url_for("conjugate"))
+    score = state.get("score", 0)
+    total = state.get("total", 0)
+    percentage = (score / total * 100) if total else 0
+    return render_template(
+        "conjugate_results.html",
+        user=session["user"],
+        score=score,
+        total=total,
+        percentage=percentage,
+        get_text=get_text,
+    )
+
+
+@app.route("/api/conjugate/validate", methods=["POST"])
+@login_required
+def conjugate_validate_api():
+    """Live word-by-word validation for the current conjugation question."""
+    state = _get_conjugate_state()
+    current = state.get("current") if state else None
+    if not current:
+        return jsonify({"error": "No active conjugation question"}), 400
+    if state.get("difficulty") == "hardcore":
+        return jsonify({"error": "Validation disabled in hardcore mode"}), 400
+    user_input = (request.json or {}).get("input", "")
+    result = quiz_logic.validate_partial_answer(
+        user_input, current["correct_answer"], "es"
+    )
+    return jsonify(result)
+
+
 @app.route("/robots.txt")
 def robots_txt():
     """Serve robots.txt for search engine crawlers."""
@@ -1830,6 +2768,8 @@ def robots_txt():
         "Disallow: /cards",
         "Disallow: /cards/",
         "Disallow: /cards/import/",
+        "Disallow: /conjugate",
+        "Disallow: /conjugate/",
         "",
         f"Sitemap: {SITE_URL.rstrip('/')}/sitemap.xml",
     ]
@@ -1847,6 +2787,8 @@ def sitemap_xml():
             urls.append(f"{base}/{lang_code}")
     for lc in get_languages_with_learn_materials():
         urls.append(f"{base}/{lc}/learn")
+    for lc in get_languages_with_conjugation_materials():
+        urls.append(f"{base}/{lc}/learn/conjugations")
     urls.append(f"{base}/about")
     urls.append(f"{base}/privacy")
     urls.append(f"{base}/imprint")

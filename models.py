@@ -65,6 +65,93 @@ class Card(db.Model):
         }
 
 
+class VerbCard(db.Model):
+    """A Spanish verb a user has added to their conjugation-practice pool.
+
+    Holds only the infinitive — the conjugations live in the committed global
+    pool (languages/es/conjugations.json), validated at add time. Scoring mirrors
+    `Card`: a 10-char `recent_results` window plus lifetime counters, used to bias
+    the practice sampler toward weak/unpracticed verbs.
+    """
+
+    __tablename__ = "verb_cards"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_sub = db.Column(db.String(255), nullable=False, index=True)
+    infinitive = db.Column(db.String(64), nullable=False)
+    times_practiced = db.Column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
+    times_correct = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    recent_results = db.Column(
+        db.String(SCORE_WINDOW_SIZE),
+        nullable=False,
+        default="",
+        server_default="",
+    )
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
+    )
+
+    @property
+    def score(self) -> float | None:
+        history = self.recent_results or ""
+        if not history:
+            return None
+        return history.count("1") / len(history)
+
+    def record_attempt(self, correct: bool) -> None:
+        history = (self.recent_results or "") + ("1" if correct else "0")
+        self.recent_results = history[-SCORE_WINDOW_SIZE:]
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "infinitive": self.infinitive,
+            "times_practiced": self.times_practiced,
+            "times_correct": self.times_correct,
+            "score": self.score,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ConjugationStat(db.Model):
+    """Per-(tense, person) practice tally for a user's verb-conjugation drills.
+
+    `VerbCard` already scores each verb; this table adds the other two
+    dimensions so the /conjugate dashboard can show which tenses and which
+    pronouns a user should practice. One row per (user_sub, tense_key,
+    person_index); only lifetime counters are kept (accuracy = correct/practiced).
+    """
+
+    __tablename__ = "conjugation_stats"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_sub", "tense_key", "person_index", name="uq_conjstat_dim"
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_sub = db.Column(db.String(255), nullable=False, index=True)
+    tense_key = db.Column(db.String(64), nullable=False)
+    person_index = db.Column(db.Integer, nullable=False)
+    times_practiced = db.Column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
+    times_correct = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
+    )
+
+    @property
+    def score(self) -> float | None:
+        if not self.times_practiced:
+            return None
+        return self.times_correct / self.times_practiced
+
+
 class DeckShare(db.Model):
     """A shareable snapshot of one user's deck.
 

@@ -1847,7 +1847,12 @@ html {
 
 /* Learn CTA on Index Page */
 .learn-cta {
-    margin: 30px 0;
+    margin: 30px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    max-width: 1040px;
 }
 
 .learn-card {
@@ -1860,8 +1865,9 @@ html {
     transition: all 0.3s ease;
     box-shadow: 0 8px 25px rgba(101, 79, 111, 0.3);
     text-align: center;
+    flex: 1 1 320px;
     max-width: 500px;
-    margin: 0 auto;
+    margin: 0;
 }
 
 @media (hover: hover) {
@@ -2284,7 +2290,12 @@ html {
 
 /* Learn CTA Card on Index Page */
 .learn-cta {
-    margin: 30px 0;
+    margin: 30px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    max-width: 1040px;
 }
 
 .learn-card {
@@ -2297,6 +2308,8 @@ html {
     transition: all 0.3s ease;
     box-shadow: 0 8px 25px rgba(101, 79, 111, 0.3);
     text-align: center;
+    flex: 1 1 320px;
+    max-width: 500px;
 }
 
 @media (hover: hover) {
@@ -3406,4 +3419,374 @@ html {
     .cards-dashboard-toplists {
         grid-template-columns: 1fr;
     }
+}
+
+/* ===== Verb conjugation practice (classic theme) ===== */
+
+.conjugate-page .cards-subtitle {
+    color: #4a4a55;
+    margin-top: 4px;
+}
+
+.conjugate-add-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.conjugate-autocomplete {
+    position: relative;
+    flex: 1;
+}
+
+.conjugate-autocomplete .answer-input {
+    font-size: 1.15rem;
+    padding: 14px 16px;
+}
+
+.conjugate-suggestions {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 6px;
+    position: absolute;
+    z-index: 50;
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    border: 2px solid #EDD382;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.conjugate-suggestion {
+    padding: 9px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    color: #020122;
+}
+
+.conjugate-suggestion:hover,
+.conjugate-suggestion-active {
+    background: #F2F3AE;
+}
+
+.conjugate-tense-en {
+    color: #6a6a75;
+    font-size: 0.85em;
+}
+
+.conjugate-list-infinitive {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #020122;
+}
+
+.conjugate-tenses-fieldset .cards-input-hint {
+    margin: 0 0 8px;
+}
+
+.conjugate-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.conjugate-prompt-verb {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #020122;
+    letter-spacing: 0.5px;
+}
+
+.conjugate-prompt-pronoun {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #B5179E;
+}
+
+.conjugate-prompt-tense {
+    font-size: 1rem;
+    color: #4a4a55;
+    text-transform: lowercase;
+}
+
+.conjugate-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.conjugate-popup-overlay[hidden] {
+    display: none;
+}
+
+.conjugate-popup {
+    width: 100%;
+    max-width: 420px;
+    background: #FFFFFF;
+    border: 3px solid #EDD382;
+    border-radius: 14px;
+    padding: 28px 24px 24px;
+    text-align: center;
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.25);
+}
+
+.conjugate-popup-title {
+    margin: 0 0 10px;
+    color: #020122;
+    font-size: 1.3rem;
+}
+
+.conjugate-popup-body {
+    margin: 0 0 20px;
+    color: #4a4a55;
+    line-height: 1.45;
+}
+
+/* ----- Practice insights dashboard ----- */
+/* Sits between the practice settings and the verb list, folded by default.
+   The summary is styled as a prominent accent toggle bar. */
+.conjugate-stats-section {
+    margin: 4px 0 24px;
+}
+.conjugate-stats-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: rgba(229, 79, 109, 0.12);
+    border: 1px solid rgba(229, 79, 109, 0.4);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.conjugate-stats-summary:hover {
+    background: rgba(229, 79, 109, 0.2);
+    border-color: rgba(229, 79, 109, 0.6);
+}
+.conjugate-stats-summary::-webkit-details-marker { display: none; }
+.conjugate-stats-summary .cards-section-heading {
+    margin: 0;
+    font-size: 1.15rem;
+}
+.conjugate-stats[open] .conjugate-stats-summary {
+    margin-bottom: 18px;
+}
+.conjugate-stats-chevron {
+    color: #C0392B;
+    font-size: 1.3rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+.conjugate-stats[open] .conjugate-stats-chevron { transform: rotate(180deg); }
+
+.conjugate-stats-overall {
+    color: #4a4a55;
+    margin: 4px 0 18px;
+    font-size: 1rem;
+}
+.conjugate-stats-overall strong {
+    color: #020122;
+    font-size: 1.15rem;
+    margin-left: 4px;
+}
+.conjugate-stats-overall-sub {
+    color: #6B7280;
+    font-size: 0.9rem;
+    margin-left: 4px;
+}
+
+/* Insight matrix: dimensions (tenses / verbs / pronouns) down the rows,
+   practice categories (unpracticed / weak / needs work) across the columns.
+   Each cell shows the member count plus a focused-recap button. */
+.conjugate-matrix {
+    margin-top: 4px;
+    display: grid;
+    grid-template-columns: minmax(96px, 1.1fr) repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.conjugate-matrix-row {
+    display: contents;
+}
+.conjugate-matrix-corner {
+    display: block;
+}
+.conjugate-matrix-colhead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a4a55;
+    padding: 0 4px 6px;
+}
+.conjugate-matrix-colhead-weak { color: #C0392B; }
+.conjugate-matrix-colhead-needs_work { color: #B7791F; }
+.conjugate-matrix-rowhead {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #020122;
+    padding-right: 6px;
+}
+.conjugate-matrix-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px;
+    background: #FFFFFF;
+    border: 1px solid #E2E2E8;
+    border-radius: 12px;
+}
+.conjugate-matrix-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #020122;
+    line-height: 1;
+}
+.conjugate-matrix-cell-empty {
+    background: #F4F4F6;
+}
+.conjugate-matrix-cell-empty .conjugate-matrix-count {
+    color: #A0A0AC;
+}
+.conjugate-matrix-recap-form {
+    width: 100%;
+    margin: 0;
+}
+.conjugate-matrix-recap-btn {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 560px) {
+    .conjugate-matrix {
+        grid-template-columns: minmax(70px, 0.9fr) repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .conjugate-matrix-rowhead {
+        font-size: 0.85rem;
+    }
+    .conjugate-matrix-colhead {
+        font-size: 0.72rem;
+    }
+    .conjugate-matrix-cell {
+        padding: 10px 4px;
+    }
+    .conjugate-matrix-count {
+        font-size: 1.2rem;
+    }
+    .conjugate-matrix-recap-btn {
+        padding: 5px 4px;
+        font-size: 0.75rem;
+    }
+}
+
+/* ===== Cards <-> conjugation sync ===== */
+.cards-verb-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #7a4a12;
+    background: rgba(252, 158, 79, 0.18);
+    border: 1px solid rgba(252, 158, 79, 0.7);
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+.cards-verbs-import-all,
+.conjugate-import-from-cards,
+.conjugate-missing-in-cards,
+.cards-practice-verb-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background-color: rgba(252, 158, 79, 0.14);
+    color: #020122;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: 1px solid rgba(252, 158, 79, 0.7);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cards-verbs-import-all:hover,
+.cards-verbs-import-all:focus,
+.conjugate-import-from-cards:hover,
+.conjugate-missing-in-cards:hover,
+.cards-practice-verb-add:hover,
+.cards-practice-verb-add:focus {
+    background-color: rgba(252, 158, 79, 0.28);
+    border-color: #FC9E4F;
+    outline: none;
+}
+
+.cards-verbs-import-all-hidden,
+.conjugate-sync-hidden {
+    display: none;
+}
+
+.conjugate-sync-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.cards-practice-verb-add {
+    margin: 14px auto 0;
+}
+.cards-practice-verb-add-done {
+    background-color: rgba(120, 190, 120, 0.18);
+    border-color: rgba(80, 160, 80, 0.7);
+    color: #2c5e2c;
+    cursor: default;
+}
+
+/* Walk-through modal for adding missing verbs to index cards. */
+.conjugate-sync-popup {
+    text-align: left;
+}
+.conjugate-sync-progress {
+    margin: 0 0 6px;
+    color: #4a4a55;
+    font-size: 0.85rem;
+}
+.conjugate-sync-verb {
+    margin: 0 0 12px;
+    color: #020122;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.conjugate-sync-popup .answer-input {
+    width: 100%;
+    margin-bottom: 16px;
+}
+.conjugate-sync-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }

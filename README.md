@@ -13,7 +13,7 @@ An interactive web application to practice number translations in multiple langu
 
 ## ✨ Features
 
-- **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Languages](ADD_LANGUAGE.md))
+- **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Number Practice](ADD_NUMBERS.md))
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
 - **Four Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), Hardcore (stricter validation), and Listening (hear a spoken number and type the digits)
@@ -67,7 +67,7 @@ The container applies pending Alembic migrations on startup and then serves via 
 diminumero/
 ├── app.py                 # Flask application & routes (quiz, auth, cards, share, poll)
 ├── quiz_logic.py          # Quiz generation & weighting logic
-├── models.py              # SQLAlchemy models (Card, DeckShare, PollResponse)
+├── models.py              # SQLAlchemy models (Card, VerbCard, ConjugationStat, DeckShare, PollResponse)
 ├── migrations/            # Alembic migrations (Flask-Migrate)
 ├── languages/             # Multi-language support
 │   ├── config.py          # Language registry & metadata (incl. has_learn_materials)
@@ -177,7 +177,17 @@ uv run tools/generate_audio.py --lang fr --only 42  # synthesize a single number
 uv run tools/generate_audio.py --lang pt --limit 10 # cap the run (quick test)
 ```
 
-Each number is voiced by a speaker drawn at random from the language's `VOICE_POOLS` entry in `tools/generate_audio.py`, so a deck mixes voices instead of using one speaker. To enable Listening for a new language, add its `VOICE_POOLS` entry, generate the audio, and set `has_audio_mode: True` on its entry in `languages/config.py`.
+Each number is voiced by a speaker drawn at random from the language's `VOICE_POOLS` entry in `tools/generate_audio.py`, so a deck mixes voices instead of using one speaker. To enable Listening for a new language, see [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) (add its `VOICE_POOLS` entry, generate the audio, and set `has_audio_mode: True` on its entry in `languages/config.py`).
+
+## 🔤 Verb-Conjugation Practice
+
+Signed-in users can build a personal pool of Spanish verbs and drill conjugations across a curated set of tenses and pronouns. Conjugations come from a committed global pool (`languages/es/conjugations.json`), generated offline with the `verbecc` library — the running app never imports `verbecc`. To regenerate the pool:
+
+```bash
+uv run tools/generate_conjugations.py
+```
+
+See [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) for how the section works, how to adjust the tense checklist, and what extending it to another language would involve.
 
 ## 🔥 Stress Testing
 
@@ -254,9 +264,15 @@ You get a terminal summary (counts + percentages per question, all free-form res
 - **Number Weighting**: Users control the number range via a 5-level magnitude dial on the mode selection page. Decay factors are defined in `MAGNITUDE_DECAY_FACTORS` in `quiz_logic.py`
 - **Colors**: Update color variables in `static/css/style.css`
 
-## 🌍 Adding New Languages
+## 🌍 Extending the App
 
-Want to add support for a new language? See [ADD_LANGUAGE.md](ADD_LANGUAGE.md) for a complete guide on how to extend the application with new languages.
+Each kind of practice has its own contributor guide:
+
+- **Number practice for a new language** — [ADD_NUMBERS.md](ADD_NUMBERS.md) (the starting point for any new language)
+- **Listening exercises** — [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) (spoken-number quiz via ElevenLabs TTS)
+- **Learn/tutorial pages** — [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md)
+- **Verb-conjugation practice** — [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) (the Spanish conjugation section)
+- **UI translations** — [ADD_UI_LANGUAGE.md](ADD_UI_LANGUAGE.md)
 
 ## 📄 License
 

@@ -1,6 +1,11 @@
-# Adding New Languages to diminumero
+# Adding Number Practice for a New Language to diminumero
 
-This guide explains how to add support for a new learning language to diminumero.
+This guide explains how to add a new learning language to diminumero's **number-translation** practice (the core quiz). It is the starting point for any new language.
+
+Related guides:
+- [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) — add the spoken-number Listening quiz to a language that already has numbers.
+- [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md) — add a Learn/tutorial page for a language.
+- [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) — the Spanish verb-conjugation section (regenerating the pool, extending it).
 
 ## Overview
 
@@ -164,37 +169,10 @@ Once everything is ready:
 
 ### 9. Add Listening Audio (Optional)
 
-The Listening quiz plays a pre-generated MP3 of a number and asks the user to type
-the digits. It is gated by the `has_audio_mode` flag and the MP3s that actually
-exist under `static/audio/<lang_code>/`. To enable it:
-
-1. **Add a voice pool.** In `tools/generate_audio.py`, add a `VOICE_POOLS` entry for
-   your code — a list of ElevenLabs voice IDs. Numbers are voiced by a speaker drawn
-   at random from this list, so a deck mixes voices. Repeating an ID biases the draw
-   toward that voice.
-   ```python
-   VOICE_POOLS = {
-       ...
-       "xx": ["voiceId1", "voiceId2", "voiceId2", "voiceId3"],
-   }
-   ```
-
-2. **Generate the MP3s** via the ElevenLabs cloud API. Put `API_KEY_11_LABS` in `.env`
-   (loaded with python-dotenv), then run the PEP-723 script:
-   ```bash
-   uv run tools/generate_audio.py --lang xx
-   ```
-   Each number in `languages/xx/numbers.py` is synthesized with the `eleven_turbo_v2_5`
-   model at `mp3_44100_64` (~64 kbps mono) and written to `static/audio/xx/<n>.mp3`.
-   Synthesis happens in the cloud — no local model is downloaded, so the API key is
-   required and each call uses ElevenLabs credits. The run skips files that already
-   exist; use `--force` to re-render, `--only <n>` for a single number, or
-   `--limit <n>` for a quick test batch. Commit the generated MP3s.
-
-3. **Flip the flag.** Set `'has_audio_mode': True` on the language's entry in
-   `languages/config.py`. Both the index language cards and `mode_selection()` consult
-   `get_languages_with_audio_mode()`, and the route intersects the deck with the MP3s
-   actually present, so a half-generated deck still works.
+Once the number deck exists you can optionally add the spoken-number **Listening**
+quiz for the language. That flow (voice pools, generating the MP3s, flipping
+`has_audio_mode`) now lives in its own guide:
+**[ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md)**.
 
 ## Example: Adding Quechua
 
@@ -267,7 +245,7 @@ Before marking a language as `ready: True`:
 - [ ] Quiz modes function correctly
 - [ ] Results page displays properly
 - [ ] (Optional) Learn pages created and `has_learn_materials: True` set in `languages/config.py`
-- [ ] (Optional) Listening audio: `VOICE_POOLS` entry added, MP3s generated and committed, `has_audio_mode: True` set
+- [ ] (Optional) Listening audio added — see [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md)
 - [ ] `meta_desc_index` and `seo_title_index` updated in `translations.py` for all 8 UI languages
 - [ ] Language code added to JSON-LD `inLanguage` in `templates/language_selection.html`
 - [ ] Edge cases tested (very small/large numbers)

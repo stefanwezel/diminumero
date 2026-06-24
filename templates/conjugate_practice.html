@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_text('cards_practice_title') }} - diminumero{% endblock %}
+{% block title %}{{ get_text('conjugate_practice_title') }} - diminumero{% endblock %}
 {% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
-{% block og_title %}{{ get_text('cards_practice_title') }} - diminumero{% endblock %}
-{% block twitter_title %}{{ get_text('cards_practice_title') }} - diminumero{% endblock %}
+{% block og_title %}{{ get_text('conjugate_practice_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ get_text('conjugate_practice_title') }} - diminumero{% endblock %}
 
 {% block content %}
 <div class="quiz-page">
@@ -15,11 +15,11 @@
             {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
         </div>
         <div class="quiz-header-buttons">
-            <form action="{{ url_for('cards_practice_results') }}" method="GET" class="quiz-header-form">
+            <form action="{{ url_for('conjugate_practice_results') }}" method="GET" class="quiz-header-form">
                 <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
             </form>
             {% if not revealed %}
-            <form action="{{ url_for('cards_practice') }}" method="POST" class="quiz-header-form">
+            <form action="{{ url_for('conjugate_practice') }}" method="POST" class="quiz-header-form">
                 <button type="submit" name="reveal" value="1"
                         class="btn btn-secondary btn-quiz-header"
                         title="{{ get_text('cards_reveal_tooltip') }}">
@@ -35,31 +35,27 @@
     </div>
 
     <div class="question-container">
-        <h2 class="question-label">{{ get_text('cards_practice_prompt') }}</h2>
-        <div class="cards-practice-prompt">{{ prompt_text }}</div>
-        {% if verb_infinitive and not revealed %}
-        <button type="button"
-                class="cards-practice-verb-add"
-                id="cards-practice-verb-add"
-                data-infinitive="{{ verb_infinitive }}"
-                data-i18n-added="{{ get_text('cards_practice_verb_added') }}"
-                data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}"
-                data-toast-msg="{{ get_text('cards_verb_synced_toast') }}">
-            {{ get_text('cards_practice_add_verb_btn').format(verb=verb_infinitive) }}
-        </button>
-        {% endif %}
+        <h2 class="question-label">{{ get_text('conjugate_practice_prompt') }}</h2>
+        <div class="conjugate-prompt">
+            <span class="conjugate-prompt-verb">{{ infinitive }}</span>
+            <span class="conjugate-prompt-pronoun">{{ pronoun }}</span>
+            <span class="conjugate-prompt-tense">
+                {{ get_text('conjugate_practice_tense_label') }}: {{ tense_label }}
+            </span>
+        </div>
     </div>
 
     {% if not revealed %}
-    <form action="{{ url_for('cards_practice') }}" method="POST" class="answer-form" id="answerForm">
+    <form action="{{ url_for('conjugate_practice') }}" method="POST" class="answer-form" id="answerForm">
         <div class="text-input-container">
             <input
                 type="text"
                 name="answer"
                 id="answerInput"
                 class="answer-input"
-                placeholder="{{ get_text('cards_practice_input_placeholder') }}"
+                placeholder="{{ get_text('conjugate_practice_input_placeholder') }}"
                 autocomplete="off"
+                autocapitalize="off"
                 autofocus
                 data-difficulty="{{ difficulty }}"
                 {% if correct_answer is not none %}data-correct-answer="{{ correct_answer }}"{% endif %}
@@ -73,11 +69,11 @@
 {% if revealed %}
 <div class="reveal-modal show" role="dialog" aria-modal="true" aria-labelledby="reveal-modal-title">
     <div class="reveal-modal-content">
-        <div class="reveal-modal-prompt">{{ prompt_text }}</div>
+        <div class="reveal-modal-prompt">{{ infinitive }} · {{ pronoun }} · {{ tense_label }}</div>
         <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
         <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
         <div class="reveal-modal-answer">{{ correct_answer }}</div>
-        <form action="{{ url_for('cards_practice') }}" method="POST" class="reveal-modal-actions" id="revealForm">
+        <form action="{{ url_for('conjugate_practice') }}" method="POST" class="reveal-modal-actions" id="revealForm">
             {% if reveal_mode == 'type' %}
             <input
                 type="text"
@@ -105,9 +101,6 @@
 <script src="{{ url_for('static', filename='js/cards_practice_reveal.js') }}"></script>
 {% endif %}
 {% else %}
-<script src="{{ url_for('static', filename='js/cards_practice.js') }}"></script>
-{% endif %}
-{% if verb_infinitive and not revealed %}
-<script src="{{ url_for('static', filename='js/cards_practice_verb_add.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/conjugate_practice.js') }}"></script>
 {% endif %}
 {% endblock %}

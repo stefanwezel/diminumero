@@ -24,3 +24,6 @@ poll_charts/
 htmlcov/
 coverage.xml
 .tox/
+
+# verbecc writes a log file when tools/generate_conjugations.py runs
+verbecc.log

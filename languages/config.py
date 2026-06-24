@@ -9,6 +9,8 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
+        "has_conjugation": True,
+        "has_conjugation_materials": True,
         "description": "Learn Spanish numbers from 1 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         # UI display names keyed by UI language code
@@ -469,6 +471,15 @@ def get_languages_with_learn_materials():
         code
         for code, info in AVAILABLE_LANGUAGES.items()
         if info.get("has_learn_materials", False) and info.get("ready", False)
+    ]
+
+
+def get_languages_with_conjugation_materials():
+    """Return language codes that have verb-conjugation learn materials and are ready."""
+    return [
+        code
+        for code, info in AVAILABLE_LANGUAGES.items()
+        if info.get("has_conjugation_materials", False) and info.get("ready", False)
     ]
 
 

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj') }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Learn Spanish Verb Conjugations</h1>
+      <p>
+        This page teaches the core patterns behind <strong>Spanish verbs</strong> — the regular
+        <em>-ar / -er / -ir</em> endings, the tenses you will practice here, and the
+        irregular verbs you cannot avoid.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">The six persons</a></li>
+        <li><a href="#patterns">Regular patterns: -ar / -er / -ir</a></li>
+        <li><a href="#tenses">The tenses you practice</a></li>
+        <li><a href="#stem-changers">Stem-changing verbs</a></li>
+        <li><a href="#irregular">Irregular verbs</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>The six persons</h2>
+      <p>
+        Every Spanish tense has one form per <strong>person</strong>. The ending of the verb
+        already tells you who is doing the action, so the pronoun is often dropped in speech.
+      </p>
+      <ul>
+        <li><strong>yo</strong> — I</li>
+        <li><strong>tú</strong> — you (informal)</li>
+        <li><strong>él / ella / usted</strong> — he / she / you (formal)</li>
+        <li><strong>nosotros</strong> — we</li>
+        <li><strong>vosotros</strong> — you all (Spain; optional in the practice settings)</li>
+        <li><strong>ellos / ellas / ustedes</strong> — they / you all</li>
+      </ul>
+      <p>
+        In Latin America <em>vosotros</em> is replaced by <em>ustedes</em>, which is why it is
+        a toggle you can switch off when practicing.
+      </p>
+    </section>
+
+    <section id="patterns" class="learn-section">
+      <h2>Regular patterns: -ar / -er / -ir</h2>
+      <p>
+        Spanish infinitives end in <strong>-ar</strong>, <strong>-er</strong> or <strong>-ir</strong>.
+        Drop that ending to get the <strong>stem</strong>, then add the ending for the person and tense.
+        In the <strong>present indicative</strong> the endings are:
+      </p>
+      <ul>
+        <li><strong>-ar</strong> (hablar → habl-): <em>-o, -as, -a, -amos, -áis, -an</em> → hablo, hablas, habla, hablamos, habláis, hablan</li>
+        <li><strong>-er</strong> (comer → com-): <em>-o, -es, -e, -emos, -éis, -en</em> → como, comes, come, comemos, coméis, comen</li>
+        <li><strong>-ir</strong> (vivir → viv-): <em>-o, -es, -e, -imos, -ís, -en</em> → vivo, vives, vive, vivimos, vivís, viven</li>
+      </ul>
+      <p>
+        Notice that <strong>-er</strong> and <strong>-ir</strong> verbs share the same endings
+        except for <em>nosotros</em> and <em>vosotros</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: tú of <em>trabajar</em>, nosotros of <em>beber</em>, ellos of <em>escribir</em>?</summary>
+        <p><strong>trabajas</strong> · <strong>bebemos</strong> · <strong>escriben</strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>The tenses you practice</h2>
+      <p>
+        The practice settings let you mix and match these tenses. A quick map of what each one is for
+        (examples shown with <em>hablar</em>, <em>comer</em>, <em>vivir</em>):
+      </p>
+      <ul>
+        <li><strong>Present</strong> — happening now / habits: <em>hablo, como, vivo</em>.</li>
+        <li><strong>Preterite (simple past)</strong> — a finished action: <em>hablé, comí, viví</em>.</li>
+        <li><strong>Imperfect</strong> — ongoing / repeated past ("used to"): <em>hablaba, comía, vivía</em>.</li>
+        <li><strong>Future</strong> — will happen; built on the full infinitive: <em>hablaré, comeré, viviré</em>.</li>
+        <li><strong>Conditional</strong> — would happen; also on the infinitive: <em>hablaría, comería, viviría</em>.</li>
+        <li><strong>Present perfect</strong> — <em>haber</em> + past participle: <em>he hablado, he comido, he vivido</em>.</li>
+        <li><strong>Past perfect</strong> — imperfect <em>haber</em> + participle: <em>había hablado…</em>.</li>
+        <li><strong>Present subjunctive</strong> — wishes, doubt, emotion: <em>(que) hable, coma, viva</em>.</li>
+        <li><strong>Imperfect subjunctive</strong> — past subjunctive / polite: <em>hablara, comiera, viviera</em>.</li>
+        <li><strong>Imperative (affirmative)</strong> — commands: <em>¡habla!, ¡come!, ¡vive!</em>.</li>
+      </ul>
+      <p>
+        The <strong>future</strong> and <strong>conditional</strong> are the easiest tenses: the same
+        endings are bolted onto the whole infinitive for every verb group.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: which tense is <em>comías</em>? And <em>comerás</em>?</summary>
+        <p><strong>comías</strong> = imperfect (you used to eat) · <strong>comerás</strong> = future (you will eat)</p>
+      </details>
+    </section>
+
+    <section id="stem-changers" class="learn-section">
+      <h2>Stem-changing verbs</h2>
+      <p>
+        Many common verbs keep their regular endings but change a vowel in the stem when it is stressed.
+        The change happens in all persons <strong>except nosotros and vosotros</strong> (the "boot").
+      </p>
+      <ul>
+        <li><strong>e → ie</strong>: querer → quiero, quieres, quiere, queremos, queréis, quieren</li>
+        <li><strong>o → ue</strong>: poder → puedo, puedes, puede, podemos, podéis, pueden</li>
+        <li><strong>e → i</strong>: pedir → pido, pides, pide, pedimos, pedís, piden</li>
+      </ul>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Irregular verbs</h2>
+      <p>
+        The most frequent Spanish verbs are also the most irregular — worth memorizing first because
+        they appear everywhere.
+      </p>
+      <ul>
+        <li><strong>ser</strong> (to be): soy, eres, es, somos, sois, son</li>
+        <li><strong>estar</strong> (to be): estoy, estás, está, estamos, estáis, están</li>
+        <li><strong>ir</strong> (to go): voy, vas, va, vamos, vais, van</li>
+        <li><strong>tener</strong> (to have): tengo, tienes, tiene, tenemos, tenéis, tienen</li>
+        <li><strong>hacer</strong> (to do/make): hago, haces, hace, hacemos, hacéis, hacen</li>
+      </ul>
+      <p>
+        Watch for the <strong>irregular "yo" form</strong>: many verbs are regular everywhere except
+        first person — <em>tener → tengo</em>, <em>hacer → hago</em>, <em>poner → pongo</em>,
+        <em>salir → salgo</em>, <em>conocer → conozco</em>.
+      </p>
+      <p>
+        A few verbs have irregular <strong>preterite</strong> stems with no accents:
+        <em>tener → tuve</em>, <em>estar → estuve</em>, <em>hacer → hice</em>,
+        <em>ir / ser → fui</em> (identical in the preterite).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: yo of <em>tener</em> (present), and yo of <em>hacer</em> (preterite)?</summary>
+        <p><strong>tengo</strong> · <strong>hice</strong></p>
+      </details>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>-er vs. -ir</strong>: they differ only in <em>nosotros/vosotros</em> (comemos vs. vivimos).</li>
+        <li><strong>Missing accents</strong>: the accent is the only difference between <em>hablo</em> (I speak) and <em>habló</em> (he spoke).</li>
+        <li><strong>Future/conditional on the infinitive</strong>: it is <em>comeré</em>, never "comé".</li>
+        <li><strong>Irregular yo forms</strong>: <em>tengo</em>, not "teno"; <em>conozco</em>, not "conoco".</li>
+        <li><strong>ser vs. estar</strong>: both mean "to be" but never share forms — learn them as separate verbs.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate') }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
