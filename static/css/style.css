@@ -2030,7 +2030,12 @@ html {
 
 /* Learn CTA on Index Page */
 .learn-cta {
-    margin: 30px 0;
+    margin: 30px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    max-width: 1040px;
 }
 
 .learn-card {
@@ -2044,8 +2049,9 @@ html {
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     text-align: center;
+    flex: 1 1 320px;
     max-width: 500px;
-    margin: 0 auto;
+    margin: 0;
 }
 
 @media (hover: hover) {
@@ -2467,7 +2473,12 @@ html {
 
 /* Learn CTA Card on Index Page */
 .learn-cta {
-    margin: 30px 0;
+    margin: 30px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    max-width: 1040px;
 }
 
 .learn-card {
@@ -2480,6 +2491,8 @@ html {
     transition: all 0.3s ease;
     box-shadow: 0 8px 25px rgba(114, 78, 145, 0.3);
     text-align: center;
+    flex: 1 1 320px;
+    max-width: 500px;
 }
 
 @media (hover: hover) {

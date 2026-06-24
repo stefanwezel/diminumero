@@ -50,6 +50,7 @@ from languages import (
     get_language_ui_description,
     get_language_ui_name,
     get_languages_with_audio_mode,
+    get_languages_with_conjugation_materials,
     get_languages_with_learn_materials,
     is_language_ready,
 )
@@ -197,9 +198,7 @@ def set_cache_headers(response):
         # URL changes whenever the file does, so an edit is fetched immediately.
         # Unversioned direct hits keep the short, revalidating cache.
         if request.args.get("v"):
-            response.headers["Cache-Control"] = (
-                "public, max-age=31536000, immutable"
-            )
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=600"
     elif "/learn" in path:
@@ -325,6 +324,7 @@ def mode_selection(lang_code):
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
     has_audio_mode = lang_code in get_languages_with_audio_mode()
+    has_conjugation_materials = lang_code in get_languages_with_conjugation_materials()
 
     return render_template(
         "index.html",
@@ -334,6 +334,7 @@ def mode_selection(lang_code):
         get_text=get_text,
         has_learn_materials=has_learn_materials,
         has_audio_mode=has_audio_mode,
+        has_conjugation_materials=has_conjugation_materials,
         magnitude_level=session.get("magnitude_level", 1),
     )
 
@@ -1039,6 +1040,27 @@ def learn(lang_code):
         return render_template(template, lang_code=lang_code, get_text=get_text)
     except jinja2.TemplateNotFound:
         template = f"learn_{lang_code}_en.html"
+        return render_template(template, lang_code=lang_code, get_text=get_text)
+
+
+@app.route("/<lang_code>/learn/conjugations")
+def learn_conjugations(lang_code):
+    """Display the verb-conjugation learn page for a language (Spanish only today)."""
+    if not is_language_ready(lang_code):
+        return redirect(url_for("index"))
+
+    if lang_code not in get_languages_with_conjugation_materials():
+        flash(get_text("flash_learn_not_available"), "info")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    template = f"learn_conjugations_{lang_code}_{ui_lang}.html"
+
+    # Fallback to English if the UI-language variant doesn't exist.
+    try:
+        return render_template(template, lang_code=lang_code, get_text=get_text)
+    except jinja2.TemplateNotFound:
+        template = f"learn_conjugations_{lang_code}_en.html"
         return render_template(template, lang_code=lang_code, get_text=get_text)
 
 
@@ -2576,6 +2598,8 @@ def sitemap_xml():
             urls.append(f"{base}/{lang_code}")
     for lc in get_languages_with_learn_materials():
         urls.append(f"{base}/{lc}/learn")
+    for lc in get_languages_with_conjugation_materials():
+        urls.append(f"{base}/{lc}/learn/conjugations")
     urls.append(f"{base}/about")
     urls.append(f"{base}/privacy")
     urls.append(f"{base}/imprint")

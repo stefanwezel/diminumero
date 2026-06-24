@@ -2,6 +2,14 @@
 
 This guide explains how to contribute learning/tutorial pages for a language that is already registered in diminumero.
 
+> **Scope:** this guide covers the **numbers** Learn page (`/<lang_code>/learn`). The Spanish
+> verb-conjugation section has its **own, separate** Learn page
+> (`/<lang_code>/learn/conjugations`) — see
+> [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md#conjugation-learn-page). On the
+> mode-selection page the two appear as side-by-side cards: **"Learn numbers"** (this guide,
+> gated on `has_learn_materials`) and **"Learn conjugations"** (gated on
+> `has_conjugation_materials`).
+
 ## Overview
 
 Each language can optionally have a **Learn page** — a reference page that teaches users the number patterns for that language before (or alongside) quizzing.

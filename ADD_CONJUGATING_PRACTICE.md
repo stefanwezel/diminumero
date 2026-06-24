@@ -7,6 +7,8 @@ checklist, and what it would take to support a second language.
 Related guides:
 - [ADD_NUMBERS.md](ADD_NUMBERS.md) — add a new language's number deck.
 - [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) — add the Listening quiz.
+- [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md) — add the *numbers* Learn page (a
+  sibling of the conjugation Learn page described below).
 
 ## Overview
 
@@ -65,6 +67,33 @@ JSON.
   updates the owning `VerbCard` and the matching `ConjugationStat`.
 - `/conjugate/practice/results` — final score, clears state.
 - `/api/conjugate/validate` (POST) — word-by-word feedback (disabled in hardcore).
+- `/<lang_code>/learn/conjugations` — the **conjugation Learn page** (a reference page that
+  explains the regular `-ar/-er/-ir` patterns, the tenses you practice, stem-changers, and the
+  irregular verbs). See [Conjugation Learn Page](#conjugation-learn-page) below.
+
+## Conjugation Learn Page
+
+Separate from the *numbers* Learn page (`/<lang_code>/learn`, see
+[ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md)), the conjugation section has its own
+reference page at `/<lang_code>/learn/conjugations`. The mode-selection page (`templates/index.html`)
+surfaces both as side-by-side cards in the `learn-cta` block — **"Learn numbers"**
+(`learn_nav_button`, gated on `has_learn_materials`) and **"Learn conjugations"**
+(`learn_nav_conjugations_button`, gated on `has_conjugation_materials`).
+
+Moving parts:
+
+| Piece | Role |
+|------|------|
+| `has_conjugation_materials` flag in `languages/config.py` | Marks a language as having a conjugation Learn page. `get_languages_with_conjugation_materials()` derives the enabled list (combined with `ready: True`); the `learn_conjugations()` route, `mode_selection()`, and `sitemap_xml()` all read from it — no hardcoded `"es"`. |
+| `learn_conjugations()` route in `app.py` | Serves `templates/learn_conjugations_<lang>_<ui_lang>.html`, falling back to `_en` (same UI-language pattern as the numbers `learn()` route). |
+| `templates/learn_conjugations_es_<ui>.html` | The page itself (`_en` required; `_es`/`_de` provided, others fall back). Reuses the `learn-*` CSS classes and the `_learn_conjugations_jsonld.html` include. The footer CTA links to `/conjugate` (`conjugate_start_btn`). |
+| Translation keys | `learn_nav_conjugations_button` / `learn_nav_conjugations_desc` (the index card) and `seo_title_learn_conj` / `meta_desc_learn_conj` (page + JSON-LD), in `translations.py`. |
+
+To add a new UI-language variant, copy `templates/learn_conjugations_es_en.html` to
+`learn_conjugations_es_<ui>.html` and translate the prose (keep the Spanish verb forms unchanged).
+Extending the page to a second language would also require the broader work in
+[Extending to Another Language](#extending-to-another-language) plus a
+`has_conjugation_materials: True` flag and a `learn_conjugations_<code>_en.html` template.
 
 ## Regenerating the Global Verb Pool
 
