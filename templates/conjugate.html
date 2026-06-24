@@ -50,88 +50,6 @@
         </form>
     </section>
 
-    {% if dashboard.total_attempts > 0 %}
-    <section class="cards-create-section conjugate-stats-section">
-        <details class="conjugate-stats" open>
-            <summary class="conjugate-stats-summary">
-                <h3 class="cards-section-heading">{{ get_text('conjugate_stats_heading') }}</h3>
-                <span class="conjugate-stats-chevron" aria-hidden="true">▾</span>
-            </summary>
-            <p class="cards-subtitle">{{ get_text('conjugate_stats_subtitle') }}</p>
-            <p class="conjugate-stats-overall">
-                {{ get_text('conjugate_stats_overall') }}
-                <strong>{{ (dashboard.overall_accuracy * 100)|round|int }}%</strong>
-                <span class="conjugate-stats-overall-sub">({{ dashboard.total_correct }}/{{ dashboard.total_attempts }})</span>
-            </p>
-
-            <div class="cards-dashboard-toplists conjugate-stats-toplists">
-                <div class="cards-dashboard-toplist">
-                    <h4 class="cards-dashboard-toplist-title">
-                        {{ get_text('conjugate_stats_tenses') }}
-                        <span class="cards-dashboard-toplist-count">({{ dashboard.tense_insights|length }})</span>
-                    </h4>
-                    {% if dashboard.tense_insights %}
-                    <ul class="cards-dashboard-toplist-list">
-                        {% for item in dashboard.tense_insights %}
-                        <li class="cards-dashboard-toplist-item">
-                            <div class="cards-dashboard-toplist-text">
-                                <span class="cards-dashboard-toplist-front">{{ item.label }}</span>
-                            </div>
-                            {{ progress_ring(item) }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="cards-dashboard-empty-hint">{{ get_text('conjugate_stats_none') }}</p>
-                    {% endif %}
-                </div>
-
-                <div class="cards-dashboard-toplist">
-                    <h4 class="cards-dashboard-toplist-title">
-                        {{ get_text('conjugate_stats_verbs') }}
-                        <span class="cards-dashboard-toplist-count">({{ dashboard.verbs_to_practice|length }})</span>
-                    </h4>
-                    {% if dashboard.verbs_to_practice %}
-                    <ul class="cards-dashboard-toplist-list">
-                        {% for verb in dashboard.verbs_to_practice[:8] %}
-                        <li class="cards-dashboard-toplist-item">
-                            <div class="cards-dashboard-toplist-text">
-                                <span class="cards-dashboard-toplist-front">{{ verb.infinitive }}</span>
-                            </div>
-                            {{ progress_ring(verb) }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="cards-dashboard-empty-hint">{{ get_text('conjugate_stats_none') }}</p>
-                    {% endif %}
-                </div>
-
-                <div class="cards-dashboard-toplist">
-                    <h4 class="cards-dashboard-toplist-title">
-                        {{ get_text('conjugate_stats_pronouns') }}
-                        <span class="cards-dashboard-toplist-count">({{ dashboard.pronoun_insights|length }})</span>
-                    </h4>
-                    {% if dashboard.pronoun_insights %}
-                    <ul class="cards-dashboard-toplist-list">
-                        {% for item in dashboard.pronoun_insights %}
-                        <li class="cards-dashboard-toplist-item">
-                            <div class="cards-dashboard-toplist-text">
-                                <span class="cards-dashboard-toplist-front">{{ item.label }}</span>
-                            </div>
-                            {{ progress_ring(item) }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="cards-dashboard-empty-hint">{{ get_text('conjugate_stats_none') }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </details>
-    </section>
-    {% endif %}
-
     <section class="cards-list-section">
         <div class="cards-list-heading-row">
             <h2 class="cards-section-heading">
@@ -199,6 +117,71 @@
                 {{ get_text('conjugate_start_btn') }}
             </button>
         </form>
+
+        {% if dashboard.total_attempts > 0 %}
+        <details class="conjugate-stats conjugate-stats-section">
+            <summary class="conjugate-stats-summary">
+                <h3 class="cards-section-heading">{{ get_text('conjugate_stats_heading') }}</h3>
+                <span class="conjugate-stats-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <p class="cards-subtitle">{{ get_text('conjugate_stats_subtitle') }}</p>
+            <p class="conjugate-stats-overall">
+                {{ get_text('conjugate_stats_overall') }}
+                <strong>{{ (dashboard.overall_accuracy * 100)|round|int }}%</strong>
+                <span class="conjugate-stats-overall-sub">({{ dashboard.total_correct }}/{{ dashboard.total_attempts }})</span>
+            </p>
+
+            {% set category_labels = {
+                'unpracticed': get_text('cards_dashboard_bucket_unpracticed'),
+                'weak': get_text('cards_dashboard_weak'),
+                'needs_work': get_text('cards_dashboard_top_weak'),
+            } %}
+            <div class="conjugate-matrix" id="conjugate-matrix" role="table"
+                 aria-label="{{ get_text('conjugate_stats_heading') }}">
+                <div class="conjugate-matrix-row conjugate-matrix-head" role="row">
+                    <span class="conjugate-matrix-corner" role="columnheader"></span>
+                    {% for cat in dashboard.matrix_categories %}
+                    <span class="conjugate-matrix-colhead conjugate-matrix-colhead-{{ cat }}"
+                          role="columnheader">{{ category_labels[cat] }}</span>
+                    {% endfor %}
+                </div>
+                {% for dim in dashboard.matrix %}
+                <div class="conjugate-matrix-row" role="row">
+                    <span class="conjugate-matrix-rowhead" role="rowheader">{{ dim.label }}</span>
+                    {% for cat in dashboard.matrix_categories %}
+                    {% set cell = dim.cells[cat] %}
+                    <div class="conjugate-matrix-cell{% if cell.count == 0 %} conjugate-matrix-cell-empty{% endif %}"
+                         role="cell">
+                        <span class="conjugate-matrix-count">{{ cell.count }}</span>
+                        {% if cell.count > 0 %}
+                        <form method="POST" action="{{ url_for('conjugate_practice_start') }}"
+                              class="conjugate-matrix-recap-form">
+                            {% for t in cell.tenses %}
+                            <input type="hidden" name="tenses" value="{{ t }}">
+                            {% endfor %}
+                            {% for vid in cell.verb_ids %}
+                            <input type="hidden" name="verb_ids" value="{{ vid }}">
+                            {% endfor %}
+                            {% for pidx in cell.persons %}
+                            <input type="hidden" name="persons" value="{{ pidx }}">
+                            {% endfor %}
+                            <input type="hidden" name="difficulty" value="advanced">
+                            <input type="hidden" name="sampling_mode" value="prioritized">
+                            <input type="hidden" name="reveal_mode" value="type">
+                            <input type="hidden" name="count" value="{{ default_count }}">
+                            <button type="submit" class="btn btn-primary conjugate-matrix-recap-btn">
+                                {{ get_text('cards_dashboard_recap_btn') }}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <script type="application/json" id="conjugate-stats-data">{{ dashboard.data_json|safe }}</script>
+        </details>
+        {% endif %}
 
         <ul class="cards-list conjugate-list" id="conjugate-list">
             {% for verb in verbs %}

@@ -4058,6 +4058,11 @@ html {
 }
 
 /* ----- Practice insights dashboard ----- */
+/* Sits between the practice settings and the verb list, folded by default.
+   The summary is styled as a prominent accent toggle bar. */
+.conjugate-stats-section {
+    margin: 4px 0 24px;
+}
 .conjugate-stats-summary {
     display: flex;
     align-items: center;
@@ -4065,12 +4070,28 @@ html {
     cursor: pointer;
     list-style: none;
     gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: rgba(229, 79, 109, 0.16);
+    border: 1px solid rgba(229, 79, 109, 0.4);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.conjugate-stats-summary:hover {
+    background: rgba(229, 79, 109, 0.26);
+    border-color: rgba(229, 79, 109, 0.65);
 }
 .conjugate-stats-summary::-webkit-details-marker { display: none; }
-.conjugate-stats-summary .cards-section-heading { margin: 0; }
+.conjugate-stats-summary .cards-section-heading {
+    margin: 0;
+    font-size: 1.15rem;
+}
+.conjugate-stats[open] .conjugate-stats-summary {
+    margin-bottom: 18px;
+}
 .conjugate-stats-chevron {
-    color: #A89BB8;
-    font-size: 1rem;
+    color: #FFFFFF;
+    font-size: 1.3rem;
+    line-height: 1;
     transition: transform 0.2s ease;
 }
 .conjugate-stats[open] .conjugate-stats-chevron { transform: rotate(180deg); }
@@ -4091,8 +4112,92 @@ html {
     margin-left: 4px;
 }
 
-/* Insight panels reuse the cards dashboard toplist styling (.cards-dashboard-*)
-   so they match the index-cards dashboard exactly; only the top margin differs. */
-.conjugate-stats-toplists {
+/* Insight matrix: dimensions (tenses / verbs / pronouns) down the rows,
+   practice categories (unpracticed / weak / needs work) across the columns.
+   Each cell shows the member count plus a focused-recap button. */
+.conjugate-matrix {
     margin-top: 4px;
+    display: grid;
+    grid-template-columns: minmax(96px, 1.1fr) repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.conjugate-matrix-row {
+    display: contents;
+}
+.conjugate-matrix-corner {
+    display: block;
+}
+.conjugate-matrix-colhead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #C9BBD9;
+    padding: 0 4px 6px;
+}
+.conjugate-matrix-colhead-weak { color: #E58B8B; }
+.conjugate-matrix-colhead-needs_work { color: #E8C07A; }
+.conjugate-matrix-rowhead {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    padding-right: 6px;
+}
+.conjugate-matrix-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+}
+.conjugate-matrix-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1;
+}
+.conjugate-matrix-cell-empty {
+    background: rgba(255, 255, 255, 0.02);
+}
+.conjugate-matrix-cell-empty .conjugate-matrix-count {
+    color: #6F6580;
+}
+.conjugate-matrix-recap-form {
+    width: 100%;
+    margin: 0;
+}
+.conjugate-matrix-recap-btn {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 560px) {
+    .conjugate-matrix {
+        grid-template-columns: minmax(70px, 0.9fr) repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .conjugate-matrix-rowhead {
+        font-size: 0.85rem;
+    }
+    .conjugate-matrix-colhead {
+        font-size: 0.72rem;
+    }
+    .conjugate-matrix-cell {
+        padding: 10px 4px;
+    }
+    .conjugate-matrix-count {
+        font-size: 1.2rem;
+    }
+    .conjugate-matrix-recap-btn {
+        padding: 5px 4px;
+        font-size: 0.75rem;
+    }
 }

@@ -312,6 +312,84 @@ class TestDashboard:
         assert "Tenses to practice" in html
         assert "Pronouns to practice" in html
 
+    def test_matrix_renders_with_recap_forms(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        self._answer_one(client, correct=False)
+        html = client.get("/conjugate").data.decode("utf-8")
+        # Matrix scaffold + category column headers + recap buttons.
+        assert "conjugate-matrix" in html
+        assert "Unpracticed" in html
+        assert "Needs work" in html
+        assert 'name="verb_ids"' in html
+        assert 'name="persons"' in html
+
+    def test_matrix_data_carries_all_tense_aggregates(self, client):
+        import json as _json
+        import re
+
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        # Practice a non-default tense; the default matrix render is scoped to
+        # presente, but the embedded JSON must still carry every tense's tally
+        # so the client can rebuild for any selection.
+        self._start(client, tense="indicativo/futuro")
+        self._answer_one(client, correct=False)
+        html = client.get("/conjugate").data.decode("utf-8")
+        blob = re.search(
+            r'id="conjugate-stats-data">(.*?)</script>', html, re.S
+        ).group(1)
+        data = _json.loads(blob)
+        futuro = next(t for t in data["tenses"] if t["key"] == "indicativo/futuro")
+        presente = next(t for t in data["tenses"] if t["key"] == "indicativo/presente")
+        assert futuro["practiced"] == 1
+        assert presente["practiced"] == 0
+        # Verb list and person aggregates are present for client-side rebuilds.
+        assert len(data["verbs"]) == 1
+        assert any(p["optional"] for p in data["persons"])
+
+    def test_recap_starts_focused_session(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        # A wrong answer makes "comer" weak and the practiced tense/person weak.
+        self._start(client)
+        tense, person = self._answer_one(client, correct=False)
+        # Recap a single verb on a single tense/person: the session must be
+        # restricted to exactly that verb, tense, and person.
+        client.post(
+            "/conjugate/practice/start",
+            data={
+                "tenses": [tense],
+                "verb_ids": [str(verb_id)],
+                "persons": [str(person)],
+                "difficulty": "advanced",
+            },
+        )
+        with client.session_transaction() as sess:
+            state = sess["conjugate_practice"]
+            assert state["verb_ids"] == [verb_id]
+            assert state["persons"] == [person]
+            assert state["tenses"] == [tense]
+
+    def test_recap_rejects_unowned_verb_ids(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        resp = client.post(
+            "/conjugate/practice/start",
+            data={
+                "tenses": ["indicativo/presente"],
+                "verb_ids": ["999999"],
+                "difficulty": "advanced",
+            },
+            follow_redirects=False,
+        )
+        # Bounced back to /conjugate, no session created.
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/conjugate")
+        with client.session_transaction() as sess:
+            assert "conjugate_practice" not in sess
+
     def test_dashboard_hidden_without_practice(self, client):
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)

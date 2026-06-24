@@ -312,4 +312,200 @@
             form.submit();
         }
     });
+
+    // ----- Insights matrix (reactive to the practice settings) -------------
+    // The matrix mirrors what's selected in the practice form below it: only the
+    // ticked tenses and the vosotros toggle feed the tense / pronoun rows, and
+    // recap buttons inherit the current tenses, persons and difficulty. The verb
+    // row always covers every verb (verb scores aren't sliceable per tense).
+
+    (function initMatrix() {
+        const matrixEl = document.getElementById('conjugate-matrix');
+        const dataEl = document.getElementById('conjugate-stats-data');
+        const practiceForm = document.querySelector('.conjugate-practice-form');
+        if (!matrixEl || !dataEl || !practiceForm) return;
+
+        let data;
+        try {
+            data = JSON.parse(dataEl.textContent || '{}');
+        } catch (e) {
+            return;
+        }
+        if (!data.categories) return;
+
+        function categoryOf(score) {
+            if (score === null || score === undefined) return 'unpracticed';
+            if (score < 0.5) return 'weak';
+            if (score < 0.8) return 'needs_work';
+            return null; // strong — not shown in the matrix
+        }
+
+        function scoreFromCounts(practiced, correct) {
+            return practiced ? correct / practiced : null;
+        }
+
+        function readSelection() {
+            const tenses = Array.prototype.map.call(
+                practiceForm.querySelectorAll('input[name="tenses"]:checked'),
+                function (el) { return el.value; }
+            );
+            const vosotros = practiceForm.querySelector('input[name="include_vosotros"]');
+            const vosotrosOn = !!(vosotros && vosotros.checked);
+            const persons = data.persons
+                .filter(function (p) { return !p.optional || vosotrosOn; })
+                .map(function (p) { return p.index; });
+            const diffEl = practiceForm.querySelector('input[name="difficulty"]:checked');
+            const difficulty = diffEl ? diffEl.value : 'advanced';
+            return { tenses: tenses, persons: persons, difficulty: difficulty };
+        }
+
+        function bucket(items, scoreFn) {
+            const m = { unpracticed: [], weak: [], needs_work: [] };
+            items.forEach(function (it) {
+                const cat = categoryOf(scoreFn(it));
+                if (cat) m[cat].push(it);
+            });
+            return m;
+        }
+
+        function computeDimensions(sel) {
+            const selTenses = sel.tenses;
+            const selPersons = sel.persons;
+
+            const tenseItems = data.tenses.filter(function (t) {
+                return selTenses.indexOf(t.key) !== -1;
+            });
+            const personItems = data.persons.filter(function (p) {
+                return selPersons.indexOf(p.index) !== -1;
+            });
+
+            const tenseM = bucket(tenseItems, function (t) {
+                return scoreFromCounts(t.practiced, t.correct);
+            });
+            const verbM = bucket(data.verbs, function (v) { return v.score; });
+            const personM = bucket(personItems, function (p) {
+                return scoreFromCounts(p.practiced, p.correct);
+            });
+
+            function cells(members, tensesFn, verbIdsFn, personsFn) {
+                const out = {};
+                data.categories.forEach(function (cat) {
+                    const ids = members[cat];
+                    out[cat] = {
+                        count: ids.length,
+                        tenses: tensesFn(ids),
+                        verb_ids: verbIdsFn(ids),
+                        persons: personsFn(ids)
+                    };
+                });
+                return out;
+            }
+
+            return [
+                {
+                    label: data.dimension_labels.tenses,
+                    cells: cells(
+                        tenseM,
+                        function (ids) { return ids.map(function (t) { return t.key; }); },
+                        function () { return []; },
+                        function () { return selPersons; }
+                    )
+                },
+                {
+                    label: data.dimension_labels.verbs,
+                    cells: cells(
+                        verbM,
+                        function () { return selTenses; },
+                        function (ids) { return ids.map(function (v) { return v.id; }); },
+                        function () { return selPersons; }
+                    )
+                },
+                {
+                    label: data.dimension_labels.pronouns,
+                    cells: cells(
+                        personM,
+                        function () { return selTenses; },
+                        function () { return []; },
+                        function (ids) { return ids.map(function (p) { return p.index; }); }
+                    )
+                }
+            ];
+        }
+
+        function makeSpan(classes, text, role) {
+            const el = document.createElement('span');
+            el.className = classes;
+            if (role) el.setAttribute('role', role);
+            if (text) el.textContent = text;
+            return el;
+        }
+
+        function hidden(name, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = String(value);
+            return input;
+        }
+
+        function buildCell(cell, difficulty) {
+            const div = document.createElement('div');
+            div.className = 'conjugate-matrix-cell' + (cell.count === 0 ? ' conjugate-matrix-cell-empty' : '');
+            div.setAttribute('role', 'cell');
+            div.appendChild(makeSpan('conjugate-matrix-count', String(cell.count)));
+            if (cell.count > 0) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = data.start_url;
+                form.className = 'conjugate-matrix-recap-form';
+                cell.tenses.forEach(function (t) { form.appendChild(hidden('tenses', t)); });
+                cell.verb_ids.forEach(function (v) { form.appendChild(hidden('verb_ids', v)); });
+                cell.persons.forEach(function (p) { form.appendChild(hidden('persons', p)); });
+                form.appendChild(hidden('difficulty', difficulty));
+                form.appendChild(hidden('sampling_mode', 'prioritized'));
+                form.appendChild(hidden('reveal_mode', 'type'));
+                form.appendChild(hidden('count', data.default_count));
+                const btn = document.createElement('button');
+                btn.type = 'submit';
+                btn.className = 'btn btn-primary conjugate-matrix-recap-btn';
+                btn.textContent = data.recap_label;
+                form.appendChild(btn);
+                div.appendChild(form);
+            }
+            return div;
+        }
+
+        function render() {
+            const sel = readSelection();
+            const dims = computeDimensions(sel);
+            matrixEl.innerHTML = '';
+
+            const head = document.createElement('div');
+            head.className = 'conjugate-matrix-row conjugate-matrix-head';
+            head.setAttribute('role', 'row');
+            head.appendChild(makeSpan('conjugate-matrix-corner', '', 'columnheader'));
+            data.categories.forEach(function (cat) {
+                head.appendChild(makeSpan(
+                    'conjugate-matrix-colhead conjugate-matrix-colhead-' + cat,
+                    data.category_labels[cat],
+                    'columnheader'
+                ));
+            });
+            matrixEl.appendChild(head);
+
+            dims.forEach(function (dim) {
+                const row = document.createElement('div');
+                row.className = 'conjugate-matrix-row';
+                row.setAttribute('role', 'row');
+                row.appendChild(makeSpan('conjugate-matrix-rowhead', dim.label, 'rowheader'));
+                data.categories.forEach(function (cat) {
+                    row.appendChild(buildCell(dim.cells[cat], sel.difficulty));
+                });
+                matrixEl.appendChild(row);
+            });
+        }
+
+        practiceForm.addEventListener('change', render);
+        render();
+    }());
 }());

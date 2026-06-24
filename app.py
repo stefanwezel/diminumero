@@ -1902,32 +1902,137 @@ def _find_user_verb(user_sub: str, infinitive: str) -> VerbCard | None:
     return None
 
 
+# Practice-category buckets shared by the conjugate insights matrix. Mirrors the
+# cards dashboard thresholds: unpracticed (no attempts), weak (<50%), needs work
+# (50–80%). The strong bucket (≥80%) is intentionally omitted from the matrix.
+CONJ_MATRIX_CATEGORIES = ("unpracticed", "weak", "needs_work")
+
+
+def _conj_category(score: float | None) -> str | None:
+    """Map a 0–1 accuracy (or None) onto a matrix category, or None if strong."""
+    if score is None:
+        return "unpracticed"
+    if score < 0.5:
+        return "weak"
+    if score < 0.8:
+        return "needs_work"
+    return None
+
+
+def _conj_build_matrix(
+    verbs: list[VerbCard],
+    by_tense: dict,
+    by_person: dict,
+    selected_tenses: list[str],
+    selected_persons: list[int],
+) -> list[dict]:
+    """Build the insights matrix scoped to the given practice selection.
+
+    Only the *selected* tenses and persons populate their dimension rows; the
+    verbs row always covers the user's whole verb list (verb scores are global —
+    `ConjugationStat` isn't keyed by verb, so they can't be sliced per tense).
+    Each cell carries the recap parameters for a focused session, where the two
+    "other" dimensions inherit the current selection.
+    """
+    sel_tenses = [t for t in selected_tenses if t in CONJ_TENSE_KEYS]
+    sel_persons = list(selected_persons)
+
+    def _empty_cells() -> dict:
+        return {cat: [] for cat in CONJ_MATRIX_CATEGORIES}
+
+    tense_members = _empty_cells()
+    for t in CONJ_TENSES:
+        if t["key"] not in sel_tenses:
+            continue
+        counts = by_tense.get(t["key"], [0, 0])
+        score = (counts[1] / counts[0]) if counts[0] else None
+        cat = _conj_category(score)
+        if cat is not None:
+            tense_members[cat].append(t["key"])
+
+    verb_members = _empty_cells()
+    for v in verbs:
+        cat = _conj_category(v.score)
+        if cat is not None:
+            verb_members[cat].append(v.id)
+
+    person_members = _empty_cells()
+    for p in CONJ_PERSONS:
+        if p["index"] not in sel_persons:
+            continue
+        counts = by_person.get(p["index"], [0, 0])
+        score = (counts[1] / counts[0]) if counts[0] else None
+        cat = _conj_category(score)
+        if cat is not None:
+            person_members[cat].append(p["index"])
+
+    def _cells(members: dict, *, tenses, verb_ids_for, persons_for) -> dict:
+        out = {}
+        for cat in CONJ_MATRIX_CATEGORIES:
+            ids = members[cat]
+            out[cat] = {
+                "count": len(ids),
+                "tenses": tenses(ids),
+                "verb_ids": verb_ids_for(ids),
+                "persons": persons_for(ids),
+            }
+        return out
+
+    return [
+        {
+            "key": "tenses",
+            "label": get_text("conjugate_stats_tenses"),
+            "cells": _cells(
+                tense_members,
+                tenses=lambda ids: ids,
+                verb_ids_for=lambda ids: [],
+                persons_for=lambda ids: sel_persons,
+            ),
+        },
+        {
+            "key": "verbs",
+            "label": get_text("conjugate_stats_verbs"),
+            "cells": _cells(
+                verb_members,
+                tenses=lambda ids: sel_tenses,
+                verb_ids_for=lambda ids: ids,
+                persons_for=lambda ids: sel_persons,
+            ),
+        },
+        {
+            "key": "pronouns",
+            "label": get_text("conjugate_stats_pronouns"),
+            "cells": _cells(
+                person_members,
+                tenses=lambda ids: sel_tenses,
+                verb_ids_for=lambda ids: [],
+                persons_for=lambda ids: ids,
+            ),
+        },
+    ]
+
+
 def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> dict:
-    """Insights for the /conjugate dashboard: which tenses, verbs, and pronouns
-    a user should practice.
+    """Insights for the /conjugate dashboard, rendered as a matrix of
+    dimensions (tenses, verbs, pronouns) × categories (unpracticed, weak,
+    needs work).
+
+    The matrix only reflects what's chosen in the practice settings below it:
+    the server renders the initial state for the form defaults (the `default_on`
+    tenses, vosotros off), and `conjugate.js` re-renders it live as the user
+    ticks tenses / toggles vosotros / changes difficulty. The per-tense and
+    per-person aggregates plus the verb list are emitted as JSON for that.
 
     Verbs are scored from `VerbCard`; tenses and pronouns are aggregated from
-    `ConjugationStat` rows (per user/tense/person). Each insight list is ordered
-    weakest-first (lowest accuracy, ties broken by more attempts) so the top of
-    each panel is what needs work most. Items are plain dicts exposing
-    `score`/`times_practiced`/`times_correct`, so the `progress_ring` macro
-    renders them just like cards.
+    `ConjugationStat` rows (per user/tense/person).
     """
-    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
-
     total_attempts = sum(v.times_practiced for v in verbs)
     total_correct = sum(v.times_correct for v in verbs)
     overall_accuracy = total_correct / total_attempts if total_attempts else None
 
-    # Verbs to practice: practiced verbs, weakest first.
-    practiced_verbs = [v for v in verbs if v.score is not None]
-    verbs_to_practice = sorted(
-        practiced_verbs, key=lambda v: (v.score, -v.times_practiced)
-    )
-
     stats_rows = db.session.query(ConjugationStat).filter_by(user_sub=user_sub).all()
 
-    # Aggregate by tense.
+    # Aggregate [practiced, correct] by tense and by person.
     by_tense: dict[str, list[int]] = {}
     by_person: dict[int, list[int]] = {}
     for row in stats_rows:
@@ -1938,36 +2043,67 @@ def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> di
         p[0] += row.times_practiced
         p[1] += row.times_correct
 
-    def _insight(label: str, practiced: int, correct: int) -> dict:
-        return {
-            "label": label,
-            "times_practiced": practiced,
-            "times_correct": correct,
-            "score": (correct / practiced) if practiced else None,
-        }
+    # Initial selection mirrors the practice form's defaults.
+    default_tenses = [t["key"] for t in CONJ_TENSES if t["default_on"]]
+    default_persons = [p["index"] for p in CONJ_PERSONS if not p["optional"]]
+    matrix = _conj_build_matrix(
+        verbs, by_tense, by_person, default_tenses, default_persons
+    )
 
-    tense_insights = [
-        _insight(tense_label(key, ui_lang), counts[0], counts[1])
-        for key, counts in by_tense.items()
-        if counts[0] > 0
-    ]
-    tense_insights.sort(key=lambda i: (i["score"], -i["times_practiced"]))
-
-    pronoun_insights = [
-        _insight(person_label(idx), counts[0], counts[1])
-        for idx, counts in by_person.items()
-        if counts[0] > 0
-    ]
-    pronoun_insights.sort(key=lambda i: (i["score"], -i["times_practiced"]))
+    # Client-side payload: full per-tense / per-person aggregates plus the verb
+    # list, so conjugate.js can rebuild the matrix for any selection.
+    data = {
+        "categories": list(CONJ_MATRIX_CATEGORIES),
+        "category_labels": {
+            "unpracticed": get_text("cards_dashboard_bucket_unpracticed"),
+            "weak": get_text("cards_dashboard_weak"),
+            "needs_work": get_text("cards_dashboard_top_weak"),
+        },
+        "dimension_labels": {
+            "tenses": get_text("conjugate_stats_tenses"),
+            "verbs": get_text("conjugate_stats_verbs"),
+            "pronouns": get_text("conjugate_stats_pronouns"),
+        },
+        "recap_label": get_text("cards_dashboard_recap_btn"),
+        "start_url": url_for("conjugate_practice_start"),
+        "default_count": CONJ_QUESTIONS_DEFAULT,
+        "tenses": [
+            {
+                "key": t["key"],
+                "practiced": by_tense.get(t["key"], [0, 0])[0],
+                "correct": by_tense.get(t["key"], [0, 0])[1],
+            }
+            for t in CONJ_TENSES
+        ],
+        "persons": [
+            {
+                "index": p["index"],
+                "optional": p["optional"],
+                "practiced": by_person.get(p["index"], [0, 0])[0],
+                "correct": by_person.get(p["index"], [0, 0])[1],
+            }
+            for p in CONJ_PERSONS
+        ],
+        "verbs": [
+            {
+                "id": v.id,
+                "score": v.score,
+                "practiced": v.times_practiced,
+                "correct": v.times_correct,
+            }
+            for v in verbs
+        ],
+    }
+    data_json = json.dumps(data).replace("</", "<\\/")
 
     return {
         "total_verbs": len(verbs),
         "total_attempts": total_attempts,
         "total_correct": total_correct,
         "overall_accuracy": overall_accuracy,
-        "verbs_to_practice": verbs_to_practice,
-        "tense_insights": tense_insights,
-        "pronoun_insights": pronoun_insights,
+        "matrix": matrix,
+        "matrix_categories": list(CONJ_MATRIX_CATEGORIES),
+        "data_json": data_json,
     }
 
 
@@ -2098,11 +2234,34 @@ def conjugate_practice_start():
         t for t in request.form.getlist("tenses") if t in CONJ_TENSE_KEYS
     ]
     include_vosotros = request.form.get("include_vosotros") in ("1", "true", "on")
-    persons = [
-        p["index"]
-        for p in CONJ_PERSONS
-        if p["index"] != VOSOTROS_INDEX or include_vosotros
-    ]
+    # An explicit `persons` list (used by the insights-matrix recap buttons)
+    # overrides the vosotros-toggle default. Values are validated against the
+    # known person slots.
+    valid_person_indices = {p["index"] for p in CONJ_PERSONS}
+    explicit_persons = []
+    for raw in request.form.getlist("persons"):
+        try:
+            idx = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if idx in valid_person_indices:
+            explicit_persons.append(idx)
+    if explicit_persons:
+        persons = sorted(set(explicit_persons))
+    else:
+        persons = [
+            p["index"]
+            for p in CONJ_PERSONS
+            if p["index"] != VOSOTROS_INDEX or include_vosotros
+        ]
+    # An explicit `verb_ids` list (also from recap buttons) restricts the verb
+    # pool to those verbs; empty means all of the user's verbs.
+    verb_ids = []
+    for raw in request.form.getlist("verb_ids"):
+        try:
+            verb_ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
     difficulty = request.form.get("difficulty", "advanced")
     if difficulty not in ("advanced", "hardcore"):
         difficulty = "advanced"
@@ -2118,16 +2277,26 @@ def conjugate_practice_start():
         count = CONJ_QUESTIONS_DEFAULT
     count = max(1, min(count, 100))
 
-    if not _user_verbs():
+    user_verbs = _user_verbs()
+    if not user_verbs:
         flash(get_text("conjugate_flash_need_verbs"), "info")
         return redirect(url_for("conjugate"))
     if not selected_tenses:
         flash(get_text("conjugate_flash_need_tenses"), "info")
         return redirect(url_for("conjugate"))
+    # If a recap restricted the verb pool, drop ids the user doesn't own and
+    # fall back to "need verbs" if nothing is left.
+    if verb_ids:
+        owned_ids = {v.id for v in user_verbs}
+        verb_ids = [vid for vid in verb_ids if vid in owned_ids]
+        if not verb_ids:
+            flash(get_text("conjugate_flash_need_verbs"), "info")
+            return redirect(url_for("conjugate"))
 
     session["conjugate_practice"] = {
         "tenses": selected_tenses,
         "persons": persons,
+        "verb_ids": verb_ids,
         "difficulty": difficulty,
         "sampling_mode": sampling_mode,
         "reveal_mode": reveal_mode,
@@ -2159,6 +2328,10 @@ def _load_next_conjugation(state: dict) -> dict | None:
     """
     asked = set(state.get("asked", []))
     verbs = _user_verbs()
+    verb_ids = state.get("verb_ids")
+    if verb_ids:
+        allowed = set(verb_ids)
+        verbs = [v for v in verbs if v.id in allowed]
     tenses = state["tenses"]
     persons = state["persons"]
 
