@@ -3478,7 +3478,7 @@ html {
 }
 
 .conjugate-list-infinitive {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: #020122;
 }
@@ -3696,4 +3696,97 @@ html {
         padding: 5px 4px;
         font-size: 0.75rem;
     }
+}
+
+/* ===== Cards <-> conjugation sync ===== */
+.cards-verb-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #7a4a12;
+    background: rgba(252, 158, 79, 0.18);
+    border: 1px solid rgba(252, 158, 79, 0.7);
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+.cards-verbs-import-all,
+.conjugate-import-from-cards,
+.conjugate-missing-in-cards,
+.cards-practice-verb-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background-color: rgba(252, 158, 79, 0.14);
+    color: #020122;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: 1px solid rgba(252, 158, 79, 0.7);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cards-verbs-import-all:hover,
+.cards-verbs-import-all:focus,
+.conjugate-import-from-cards:hover,
+.conjugate-missing-in-cards:hover,
+.cards-practice-verb-add:hover,
+.cards-practice-verb-add:focus {
+    background-color: rgba(252, 158, 79, 0.28);
+    border-color: #FC9E4F;
+    outline: none;
+}
+
+.cards-verbs-import-all-hidden,
+.conjugate-sync-hidden {
+    display: none;
+}
+
+.conjugate-sync-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.cards-practice-verb-add {
+    margin: 14px auto 0;
+}
+.cards-practice-verb-add-done {
+    background-color: rgba(120, 190, 120, 0.18);
+    border-color: rgba(80, 160, 80, 0.7);
+    color: #2c5e2c;
+    cursor: default;
+}
+
+/* Walk-through modal for adding missing verbs to index cards. */
+.conjugate-sync-popup {
+    text-align: left;
+}
+.conjugate-sync-progress {
+    margin: 0 0 6px;
+    color: #4a4a55;
+    font-size: 0.85rem;
+}
+.conjugate-sync-verb {
+    margin: 0 0 12px;
+    color: #020122;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.conjugate-sync-popup .answer-input {
+    width: 100%;
+    margin-bottom: 16px;
+}
+.conjugate-sync-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }

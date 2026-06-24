@@ -70,6 +70,11 @@
              data-i18n-created="{{ get_text('cards_flash_created') }}"
              data-i18n-duplicate="{{ get_text('cards_flash_duplicate_create') }}"
              data-i18n-duplicate-edit="{{ get_text('cards_flash_duplicate_edit') }}"
+             data-i18n-verb-add="{{ get_text('cards_add_to_conjugation_btn') }}"
+             data-i18n-verb-badge="{{ get_text('cards_verb_badge') }}"
+             data-i18n-verb-synced="{{ get_text('cards_verb_synced_toast') }}"
+             data-i18n-import-done="{{ get_text('conjugate_import_done_toast') }}"
+             data-i18n-import-none="{{ get_text('conjugate_import_none_toast') }}"
              data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
         <div class="cards-list-heading-row">
             <h2 class="cards-section-heading">
@@ -78,6 +83,13 @@
             </h2>
             {% if cards %}
             <div class="cards-heading-actions">
+                <button type="button"
+                        class="cards-verbs-import-all{% if not importable_verb_count %} cards-verbs-import-all-hidden{% endif %}"
+                        id="cards-verbs-import-all"
+                        data-count="{{ importable_verb_count }}"
+                        data-i18n-template="{{ get_text('cards_verbs_import_all_btn') }}">
+                    {{ get_text('cards_verbs_import_all_btn').format(n=importable_verb_count) }}
+                </button>
                 <button type="button"
                         class="cards-share-toggle"
                         id="cards-share-btn"
@@ -262,11 +274,15 @@
             {% for card in cards %}
                 <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}"
                     data-card-id="{{ card.id }}"
-                    data-created-at="{{ card.created_at.isoformat() }}">
+                    data-created-at="{{ card.created_at.isoformat() }}"
+                    {% if card.id in importable_verb_infinitives %}data-verb-infinitive="{{ importable_verb_infinitives[card.id] }}"{% endif %}>
                     <div class="cards-list-text">
                         <div class="cards-list-line">
                             <span class="cards-list-label cards-list-label-front">{{ get_text('cards_front_label') }}</span>
                             <span class="cards-list-front">{{ card.front }}</span>
+                            {% if card.id in importable_verb_infinitives %}
+                            <span class="cards-verb-badge">{{ get_text('cards_verb_badge') }}</span>
+                            {% endif %}
                         </div>
                         <div class="cards-list-line">
                             <span class="cards-list-label cards-list-label-back">{{ get_text('cards_back_label') }}</span>
@@ -275,6 +291,13 @@
                     </div>
                     {{ progress_ring(card) }}
                     <div class="cards-list-actions">
+                        {% if card.id in importable_verb_infinitives %}
+                        <button type="button"
+                                class="btn btn-secondary cards-list-btn cards-verb-add-btn"
+                                data-infinitive="{{ importable_verb_infinitives[card.id] }}">
+                            {{ get_text('cards_add_to_conjugation_btn') }}
+                        </button>
+                        {% endif %}
                         <a href="{{ url_for('cards', edit=card.id) }}#edit"
                            class="btn btn-secondary cards-list-btn">
                             {{ get_text('cards_edit_btn') }}

@@ -1168,6 +1168,8 @@ def cards():
     else:
         practice_numbers_url = url_for("index")
     stats, stats_json = _build_cards_dashboard_stats(user_cards)
+    importable = _importable_card_verbs(_current_user_sub(), user_cards)
+    importable_verb_infinitives = {card.id: inf for card, inf in importable}
     return render_template(
         "cards.html",
         user=session["user"],
@@ -1177,6 +1179,8 @@ def cards():
         get_text=get_text,
         stats=stats,
         stats_json=stats_json,
+        importable_verb_infinitives=importable_verb_infinitives,
+        importable_verb_count=len(importable),
     )
 
 
@@ -1322,11 +1326,24 @@ def api_cards_create():
     user_sub = _current_user_sub()
     existing = _find_duplicate_card(user_sub, front, back)
     if existing is not None:
-        return jsonify({"ok": True, "duplicate": True, "card": existing.to_dict()})
+        return jsonify(
+            {
+                "ok": True,
+                "duplicate": True,
+                "card": existing.to_dict(),
+                "verb_infinitive": _importable_infinitive_for_card(user_sub, existing),
+            }
+        )
     card = Card(user_sub=user_sub, front=front, back=back)
     db.session.add(card)
     db.session.commit()
-    return jsonify({"ok": True, "card": card.to_dict()})
+    return jsonify(
+        {
+            "ok": True,
+            "card": card.to_dict(),
+            "verb_infinitive": _importable_infinitive_for_card(user_sub, card),
+        }
+    )
 
 
 @app.route("/api/cards/<int:card_id>", methods=["PATCH"])
@@ -1341,11 +1358,26 @@ def api_cards_update(card_id: int):
             {"ok": False, "error": get_text("cards_flash_both_sides_required")}
         ), 400
     if _find_duplicate_card(card.user_sub, front, back, exclude_id=card_id) is not None:
-        return jsonify({"ok": True, "duplicate": True, "card": card.to_dict()})
+        return jsonify(
+            {
+                "ok": True,
+                "duplicate": True,
+                "card": card.to_dict(),
+                "verb_infinitive": _importable_infinitive_for_card(
+                    card.user_sub, card
+                ),
+            }
+        )
     card.front = front
     card.back = back
     db.session.commit()
-    return jsonify({"ok": True, "card": card.to_dict()})
+    return jsonify(
+        {
+            "ok": True,
+            "card": card.to_dict(),
+            "verb_infinitive": _importable_infinitive_for_card(card.user_sub, card),
+        }
+    )
 
 
 @app.route("/api/cards/<int:card_id>", methods=["DELETE"])
@@ -1813,6 +1845,11 @@ def cards_practice():
 
     difficulty = state.get("difficulty", "advanced")
     revealed = bool(state.get("current_revealed"))
+    # If this card is a Spanish verb the user hasn't added to conjugation
+    # practice yet, expose its infinitive so the page can offer a one-click add.
+    verb_infinitive = _card_verb_infinitive(card)
+    if verb_infinitive and _find_user_verb(_current_user_sub(), verb_infinitive):
+        verb_infinitive = None
     # Only leak the correct answer to the page in hardcore mode (JS needs it
     # for client-side green/red feedback) or when the card has been revealed
     # (template renders it as the prominent study display).
@@ -1829,6 +1866,7 @@ def cards_practice():
         score=state["score"],
         total=state["total"],
         max_questions=min(count, total_cards),
+        verb_infinitive=verb_infinitive,
         get_text=get_text,
     )
 
@@ -1922,6 +1960,76 @@ def _find_user_verb(user_sub: str, infinitive: str) -> VerbCard | None:
         if _normalize_infinitive(verb.infinitive) == key:
             return verb
     return None
+
+
+# ----- Cards <-> conjugation sync ------------------------------------------
+# An index card and a conjugation verb are linked purely by value: a card whose
+# front or back is a Spanish infinitive in the global pool can become a VerbCard,
+# and a VerbCard whose infinitive isn't yet a card side can become a card. The
+# sync is additive only — neither side is deleted when the other is.
+
+
+def _card_verb_infinitive(card: Card) -> str | None:
+    """Return the normalized pool infinitive matching this card, or None.
+
+    Either side may carry the Spanish verb (cards are free-form), so the front
+    is checked first, then the back. Matching is exact against the global pool.
+    """
+    for side in (card.front, card.back):
+        infinitive = _normalize_infinitive(side)
+        if infinitive and es_conjugations.verb_exists(infinitive):
+            return infinitive
+    return None
+
+
+def _owned_infinitives(user_sub: str) -> set[str]:
+    """Normalized infinitives already in the user's conjugation pool."""
+    return {
+        _normalize_infinitive(v.infinitive)
+        for v in db.session.query(VerbCard).filter_by(user_sub=user_sub).all()
+    }
+
+
+def _importable_card_verbs(user_sub: str, cards: list[Card]) -> list[tuple[Card, str]]:
+    """Cards whose verb side is a pool infinitive the user doesn't own yet.
+
+    De-duped by infinitive (the first card carrying it wins) so the same verb
+    appearing on two cards is only offered once.
+    """
+    owned = _owned_infinitives(user_sub)
+    seen: set[str] = set()
+    out: list[tuple[Card, str]] = []
+    for card in cards:
+        infinitive = _card_verb_infinitive(card)
+        if infinitive and infinitive not in owned and infinitive not in seen:
+            seen.add(infinitive)
+            out.append((card, infinitive))
+    return out
+
+
+def _verbs_missing_from_cards(
+    verbs: list[VerbCard], cards: list[Card]
+) -> list[VerbCard]:
+    """Owned verbs whose infinitive isn't a side of any of the user's cards."""
+    card_sides = set()
+    for card in cards:
+        card_sides.add(_normalize_infinitive(card.front))
+        card_sides.add(_normalize_infinitive(card.back))
+    return [v for v in verbs if _normalize_infinitive(v.infinitive) not in card_sides]
+
+
+def _importable_infinitive_for_card(user_sub: str, card: Card) -> str | None:
+    """The pool infinitive a single card could add to conjugation, or None.
+
+    Used by the JSON card API so the client can show the "verb" badge and
+    "add to conjugation" button on a freshly created/edited card without a
+    page reload. Returns None when the card isn't a verb or the user already
+    owns it.
+    """
+    infinitive = _card_verb_infinitive(card)
+    if not infinitive or _find_user_verb(user_sub, infinitive):
+        return None
+    return infinitive
 
 
 # Practice-category buckets shared by the conjugate insights matrix. Mirrors the
@@ -2140,6 +2248,14 @@ def conjugate():
     else:
         practice_numbers_url = url_for("mode_selection", lang_code=CONJUGATION_LANG)
     dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs)
+    user_sub = _current_user_sub()
+    user_cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
+    card_import_count = len(_importable_card_verbs(user_sub, user_cards))
+    missing = _verbs_missing_from_cards(verbs, user_cards)
+    missing_infinitives = {v.infinitive for v in missing}
+    missing_in_cards_json = json.dumps(
+        [{"infinitive": v.infinitive} for v in missing]
+    ).replace("</", "<\\/")
     return render_template(
         "conjugate.html",
         user=session["user"],
@@ -2151,6 +2267,10 @@ def conjugate():
         practice_numbers_url=practice_numbers_url,
         dashboard=dashboard,
         get_text=get_text,
+        card_import_count=card_import_count,
+        missing_in_cards_count=len(missing),
+        missing_in_cards_json=missing_in_cards_json,
+        missing_infinitives=missing_infinitives,
     )
 
 
@@ -2192,6 +2312,25 @@ def api_verbs_create():
     db.session.add(verb)
     db.session.commit()
     return jsonify({"ok": True, "verb": verb.to_dict()})
+
+
+@app.route("/api/verbs/import-from-cards", methods=["POST"])
+@login_required
+def api_verbs_import_from_cards():
+    """Add every index-card verb (front/back in the pool) not already owned."""
+    user_sub = _current_user_sub()
+    cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
+    importable = _importable_card_verbs(user_sub, cards)
+    added = []
+    for _card, infinitive in importable:
+        verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+        db.session.add(verb)
+        added.append(verb)
+    if added:
+        db.session.commit()
+    return jsonify(
+        {"ok": True, "added": len(added), "verbs": [v.to_dict() for v in added]}
+    )
 
 
 @app.route("/api/verbs/<int:verb_id>", methods=["DELETE"])

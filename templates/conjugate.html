@@ -25,6 +25,7 @@
              data-i18n-delete="{{ get_text('conjugate_delete_btn') }}"
              data-i18n-popup-title="{{ get_text('conjugate_unsupported_popup_title') }}"
              data-i18n-popup-close="{{ get_text('conjugate_unsupported_popup_close') }}"
+             data-i18n-add-to-cards="{{ get_text('conjugate_add_to_cards_btn') }}"
              data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
         <h3 class="cards-section-heading">{{ get_text('conjugate_add_heading') }}</h3>
         <form class="cards-create-form" id="conjugate-add-form" autocomplete="off"
@@ -48,6 +49,27 @@
             </div>
             <p class="cards-input-hint">{{ get_text('conjugate_add_hint') }}</p>
         </form>
+
+        <div class="conjugate-sync-actions"
+             data-i18n-import-done="{{ get_text('conjugate_import_done_toast') }}"
+             data-i18n-import-none="{{ get_text('conjugate_import_none_toast') }}"
+             data-i18n-import-template="{{ get_text('conjugate_import_from_cards_btn') }}"
+             data-i18n-missing-template="{{ get_text('conjugate_missing_in_cards_btn') }}"
+             data-i18n-sync-done="{{ get_text('conjugate_sync_done_toast') }}">
+            <button type="button"
+                    class="btn btn-secondary conjugate-import-from-cards{% if not card_import_count %} conjugate-sync-hidden{% endif %}"
+                    id="conjugate-import-from-cards"
+                    data-count="{{ card_import_count }}">
+                {{ get_text('conjugate_import_from_cards_btn').format(n=card_import_count) }}
+            </button>
+            <button type="button"
+                    class="btn btn-secondary conjugate-missing-in-cards{% if not missing_in_cards_count %} conjugate-sync-hidden{% endif %}"
+                    id="conjugate-missing-in-cards"
+                    data-count="{{ missing_in_cards_count }}">
+                {{ get_text('conjugate_missing_in_cards_btn').format(n=missing_in_cards_count) }}
+            </button>
+        </div>
+        <script type="application/json" id="conjugate-missing-in-cards-data">{{ missing_in_cards_json|safe }}</script>
     </section>
 
     <section class="cards-list-section">
@@ -194,6 +216,13 @@
                 </div>
                 {{ progress_ring(verb) }}
                 <div class="cards-list-actions">
+                    {% if verb.infinitive in missing_infinitives %}
+                    <button type="button"
+                            class="btn btn-secondary cards-list-btn conjugate-verb-to-card-btn"
+                            data-infinitive="{{ verb.infinitive }}">
+                        {{ get_text('conjugate_add_to_cards_btn') }}
+                    </button>
+                    {% endif %}
                     <form method="POST"
                           action="{{ url_for('conjugate_verb_delete', verb_id=verb.id) }}"
                           class="conjugate-delete-form">
@@ -219,6 +248,28 @@
         <button type="button" class="btn btn-primary" id="conjugate-popup-close">
             {{ get_text('conjugate_unsupported_popup_close') }}
         </button>
+    </div>
+</div>
+
+<div class="conjugate-popup-overlay" id="conjugate-sync-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="conjugate-sync-modal-title">
+    <div class="conjugate-popup conjugate-sync-popup">
+        <h3 class="conjugate-popup-title" id="conjugate-sync-modal-title">{{ get_text('conjugate_sync_modal_title') }}</h3>
+        <p class="conjugate-sync-progress" id="conjugate-sync-progress"></p>
+        <form id="conjugate-sync-form" autocomplete="off">
+            <div class="conjugate-sync-verb" id="conjugate-sync-verb"></div>
+            <input type="text" id="conjugate-sync-translation" class="answer-input"
+                   maxlength="500" autocomplete="off" autocapitalize="off"
+                   placeholder="{{ get_text('conjugate_sync_translation_placeholder') }}">
+            <div class="conjugate-sync-buttons">
+                <button type="button" class="btn btn-secondary" id="conjugate-sync-skip">
+                    {{ get_text('conjugate_sync_skip_btn') }}
+                </button>
+                <button type="submit" class="btn btn-primary" id="conjugate-sync-create">
+                    {{ get_text('conjugate_sync_create_btn') }}
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

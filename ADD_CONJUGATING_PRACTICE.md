@@ -145,14 +145,37 @@ minimum:
 This is a larger change than adding numbers or audio; open an issue to scope it
 before starting.
 
+## Index-card ↔ conjugation sync
+
+Index cards and the conjugation pool are linked purely **by value** (no DB link,
+no migration) — the sync is **additive only**, so deleting one side never touches
+the other. A card matches a verb when its front *or* back is an exact pool
+infinitive (`_card_verb_infinitive` in `app.py`); the matching side becomes the
+stored infinitive.
+
+- **Cards → conjugation:** importable cards (verb side in the pool, not yet owned)
+  are surfaced on `/cards` (per-card badge + "add to conjugation" button, plus a
+  batch "add all" button) and during cards practice (`cards_practice.html`'s inline
+  button, wired by `static/js/cards_practice_verb_add.js`). All paths POST to the
+  existing `POST /api/verbs`; the batch button uses `POST /api/verbs/import-from-cards`.
+- **Conjugation → cards:** verbs missing from the deck (`_verbs_missing_from_cards`)
+  are offered on `/conjugate` via a walk-through modal that prompts for a translation
+  per verb and creates each card with the existing `POST /api/cards`.
+
+Detection helpers live in `app.py` (`_card_verb_infinitive`,
+`_importable_card_verbs`, `_verbs_missing_from_cards`); the JS lives in
+`static/js/cards.js` and `static/js/conjugate.js`.
+
 ## Tests
 
 `tests/test_conjugate.py` covers verb add / validate-against-pool / reject-unknown,
 autocomplete, the practice flow + scoring, the vosotros toggle, the validate API,
-and the insights dashboard + `ConjugationStat` recording. Run:
+and the insights dashboard + `ConjugationStat` recording.
+`tests/test_card_verb_sync.py` covers the index-card ↔ conjugation sync
+(detection, import-from-cards, page/practice exposure, additive-only deletes). Run:
 
 ```bash
-uv run pytest tests/test_conjugate.py
+uv run pytest tests/test_conjugate.py tests/test_card_verb_sync.py
 ```
 
 ## Questions?

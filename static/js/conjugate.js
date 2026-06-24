@@ -18,7 +18,8 @@
         added: addSection.getAttribute('data-i18n-added') || 'Verb added.',
         duplicate: addSection.getAttribute('data-i18n-duplicate') || 'That verb is already in your list.',
         del: addSection.getAttribute('data-i18n-delete') || 'Remove',
-        popupTitle: addSection.getAttribute('data-i18n-popup-title') || 'Verb not supported'
+        popupTitle: addSection.getAttribute('data-i18n-popup-title') || 'Verb not supported',
+        addToCards: addSection.getAttribute('data-i18n-add-to-cards') || 'Add to cards'
     };
     const toastIcon = addSection.getAttribute('data-toast-icon') || '';
 
@@ -111,7 +112,8 @@
         return wrap;
     }
 
-    function buildVerbLi(verb) {
+    function buildVerbLi(verb, opts) {
+        opts = opts || {};
         const li = document.createElement('li');
         li.className = 'cards-list-item conjugate-list-item';
         li.setAttribute('data-verb-id', String(verb.id));
@@ -125,6 +127,14 @@
 
         const actions = document.createElement('div');
         actions.className = 'cards-list-actions';
+        if (opts.missing) {
+            const toCard = document.createElement('button');
+            toCard.type = 'button';
+            toCard.className = 'btn btn-secondary cards-list-btn conjugate-verb-to-card-btn';
+            toCard.setAttribute('data-infinitive', verb.infinitive);
+            toCard.textContent = i18n.addToCards;
+            actions.appendChild(toCard);
+        }
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/conjugate/' + verb.id + '/delete';
@@ -278,7 +288,10 @@
                 showToast(i18n.duplicate);
             } else if (data.verb) {
                 const list = ensureList();
-                list.insertBefore(buildVerbLi(data.verb), list.firstChild);
+                // A freshly typed verb usually isn't in the deck yet, so offer
+                // the per-verb "add to cards" affordance; duplicates are deduped
+                // server-side if it turns out to already be a card.
+                list.insertBefore(buildVerbLi(data.verb, { missing: true }), list.firstChild);
                 updateCount();
                 showToast(i18n.added);
             }
@@ -507,5 +520,182 @@
 
         practiceForm.addEventListener('change', render);
         render();
+    }());
+
+    // ----- Cards <-> conjugation sync --------------------------------------
+
+    (function initSync() {
+        const syncActions = document.querySelector('.conjugate-sync-actions');
+        if (!syncActions) return;
+
+        const syncI18n = {
+            importDone: syncActions.getAttribute('data-i18n-import-done') || 'Imported {n} verb(s) from your cards.',
+            importNone: syncActions.getAttribute('data-i18n-import-none') || 'No new verbs to import.',
+            importTpl: syncActions.getAttribute('data-i18n-import-template') || 'Import {n} from index cards',
+            missingTpl: syncActions.getAttribute('data-i18n-missing-template') || '{n} verbs aren’t in your index cards — add',
+            syncDone: syncActions.getAttribute('data-i18n-sync-done') || 'Added {n} card(s) to your deck.'
+        };
+
+        // --- Import card verbs into conjugation practice ---
+        const importBtn = document.getElementById('conjugate-import-from-cards');
+        if (importBtn) {
+            importBtn.addEventListener('click', async function () {
+                importBtn.disabled = true;
+                try {
+                    const res = await fetch('/api/verbs/import-from-cards', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.ok) {
+                        importBtn.disabled = false;
+                        return;
+                    }
+                    const list = ensureList();
+                    (data.verbs || []).forEach(function (verb) {
+                        list.insertBefore(buildVerbLi(verb), list.firstChild);
+                    });
+                    updateCount();
+                    importBtn.classList.add('conjugate-sync-hidden');
+                    const added = data.added || 0;
+                    showToast(
+                        added > 0
+                            ? syncI18n.importDone.replace('{n}', String(added))
+                            : syncI18n.importNone
+                    );
+                } catch (err) {
+                    importBtn.disabled = false;
+                }
+            });
+        }
+
+        // --- Walk-through: add missing verbs to index cards ---
+        const missingBtn = document.getElementById('conjugate-missing-in-cards');
+        const dataEl = document.getElementById('conjugate-missing-in-cards-data');
+        const modal = document.getElementById('conjugate-sync-modal');
+        const modalForm = document.getElementById('conjugate-sync-form');
+        const verbEl = document.getElementById('conjugate-sync-verb');
+        const transInput = document.getElementById('conjugate-sync-translation');
+        const progressEl = document.getElementById('conjugate-sync-progress');
+        const skipBtn = document.getElementById('conjugate-sync-skip');
+        if (!missingBtn || !dataEl || !modal || !modalForm) return;
+
+        let pending = [];
+        try {
+            pending = (JSON.parse(dataEl.textContent || '[]') || [])
+                .map(function (it) { return it.infinitive; })
+                .filter(Boolean);
+        } catch (e) {
+            pending = [];
+        }
+
+        let queue = [];
+        let index = 0;
+        let createdCount = 0;
+        let created = {};
+
+        function updateMissingBtn() {
+            missingBtn.setAttribute('data-count', String(pending.length));
+            if (pending.length <= 0) {
+                missingBtn.classList.add('conjugate-sync-hidden');
+            } else {
+                missingBtn.textContent = syncI18n.missingTpl.replace('{n}', String(pending.length));
+            }
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+        }
+
+        function finish() {
+            closeModal();
+            // Drop per-verb "add to cards" buttons for verbs now in the deck.
+            const list = findList();
+            if (list) {
+                list.querySelectorAll('.conjugate-verb-to-card-btn').forEach(function (b) {
+                    if (created[b.getAttribute('data-infinitive')]) b.remove();
+                });
+            }
+            pending = pending.filter(function (inf) { return !created[inf]; });
+            updateMissingBtn();
+            if (createdCount > 0) {
+                showToast(syncI18n.syncDone.replace('{n}', String(createdCount)));
+            }
+        }
+
+        function startSync(infinitives) {
+            queue = infinitives.slice();
+            index = 0;
+            createdCount = 0;
+            created = {};
+            showCurrent();
+        }
+
+        function showCurrent() {
+            if (index >= queue.length) {
+                finish();
+                return;
+            }
+            const infinitive = queue[index];
+            if (verbEl) verbEl.textContent = infinitive;
+            if (progressEl) progressEl.textContent = (index + 1) + ' / ' + queue.length;
+            if (transInput) transInput.value = '';
+            modal.hidden = false;
+            if (transInput) transInput.focus();
+        }
+
+        missingBtn.addEventListener('click', function () {
+            if (!pending.length) return;
+            startSync(pending);
+        });
+
+        // Per-verb "add to index cards" (event-delegated so dynamically added
+        // verb rows are covered too).
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.conjugate-verb-to-card-btn');
+            if (!btn) return;
+            const infinitive = (btn.getAttribute('data-infinitive') || '').trim();
+            if (infinitive) startSync([infinitive]);
+        });
+
+        if (skipBtn) {
+            skipBtn.addEventListener('click', function () {
+                index += 1;
+                showCurrent();
+            });
+        }
+
+        modalForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const infinitive = queue[index];
+            const translation = (transInput && transInput.value || '').trim();
+            if (!translation) {
+                if (transInput) transInput.focus();
+                return;
+            }
+            try {
+                const res = await fetch('/api/cards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ front: infinitive, back: translation })
+                });
+                const data = await res.json();
+                if (res.ok && data.ok) {
+                    created[infinitive] = true;
+                    if (!data.duplicate) createdCount += 1;
+                }
+            } catch (err) {
+                // Ignore and advance — the user can retry from /cards.
+            }
+            index += 1;
+            showCurrent();
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) finish();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.hidden) finish();
+        });
     }());
 }());

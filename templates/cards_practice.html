@@ -37,6 +37,17 @@
     <div class="question-container">
         <h2 class="question-label">{{ get_text('cards_practice_prompt') }}</h2>
         <div class="cards-practice-prompt">{{ prompt_text }}</div>
+        {% if verb_infinitive and not revealed %}
+        <button type="button"
+                class="cards-practice-verb-add"
+                id="cards-practice-verb-add"
+                data-infinitive="{{ verb_infinitive }}"
+                data-i18n-added="{{ get_text('cards_practice_verb_added') }}"
+                data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}"
+                data-toast-msg="{{ get_text('cards_verb_synced_toast') }}">
+            {{ get_text('cards_practice_add_verb_btn').format(verb=verb_infinitive) }}
+        </button>
+        {% endif %}
     </div>
 
     {% if not revealed %}
@@ -95,5 +106,8 @@
 {% endif %}
 {% else %}
 <script src="{{ url_for('static', filename='js/cards_practice.js') }}"></script>
+{% endif %}
+{% if verb_infinitive and not revealed %}
+<script src="{{ url_for('static', filename='js/cards_practice_verb_add.js') }}" defer></script>
 {% endif %}
 {% endblock %}
