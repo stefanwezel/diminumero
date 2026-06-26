@@ -1786,6 +1786,12 @@ def cards_practice():
             _save_practice_state(state)
             return redirect(url_for("cards_practice"))
 
+        # A revealed card has already recorded its (wrong) attempt; only a
+        # `next` advances it. Ignore a stray answer POST so the question can't
+        # be counted twice (the reveal-retype form must submit with `next`).
+        if state.get("current_revealed"):
+            return redirect(url_for("cards_practice"))
+
         user_answer = (request.form.get("answer") or "").strip()
         acceptable = _acceptable_answers(card, prompt_side)
         if user_answer and any(
@@ -2649,6 +2655,12 @@ def conjugate_practice():
             state["current"] = None
             state["current_revealed"] = False
             _save_conjugate_state(state)
+            return redirect(url_for("conjugate_practice"))
+
+        # A revealed question has already recorded its (wrong) attempt; only a
+        # `next` advances it. Ignore a stray answer POST so it can't be counted
+        # twice (the reveal-retype form must submit with `next`).
+        if state.get("current_revealed"):
             return redirect(url_for("conjugate_practice"))
 
         user_answer = (request.form.get("answer") or "").strip()

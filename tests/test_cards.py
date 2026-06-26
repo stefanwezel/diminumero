@@ -407,6 +407,41 @@ class TestPracticeFlow:
         body = results.data.decode("utf-8")
         assert "0 / 1" in body
 
+    def test_answer_post_after_reveal_does_not_double_count(self, client):
+        # Regression: a revealed card already recorded its attempt. A stray
+        # answer POST without `next` (e.g. the type-to-continue retype form
+        # auto-submitting via form.submit(), which drops the Next button) must
+        # not advance the card nor count it a second time — otherwise a
+        # 10-question session would end after 5 cards.
+        make_card(SAMPLE_USER["sub"], "mesa", "table")
+        login(client)
+        client.post(
+            "/cards/practice/start",
+            data={"direction": "front_to_back", "reveal_mode": "type"},
+        )
+        client.get("/cards/practice")
+        client.post("/cards/practice", data={"reveal": "1"})
+        with client.session_transaction() as sess:
+            pinned = sess["card_practice"]["current_card_id"]
+
+        # Buggy client: retyped answer submitted WITHOUT `next`.
+        client.post("/cards/practice", data={"answer": "table"})
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["total"] == 1  # not 2
+        assert state["score"] == 0
+        assert state["current_revealed"] is True
+        assert state["current_card_id"] == pinned
+        assert pinned not in state["asked_ids"]
+
+        # The correct `next` POST (with the retyped answer) advances exactly once.
+        client.post("/cards/practice", data={"answer": "table", "next": "1"})
+        with client.session_transaction() as sess:
+            state = sess["card_practice"]
+        assert state["total"] == 1
+        assert state["current_revealed"] is False
+        assert pinned in state["asked_ids"]
+
     def test_reveal_renders_answer_and_next_form(self, client):
         make_card(SAMPLE_USER["sub"], "mesa", "tablecloth-distinct-answer")
         login(client)

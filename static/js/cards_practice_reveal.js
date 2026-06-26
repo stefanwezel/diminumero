@@ -28,8 +28,29 @@ document.addEventListener('DOMContentLoaded', function () {
             input.classList.remove('input-incorrect');
             input.classList.add('input-correct');
             submitting = true;
-            setTimeout(function () { form.submit(); }, 400);
+            setTimeout(advance, 400);
         }
+    }
+
+    // Advance via the Next button so the POST carries its name/value
+    // (next=1). A bare form.submit() omits the submit button, so the server
+    // would mistake the retyped answer for a fresh answer submission and
+    // double-count the question. requestSubmit() includes the submitter;
+    // fall back to a hidden field for older engines.
+    function advance() {
+        var nextBtn = form.querySelector('button[name="next"]');
+        if (nextBtn && form.requestSubmit) {
+            form.requestSubmit(nextBtn);
+            return;
+        }
+        if (!form.querySelector('input[name="next"]')) {
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'next';
+            hidden.value = '1';
+            form.appendChild(hidden);
+        }
+        form.submit();
     }
 
     input.addEventListener('input', function () {

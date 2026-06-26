@@ -274,6 +274,36 @@ class TestPracticeFlow:
         with client.session_transaction() as sess:
             assert sess["conjugate_practice"]["current_revealed"] is True
 
+    def test_answer_post_after_reveal_does_not_double_count(self, client):
+        # Regression: the type-to-continue retype form auto-submits via
+        # form.submit(), which drops the Next button so the POST arrives with
+        # `answer` but no `next`. A revealed question already recorded its
+        # attempt, so a stray answer POST must not advance or re-count it —
+        # otherwise a 10-question session ends after 5.
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        client.get("/conjugate/practice")
+        client.post("/conjugate/practice", data={"reveal": "1"})
+        with client.session_transaction() as sess:
+            correct = sess["conjugate_practice"]["current"]["correct_answer"]
+
+        # Buggy client: retyped answer without `next`.
+        client.post("/conjugate/practice", data={"answer": correct})
+        with client.session_transaction() as sess:
+            state = sess["conjugate_practice"]
+        assert state["total"] == 1  # not 2
+        assert state["score"] == 0
+        assert state["current_revealed"] is True
+        assert state["current"] is not None
+
+        # Correct `next` POST advances exactly once.
+        client.post("/conjugate/practice", data={"answer": correct, "next": "1"})
+        with client.session_transaction() as sess:
+            state = sess["conjugate_practice"]
+        assert state["total"] == 1
+        assert state["current"] is None
+
     def test_accent_insensitive_answer_accepted(self, client):
         # "comió" should accept "comio" (normalize_text strips accents).
         add_verb(SAMPLE_USER["sub"], "comer")
