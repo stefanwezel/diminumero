@@ -325,6 +325,108 @@ class TestPracticeFlow:
             assert sess["conjugate_practice"]["score"] == 1
 
 
+class TestHint:
+    def _start(self, client, tense="indicativo/presente", difficulty="advanced"):
+        client.post(
+            "/conjugate/practice/start",
+            data={"tenses": [tense], "difficulty": difficulty, "count": "10"},
+        )
+
+    def _current_answer(self, client):
+        client.get("/conjugate/practice")
+        with client.session_transaction() as sess:
+            current = sess["conjugate_practice"]["current"]
+        return current["correct_answer"], current["tense_key"], current["person_index"]
+
+    def test_build_hint_structure(self):
+        from app import _build_conjugation_hint
+
+        hint = _build_conjugation_hint("indicativo/presente", 1, "en")
+        assert hint["blurb"]
+        assert [m["infinitive"] for m in hint["models"]] == [
+            "hablar",
+            "comer",
+            "vivir",
+        ]
+        assert all(len(m["forms"]) == 6 for m in hint["models"])
+        assert len(hint["persons"]) == 6
+        # Exactly the prompted pronoun's row is flagged.
+        assert [p["highlight"] for p in hint["persons"]] == [
+            False,
+            True,
+            False,
+            False,
+            False,
+            False,
+        ]
+
+    def test_build_hint_handles_null_person_form(self):
+        from app import _build_conjugation_hint
+
+        # The imperative has no "yo" form (index 0 is null in the pool).
+        hint = _build_conjugation_hint("imperativo/afirmativo", 0, "en")
+        assert hint["models"][0]["forms"][0] is None
+
+    def test_correct_with_hint_awards_half_point(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        correct, tense, person = self._current_answer(client)
+        resp = client.post(
+            "/conjugate/practice", data={"answer": correct, "hint_used": "1"}
+        )
+        assert resp.status_code == 302
+        with client.session_transaction() as sess:
+            state = sess["conjugate_practice"]
+            assert state["score"] == 0.5
+            assert state["total"] == 1
+        # Counts as a miss for mastery: no times_correct, recent_results ends '0'.
+        with flask_app.app_context():
+            verb = db.session.get(VerbCard, verb_id)
+            assert verb.times_practiced == 1
+            assert verb.times_correct == 0
+            assert verb.recent_results.endswith("0")
+
+    def test_hint_correct_records_stat_as_miss(self, client):
+        from models import ConjugationStat
+
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        correct, tense, person = self._current_answer(client)
+        client.post("/conjugate/practice", data={"answer": correct, "hint_used": "1"})
+        with flask_app.app_context():
+            row = (
+                db.session.query(ConjugationStat)
+                .filter_by(
+                    user_sub=SAMPLE_USER["sub"],
+                    tense_key=tense,
+                    person_index=person,
+                )
+                .one()
+            )
+            assert row.times_practiced == 1
+            assert row.times_correct == 0
+
+    def test_correct_without_hint_still_full_point(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        correct, _, _ = self._current_answer(client)
+        client.post("/conjugate/practice", data={"answer": correct, "hint_used": "0"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+
+    def test_hint_ignored_in_hardcore(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client, difficulty="hardcore")
+        correct, _, _ = self._current_answer(client)
+        client.post("/conjugate/practice", data={"answer": correct, "hint_used": "1"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+
+
 class TestDashboard:
     def _start(self, client, tense="indicativo/presente"):
         client.post(
@@ -398,9 +500,9 @@ class TestDashboard:
         self._start(client, tense="indicativo/futuro")
         self._answer_one(client, correct=False)
         html = client.get("/conjugate").data.decode("utf-8")
-        blob = re.search(
-            r'id="conjugate-stats-data">(.*?)</script>', html, re.S
-        ).group(1)
+        blob = re.search(r'id="conjugate-stats-data">(.*?)</script>', html, re.S).group(
+            1
+        )
         data = _json.loads(blob)
         futuro = next(t for t in data["tenses"] if t["key"] == "indicativo/futuro")
         presente = next(t for t in data["tenses"] if t["key"] == "indicativo/presente")

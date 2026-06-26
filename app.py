@@ -56,12 +56,14 @@ from languages import (
 )
 from translations import TRANSLATIONS
 from conjugation_config import (
+    CONJ_HINT_MODEL_VERBS,
     CONJ_PERSONS,
     CONJ_QUESTIONS_DEFAULT,
     CONJ_TENSES,
     CONJ_TENSE_KEYS,
     VOSOTROS_INDEX,
     person_label,
+    tense_hint,
     tense_label,
 )
 from languages.es import conjugations as es_conjugations
@@ -1363,9 +1365,7 @@ def api_cards_update(card_id: int):
                 "ok": True,
                 "duplicate": True,
                 "card": card.to_dict(),
-                "verb_infinitive": _importable_infinitive_for_card(
-                    card.user_sub, card
-                ),
+                "verb_infinitive": _importable_infinitive_for_card(card.user_sub, card),
             }
         )
     card.front = front
@@ -2396,6 +2396,36 @@ def _form_available(infinitive: str, tense_key: str, person_index: int) -> str |
     return tense_forms[person_index]
 
 
+def _build_conjugation_hint(
+    tense_key: str, person_index: int, ui_lang: str = "en"
+) -> dict:
+    """Build the practice "Hint" excerpt for a (tense, pronoun) prompt.
+
+    Shows the tense's regular pattern via the model verbs (one per -ar/-er/-ir
+    group) with the prompted pronoun's row flagged, plus a one-line blurb. Forms
+    come straight from the committed global pool, so no answer is leaked (unless
+    the verb under test is itself a model verb, which just shows the pattern).
+    """
+    models = []
+    for infinitive in CONJ_HINT_MODEL_VERBS:
+        forms = es_conjugations.get_verb_forms(infinitive) or {}
+        models.append(
+            {
+                "infinitive": infinitive,
+                "forms": list(forms.get(tense_key) or []),
+            }
+        )
+    persons = [
+        {"label": person_label(p["index"]), "highlight": p["index"] == person_index}
+        for p in CONJ_PERSONS
+    ]
+    return {
+        "blurb": tense_hint(tense_key, ui_lang),
+        "persons": persons,
+        "models": models,
+    }
+
+
 def _record_conjugation_stat(
     user_sub: str, tense_key: str, person_index: int, correct: bool
 ) -> None:
@@ -2583,17 +2613,23 @@ def _conjugate_question_view(state: dict, current: dict):
     difficulty = state.get("difficulty", "advanced")
     revealed = bool(state.get("current_revealed"))
     correct = current["correct_answer"]
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    # The pattern hint is an advanced-mode aid only; hardcore stays no-help.
+    hint = (
+        _build_conjugation_hint(current["tense_key"], current["person_index"], ui_lang)
+        if (difficulty != "hardcore" and not revealed)
+        else None
+    )
     return render_template(
         "conjugate_practice.html",
         user=session["user"],
         infinitive=current["infinitive"],
         pronoun=person_label(current["person_index"]),
-        tense_label=tense_label(
-            current["tense_key"], session.get("language", DEFAULT_UI_LANGUAGE)
-        ),
+        tense_label=tense_label(current["tense_key"], ui_lang),
         correct_answer=correct if (revealed or difficulty == "hardcore") else None,
         difficulty=difficulty,
         revealed=revealed,
+        hint=hint,
         reveal_mode=state.get("reveal_mode", "type"),
         score=state["score"],
         total=state["total"],
@@ -2663,24 +2699,44 @@ def conjugate_practice():
         if state.get("current_revealed"):
             return redirect(url_for("conjugate_practice"))
 
+        # A hint is an advanced-mode aid; a correct answer after one earns half a
+        # point and still counts as a miss for mastery tracking.
+        hint_used = (
+            state.get("difficulty") == "advanced"
+            and request.form.get("hint_used") == "1"
+        )
         user_answer = (request.form.get("answer") or "").strip()
         if user_answer and quiz_logic.check_answer_advanced(
             user_answer, correct_answer
         ):
-            state["score"] += 1
             state["total"] += 1
-            if owns_verb:
-                verb.times_practiced += 1
-                verb.times_correct += 1
-                verb.record_attempt(True)
-                _record_conjugation_stat(
-                    verb.user_sub,
-                    current["tense_key"],
-                    current["person_index"],
-                    True,
-                )
-                db.session.commit()
-            flash(get_text("cards_flash_correct"), "success")
+            if hint_used:
+                state["score"] += 0.5
+                if owns_verb:
+                    verb.times_practiced += 1
+                    verb.record_attempt(False)
+                    _record_conjugation_stat(
+                        verb.user_sub,
+                        current["tense_key"],
+                        current["person_index"],
+                        False,
+                    )
+                    db.session.commit()
+                flash(get_text("conjugate_flash_correct_hint"), "success")
+            else:
+                state["score"] += 1
+                if owns_verb:
+                    verb.times_practiced += 1
+                    verb.times_correct += 1
+                    verb.record_attempt(True)
+                    _record_conjugation_stat(
+                        verb.user_sub,
+                        current["tense_key"],
+                        current["person_index"],
+                        True,
+                    )
+                    db.session.commit()
+                flash(get_text("cards_flash_correct"), "success")
         else:
             flash(
                 get_text("cards_flash_incorrect").format(correct_answer),

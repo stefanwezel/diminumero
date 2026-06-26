@@ -3514,6 +3514,62 @@ html {
     text-transform: lowercase;
 }
 
+/* Pattern hint excerpt */
+.conjugate-hint {
+    max-width: 520px;
+    margin: 16px auto 0;
+    padding: 16px 18px;
+    background: rgba(181, 23, 158, 0.06);
+    border: 1px solid rgba(181, 23, 158, 0.3);
+    border-radius: 12px;
+}
+
+.conjugate-hint-title {
+    font-weight: 700;
+    color: #B5179E;
+    margin-bottom: 6px;
+}
+
+.conjugate-hint-blurb {
+    font-size: 0.95rem;
+    color: #4a4a55;
+    margin: 0 0 12px;
+}
+
+.conjugate-hint-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.conjugate-hint-table th,
+.conjugate-hint-table td {
+    padding: 5px 8px;
+    text-align: left;
+    color: #020122;
+}
+
+.conjugate-hint-table thead th {
+    color: #4a4a55;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(181, 23, 158, 0.25);
+}
+
+.conjugate-hint-table tbody th {
+    color: #4a4a55;
+    font-weight: 500;
+}
+
+.conjugate-hint-row-active {
+    background: rgba(181, 23, 158, 0.12);
+}
+
+.conjugate-hint-row-active th,
+.conjugate-hint-row-active td {
+    color: #020122;
+    font-weight: 700;
+}
+
 .conjugate-popup-overlay {
     position: fixed;
     inset: 0;

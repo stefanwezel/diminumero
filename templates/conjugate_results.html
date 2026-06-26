@@ -10,7 +10,7 @@
     <div class="hero">
         <h1 class="title">{{ get_text('conjugate_practice_title') }}</h1>
         <p class="subtitle">
-            {{ score }} / {{ total }}
+            {{ "%g"|format(score) }} / {{ total }}
             {% if total %}
                 <span class="cards-results-percent">({{ "%.0f"|format(percentage) }}%)</span>
             {% endif %}
