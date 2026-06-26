@@ -13,7 +13,7 @@
     <!-- Header with score and exit button -->
     <div class="quiz-header">
         <div class="progress-info">
-            {{ get_text('quiz_question') }} {{ total + 1 }} / {{ max_questions }}
+            {{ get_text('quiz_question') }} {{ total if revealed else total + 1 }} / {{ max_questions }}
         </div>
         <div class="score-display">
             {{ get_text('quiz_score') }}: {{ score }} / {{ total }}

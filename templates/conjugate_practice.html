@@ -9,7 +9,7 @@
 <div class="quiz-page">
     <div class="quiz-header">
         <div class="progress-info">
-            {{ get_text('cards_practice_progress') }} {{ total + 1 }} / {{ max_questions }}
+            {{ get_text('cards_practice_progress') }} {{ total if revealed else total + 1 }} / {{ max_questions }}
         </div>
         <div class="score-display">
             {{ get_text('quiz_score') }}: {{ score }} / {{ total }}
