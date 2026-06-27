@@ -49,7 +49,7 @@
                 <p class="new-feature-body">{{ get_text('conjugate_subtitle') }}</p>
             </div>
             {% if user %}
-                <a href="{{ url_for('conjugate') }}" class="btn btn-primary new-feature-cta">
+                <a href="{{ url_for('conjugate', lang_code=conjugation_lang) }}" class="btn btn-primary new-feature-cta">
                     {{ get_text('conjugate_start_btn') }}
                 </a>
             {% else %}

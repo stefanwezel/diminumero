@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const answerForm = document.getElementById('answerForm');
     if (!answerInput || !validationFeedback || !answerForm) return;
 
+    setupHint(answerInput);
+
     const isHardcore = answerInput.getAttribute('data-difficulty') === 'hardcore';
 
     if (isHardcore) {
@@ -25,6 +27,23 @@ document.addEventListener('DOMContentLoaded', function () {
         setupAdvanced(answerInput, validationFeedback, answerForm);
     }
 });
+
+// Pattern hint (advanced only). Reveals the excerpt, marks hint_used so the
+// server awards a half point on a correct answer, then keeps it shown. The
+// elements are absent in hardcore, so this no-ops there.
+function setupHint(answerInput) {
+    const hintBtn = document.getElementById('hintBtn');
+    const hintPanel = document.getElementById('hintPanel');
+    const hintUsed = document.getElementById('hintUsed');
+    if (!hintBtn || !hintPanel || !hintUsed) return;
+
+    hintBtn.addEventListener('click', function () {
+        hintPanel.hidden = false;
+        hintUsed.value = '1';
+        hintBtn.hidden = true;
+        answerInput.focus();
+    });
+}
 
 function escapeHtml(text) {
     const div = document.createElement('div');

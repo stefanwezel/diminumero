@@ -47,13 +47,13 @@ def test_global_pool_has_common_verbs():
 
 class TestVerbManage:
     def test_logged_out_redirects_to_login(self, client):
-        resp = client.get("/conjugate")
+        resp = client.get("/es/conjugate")
         assert resp.status_code == 302
         assert resp.headers["Location"].endswith("/login")
 
     def test_page_renders_for_user(self, client):
         login(client)
-        resp = client.get("/conjugate")
+        resp = client.get("/es/conjugate")
         assert resp.status_code == 200
         assert "Conjugate" in resp.data.decode("utf-8")
 
@@ -124,9 +124,9 @@ class TestAddVerbFormFallback:
 
     def test_form_add_redirects_and_persists(self, client):
         login(client)
-        resp = client.post("/conjugate/add", data={"infinitive": "comer"})
+        resp = client.post("/es/conjugate/add", data={"infinitive": "comer"})
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/conjugate")
+        assert resp.headers["Location"].endswith("/es/conjugate")
         with flask_app.app_context():
             rows = (
                 db.session.query(VerbCard).filter_by(user_sub=SAMPLE_USER["sub"]).all()
@@ -135,7 +135,7 @@ class TestAddVerbFormFallback:
 
     def test_form_add_unsupported_does_not_persist(self, client):
         login(client)
-        resp = client.post("/conjugate/add", data={"infinitive": "xyzzyfoo"})
+        resp = client.post("/es/conjugate/add", data={"infinitive": "xyzzyfoo"})
         assert resp.status_code == 302
         with flask_app.app_context():
             assert db.session.query(VerbCard).count() == 0
@@ -143,7 +143,7 @@ class TestAddVerbFormFallback:
     def test_form_add_duplicate_does_not_duplicate(self, client):
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
-        resp = client.post("/conjugate/add", data={"infinitive": "Comer"})
+        resp = client.post("/es/conjugate/add", data={"infinitive": "Comer"})
         assert resp.status_code == 302
         with flask_app.app_context():
             assert db.session.query(VerbCard).count() == 1
@@ -173,24 +173,24 @@ class TestPracticeStart:
     def test_requires_verbs(self, client):
         login(client)
         resp = client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={"tenses": ["indicativo/presente"]},
         )
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/conjugate")
+        assert resp.headers["Location"].endswith("/es/conjugate")
 
     def test_requires_tenses(self, client):
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
-        resp = client.post("/conjugate/practice/start", data={})
+        resp = client.post("/es/conjugate/practice/start", data={})
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/conjugate")
+        assert resp.headers["Location"].endswith("/es/conjugate")
 
     def test_builds_session(self, client):
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         resp = client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={
                 "tenses": ["indicativo/presente"],
                 "difficulty": "advanced",
@@ -198,7 +198,7 @@ class TestPracticeStart:
             },
         )
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/conjugate/practice")
+        assert resp.headers["Location"].endswith("/es/conjugate/practice")
         with client.session_transaction() as sess:
             state = sess["conjugate_practice"]
             assert state["tenses"] == ["indicativo/presente"]
@@ -210,7 +210,7 @@ class TestPracticeStart:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={
                 "tenses": ["indicativo/presente"],
                 "include_vosotros": "1",
@@ -223,7 +223,7 @@ class TestPracticeStart:
 class TestPracticeFlow:
     def _start(self, client, tense="indicativo/presente", difficulty="advanced"):
         client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={"tenses": [tense], "difficulty": difficulty, "count": "10"},
         )
 
@@ -232,11 +232,11 @@ class TestPracticeFlow:
         login(client)
         self._start(client)
         # Render the question, then read the correct answer from session state.
-        client.get("/conjugate/practice")
+        client.get("/es/conjugate/practice")
         with client.session_transaction() as sess:
             current = sess["conjugate_practice"]["current"]
             correct = current["correct_answer"]
-        resp = client.post("/conjugate/practice", data={"answer": correct})
+        resp = client.post("/es/conjugate/practice", data={"answer": correct})
         assert resp.status_code == 302
         with client.session_transaction() as sess:
             state = sess["conjugate_practice"]
@@ -252,8 +252,8 @@ class TestPracticeFlow:
         verb_id = add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         self._start(client)
-        client.get("/conjugate/practice")
-        resp = client.post("/conjugate/practice", data={"answer": "zzzwrong"})
+        client.get("/es/conjugate/practice")
+        resp = client.post("/es/conjugate/practice", data={"answer": "zzzwrong"})
         assert resp.status_code == 302
         with client.session_transaction() as sess:
             state = sess["conjugate_practice"]
@@ -268,8 +268,8 @@ class TestPracticeFlow:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         self._start(client)
-        client.get("/conjugate/practice")
-        resp = client.post("/conjugate/practice", data={"reveal": "1"})
+        client.get("/es/conjugate/practice")
+        resp = client.post("/es/conjugate/practice", data={"reveal": "1"})
         assert resp.status_code == 302
         with client.session_transaction() as sess:
             assert sess["conjugate_practice"]["current_revealed"] is True
@@ -283,13 +283,13 @@ class TestPracticeFlow:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         self._start(client)
-        client.get("/conjugate/practice")
-        client.post("/conjugate/practice", data={"reveal": "1"})
+        client.get("/es/conjugate/practice")
+        client.post("/es/conjugate/practice", data={"reveal": "1"})
         with client.session_transaction() as sess:
             correct = sess["conjugate_practice"]["current"]["correct_answer"]
 
         # Buggy client: retyped answer without `next`.
-        client.post("/conjugate/practice", data={"answer": correct})
+        client.post("/es/conjugate/practice", data={"answer": correct})
         with client.session_transaction() as sess:
             state = sess["conjugate_practice"]
         assert state["total"] == 1  # not 2
@@ -298,7 +298,7 @@ class TestPracticeFlow:
         assert state["current"] is not None
 
         # Correct `next` POST advances exactly once.
-        client.post("/conjugate/practice", data={"answer": correct, "next": "1"})
+        client.post("/es/conjugate/practice", data={"answer": correct, "next": "1"})
         with client.session_transaction() as sess:
             state = sess["conjugate_practice"]
         assert state["total"] == 1
@@ -309,7 +309,7 @@ class TestPracticeFlow:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         self._start(client, tense="indicativo/pretérito-perfecto-simple")
-        client.get("/conjugate/practice")
+        client.get("/es/conjugate/practice")
         with client.session_transaction() as sess:
             correct = sess["conjugate_practice"]["current"]["correct_answer"]
         # Strip accents from the expected answer and submit that.
@@ -320,7 +320,109 @@ class TestPracticeFlow:
             for c in unicodedata.normalize("NFD", correct)
             if unicodedata.category(c) != "Mn"
         )
-        client.post("/conjugate/practice", data={"answer": ascii_answer})
+        client.post("/es/conjugate/practice", data={"answer": ascii_answer})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+
+
+class TestHint:
+    def _start(self, client, tense="indicativo/presente", difficulty="advanced"):
+        client.post(
+            "/es/conjugate/practice/start",
+            data={"tenses": [tense], "difficulty": difficulty, "count": "10"},
+        )
+
+    def _current_answer(self, client):
+        client.get("/es/conjugate/practice")
+        with client.session_transaction() as sess:
+            current = sess["conjugate_practice"]["current"]
+        return current["correct_answer"], current["tense_key"], current["person_index"]
+
+    def test_build_hint_structure(self):
+        from app import _build_conjugation_hint
+
+        hint = _build_conjugation_hint("indicativo/presente", 1, "en")
+        assert hint["blurb"]
+        assert [m["infinitive"] for m in hint["models"]] == [
+            "hablar",
+            "comer",
+            "vivir",
+        ]
+        assert all(len(m["forms"]) == 6 for m in hint["models"])
+        assert len(hint["persons"]) == 6
+        # Exactly the prompted pronoun's row is flagged.
+        assert [p["highlight"] for p in hint["persons"]] == [
+            False,
+            True,
+            False,
+            False,
+            False,
+            False,
+        ]
+
+    def test_build_hint_handles_null_person_form(self):
+        from app import _build_conjugation_hint
+
+        # The imperative has no "yo" form (index 0 is null in the pool).
+        hint = _build_conjugation_hint("imperativo/afirmativo", 0, "en")
+        assert hint["models"][0]["forms"][0] is None
+
+    def test_correct_with_hint_awards_half_point(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        correct, tense, person = self._current_answer(client)
+        resp = client.post(
+            "/es/conjugate/practice", data={"answer": correct, "hint_used": "1"}
+        )
+        assert resp.status_code == 302
+        with client.session_transaction() as sess:
+            state = sess["conjugate_practice"]
+            assert state["score"] == 0.5
+            assert state["total"] == 1
+        # Counts as a miss for mastery: no times_correct, recent_results ends '0'.
+        with flask_app.app_context():
+            verb = db.session.get(VerbCard, verb_id)
+            assert verb.times_practiced == 1
+            assert verb.times_correct == 0
+            assert verb.recent_results.endswith("0")
+
+    def test_hint_correct_records_stat_as_miss(self, client):
+        from models import ConjugationStat
+
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        correct, tense, person = self._current_answer(client)
+        client.post("/es/conjugate/practice", data={"answer": correct, "hint_used": "1"})
+        with flask_app.app_context():
+            row = (
+                db.session.query(ConjugationStat)
+                .filter_by(
+                    user_sub=SAMPLE_USER["sub"],
+                    tense_key=tense,
+                    person_index=person,
+                )
+                .one()
+            )
+            assert row.times_practiced == 1
+            assert row.times_correct == 0
+
+    def test_correct_without_hint_still_full_point(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client)
+        correct, _, _ = self._current_answer(client)
+        client.post("/es/conjugate/practice", data={"answer": correct, "hint_used": "0"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+
+    def test_hint_ignored_in_hardcore(self, client):
+        add_verb(SAMPLE_USER["sub"], "comer")
+        login(client)
+        self._start(client, difficulty="hardcore")
+        correct, _, _ = self._current_answer(client)
+        client.post("/es/conjugate/practice", data={"answer": correct, "hint_used": "1"})
         with client.session_transaction() as sess:
             assert sess["conjugate_practice"]["score"] == 1
 
@@ -328,18 +430,18 @@ class TestPracticeFlow:
 class TestDashboard:
     def _start(self, client, tense="indicativo/presente"):
         client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={"tenses": [tense], "difficulty": "advanced", "count": "10"},
         )
 
     def _answer_one(self, client, correct):
-        client.get("/conjugate/practice")
+        client.get("/es/conjugate/practice")
         with client.session_transaction() as sess:
             current = sess["conjugate_practice"]["current"]
             answer = current["correct_answer"] if correct else "zzzwrong"
             tense = current["tense_key"]
             person = current["person_index"]
-        client.post("/conjugate/practice", data={"answer": answer})
+        client.post("/es/conjugate/practice", data={"answer": answer})
         return tense, person
 
     def test_attempt_records_conjugation_stat(self, client):
@@ -368,7 +470,7 @@ class TestDashboard:
         login(client)
         self._start(client)
         self._answer_one(client, correct=False)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         assert "Your insights" in html
         assert "Tenses to practice" in html
         assert "Pronouns to practice" in html
@@ -378,7 +480,7 @@ class TestDashboard:
         login(client)
         self._start(client)
         self._answer_one(client, correct=False)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         # Matrix scaffold + category column headers + recap buttons.
         assert "conjugate-matrix" in html
         assert "Unpracticed" in html
@@ -397,10 +499,10 @@ class TestDashboard:
         # so the client can rebuild for any selection.
         self._start(client, tense="indicativo/futuro")
         self._answer_one(client, correct=False)
-        html = client.get("/conjugate").data.decode("utf-8")
-        blob = re.search(
-            r'id="conjugate-stats-data">(.*?)</script>', html, re.S
-        ).group(1)
+        html = client.get("/es/conjugate").data.decode("utf-8")
+        blob = re.search(r'id="conjugate-stats-data">(.*?)</script>', html, re.S).group(
+            1
+        )
         data = _json.loads(blob)
         futuro = next(t for t in data["tenses"] if t["key"] == "indicativo/futuro")
         presente = next(t for t in data["tenses"] if t["key"] == "indicativo/presente")
@@ -419,7 +521,7 @@ class TestDashboard:
         # Recap a single verb on a single tense/person: the session must be
         # restricted to exactly that verb, tense, and person.
         client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={
                 "tenses": [tense],
                 "verb_ids": [str(verb_id)],
@@ -437,7 +539,7 @@ class TestDashboard:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         resp = client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={
                 "tenses": ["indicativo/presente"],
                 "verb_ids": ["999999"],
@@ -447,14 +549,14 @@ class TestDashboard:
         )
         # Bounced back to /conjugate, no session created.
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/conjugate")
+        assert resp.headers["Location"].endswith("/es/conjugate")
         with client.session_transaction() as sess:
             assert "conjugate_practice" not in sess
 
     def test_dashboard_hidden_without_practice(self, client):
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         assert "Your insights" not in html
 
 
@@ -463,10 +565,10 @@ class TestValidateApi:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={"tenses": ["indicativo/presente"], "difficulty": "advanced"},
         )
-        client.get("/conjugate/practice")
+        client.get("/es/conjugate/practice")
         resp = client.post("/api/conjugate/validate", json={"input": "x"})
         assert resp.status_code == 200
         assert "words" in resp.get_json()
@@ -475,10 +577,10 @@ class TestValidateApi:
         add_verb(SAMPLE_USER["sub"], "comer")
         login(client)
         client.post(
-            "/conjugate/practice/start",
+            "/es/conjugate/practice/start",
             data={"tenses": ["indicativo/presente"], "difficulty": "hardcore"},
         )
-        client.get("/conjugate/practice")
+        client.get("/es/conjugate/practice")
         resp = client.post("/api/conjugate/validate", json={"input": "x"})
         assert resp.status_code == 400
 

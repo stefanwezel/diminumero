@@ -26,10 +26,11 @@
              data-i18n-popup-title="{{ get_text('conjugate_unsupported_popup_title') }}"
              data-i18n-popup-close="{{ get_text('conjugate_unsupported_popup_close') }}"
              data-i18n-add-to-cards="{{ get_text('conjugate_add_to_cards_btn') }}"
+             data-delete-base="{{ url_for('conjugate_verb_delete', lang_code=lang_code, verb_id=0) }}"
              data-toast-icon="{{ url_for('static', filename='favicon-32x32.png') }}">
         <h3 class="cards-section-heading">{{ get_text('conjugate_add_heading') }}</h3>
         <form class="cards-create-form" id="conjugate-add-form" autocomplete="off"
-              method="POST" action="{{ url_for('conjugate_verb_add') }}">
+              method="POST" action="{{ url_for('conjugate_verb_add', lang_code=lang_code) }}">
             <div class="conjugate-add-row">
                 <div class="conjugate-autocomplete">
                     <input type="text" name="infinitive" id="conjugate-verb-input"
@@ -81,7 +82,7 @@
         </div>
 
         {% if verbs %}
-        <form method="POST" action="{{ url_for('conjugate_practice_start') }}"
+        <form method="POST" action="{{ url_for('conjugate_practice_start', lang_code=lang_code) }}"
               class="cards-practice-form conjugate-practice-form">
             <fieldset class="cards-direction-fieldset conjugate-tenses-fieldset">
                 <legend>{{ get_text('conjugate_tenses_label') }}</legend>
@@ -179,7 +180,7 @@
                          role="cell">
                         <span class="conjugate-matrix-count">{{ cell.count }}</span>
                         {% if cell.count > 0 %}
-                        <form method="POST" action="{{ url_for('conjugate_practice_start') }}"
+                        <form method="POST" action="{{ url_for('conjugate_practice_start', lang_code=lang_code) }}"
                               class="conjugate-matrix-recap-form">
                             {% for t in cell.tenses %}
                             <input type="hidden" name="tenses" value="{{ t }}">
@@ -224,7 +225,7 @@
                     </button>
                     {% endif %}
                     <form method="POST"
-                          action="{{ url_for('conjugate_verb_delete', verb_id=verb.id) }}"
+                          action="{{ url_for('conjugate_verb_delete', lang_code=lang_code, verb_id=verb.id) }}"
                           class="conjugate-delete-form">
                         <button type="submit" class="btn btn-secondary cards-list-btn cards-list-btn-delete">
                             {{ get_text('conjugate_delete_btn') }}

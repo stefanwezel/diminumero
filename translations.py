@@ -357,6 +357,10 @@ TRANSLATIONS = {
         "conjugate_flash_verb_deleted": "Verb removed.",
         "conjugate_flash_need_verbs": "Add at least one verb before starting a session.",
         "conjugate_flash_need_tenses": "Select at least one tense to practice.",
+        "conjugate_hint_btn": "Hint",
+        "conjugate_hint_tooltip": "Show a pattern hint — a correct answer after a hint earns half a point",
+        "conjugate_hint_panel_title": "Pattern hint",
+        "conjugate_flash_correct_hint": "Correct — half a point (hint used)",
         "conjugate_unsupported_popup_title": "Verb not supported",
         "conjugate_unsupported_popup_close": "OK",
         # Cards <-> conjugation sync
@@ -733,6 +737,10 @@ TRANSLATIONS = {
         "conjugate_flash_verb_deleted": "Verb entfernt.",
         "conjugate_flash_need_verbs": "Füge mindestens ein Verb hinzu, bevor du startest.",
         "conjugate_flash_need_tenses": "Wähle mindestens eine Zeitform zum Üben.",
+        "conjugate_hint_btn": "Tipp",
+        "conjugate_hint_tooltip": "Muster-Tipp anzeigen — eine richtige Antwort nach einem Tipp gibt einen halben Punkt",
+        "conjugate_hint_panel_title": "Muster-Tipp",
+        "conjugate_flash_correct_hint": "Richtig — ein halber Punkt (Tipp genutzt)",
         "conjugate_unsupported_popup_title": "Verb nicht unterstützt",
         "conjugate_unsupported_popup_close": "OK",
         # Karten <-> Konjugation
@@ -1085,6 +1093,10 @@ TRANSLATIONS = {
         "conjugate_flash_verb_deleted": "Verbo eliminado.",
         "conjugate_flash_need_verbs": "Añade al menos un verbo antes de empezar.",
         "conjugate_flash_need_tenses": "Selecciona al menos un tiempo para practicar.",
+        "conjugate_hint_btn": "Pista",
+        "conjugate_hint_tooltip": "Muestra una pista del patrón — una respuesta correcta tras una pista da medio punto",
+        "conjugate_hint_panel_title": "Pista del patrón",
+        "conjugate_flash_correct_hint": "Correcto — medio punto (pista usada)",
         "conjugate_unsupported_popup_title": "Verbo no admitido",
         "conjugate_unsupported_popup_close": "OK",
         # Tarjetas <-> conjugación

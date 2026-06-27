@@ -4030,6 +4030,62 @@ html {
     text-transform: lowercase;
 }
 
+/* Pattern hint excerpt */
+.conjugate-hint {
+    max-width: 520px;
+    margin: 16px auto 0;
+    padding: 16px 18px;
+    background: rgba(233, 168, 255, 0.08);
+    border: 1px solid rgba(233, 168, 255, 0.35);
+    border-radius: 12px;
+}
+
+.conjugate-hint-title {
+    font-weight: 700;
+    color: #E9A8FF;
+    margin-bottom: 6px;
+}
+
+.conjugate-hint-blurb {
+    font-size: 0.95rem;
+    color: #C9BBD9;
+    margin: 0 0 12px;
+}
+
+.conjugate-hint-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.conjugate-hint-table th,
+.conjugate-hint-table td {
+    padding: 5px 8px;
+    text-align: left;
+    color: #E5DBF0;
+}
+
+.conjugate-hint-table thead th {
+    color: #C9BBD9;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(233, 168, 255, 0.25);
+}
+
+.conjugate-hint-table tbody th {
+    color: #C9BBD9;
+    font-weight: 500;
+}
+
+.conjugate-hint-row-active {
+    background: rgba(233, 168, 255, 0.18);
+}
+
+.conjugate-hint-row-active th,
+.conjugate-hint-row-active td {
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
 /* "Not supported" popup */
 .conjugate-popup-overlay {
     position: fixed;
