@@ -30,7 +30,7 @@ JSON.
 | `languages/es/conjugations.py` | Lazy loader over the JSON. Exposes `verb_exists()`, `get_verb_forms()`, `search_verbs(prefix, limit, exclude)`, and (via PEP 562 `__getattr__`) `GLOBAL_VERBS`. |
 | `tools/generate_conjugations.py` | PEP-723 generator that (re)builds `conjugations.json`. |
 | `models.py` | `VerbCard` (a user's verb + rolling score) and `ConjugationStat` (per-`(tense, person)` tally for the insights dashboard). |
-| `static/js/conjugate.js` | Wires the `/conjugate` manage page (autocomplete, settings, start). |
+| `static/js/conjugate.js` | Wires the `/<lang>/conjugate` manage page (autocomplete, settings, start). Reads the lang-aware delete endpoint from the add-section's `data-delete-base`. |
 
 ## Data Model
 
@@ -48,7 +48,15 @@ JSON.
 
 ## Routes
 
-- `/conjugate` — manage page: add-verb form with autocomplete, a foldable insights
+The page/practice routes are namespaced under `/<lang_code>/` (e.g. `/es/conjugate`)
+and `_require_conjugation_lang(lang_code)` 404s any language without `has_conjugation`
+(`get_languages_with_conjugation()` in `languages/config.py`). Templates link to them
+via `url_for(..., lang_code=...)`; globally-rendered templates (nav, home, language
+cards) use the `conjugation_lang` context-processor variable (= `CONJUGATION_LANG`).
+The `/api/verbs*` and `/api/conjugate/validate` JSON endpoints stay un-namespaced
+because the verb pool is per-user, not per-language, today.
+
+- `/<lang_code>/conjugate` — manage page: add-verb form with autocomplete, a foldable insights
   dashboard (shown once any attempt exists), the user's verb list, and practice
   settings (tense checklist, vosotros toggle, difficulty, sampling, count) + Start.
   The dashboard is built by `_build_conjugate_dashboard_stats()` — three
@@ -57,15 +65,15 @@ JSON.
 - `/api/verbs/search?q=` — autocomplete from the global pool, excluding owned verbs.
 - `/api/verbs` (POST) — add a verb; rejects verbs not in the global pool with
   `{"unsupported": true}` (JS shows a popup). `/api/verbs/<id>` (DELETE) and
-  `/conjugate/<id>/delete` (POST fallback) remove a verb.
-- `/conjugate/practice/start` (POST) — builds a session from selected `tenses`,
+  `/<lang_code>/conjugate/<id>/delete` (POST fallback) remove a verb.
+- `/<lang_code>/conjugate/practice/start` (POST) — builds a session from selected `tenses`,
   `include_vosotros`, `difficulty` (advanced/hardcore), `sampling_mode`, `count`
   (default 10).
-- `/conjugate/practice` (GET/POST) — prompt is verb + pronoun + tense; typed answer
+- `/<lang_code>/conjugate/practice` (GET/POST) — prompt is verb + pronoun + tense; typed answer
   checked with `check_answer_advanced`; reveal/next with type-to-continue (reuses
   `cards_practice_reveal.js`); advanced mode highlights words live. Each attempt
   updates the owning `VerbCard` and the matching `ConjugationStat`.
-- `/conjugate/practice/results` — final score, clears state.
+- `/<lang_code>/conjugate/practice/results` — final score, clears state.
 - `/api/conjugate/validate` (POST) — word-by-word feedback (disabled in hardcore).
 - `/<lang_code>/learn/conjugations` — the **conjugation Learn page** (a reference page that
   explains the regular `-ar/-er/-ir` patterns, the tenses you practice, stem-changers, and the
@@ -86,7 +94,7 @@ Moving parts:
 |------|------|
 | `has_conjugation_materials` flag in `languages/config.py` | Marks a language as having a conjugation Learn page. `get_languages_with_conjugation_materials()` derives the enabled list (combined with `ready: True`); the `learn_conjugations()` route, `mode_selection()`, and `sitemap_xml()` all read from it — no hardcoded `"es"`. |
 | `learn_conjugations()` route in `app.py` | Serves `templates/learn_conjugations_<lang>_<ui_lang>.html`, falling back to `_en` (same UI-language pattern as the numbers `learn()` route). |
-| `templates/learn_conjugations_es_<ui>.html` | The page itself (`_en` required; `_es`/`_de` provided, others fall back). Reuses the `learn-*` CSS classes and the `_learn_conjugations_jsonld.html` include. The footer CTA links to `/conjugate` (`conjugate_start_btn`). |
+| `templates/learn_conjugations_es_<ui>.html` | The page itself (`_en` required; `_es`/`_de` provided, others fall back). Reuses the `learn-*` CSS classes and the `_learn_conjugations_jsonld.html` include. The footer CTA links to `/<lang>/conjugate` (`conjugate_start_btn`). |
 | Translation keys | `learn_nav_conjugations_button` / `learn_nav_conjugations_desc` (the index card) and `seo_title_learn_conj` / `meta_desc_learn_conj` (page + JSON-LD), in `translations.py`. |
 
 To add a new UI-language variant, copy `templates/learn_conjugations_es_en.html` to
@@ -132,15 +140,17 @@ The pronoun slots live in `CONJ_PERSONS`; `vosotros` (index 4) is the only
 ## Extending to Another Language
 
 The section is Spanish-only today and several pieces hardcode that assumption (the
-`/conjugate*` routes, the `es` JSON path, `verbecc` Spanish conjugation, the
-`CONJ_PERSONS` Spanish pronoun set). Adding another language would require, at
-minimum:
+`es` JSON path, `verbecc` Spanish conjugation, the `CONJ_PERSONS` Spanish pronoun
+set, and the per-user `VerbCard` pool which carries no language). The page/practice
+routes are already namespaced under `/<lang_code>/` and gated by `has_conjugation`,
+so the URL space is ready; adding another language would require, at minimum:
 1. A generator + committed `conjugations.json` for that language (a verbecc-style
    source or another conjugation engine).
 2. A language-aware loader (parameterize `languages/<code>/conjugations.py`).
 3. A language-specific person/tense config (the current `CONJ_PERSONS`/`CONJ_TENSES`
    are Spanish).
-4. Generalizing the `/conjugate*` routes and `VerbCard` to carry a language.
+4. Giving `VerbCard` (and the `/api/verbs*` + `/api/conjugate/validate` endpoints) a
+   language so each user's pool is scoped per language.
 
 This is a larger change than adding numbers or audio; open an issue to scope it
 before starting.

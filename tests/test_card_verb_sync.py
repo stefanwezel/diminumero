@@ -218,14 +218,14 @@ class TestConjugatePageExposure:
     def test_missing_verb_offered_for_card_sync(self, client):
         add_verb(SAMPLE_USER["sub"], "vivir")
         login(client)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         assert "conjugate-missing-in-cards" in html
         assert '"infinitive": "vivir"' in html
 
     def test_import_from_cards_button_counts(self, client):
         make_card(SAMPLE_USER["sub"], "comer", "to eat")
         login(client)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         assert "conjugate-import-from-cards" in html
         # The button is visible (not hidden) when there is something to import.
         assert "conjugate-import-from-cards conjugate-sync-hidden" not in html
@@ -233,7 +233,7 @@ class TestConjugatePageExposure:
     def test_missing_verb_row_has_add_to_cards_button(self, client):
         add_verb(SAMPLE_USER["sub"], "vivir")
         login(client)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         assert "conjugate-verb-to-card-btn" in html
         assert 'data-infinitive="vivir"' in html
 
@@ -241,7 +241,7 @@ class TestConjugatePageExposure:
         make_card(SAMPLE_USER["sub"], "vivir", "to live")
         add_verb(SAMPLE_USER["sub"], "vivir")
         login(client)
-        html = client.get("/conjugate").data.decode("utf-8")
+        html = client.get("/es/conjugate").data.decode("utf-8")
         assert "conjugate-verb-to-card-btn" not in html
 
 

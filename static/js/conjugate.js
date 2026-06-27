@@ -1,8 +1,9 @@
 /**
- * Verb-conjugation manage page (/conjugate): add verbs with autocomplete from
- * the global pool, delete verbs, and show a "not supported" popup when a typed
- * verb isn't in the pool. Progressive enhancement — the underlying form POSTs
- * (add via /api/verbs, delete via /conjugate/<id>/delete) still work without JS.
+ * Verb-conjugation manage page (/<lang>/conjugate): add verbs with autocomplete
+ * from the global pool, delete verbs, and show a "not supported" popup when a
+ * typed verb isn't in the pool. Progressive enhancement — the underlying form
+ * POSTs (add via /api/verbs, delete via /<lang>/conjugate/<id>/delete) still
+ * work without JS.
  */
 
 (function () {
@@ -22,6 +23,9 @@
         addToCards: addSection.getAttribute('data-i18n-add-to-cards') || 'Add to cards'
     };
     const toastIcon = addSection.getAttribute('data-toast-icon') || '';
+    // Lang-aware delete endpoint, e.g. "/es/conjugate/0/delete" (0 is swapped
+    // for the real verb id when rebuilding the no-JS fallback form).
+    const deleteBase = addSection.getAttribute('data-delete-base') || '/es/conjugate/0/delete';
 
     const countEl = document.getElementById('conjugate-count');
     const popup = document.getElementById('conjugate-popup');
@@ -137,7 +141,7 @@
         }
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/conjugate/' + verb.id + '/delete';
+        form.action = deleteBase.replace(/0\/delete$/, verb.id + '/delete');
         form.className = 'conjugate-delete-form';
         const btn = document.createElement('button');
         btn.type = 'submit';

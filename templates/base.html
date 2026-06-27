@@ -110,7 +110,7 @@
                     <a class="auth-option" role="menuitem"
                        href="{{ url_for('cards') }}">{{ get_text('nav_my_cards') }}</a>
                     <a class="auth-option" role="menuitem"
-                       href="{{ url_for('conjugate') }}">{{ get_text('nav_conjugate') }}</a>
+                       href="{{ url_for('conjugate', lang_code=conjugation_lang) }}">{{ get_text('nav_conjugate') }}</a>
                     <a class="auth-option" role="menuitem"
                        href="{{ url_for('logout') }}">{{ get_text('nav_logout') }}</a>
                 </div>

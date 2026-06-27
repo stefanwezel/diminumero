@@ -474,6 +474,15 @@ def get_languages_with_learn_materials():
     ]
 
 
+def get_languages_with_conjugation():
+    """Return language codes that have a verb-conjugation practice section and are ready."""
+    return [
+        code
+        for code, info in AVAILABLE_LANGUAGES.items()
+        if info.get("has_conjugation", False) and info.get("ready", False)
+    ]
+
+
 def get_languages_with_conjugation_materials():
     """Return language codes that have verb-conjugation learn materials and are ready."""
     return [

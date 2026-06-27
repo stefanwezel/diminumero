@@ -50,6 +50,7 @@ from languages import (
     get_language_ui_description,
     get_language_ui_name,
     get_languages_with_audio_mode,
+    get_languages_with_conjugation,
     get_languages_with_conjugation_materials,
     get_languages_with_learn_materials,
     is_language_ready,
@@ -190,7 +191,7 @@ def set_cache_headers(response):
         or path.startswith("/api/")
         or path in ("/login", "/callback", "/logout")
         or path.startswith("/cards")
-        or path.startswith("/conjugate")
+        or "/conjugate" in path
     ):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
@@ -258,6 +259,7 @@ def inject_seo_context():
         "og_locale_alternates": og_locale_alternates,
         "breadcrumbs": breadcrumbs,
         "user": session.get("user"),
+        "conjugation_lang": CONJUGATION_LANG,
     }
 
 
@@ -2148,7 +2150,9 @@ def _conj_build_matrix(
     ]
 
 
-def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> dict:
+def _build_conjugate_dashboard_stats(
+    user_sub: str, verbs: list[VerbCard], lang_code: str
+) -> dict:
     """Insights for the /conjugate dashboard, rendered as a matrix of
     dimensions (tenses, verbs, pronouns) × categories (unpracticed, weak,
     needs work).
@@ -2201,7 +2205,7 @@ def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> di
             "pronouns": get_text("conjugate_stats_pronouns"),
         },
         "recap_label": get_text("cards_dashboard_recap_btn"),
-        "start_url": url_for("conjugate_practice_start"),
+        "start_url": url_for("conjugate_practice_start", lang_code=lang_code),
         "default_count": CONJ_QUESTIONS_DEFAULT,
         "tenses": [
             {
@@ -2243,17 +2247,26 @@ def _build_conjugate_dashboard_stats(user_sub: str, verbs: list[VerbCard]) -> di
     }
 
 
-@app.route("/conjugate")
+def _require_conjugation_lang(lang_code: str) -> None:
+    """404 for a language that has no verb-conjugation practice section."""
+    if lang_code not in get_languages_with_conjugation():
+        from flask import abort
+
+        abort(404)
+
+
+@app.route("/<lang_code>/conjugate")
 @login_required
-def conjugate():
+def conjugate(lang_code):
     """Manage page: add verbs (autocomplete) + practice settings + start."""
+    _require_conjugation_lang(lang_code)
     verbs = _user_verbs()
     practice_lang = session.get("learn_language")
     if practice_lang and is_language_ready(practice_lang):
         practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
     else:
         practice_numbers_url = url_for("mode_selection", lang_code=CONJUGATION_LANG)
-    dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs)
+    dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs, lang_code)
     user_sub = _current_user_sub()
     user_cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
     card_import_count = len(_importable_card_verbs(user_sub, user_cards))
@@ -2265,6 +2278,7 @@ def conjugate():
     return render_template(
         "conjugate.html",
         user=session["user"],
+        lang_code=lang_code,
         verbs=verbs,
         tenses=CONJ_TENSES,
         persons=CONJ_PERSONS,
@@ -2320,30 +2334,31 @@ def api_verbs_create():
     return jsonify({"ok": True, "verb": verb.to_dict()})
 
 
-@app.route("/conjugate/add", methods=["POST"])
+@app.route("/<lang_code>/conjugate/add", methods=["POST"])
 @login_required
-def conjugate_verb_add():
+def conjugate_verb_add(lang_code):
     """Form fallback for adding a verb (no-JS path, and the JS error fallback).
 
     Mirrors the cards `/cards` POST route: reads the form field, flashes, and
-    redirects back to /conjugate. The JS add flow uses the JSON `/api/verbs`.
+    redirects back to /<lang>/conjugate. The JS add flow uses the JSON `/api/verbs`.
     """
+    _require_conjugation_lang(lang_code)
     infinitive = _normalize_infinitive(request.form.get("infinitive"))
     if not infinitive:
         flash(get_text("conjugate_flash_verb_required"), "error")
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
     if not es_conjugations.verb_exists(infinitive):
         flash(get_text("conjugate_flash_unsupported").format(infinitive), "error")
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
     user_sub = _current_user_sub()
     if _find_user_verb(user_sub, infinitive) is not None:
         flash(get_text("conjugate_flash_verb_duplicate"), "info")
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
     verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
     db.session.add(verb)
     db.session.commit()
     flash(get_text("conjugate_flash_verb_added"), "success")
-    return redirect(url_for("conjugate"))
+    return redirect(url_for("conjugate", lang_code=lang_code))
 
 
 @app.route("/api/verbs/import-from-cards", methods=["POST"])
@@ -2374,15 +2389,16 @@ def api_verbs_delete(verb_id: int):
     return jsonify({"ok": True})
 
 
-@app.route("/conjugate/<int:verb_id>/delete", methods=["POST"])
+@app.route("/<lang_code>/conjugate/<int:verb_id>/delete", methods=["POST"])
 @login_required
-def conjugate_verb_delete(verb_id: int):
+def conjugate_verb_delete(lang_code, verb_id: int):
     """Form fallback for deleting a verb (no-JS path)."""
+    _require_conjugation_lang(lang_code)
     verb = _user_verb_or_404(verb_id)
     db.session.delete(verb)
     db.session.commit()
     flash(get_text("conjugate_flash_verb_deleted"), "info")
-    return redirect(url_for("conjugate"))
+    return redirect(url_for("conjugate", lang_code=lang_code))
 
 
 def _form_available(infinitive: str, tense_key: str, person_index: int) -> str | None:
@@ -2449,10 +2465,11 @@ def _record_conjugation_stat(
         stat.times_correct += 1
 
 
-@app.route("/conjugate/practice/start", methods=["POST"])
+@app.route("/<lang_code>/conjugate/practice/start", methods=["POST"])
 @login_required
-def conjugate_practice_start():
+def conjugate_practice_start(lang_code):
     """Initialize a conjugation practice session and redirect to the first prompt."""
+    _require_conjugation_lang(lang_code)
     selected_tenses = [
         t for t in request.form.getlist("tenses") if t in CONJ_TENSE_KEYS
     ]
@@ -2503,10 +2520,10 @@ def conjugate_practice_start():
     user_verbs = _user_verbs()
     if not user_verbs:
         flash(get_text("conjugate_flash_need_verbs"), "info")
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
     if not selected_tenses:
         flash(get_text("conjugate_flash_need_tenses"), "info")
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
     # If a recap restricted the verb pool, drop ids the user doesn't own and
     # fall back to "need verbs" if nothing is left.
     if verb_ids:
@@ -2514,7 +2531,7 @@ def conjugate_practice_start():
         verb_ids = [vid for vid in verb_ids if vid in owned_ids]
         if not verb_ids:
             flash(get_text("conjugate_flash_need_verbs"), "info")
-            return redirect(url_for("conjugate"))
+            return redirect(url_for("conjugate", lang_code=lang_code))
 
     session["conjugate_practice"] = {
         "tenses": selected_tenses,
@@ -2530,7 +2547,7 @@ def conjugate_practice_start():
         "current": None,
         "current_revealed": False,
     }
-    return redirect(url_for("conjugate_practice"))
+    return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
 
 def _get_conjugate_state() -> dict | None:
@@ -2608,7 +2625,7 @@ def _load_next_conjugation(state: dict) -> dict | None:
     return current
 
 
-def _conjugate_question_view(state: dict, current: dict):
+def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     """Render the practice page for the current question."""
     difficulty = state.get("difficulty", "advanced")
     revealed = bool(state.get("current_revealed"))
@@ -2623,6 +2640,7 @@ def _conjugate_question_view(state: dict, current: dict):
     return render_template(
         "conjugate_practice.html",
         user=session["user"],
+        lang_code=lang_code,
         infinitive=current["infinitive"],
         pronoun=person_label(current["person_index"]),
         tense_label=tense_label(current["tense_key"], ui_lang),
@@ -2638,18 +2656,19 @@ def _conjugate_question_view(state: dict, current: dict):
     )
 
 
-@app.route("/conjugate/practice", methods=["GET", "POST"])
+@app.route("/<lang_code>/conjugate/practice", methods=["GET", "POST"])
 @login_required
-def conjugate_practice():
+def conjugate_practice(lang_code):
     """Show the current conjugation question or process an answer/reveal."""
+    _require_conjugation_lang(lang_code)
     state = _get_conjugate_state()
     if state is None:
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
 
     if request.method == "POST":
         current = state.get("current")
         if not current:
-            return redirect(url_for("conjugate_practice"))
+            return redirect(url_for("conjugate_practice", lang_code=lang_code))
         verb = db.session.get(VerbCard, current["verb_id"])
         owns_verb = verb is not None and verb.user_sub == _current_user_sub()
         correct_answer = current["correct_answer"]
@@ -2668,7 +2687,7 @@ def conjugate_practice():
                 db.session.commit()
             state["current_revealed"] = True
             _save_conjugate_state(state)
-            return redirect(url_for("conjugate_practice"))
+            return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
         if "next" in request.form:
             # Type-to-continue: in "type" reveal mode the user must retype the
@@ -2679,7 +2698,7 @@ def conjugate_practice():
                     user_answer
                     and quiz_logic.check_answer_advanced(user_answer, correct_answer)
                 ):
-                    return redirect(url_for("conjugate_practice"))
+                    return redirect(url_for("conjugate_practice", lang_code=lang_code))
             state["asked"].append(
                 _conj_asked_key(
                     state["tenses"],
@@ -2691,13 +2710,13 @@ def conjugate_practice():
             state["current"] = None
             state["current_revealed"] = False
             _save_conjugate_state(state)
-            return redirect(url_for("conjugate_practice"))
+            return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
         # A revealed question has already recorded its (wrong) attempt; only a
         # `next` advances it. Ignore a stray answer POST so it can't be counted
         # twice (the reveal-retype form must submit with `next`).
         if state.get("current_revealed"):
-            return redirect(url_for("conjugate_practice"))
+            return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
         # A hint is an advanced-mode aid; a correct answer after one earns half a
         # point and still counts as a miss for mastery tracking.
@@ -2763,37 +2782,39 @@ def conjugate_practice():
         )
         state["current"] = None
         _save_conjugate_state(state)
-        return redirect(url_for("conjugate_practice"))
+        return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
     # GET: render current question, or load the next one.
     count = state.get("count", CONJ_QUESTIONS_DEFAULT)
     if state.get("current") is None:
         if state["total"] >= count:
-            return redirect(url_for("conjugate_practice_results"))
+            return redirect(url_for("conjugate_practice_results", lang_code=lang_code))
         nxt = _load_next_conjugation(state)
         if nxt is None:
             _save_conjugate_state(state)
-            return redirect(url_for("conjugate_practice_results"))
+            return redirect(url_for("conjugate_practice_results", lang_code=lang_code))
         _save_conjugate_state(state)
         current = nxt
     else:
         current = state["current"]
-    return _conjugate_question_view(state, current)
+    return _conjugate_question_view(state, current, lang_code)
 
 
-@app.route("/conjugate/practice/results")
+@app.route("/<lang_code>/conjugate/practice/results")
 @login_required
-def conjugate_practice_results():
+def conjugate_practice_results(lang_code):
     """Show the final conjugation score and clear session state."""
+    _require_conjugation_lang(lang_code)
     state = session.pop("conjugate_practice", None)
     if state is None:
-        return redirect(url_for("conjugate"))
+        return redirect(url_for("conjugate", lang_code=lang_code))
     score = state.get("score", 0)
     total = state.get("total", 0)
     percentage = (score / total * 100) if total else 0
     return render_template(
         "conjugate_results.html",
         user=session["user"],
+        lang_code=lang_code,
         score=score,
         total=total,
         percentage=percentage,
@@ -2836,8 +2857,8 @@ def robots_txt():
         "Disallow: /cards",
         "Disallow: /cards/",
         "Disallow: /cards/import/",
-        "Disallow: /conjugate",
-        "Disallow: /conjugate/",
+        "Disallow: /*/conjugate",
+        "Disallow: /*/conjugate/",
         "",
         f"Sitemap: {SITE_URL.rstrip('/')}/sitemap.xml",
     ]

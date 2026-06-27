@@ -54,7 +54,7 @@
                 <p class="new-feature-body">{{ get_text('home_conjugate_body') }}</p>
             </div>
             {% if user %}
-                <a href="{{ url_for('conjugate') }}" class="btn btn-primary new-feature-cta">
+                <a href="{{ url_for('conjugate', lang_code=conjugation_lang) }}" class="btn btn-primary new-feature-cta">
                     {{ get_text('home_conjugate_cta_open') }}
                 </a>
             {% else %}
@@ -86,7 +86,7 @@
                 {% if lang_info.has_conjugation or lang_info.has_audio_mode %}
                 <div class="card-corner-actions">
                     {% if lang_info.has_conjugation %}
-                    <a href="{{ url_for('conjugate') }}" class="corner-action-btn" aria-label="{{ get_text('language_card_verbs_badge') }}" title="{{ get_text('language_card_verbs_badge') }}">
+                    <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="corner-action-btn" aria-label="{{ get_text('language_card_verbs_badge') }}" title="{{ get_text('language_card_verbs_badge') }}">
                         <img src="{{ url_for('static', filename='icons/icon-verbs.svg') }}" alt="" class="corner-action-icon" aria-hidden="true" loading="lazy">
                         <span class="corner-action-label">{{ get_text('language_card_verbs_badge') }}</span>
                     </a>

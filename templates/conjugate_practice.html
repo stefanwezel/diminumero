@@ -15,7 +15,7 @@
             {{ get_text('quiz_score') }}: {{ "%g"|format(score) }} / {{ total }}
         </div>
         <div class="quiz-header-buttons">
-            <form action="{{ url_for('conjugate_practice_results') }}" method="GET" class="quiz-header-form">
+            <form action="{{ url_for('conjugate_practice_results', lang_code=lang_code) }}" method="GET" class="quiz-header-form">
                 <button type="submit" class="btn btn-exit btn-quiz-header">{{ get_text('quiz_exit') }}</button>
             </form>
             {% if not revealed and hint %}
@@ -25,7 +25,7 @@
             </button>
             {% endif %}
             {% if not revealed %}
-            <form action="{{ url_for('conjugate_practice') }}" method="POST" class="quiz-header-form">
+            <form action="{{ url_for('conjugate_practice', lang_code=lang_code) }}" method="POST" class="quiz-header-form">
                 <button type="submit" name="reveal" value="1"
                         class="btn btn-secondary btn-quiz-header"
                         title="{{ get_text('cards_reveal_tooltip') }}">
@@ -52,7 +52,7 @@
     </div>
 
     {% if not revealed %}
-    <form action="{{ url_for('conjugate_practice') }}" method="POST" class="answer-form" id="answerForm">
+    <form action="{{ url_for('conjugate_practice', lang_code=lang_code) }}" method="POST" class="answer-form" id="answerForm">
         {% if hint %}<input type="hidden" name="hint_used" id="hintUsed" value="0">{% endif %}
         <div class="text-input-container">
             <input
@@ -104,7 +104,7 @@
         <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
         <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
         <div class="reveal-modal-answer">{{ correct_answer }}</div>
-        <form action="{{ url_for('conjugate_practice') }}" method="POST" class="reveal-modal-actions" id="revealForm">
+        <form action="{{ url_for('conjugate_practice', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions" id="revealForm">
             {% if reveal_mode == 'type' %}
             <input
                 type="text"
