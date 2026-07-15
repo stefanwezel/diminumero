@@ -66,18 +66,19 @@ class Card(db.Model):
 
 
 class VerbCard(db.Model):
-    """A Spanish verb a user has added to their conjugation-practice pool.
+    """A verb a user has added to their conjugation-practice pool.
 
-    Holds only the infinitive — the conjugations live in the committed global
-    pool (languages/es/conjugations.json), validated at add time. Scoring mirrors
-    `Card`: a 10-char `recent_results` window plus lifetime counters, used to bias
-    the practice sampler toward weak/unpracticed verbs.
+    Holds only the infinitive and its language — the conjugations live in the
+    committed global pool (languages/<lang>/conjugations.json), validated at add
+    time. Scoring mirrors `Card`: a 10-char `recent_results` window plus lifetime
+    counters, used to bias the practice sampler toward weak/unpracticed verbs.
     """
 
     __tablename__ = "verb_cards"
 
     id = db.Column(db.Integer, primary_key=True)
     user_sub = db.Column(db.String(255), nullable=False, index=True)
+    lang = db.Column(db.String(8), nullable=False, default="es", server_default="es")
     infinitive = db.Column(db.String(64), nullable=False)
     times_practiced = db.Column(
         db.Integer, nullable=False, default=0, server_default="0"
@@ -108,6 +109,7 @@ class VerbCard(db.Model):
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "lang": self.lang,
             "infinitive": self.infinitive,
             "times_practiced": self.times_practiced,
             "times_correct": self.times_correct,
@@ -121,19 +123,20 @@ class ConjugationStat(db.Model):
 
     `VerbCard` already scores each verb; this table adds the other two
     dimensions so the /conjugate dashboard can show which tenses and which
-    pronouns a user should practice. One row per (user_sub, tense_key,
+    pronouns a user should practice. One row per (user_sub, lang, tense_key,
     person_index); only lifetime counters are kept (accuracy = correct/practiced).
     """
 
     __tablename__ = "conjugation_stats"
     __table_args__ = (
         db.UniqueConstraint(
-            "user_sub", "tense_key", "person_index", name="uq_conjstat_dim"
+            "user_sub", "lang", "tense_key", "person_index", name="uq_conjstat_dim"
         ),
     )
 
     id = db.Column(db.Integer, primary_key=True)
     user_sub = db.Column(db.String(255), nullable=False, index=True)
+    lang = db.Column(db.String(8), nullable=False, default="es", server_default="es")
     tense_key = db.Column(db.String(64), nullable=False)
     person_index = db.Column(db.Integer, nullable=False)
     times_practiced = db.Column(

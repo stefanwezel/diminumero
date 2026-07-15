@@ -41,15 +41,15 @@
             {{ get_text('home_hero_description') }}
         </p>
 
-        {% if lang_code == 'es' %}
-        <aside class="new-feature-callout" aria-label="{{ get_text('conjugate_title') }}">
+        {% if has_conjugation %}
+        <aside class="new-feature-callout" aria-label="{{ get_text('conjugate_title_' + lang_code) }}">
             <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
             <div class="new-feature-text">
-                <h2 class="new-feature-title">{{ get_text('conjugate_title') }}</h2>
+                <h2 class="new-feature-title">{{ get_text('conjugate_title_' + lang_code) }}</h2>
                 <p class="new-feature-body">{{ get_text('conjugate_subtitle') }}</p>
             </div>
             {% if user %}
-                <a href="{{ url_for('conjugate', lang_code=conjugation_lang) }}" class="btn btn-primary new-feature-cta">
+                <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary new-feature-cta">
                     {{ get_text('conjugate_start_btn') }}
                 </a>
             {% else %}

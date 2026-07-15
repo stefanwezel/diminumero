@@ -1,8 +1,8 @@
-"""Loader for the global Spanish verb-conjugation pool.
+"""Loader for the global German verb-conjugation pool.
 
-Reads the committed ``conjugations.json`` (generated offline by
-``tools/generate_conjugations.py`` via the ``verbecc`` library). Person slots:
-[yo, tú, él/ella/usted, nosotros, vosotros, ellos/ellas/ustedes]. See
+Reads the committed ``conjugations.json`` (generated offline by the
+self-contained rule engine in ``tools/generate_conjugations_de.py``). Person
+slots: [ich, du, er/sie/es, wir, ihr, sie/Sie]. See
 ``languages/conjugation_loader.py`` for the shared implementation.
 """
 

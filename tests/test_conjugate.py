@@ -341,7 +341,7 @@ class TestHint:
     def test_build_hint_structure(self):
         from app import _build_conjugation_hint
 
-        hint = _build_conjugation_hint("indicativo/presente", 1, "en")
+        hint = _build_conjugation_hint("es", "indicativo/presente", 1, "en")
         assert hint["blurb"]
         assert [m["infinitive"] for m in hint["models"]] == [
             "hablar",
@@ -364,7 +364,7 @@ class TestHint:
         from app import _build_conjugation_hint
 
         # The imperative has no "yo" form (index 0 is null in the pool).
-        hint = _build_conjugation_hint("imperativo/afirmativo", 0, "en")
+        hint = _build_conjugation_hint("es", "imperativo/afirmativo", 0, "en")
         assert hint["models"][0]["forms"][0] is None
 
     def test_correct_with_hint_awards_half_point(self, client):

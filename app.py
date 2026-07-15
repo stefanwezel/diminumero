@@ -57,20 +57,44 @@ from languages import (
 )
 from translations import TRANSLATIONS
 from conjugation_config import (
-    CONJ_HINT_MODEL_VERBS,
-    CONJ_PERSONS,
     CONJ_QUESTIONS_DEFAULT,
-    CONJ_TENSES,
-    CONJ_TENSE_KEYS,
-    VOSOTROS_INDEX,
+    conj_hint_model_verbs,
+    conj_optional_person_index,
+    conj_persons,
+    conj_tense_keys,
+    conj_tenses,
     person_label,
     tense_hint,
     tense_label,
 )
+from languages.de import conjugations as de_conjugations
 from languages.es import conjugations as es_conjugations
 
-# Language the conjugation section is offered for (Spanish only, for now).
-CONJUGATION_LANG = "es"
+# Committed global verb pools, one per conjugation language. Every language
+# with `has_conjugation: True` in languages/config.py must have an entry here.
+CONJ_POOLS = {"es": es_conjugations, "de": de_conjugations}
+
+# Fallback language for globally-rendered conjugation links (nav, home page)
+# when the session's learn language has no conjugation section.
+DEFAULT_CONJUGATION_LANG = "es"
+
+
+def _conj_pool(lang_code: str):
+    """The committed verb pool module for a conjugation language."""
+    return CONJ_POOLS[lang_code]
+
+
+def _current_conjugation_lang() -> str:
+    """Conjugation language for globally-rendered links (nav, home page).
+
+    Follows the session's learn language when that language has a conjugation
+    section, so e.g. a German learner's nav points at /de/conjugate.
+    """
+    learn_lang = session.get("learn_language")
+    if learn_lang in get_languages_with_conjugation():
+        return learn_lang
+    return DEFAULT_CONJUGATION_LANG
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -259,7 +283,7 @@ def inject_seo_context():
         "og_locale_alternates": og_locale_alternates,
         "breadcrumbs": breadcrumbs,
         "user": session.get("user"),
-        "conjugation_lang": CONJUGATION_LANG,
+        "conjugation_lang": _current_conjugation_lang(),
     }
 
 
@@ -288,6 +312,16 @@ def get_text(key):
         get_language_ui_name(learn_language, ui_language),
     )
     return text
+
+
+def _conj_text(key: str, lang_code: str) -> str:
+    """Translated text for a per-conjugation-language key.
+
+    A few conjugation strings name the language being conjugated (page title,
+    add-verb placeholder, "not in our … list" error); those exist as
+    ``<key>_es`` / ``<key>_de`` variants and are looked up here.
+    """
+    return get_text(f"{key}_{lang_code}")
 
 
 @app.route("/")
@@ -328,6 +362,7 @@ def mode_selection(lang_code):
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
     has_audio_mode = lang_code in get_languages_with_audio_mode()
+    has_conjugation = lang_code in get_languages_with_conjugation()
     has_conjugation_materials = lang_code in get_languages_with_conjugation_materials()
 
     return render_template(
@@ -338,6 +373,7 @@ def mode_selection(lang_code):
         get_text=get_text,
         has_learn_materials=has_learn_materials,
         has_audio_mode=has_audio_mode,
+        has_conjugation=has_conjugation,
         has_conjugation_materials=has_conjugation_materials,
         magnitude_level=session.get("magnitude_level", 1),
     )
@@ -1173,7 +1209,9 @@ def cards():
         practice_numbers_url = url_for("index")
     stats, stats_json = _build_cards_dashboard_stats(user_cards)
     importable = _importable_card_verbs(_current_user_sub(), user_cards)
-    importable_verb_infinitives = {card.id: inf for card, inf in importable}
+    importable_verbs = {
+        card.id: {"lang": lang, "infinitive": inf} for card, lang, inf in importable
+    }
     return render_template(
         "cards.html",
         user=session["user"],
@@ -1183,7 +1221,7 @@ def cards():
         get_text=get_text,
         stats=stats,
         stats_json=stats_json,
-        importable_verb_infinitives=importable_verb_infinitives,
+        importable_verbs=importable_verbs,
         importable_verb_count=len(importable),
     )
 
@@ -1335,7 +1373,7 @@ def api_cards_create():
                 "ok": True,
                 "duplicate": True,
                 "card": existing.to_dict(),
-                "verb_infinitive": _importable_infinitive_for_card(user_sub, existing),
+                **_verb_sync_fields(user_sub, existing),
             }
         )
     card = Card(user_sub=user_sub, front=front, back=back)
@@ -1345,7 +1383,7 @@ def api_cards_create():
         {
             "ok": True,
             "card": card.to_dict(),
-            "verb_infinitive": _importable_infinitive_for_card(user_sub, card),
+            **_verb_sync_fields(user_sub, card),
         }
     )
 
@@ -1367,7 +1405,7 @@ def api_cards_update(card_id: int):
                 "ok": True,
                 "duplicate": True,
                 "card": card.to_dict(),
-                "verb_infinitive": _importable_infinitive_for_card(card.user_sub, card),
+                **_verb_sync_fields(card.user_sub, card),
             }
         )
     card.front = front
@@ -1377,7 +1415,7 @@ def api_cards_update(card_id: int):
         {
             "ok": True,
             "card": card.to_dict(),
-            "verb_infinitive": _importable_infinitive_for_card(card.user_sub, card),
+            **_verb_sync_fields(card.user_sub, card),
         }
     )
 
@@ -1853,11 +1891,10 @@ def cards_practice():
 
     difficulty = state.get("difficulty", "advanced")
     revealed = bool(state.get("current_revealed"))
-    # If this card is a Spanish verb the user hasn't added to conjugation
-    # practice yet, expose its infinitive so the page can offer a one-click add.
-    verb_infinitive = _card_verb_infinitive(card)
-    if verb_infinitive and _find_user_verb(_current_user_sub(), verb_infinitive):
-        verb_infinitive = None
+    # If this card is a pool verb the user hasn't added to conjugation practice
+    # yet, expose its infinitive + language so the page can offer a one-click add.
+    verb_match = _importable_verb_for_card(_current_user_sub(), card)
+    verb_lang, verb_infinitive = verb_match if verb_match else (None, None)
     # Only leak the correct answer to the page in hardcore mode (JS needs it
     # for client-side green/red feedback) or when the card has been revealed
     # (template renders it as the prominent study display).
@@ -1875,6 +1912,7 @@ def cards_practice():
         total=state["total"],
         max_questions=min(count, total_cards),
         verb_infinitive=verb_infinitive,
+        verb_lang=verb_lang,
         get_text=get_text,
     )
 
@@ -1929,9 +1967,10 @@ def cards_validate_api():
 
 # ----- Verb conjugation practice -------------------------------------------
 #
-# A third user-owned practice section (alongside cards) for conjugating Spanish
-# verbs. The user builds a personal pool of verbs drawn from the global pool
-# (languages/es/conjugations.json); a session asks them to conjugate
+# A third user-owned practice section (alongside cards) for conjugating verbs,
+# per language (Spanish and German today). The user builds a personal pool of
+# verbs drawn from the language's global pool
+# (languages/<lang>/conjugations.json); a session asks them to conjugate
 # verb + pronoun + tense. Mirrors the cards subsystem: VerbCard model, advanced/
 # hardcore typed answers with live word highlighting, 10 questions by default.
 
@@ -1946,10 +1985,10 @@ def _user_verb_or_404(verb_id: int) -> VerbCard:
     return verb
 
 
-def _user_verbs() -> list[VerbCard]:
+def _user_verbs(lang_code: str) -> list[VerbCard]:
     return (
         db.session.query(VerbCard)
-        .filter_by(user_sub=_current_user_sub())
+        .filter_by(user_sub=_current_user_sub(), lang=lang_code)
         .order_by(VerbCard.created_at.desc())
         .all()
     )
@@ -1959,12 +1998,14 @@ def _normalize_infinitive(value: str) -> str:
     return (value or "").strip().lower()
 
 
-def _find_user_verb(user_sub: str, infinitive: str) -> VerbCard | None:
+def _find_user_verb(user_sub: str, lang_code: str, infinitive: str) -> VerbCard | None:
     """Return the user's VerbCard for an infinitive (case-insensitive), or None."""
     key = _normalize_infinitive(infinitive)
     if not key:
         return None
-    for verb in db.session.query(VerbCard).filter_by(user_sub=user_sub).all():
+    for verb in (
+        db.session.query(VerbCard).filter_by(user_sub=user_sub, lang=lang_code).all()
+    ):
         if _normalize_infinitive(verb.infinitive) == key:
             return verb
     return None
@@ -1972,46 +2013,58 @@ def _find_user_verb(user_sub: str, infinitive: str) -> VerbCard | None:
 
 # ----- Cards <-> conjugation sync ------------------------------------------
 # An index card and a conjugation verb are linked purely by value: a card whose
-# front or back is a Spanish infinitive in the global pool can become a VerbCard,
-# and a VerbCard whose infinitive isn't yet a card side can become a card. The
-# sync is additive only — neither side is deleted when the other is.
+# front or back is an infinitive in one of the global pools can become a
+# VerbCard, and a VerbCard whose infinitive isn't yet a card side can become a
+# card. The sync is additive only — neither side is deleted when the other is.
 
 
-def _card_verb_infinitive(card: Card) -> str | None:
-    """Return the normalized pool infinitive matching this card, or None.
+def _card_verb_match(card: Card) -> tuple[str, str] | None:
+    """Return (lang, normalized infinitive) for the pool matching this card.
 
-    Either side may carry the Spanish verb (cards are free-form), so the front
-    is checked first, then the back. Matching is exact against the global pool.
+    Either side may carry the verb (cards are free-form), so the front is
+    checked first, then the back; per side, the conjugation languages are tried
+    in registry order. Matching is exact against each global pool.
     """
     for side in (card.front, card.back):
         infinitive = _normalize_infinitive(side)
-        if infinitive and es_conjugations.verb_exists(infinitive):
-            return infinitive
+        if not infinitive:
+            continue
+        for lang_code in get_languages_with_conjugation():
+            if _conj_pool(lang_code).verb_exists(infinitive):
+                return lang_code, infinitive
     return None
 
 
-def _owned_infinitives(user_sub: str) -> set[str]:
-    """Normalized infinitives already in the user's conjugation pool."""
+def _owned_infinitives(user_sub: str) -> set[tuple[str, str]]:
+    """(lang, normalized infinitive) pairs already in the user's verb pool."""
     return {
-        _normalize_infinitive(v.infinitive)
+        (v.lang, _normalize_infinitive(v.infinitive))
         for v in db.session.query(VerbCard).filter_by(user_sub=user_sub).all()
     }
 
 
-def _importable_card_verbs(user_sub: str, cards: list[Card]) -> list[tuple[Card, str]]:
+def _importable_card_verbs(
+    user_sub: str, cards: list[Card], lang_code: str | None = None
+) -> list[tuple[Card, str, str]]:
     """Cards whose verb side is a pool infinitive the user doesn't own yet.
 
-    De-duped by infinitive (the first card carrying it wins) so the same verb
-    appearing on two cards is only offered once.
+    Returns (card, lang, infinitive) tuples, de-duped by (lang, infinitive)
+    (the first card carrying it wins) so the same verb appearing on two cards
+    is only offered once. ``lang_code`` restricts matches to one pool (used on
+    /<lang>/conjugate); None offers verbs from every pool (used on /cards).
     """
     owned = _owned_infinitives(user_sub)
-    seen: set[str] = set()
-    out: list[tuple[Card, str]] = []
+    seen: set[tuple[str, str]] = set()
+    out: list[tuple[Card, str, str]] = []
     for card in cards:
-        infinitive = _card_verb_infinitive(card)
-        if infinitive and infinitive not in owned and infinitive not in seen:
-            seen.add(infinitive)
-            out.append((card, infinitive))
+        match = _card_verb_match(card)
+        if match is None:
+            continue
+        if lang_code is not None and match[0] != lang_code:
+            continue
+        if match not in owned and match not in seen:
+            seen.add(match)
+            out.append((card, match[0], match[1]))
     return out
 
 
@@ -2026,18 +2079,26 @@ def _verbs_missing_from_cards(
     return [v for v in verbs if _normalize_infinitive(v.infinitive) not in card_sides]
 
 
-def _importable_infinitive_for_card(user_sub: str, card: Card) -> str | None:
-    """The pool infinitive a single card could add to conjugation, or None.
+def _importable_verb_for_card(user_sub: str, card: Card) -> tuple[str, str] | None:
+    """The (lang, infinitive) a single card could add to conjugation, or None.
 
     Used by the JSON card API so the client can show the "verb" badge and
     "add to conjugation" button on a freshly created/edited card without a
     page reload. Returns None when the card isn't a verb or the user already
     owns it.
     """
-    infinitive = _card_verb_infinitive(card)
-    if not infinitive or _find_user_verb(user_sub, infinitive):
+    match = _card_verb_match(card)
+    if match is None or _find_user_verb(user_sub, match[0], match[1]):
         return None
-    return infinitive
+    return match
+
+
+def _verb_sync_fields(user_sub: str, card: Card) -> dict:
+    """JSON fields describing a card's importable verb (for the cards API)."""
+    match = _importable_verb_for_card(user_sub, card)
+    if match is None:
+        return {"verb_infinitive": None, "verb_lang": None}
+    return {"verb_infinitive": match[1], "verb_lang": match[0]}
 
 
 # Practice-category buckets shared by the conjugate insights matrix. Mirrors the
@@ -2058,6 +2119,7 @@ def _conj_category(score: float | None) -> str | None:
 
 
 def _conj_build_matrix(
+    lang_code: str,
     verbs: list[VerbCard],
     by_tense: dict,
     by_person: dict,
@@ -2072,14 +2134,14 @@ def _conj_build_matrix(
     Each cell carries the recap parameters for a focused session, where the two
     "other" dimensions inherit the current selection.
     """
-    sel_tenses = [t for t in selected_tenses if t in CONJ_TENSE_KEYS]
+    sel_tenses = [t for t in selected_tenses if t in conj_tense_keys(lang_code)]
     sel_persons = list(selected_persons)
 
     def _empty_cells() -> dict:
         return {cat: [] for cat in CONJ_MATRIX_CATEGORIES}
 
     tense_members = _empty_cells()
-    for t in CONJ_TENSES:
+    for t in conj_tenses(lang_code):
         if t["key"] not in sel_tenses:
             continue
         counts = by_tense.get(t["key"], [0, 0])
@@ -2095,7 +2157,7 @@ def _conj_build_matrix(
             verb_members[cat].append(v.id)
 
     person_members = _empty_cells()
-    for p in CONJ_PERSONS:
+    for p in conj_persons(lang_code):
         if p["index"] not in sel_persons:
             continue
         counts = by_person.get(p["index"], [0, 0])
@@ -2164,13 +2226,17 @@ def _build_conjugate_dashboard_stats(
     per-person aggregates plus the verb list are emitted as JSON for that.
 
     Verbs are scored from `VerbCard`; tenses and pronouns are aggregated from
-    `ConjugationStat` rows (per user/tense/person).
+    `ConjugationStat` rows (per user/lang/tense/person).
     """
     total_attempts = sum(v.times_practiced for v in verbs)
     total_correct = sum(v.times_correct for v in verbs)
     overall_accuracy = total_correct / total_attempts if total_attempts else None
 
-    stats_rows = db.session.query(ConjugationStat).filter_by(user_sub=user_sub).all()
+    stats_rows = (
+        db.session.query(ConjugationStat)
+        .filter_by(user_sub=user_sub, lang=lang_code)
+        .all()
+    )
 
     # Aggregate [practiced, correct] by tense and by person.
     by_tense: dict[str, list[int]] = {}
@@ -2184,10 +2250,10 @@ def _build_conjugate_dashboard_stats(
         p[1] += row.times_correct
 
     # Initial selection mirrors the practice form's defaults.
-    default_tenses = [t["key"] for t in CONJ_TENSES if t["default_on"]]
-    default_persons = [p["index"] for p in CONJ_PERSONS if not p["optional"]]
+    default_tenses = [t["key"] for t in conj_tenses(lang_code) if t["default_on"]]
+    default_persons = [p["index"] for p in conj_persons(lang_code) if not p["optional"]]
     matrix = _conj_build_matrix(
-        verbs, by_tense, by_person, default_tenses, default_persons
+        lang_code, verbs, by_tense, by_person, default_tenses, default_persons
     )
 
     # Client-side payload: full per-tense / per-person aggregates plus the verb
@@ -2213,7 +2279,7 @@ def _build_conjugate_dashboard_stats(
                 "practiced": by_tense.get(t["key"], [0, 0])[0],
                 "correct": by_tense.get(t["key"], [0, 0])[1],
             }
-            for t in CONJ_TENSES
+            for t in conj_tenses(lang_code)
         ],
         "persons": [
             {
@@ -2222,7 +2288,7 @@ def _build_conjugate_dashboard_stats(
                 "practiced": by_person.get(p["index"], [0, 0])[0],
                 "correct": by_person.get(p["index"], [0, 0])[1],
             }
-            for p in CONJ_PERSONS
+            for p in conj_persons(lang_code)
         ],
         "verbs": [
             {
@@ -2260,16 +2326,16 @@ def _require_conjugation_lang(lang_code: str) -> None:
 def conjugate(lang_code):
     """Manage page: add verbs (autocomplete) + practice settings + start."""
     _require_conjugation_lang(lang_code)
-    verbs = _user_verbs()
+    verbs = _user_verbs(lang_code)
     practice_lang = session.get("learn_language")
     if practice_lang and is_language_ready(practice_lang):
         practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
     else:
-        practice_numbers_url = url_for("mode_selection", lang_code=CONJUGATION_LANG)
+        practice_numbers_url = url_for("mode_selection", lang_code=lang_code)
     dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs, lang_code)
     user_sub = _current_user_sub()
     user_cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
-    card_import_count = len(_importable_card_verbs(user_sub, user_cards))
+    card_import_count = len(_importable_card_verbs(user_sub, user_cards, lang_code))
     missing = _verbs_missing_from_cards(verbs, user_cards)
     missing_infinitives = {v.infinitive for v in missing}
     missing_in_cards_json = json.dumps(
@@ -2280,13 +2346,14 @@ def conjugate(lang_code):
         user=session["user"],
         lang_code=lang_code,
         verbs=verbs,
-        tenses=CONJ_TENSES,
-        persons=CONJ_PERSONS,
-        vosotros_index=VOSOTROS_INDEX,
+        tenses=conj_tenses(lang_code),
+        persons=conj_persons(lang_code),
+        optional_person_index=conj_optional_person_index(lang_code),
         default_count=CONJ_QUESTIONS_DEFAULT,
         practice_numbers_url=practice_numbers_url,
         dashboard=dashboard,
         get_text=get_text,
+        conj_text=lambda key: _conj_text(key, lang_code),
         card_import_count=card_import_count,
         missing_in_cards_count=len(missing),
         missing_in_cards_json=missing_in_cards_json,
@@ -2294,15 +2361,27 @@ def conjugate(lang_code):
     )
 
 
+def _requested_conjugation_lang(value: str | None) -> str:
+    """Validate a lang parameter on the un-namespaced /api/verbs* endpoints.
+
+    Missing/unknown values fall back to "es" (the only pool that existed before
+    the endpoints grew a lang parameter, so older clients keep working).
+    """
+    if value in get_languages_with_conjugation():
+        return value
+    return DEFAULT_CONJUGATION_LANG
+
+
 @app.route("/api/verbs/search")
 @login_required
 def api_verbs_search():
     """Autocomplete: pool infinitives starting with ?q=, excluding owned verbs."""
+    lang_code = _requested_conjugation_lang(request.args.get("lang"))
     query = (request.args.get("q") or "").strip()
     if not query:
         return jsonify({"ok": True, "results": []})
-    owned = {_normalize_infinitive(v.infinitive) for v in _user_verbs()}
-    results = es_conjugations.search_verbs(query, limit=8, exclude=owned)
+    owned = {_normalize_infinitive(v.infinitive) for v in _user_verbs(lang_code)}
+    results = _conj_pool(lang_code).search_verbs(query, limit=8, exclude=owned)
     return jsonify({"ok": True, "results": results})
 
 
@@ -2311,24 +2390,27 @@ def api_verbs_search():
 def api_verbs_create():
     """Add a verb. Rejects verbs not in the global pool with an 'unsupported' flag."""
     payload = request.get_json(silent=True) or {}
+    lang_code = _requested_conjugation_lang(payload.get("lang"))
     infinitive = _normalize_infinitive(payload.get("infinitive"))
     if not infinitive:
         return jsonify(
             {"ok": False, "error": get_text("conjugate_flash_verb_required")}
         ), 400
-    if not es_conjugations.verb_exists(infinitive):
+    if not _conj_pool(lang_code).verb_exists(infinitive):
         return jsonify(
             {
                 "ok": False,
                 "unsupported": True,
-                "error": get_text("conjugate_flash_unsupported").format(infinitive),
+                "error": _conj_text("conjugate_flash_unsupported", lang_code).format(
+                    infinitive
+                ),
             }
         ), 400
     user_sub = _current_user_sub()
-    existing = _find_user_verb(user_sub, infinitive)
+    existing = _find_user_verb(user_sub, lang_code, infinitive)
     if existing is not None:
         return jsonify({"ok": True, "duplicate": True, "verb": existing.to_dict()})
-    verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+    verb = VerbCard(user_sub=user_sub, lang=lang_code, infinitive=infinitive)
     db.session.add(verb)
     db.session.commit()
     return jsonify({"ok": True, "verb": verb.to_dict()})
@@ -2347,14 +2429,17 @@ def conjugate_verb_add(lang_code):
     if not infinitive:
         flash(get_text("conjugate_flash_verb_required"), "error")
         return redirect(url_for("conjugate", lang_code=lang_code))
-    if not es_conjugations.verb_exists(infinitive):
-        flash(get_text("conjugate_flash_unsupported").format(infinitive), "error")
+    if not _conj_pool(lang_code).verb_exists(infinitive):
+        flash(
+            _conj_text("conjugate_flash_unsupported", lang_code).format(infinitive),
+            "error",
+        )
         return redirect(url_for("conjugate", lang_code=lang_code))
     user_sub = _current_user_sub()
-    if _find_user_verb(user_sub, infinitive) is not None:
+    if _find_user_verb(user_sub, lang_code, infinitive) is not None:
         flash(get_text("conjugate_flash_verb_duplicate"), "info")
         return redirect(url_for("conjugate", lang_code=lang_code))
-    verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+    verb = VerbCard(user_sub=user_sub, lang=lang_code, infinitive=infinitive)
     db.session.add(verb)
     db.session.commit()
     flash(get_text("conjugate_flash_verb_added"), "success")
@@ -2364,13 +2449,22 @@ def conjugate_verb_add(lang_code):
 @app.route("/api/verbs/import-from-cards", methods=["POST"])
 @login_required
 def api_verbs_import_from_cards():
-    """Add every index-card verb (front/back in the pool) not already owned."""
+    """Add every index-card verb (front/back in a pool) not already owned.
+
+    An optional `lang` in the JSON payload restricts the import to one pool
+    (the /<lang>/conjugate page passes its own language); without it, every
+    conjugation language's matches are imported (the /cards page's button).
+    """
+    payload = request.get_json(silent=True) or {}
+    lang_filter = payload.get("lang")
+    if lang_filter is not None and lang_filter not in get_languages_with_conjugation():
+        lang_filter = DEFAULT_CONJUGATION_LANG
     user_sub = _current_user_sub()
     cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
-    importable = _importable_card_verbs(user_sub, cards)
+    importable = _importable_card_verbs(user_sub, cards, lang_filter)
     added = []
-    for _card, infinitive in importable:
-        verb = VerbCard(user_sub=user_sub, infinitive=infinitive)
+    for _card, verb_lang, infinitive in importable:
+        verb = VerbCard(user_sub=user_sub, lang=verb_lang, infinitive=infinitive)
         db.session.add(verb)
         added.append(verb)
     if added:
@@ -2401,9 +2495,11 @@ def conjugate_verb_delete(lang_code, verb_id: int):
     return redirect(url_for("conjugate", lang_code=lang_code))
 
 
-def _form_available(infinitive: str, tense_key: str, person_index: int) -> str | None:
+def _form_available(
+    lang_code: str, infinitive: str, tense_key: str, person_index: int
+) -> str | None:
     """Return the conjugated form for a verb/tense/person, or None if absent."""
-    forms = es_conjugations.get_verb_forms(infinitive)
+    forms = _conj_pool(lang_code).get_verb_forms(infinitive)
     if not forms:
         return None
     tense_forms = forms.get(tense_key)
@@ -2413,18 +2509,20 @@ def _form_available(infinitive: str, tense_key: str, person_index: int) -> str |
 
 
 def _build_conjugation_hint(
-    tense_key: str, person_index: int, ui_lang: str = "en"
+    lang_code: str, tense_key: str, person_index: int, ui_lang: str = "en"
 ) -> dict:
     """Build the practice "Hint" excerpt for a (tense, pronoun) prompt.
 
-    Shows the tense's regular pattern via the model verbs (one per -ar/-er/-ir
-    group) with the prompted pronoun's row flagged, plus a one-line blurb. Forms
-    come straight from the committed global pool, so no answer is leaked (unless
-    the verb under test is itself a model verb, which just shows the pattern).
+    Shows the tense's regular pattern via the language's model verbs (one per
+    conjugation group) with the prompted pronoun's row flagged, plus a one-line
+    blurb. Forms come straight from the committed global pool, so no answer is
+    leaked (unless the verb under test is itself a model verb, which just shows
+    the pattern).
     """
+    pool = _conj_pool(lang_code)
     models = []
-    for infinitive in CONJ_HINT_MODEL_VERBS:
-        forms = es_conjugations.get_verb_forms(infinitive) or {}
+    for infinitive in conj_hint_model_verbs(lang_code):
+        forms = pool.get_verb_forms(infinitive) or {}
         models.append(
             {
                 "infinitive": infinitive,
@@ -2432,28 +2530,37 @@ def _build_conjugation_hint(
             }
         )
     persons = [
-        {"label": person_label(p["index"]), "highlight": p["index"] == person_index}
-        for p in CONJ_PERSONS
+        {
+            "label": person_label(lang_code, p["index"]),
+            "highlight": p["index"] == person_index,
+        }
+        for p in conj_persons(lang_code)
     ]
     return {
-        "blurb": tense_hint(tense_key, ui_lang),
+        "blurb": tense_hint(lang_code, tense_key, ui_lang),
         "persons": persons,
         "models": models,
     }
 
 
 def _record_conjugation_stat(
-    user_sub: str, tense_key: str, person_index: int, correct: bool
+    user_sub: str, lang_code: str, tense_key: str, person_index: int, correct: bool
 ) -> None:
-    """Upsert the per-(tense, person) practice tally for the dashboard insights."""
+    """Upsert the per-(lang, tense, person) practice tally for the insights."""
     stat = (
         db.session.query(ConjugationStat)
-        .filter_by(user_sub=user_sub, tense_key=tense_key, person_index=person_index)
+        .filter_by(
+            user_sub=user_sub,
+            lang=lang_code,
+            tense_key=tense_key,
+            person_index=person_index,
+        )
         .first()
     )
     if stat is None:
         stat = ConjugationStat(
             user_sub=user_sub,
+            lang=lang_code,
             tense_key=tense_key,
             person_index=person_index,
             times_practiced=0,
@@ -2471,13 +2578,13 @@ def conjugate_practice_start(lang_code):
     """Initialize a conjugation practice session and redirect to the first prompt."""
     _require_conjugation_lang(lang_code)
     selected_tenses = [
-        t for t in request.form.getlist("tenses") if t in CONJ_TENSE_KEYS
+        t for t in request.form.getlist("tenses") if t in conj_tense_keys(lang_code)
     ]
     include_vosotros = request.form.get("include_vosotros") in ("1", "true", "on")
     # An explicit `persons` list (used by the insights-matrix recap buttons)
-    # overrides the vosotros-toggle default. Values are validated against the
-    # known person slots.
-    valid_person_indices = {p["index"] for p in CONJ_PERSONS}
+    # overrides the optional-person-toggle default. Values are validated
+    # against the known person slots.
+    valid_person_indices = {p["index"] for p in conj_persons(lang_code)}
     explicit_persons = []
     for raw in request.form.getlist("persons"):
         try:
@@ -2489,10 +2596,13 @@ def conjugate_practice_start(lang_code):
     if explicit_persons:
         persons = sorted(set(explicit_persons))
     else:
+        # The optional slot (Spanish vosotros; German has none) is included
+        # only when the toggle is on.
+        optional_index = conj_optional_person_index(lang_code)
         persons = [
             p["index"]
-            for p in CONJ_PERSONS
-            if p["index"] != VOSOTROS_INDEX or include_vosotros
+            for p in conj_persons(lang_code)
+            if p["index"] != optional_index or include_vosotros
         ]
     # An explicit `verb_ids` list (also from recap buttons) restricts the verb
     # pool to those verbs; empty means all of the user's verbs.
@@ -2517,7 +2627,7 @@ def conjugate_practice_start(lang_code):
         count = CONJ_QUESTIONS_DEFAULT
     count = max(1, min(count, 100))
 
-    user_verbs = _user_verbs()
+    user_verbs = _user_verbs(lang_code)
     if not user_verbs:
         flash(get_text("conjugate_flash_need_verbs"), "info")
         return redirect(url_for("conjugate", lang_code=lang_code))
@@ -2534,6 +2644,7 @@ def conjugate_practice_start(lang_code):
             return redirect(url_for("conjugate", lang_code=lang_code))
 
     session["conjugate_practice"] = {
+        "lang": lang_code,
         "tenses": selected_tenses,
         "persons": persons,
         "verb_ids": verb_ids,
@@ -2550,8 +2661,17 @@ def conjugate_practice_start(lang_code):
     return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
 
-def _get_conjugate_state() -> dict | None:
-    return session.get("conjugate_practice")
+def _get_conjugate_state(lang_code: str | None = None) -> dict | None:
+    """The active practice state; None when absent or started for another language."""
+    state = session.get("conjugate_practice")
+    if state is None:
+        return None
+    if (
+        lang_code is not None
+        and state.get("lang", DEFAULT_CONJUGATION_LANG) != lang_code
+    ):
+        return None
+    return state
 
 
 def _save_conjugate_state(state: dict) -> None:
@@ -2580,8 +2700,9 @@ def _load_next_conjugation(state: dict) -> dict | None:
     then a random available tense+person for that verb that hasn't been asked.
     Verbs whose questions are all exhausted are dropped and another is tried.
     """
+    lang_code = state.get("lang", DEFAULT_CONJUGATION_LANG)
     asked = set(state.get("asked", []))
-    verbs = _user_verbs()
+    verbs = _user_verbs(lang_code)
     verb_ids = state.get("verb_ids")
     if verb_ids:
         allowed = set(verb_ids)
@@ -2597,7 +2718,10 @@ def _load_next_conjugation(state: dict) -> dict | None:
                 key = _conj_asked_key(tenses, verb.id, tense_key, person_index)
                 if key in asked:
                     continue
-                if _form_available(verb.infinitive, tense_key, person_index) is None:
+                if (
+                    _form_available(lang_code, verb.infinitive, tense_key, person_index)
+                    is None
+                ):
                     continue
                 out.append((tense_key, person_index))
         return out
@@ -2612,7 +2736,7 @@ def _load_next_conjugation(state: dict) -> dict | None:
 
     options = open_questions(verb)
     tense_key, person_index = options[secrets.randbelow(len(options))]
-    correct = _form_available(verb.infinitive, tense_key, person_index)
+    correct = _form_available(lang_code, verb.infinitive, tense_key, person_index)
     current = {
         "verb_id": verb.id,
         "infinitive": verb.infinitive,
@@ -2633,7 +2757,9 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     # The pattern hint is an advanced-mode aid only; hardcore stays no-help.
     hint = (
-        _build_conjugation_hint(current["tense_key"], current["person_index"], ui_lang)
+        _build_conjugation_hint(
+            lang_code, current["tense_key"], current["person_index"], ui_lang
+        )
         if (difficulty != "hardcore" and not revealed)
         else None
     )
@@ -2642,8 +2768,8 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
         user=session["user"],
         lang_code=lang_code,
         infinitive=current["infinitive"],
-        pronoun=person_label(current["person_index"]),
-        tense_label=tense_label(current["tense_key"], ui_lang),
+        pronoun=person_label(lang_code, current["person_index"]),
+        tense_label=tense_label(lang_code, current["tense_key"], ui_lang),
         correct_answer=correct if (revealed or difficulty == "hardcore") else None,
         difficulty=difficulty,
         revealed=revealed,
@@ -2661,7 +2787,7 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
 def conjugate_practice(lang_code):
     """Show the current conjugation question or process an answer/reveal."""
     _require_conjugation_lang(lang_code)
-    state = _get_conjugate_state()
+    state = _get_conjugate_state(lang_code)
     if state is None:
         return redirect(url_for("conjugate", lang_code=lang_code))
 
@@ -2680,6 +2806,7 @@ def conjugate_practice(lang_code):
                 verb.record_attempt(False)
                 _record_conjugation_stat(
                     verb.user_sub,
+                    lang_code,
                     current["tense_key"],
                     current["person_index"],
                     False,
@@ -2736,6 +2863,7 @@ def conjugate_practice(lang_code):
                     verb.record_attempt(False)
                     _record_conjugation_stat(
                         verb.user_sub,
+                        lang_code,
                         current["tense_key"],
                         current["person_index"],
                         False,
@@ -2750,6 +2878,7 @@ def conjugate_practice(lang_code):
                     verb.record_attempt(True)
                     _record_conjugation_stat(
                         verb.user_sub,
+                        lang_code,
                         current["tense_key"],
                         current["person_index"],
                         True,
@@ -2767,6 +2896,7 @@ def conjugate_practice(lang_code):
                 verb.record_attempt(False)
                 _record_conjugation_stat(
                     verb.user_sub,
+                    lang_code,
                     current["tense_key"],
                     current["person_index"],
                     False,
@@ -2805,9 +2935,10 @@ def conjugate_practice(lang_code):
 def conjugate_practice_results(lang_code):
     """Show the final conjugation score and clear session state."""
     _require_conjugation_lang(lang_code)
-    state = session.pop("conjugate_practice", None)
-    if state is None:
+    if _get_conjugate_state(lang_code) is None:
+        # No session, or one started for another language — leave that one alone.
         return redirect(url_for("conjugate", lang_code=lang_code))
+    state = session.pop("conjugate_practice")
     score = state.get("score", 0)
     total = state.get("total", 0)
     percentage = (score / total * 100) if total else 0
@@ -2819,6 +2950,7 @@ def conjugate_practice_results(lang_code):
         total=total,
         percentage=percentage,
         get_text=get_text,
+        conj_text=lambda key: _conj_text(key, lang_code),
     )
 
 
@@ -2833,6 +2965,9 @@ def conjugate_validate_api():
     if state.get("difficulty") == "hardcore":
         return jsonify({"error": "Validation disabled in hardcore mode"}), 400
     user_input = (request.json or {}).get("input", "")
+    # `lang_code="es"` forces the word_based strategy regardless of the
+    # session's conjugation language — right for conjugated forms too ("de"
+    # would select the compound-number decomposer, which only fits numbers).
     result = quiz_logic.validate_partial_answer(
         user_input, current["correct_answer"], "es"
     )

@@ -384,11 +384,17 @@ class TestLearnPage:
         assert response.status_code == 200
         assert b"-ar" in response.data
 
+    def test_learn_conjugations_loads_german(self, client):
+        """The conjugation learn page loads for German."""
+        response = client.get("/de/learn/conjugations")
+        assert response.status_code == 200
+        assert "Präteritum".encode() in response.data
+
     def test_learn_conjugations_unavailable_language(self, client):
         """A language without conjugation materials redirects to mode selection."""
-        response = client.get("/de/learn/conjugations", follow_redirects=False)
+        response = client.get("/fr/learn/conjugations", follow_redirects=False)
         assert response.status_code == 302
-        assert "/de" in response.headers["Location"]
+        assert "/fr" in response.headers["Location"]
 
     def test_mode_selection_links_to_conjugation_learn(self, client):
         """The Spanish mode page surfaces the 'Learn conjugations' card."""
