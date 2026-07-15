@@ -169,6 +169,8 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇮🇹",
         "ready": True,
         "has_learn_materials": True,
+        "has_conjugation": True,
+        "has_conjugation_materials": True,
         "description": "Learn Italian numbers from 1 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {

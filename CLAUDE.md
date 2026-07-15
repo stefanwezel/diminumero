@@ -43,6 +43,10 @@ uv run tools/generate_conjugations.py
 # engine — verbecc has no German support; no dependencies)
 uv run tools/generate_conjugations_de.py
 
+# Regenerate the global Italian verb-conjugation pool (verbecc-based, like
+# the Spanish one; generation-only dependency)
+uv run tools/generate_conjugations_it.py
+
 # Production deployment (uses .env.prod, not .env)
 docker-compose -f docker-compose.prod.yml up --build
 ```
@@ -79,13 +83,15 @@ docker-compose -f docker-compose.prod.yml up --build
   - `config.py`: Language registry (`AVAILABLE_LANGUAGES`) with metadata, validation strategies, and helper functions (`get_language_numbers()`, `get_validation_strategy()`, `get_component_decomposer()`, `get_languages_with_learn_materials()`, `get_languages_with_audio_mode()`, etc.). Per-language flags include `ready`, `has_learn_materials`, and `has_audio_mode`.
   - Each language directory (es/, de/, fr/, ne/, da/, it/, ja/, ko/, zh/, pt/, tr/, sv/, no/, cy/, ga/) contains `numbers.py` (number→translation dict) and `generate_numbers.py`
 
-- **conjugation_config.py** (project root): Per-language config for the verb-conjugation section — `CONJ_LANGS` keyed by language (`es`, `de`), each with `tenses` (the usefulness-ranked checklist; each `key` matches that language's `conjugations.json`), `persons` (the six pronoun slots), `optional_person_index` (the user-toggleable slot: 4/vosotros for Spanish, `None` for German), and `hint_model_verbs`. Plus `CONJ_QUESTIONS_DEFAULT = 10` and the lang-aware helpers `conj_tenses()`/`conj_persons()`/`tense_label()`/`tense_hint()`/`person_label()`.
+- **conjugation_config.py** (project root): Per-language config for the verb-conjugation section — `CONJ_LANGS` keyed by language (`es`, `it`, `de`), each with `tenses` (the usefulness-ranked checklist; each `key` matches that language's `conjugations.json`), `persons` (the six pronoun slots), `optional_person_index` (the user-toggleable slot: 4/vosotros for Spanish, `None` for Italian and German), and `hint_model_verbs`. Plus `CONJ_QUESTIONS_DEFAULT = 10` and the lang-aware helpers `conj_tenses()`/`conj_persons()`/`tense_label()`/`tense_hint()`/`person_label()`.
 
-- **languages/es/conjugations.json** + **languages/de/conjugations.json**: The committed global verb pools (Spanish ~840 verbs, slots [yo, tú, él/ella/usted, nosotros, vosotros, ellos]; German ~215 verbs, slots [ich, du, er/sie/es, wir, ihr, sie/Sie]). Each tense → a 6-element list, `null` where a person has no form; German composite tenses are full multi-word strings ("habe gemacht") and separable verbs split in finite forms ("stehe auf"). Both JSONs are kept in frequency order so autocomplete ranks common verbs first. `languages/conjugation_loader.py` holds the shared `ConjugationPool` class (lazy load, `verb_exists()`, `get_verb_forms()`, `search_verbs(prefix, limit, exclude)` with accent folding); `languages/<code>/conjugations.py` are thin per-language modules instantiating it, mapped in `app.py`'s `CONJ_POOLS`.
+- **languages/{es,it,de}/conjugations.json**: The committed global verb pools (Spanish ~840 verbs, slots [yo, tú, él/ella/usted, nosotros, vosotros, ellos]; Italian ~250 verbs, slots [io, tu, lui/lei, noi, voi, loro]; German ~215 verbs, slots [ich, du, er/sie/es, wir, ihr, sie/Sie]). Each tense → a 6-element list, `null` where a person has no form; composite tenses are full multi-word strings ("habe gemacht", "sono andato") and German separable verbs split in finite forms ("stehe auf"). Both JSONs are kept in frequency order so autocomplete ranks common verbs first. `languages/conjugation_loader.py` holds the shared `ConjugationPool` class (lazy load, `verb_exists()`, `get_verb_forms()`, `search_verbs(prefix, limit, exclude)` with accent folding); `languages/<code>/conjugations.py` are thin per-language modules instantiating it, mapped in `app.py`'s `CONJ_POOLS`.
 
 - **tools/generate_conjugations.py**: PEP-723 script (`uv run tools/generate_conjugations.py`) that conjugates a frequency-ranked list of popular verbs with the `verbecc` library and writes `languages/es/conjugations.json`. `verbecc` is a **generation-only** dependency (declared inline, never in `pyproject.toml` — the app reads the committed JSON). The script monkeypatches a verbecc voseo bug and rebuilds a few verbecc-defective regular verbs (`pasar`, `resultar`, `suceder`) from a regular proxy; verbs verbecc can't conjugate correctly are auto-dropped.
 
 - **tools/generate_conjugations_de.py**: PEP-723 script (`uv run tools/generate_conjugations_de.py`, no dependencies) that writes `languages/de/conjugations.json` from a self-contained German conjugation engine — weak verbs by rule, strong/mixed verbs from the `IRREGULAR` table, sein/haben/werden/modals/wissen from `FULL_OVERRIDES`, separable verbs from `SEPARABLE`, sein-auxiliary verbs from `SEIN_VERBS`. Ends with ~65 hard-coded form self-checks that abort on any regression.
+
+- **tools/generate_conjugations_it.py**: PEP-723 script (`uv run tools/generate_conjugations_it.py`) that writes `languages/it/conjugations.json` via `verbecc` (generation-only dependency, like the Spanish generator). Italian-specific extraction: strips the congiuntivo's "che " lead-in, maps the imperative's "-" placeholder to null, keeps the first of slash-joined alternatives (faccio/fo), prefers the masculine gender variant, and force-rebuilds the composite tenses of `ESSERE_VERBS` (verbecc wrongly gives avere to piacere/riuscire). ~29 form self-checks.
 
 - **tools/generate_audio.py**: PEP-723 script (`uv run tools/generate_audio.py --lang <code>`) that synthesizes one MP3 per number with ElevenLabs' `eleven_turbo_v2_5` cloud model into `static/audio/<lang>/<n>.mp3`. Each number is voiced by a speaker drawn at random from the language's `VOICE_POOLS` entry so a deck mixes voices. Needs `API_KEY_11_LABS` in `.env`. Languages currently shipping audio (1000 MP3s each): es, de, fr, ja, pt, sv.
 
@@ -113,7 +119,7 @@ Quiz:
 - `/<lang_code>/listen` — Listening mode quiz (GET/POST): plays the number's MP3, accepts a typed digit answer, supports reveal/next
 - `/<lang_code>/results` — Results page
 - `/<lang_code>/learn` — Numbers Learn page (languages with `has_learn_materials`)
-- `/<lang_code>/learn/conjugations` — Verb-conjugation Learn page (languages with `has_conjugation_materials`; Spanish and German today). Explains the regular patterns, tenses, and irregular verbs (Spanish: `-ar/-er/-ir`, stem-changers; German: weak/strong verbs, separable prefixes). The mode-selection page shows the numbers and conjugation Learn pages as two side-by-side cards.
+- `/<lang_code>/learn/conjugations` — Verb-conjugation Learn page (languages with `has_conjugation_materials`; Spanish, Italian and German today). Explains the regular patterns, tenses, and irregular verbs (Spanish: `-ar/-er/-ir`, stem-changers; Italian: `-are/-ere/-ire`, -isc- verbs, avere/essere; German: weak/strong verbs, separable prefixes). The mode-selection page shows the numbers and conjugation Learn pages as two side-by-side cards.
 - `/api/validate` — POST, JSON: live word-by-word validation for advanced/hardcore modes
 
 Auth (Auth0 OIDC):
@@ -132,7 +138,7 @@ Cards (login required; ownership enforced by `Card.user_sub == session["user"]["
 - `/cards/practice/results` — Final score; clears practice state
 - `/api/cards/validate` — POST, JSON: word-by-word validation for the active practice card (forces word-based strategy regardless of card language)
 
-Verb conjugation (login required; Spanish and German today; the page/practice routes are namespaced under `/<lang_code>/` and 404 for languages without `has_conjugation` via `_require_conjugation_lang()`; ownership enforced by `VerbCard.user_sub`, pool scoping by `VerbCard.lang`). The context processor exposes `conjugation_lang` for globally-rendered links — the session's learn language when it has a conjugation section, else `DEFAULT_CONJUGATION_LANG` (`"es"`). The `/api/verbs*` JSON endpoints stay un-namespaced but take a `lang` parameter (query/body, default `"es"`); `/api/conjugate/validate` reads the language from the active practice session:
+Verb conjugation (login required; Spanish, Italian and German today; the page/practice routes are namespaced under `/<lang_code>/` and 404 for languages without `has_conjugation` via `_require_conjugation_lang()`; ownership enforced by `VerbCard.user_sub`, pool scoping by `VerbCard.lang`). The context processor exposes `conjugation_lang` for globally-rendered links — the session's learn language when it has a conjugation section, else `DEFAULT_CONJUGATION_LANG` (`"es"`). The `/api/verbs*` JSON endpoints stay un-namespaced but take a `lang` parameter (query/body, default `"es"`); `/api/conjugate/validate` reads the language from the active practice session:
 - `/<lang_code>/conjugate` — manage page: add-verb form with autocomplete, a foldable insights dashboard (shown once any attempt exists), the user's verb list for that language, and practice settings (tense checklist, optional-person toggle where the language has one, difficulty, sampling, count) + Start. Wired by `static/js/conjugate.js` (which reads the page language from the add-section's `data-lang`). The dashboard is built by `_build_conjugate_dashboard_stats()` — three weakest-first panels (tenses, verbs, pronouns) each rendered with the shared `progress_ring` macro; verb scores come from `VerbCard`, tense/pronoun scores are aggregated from `ConjugationStat` rows (filtered by lang) recorded per attempt by `_record_conjugation_stat()`.
 - `/api/verbs/search?q=&lang=` — GET: autocomplete from that language's pool, excluding owned verbs.
 - `/api/verbs` (POST, JSON `{infinitive, lang}`) — add a verb; rejects verbs not in that language's pool with `{"unsupported": true}` (JS shows a popup). `/api/verbs/<id>` (DELETE) and `/<lang_code>/conjugate/<id>/delete` (POST fallback) remove a verb.
@@ -186,7 +192,7 @@ Tests live in `tests/` with a shared `tests/conftest.py` that:
 - sets dummy `AUTH0_*` env vars so `oauth.register("auth0", ...)` runs in CI (otherwise auth tests would hit `No such client: auth0`);
 - creates/drops all tables around every test via an autouse fixture.
 
-Test files: `test_app.py` (quiz routes/session), `test_quiz_logic.py` (engine in isolation), `test_auth.py` (Auth0 login/callback/logout, mocked), `test_cards.py` (card CRUD, practice flow, scoring, sharing/import dedup, dashboard stats), `test_conjugate.py` (verb add/validate-against-pool/reject-unknown, autocomplete, practice flow + scoring, vosotros toggle, validate API, insights dashboard + `ConjugationStat` recording — against Spanish), `test_conjugate_de.py` (the German pool's forms incl. separable verbs/modals, `lang` scoping of the verbs API, es/de pool isolation, per-language sessions and dashboards), `test_card_verb_sync.py` (index-card ↔ conjugation sync incl. language detection), `test_poll.py` (feedback poll endpoint and storage). Each test file still defines its own `app`/`client` fixtures.
+Test files: `test_app.py` (quiz routes/session), `test_quiz_logic.py` (engine in isolation), `test_auth.py` (Auth0 login/callback/logout, mocked), `test_cards.py` (card CRUD, practice flow, scoring, sharing/import dedup, dashboard stats), `test_conjugate.py` (verb add/validate-against-pool/reject-unknown, autocomplete, practice flow + scoring, vosotros toggle, validate API, insights dashboard + `ConjugationStat` recording — against Spanish), `test_conjugate_de.py` (the German pool's forms incl. separable verbs/modals, `lang` scoping of the verbs API, es/de pool isolation, per-language sessions and dashboards), `test_conjugate_it.py` (the Italian pool's forms incl. -isc- verbs and avere/essere auxiliaries, it-pool scoping), `test_card_verb_sync.py` (index-card ↔ conjugation sync incl. language detection), `test_poll.py` (feedback poll endpoint and storage). Each test file still defines its own `app`/`client` fixtures.
 
 ## Contributor Guides
 
@@ -194,7 +200,7 @@ Each kind of content has a dedicated top-level guide. Point to these (and keep t
 - **ADD_NUMBERS.md** — add number practice for a new language (the most common recurring task; the starting point for any new language).
 - **ADD_LISTENING_EXERCISES.md** — add the spoken-number Listening quiz to a language.
 - **ADD_LEARNING_MATERIALS.md** — add Learn/tutorial pages for a language.
-- **ADD_CONJUGATING_PRACTICE.md** — the verb-conjugation section (Spanish + German; regenerating the pools, tense checklists, adding a language).
+- **ADD_CONJUGATING_PRACTICE.md** — the verb-conjugation section (Spanish, Italian + German; regenerating the pools, tense checklists, adding a language).
 - **ADD_UI_LANGUAGE.md** — add a new UI/interface translation.
 
 ## Adding Number Practice (a new language)
@@ -220,4 +226,4 @@ See ADD_LISTENING_EXERCISES.md for the complete guide. Key steps:
 
 ## Verb-Conjugation Practice
 
-See ADD_CONJUGATING_PRACTICE.md for the complete guide. The conjugation section (Spanish and German) reads committed global pools (`languages/<code>/conjugations.json`); regenerate offline with `uv run tools/generate_conjugations.py` (Spanish; `verbecc` is a generation-only dependency) or `uv run tools/generate_conjugations_de.py` (German; self-contained rule engine). Tenses/pronouns are configured per language in `conjugation_config.py` (`CONJ_LANGS`).
+See ADD_CONJUGATING_PRACTICE.md for the complete guide. The conjugation section (Spanish, Italian and German) reads committed global pools (`languages/<code>/conjugations.json`); regenerate offline with `uv run tools/generate_conjugations.py` (Spanish) / `uv run tools/generate_conjugations_it.py` (Italian) — both verbecc-based, `verbecc` is a generation-only dependency — or `uv run tools/generate_conjugations_de.py` (German; self-contained rule engine). Tenses/pronouns are configured per language in `conjugation_config.py` (`CONJ_LANGS`).

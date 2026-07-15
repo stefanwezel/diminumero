@@ -1,11 +1,12 @@
 """Configuration for the verb-conjugation practice section, per language.
 
-``CONJ_LANGS`` holds one entry per supported conjugation language (Spanish and
-German today). Each entry defines the fixed, usefulness-ranked tense list (a
-checklist the user ticks), the six person/pronoun slots, which slot (if any) is
-optional/user-toggleable (Spanish vosotros; German has none), and the model
-verbs used by the practice "Hint" excerpt. The ``key`` of each tense matches
-the keys in that language's ``languages/<code>/conjugations.json``.
+``CONJ_LANGS`` holds one entry per supported conjugation language (Spanish,
+Italian and German today). Each entry defines the fixed, usefulness-ranked
+tense list (a checklist the user ticks), the six person/pronoun slots, which
+slot (if any) is optional/user-toggleable (Spanish vosotros; Italian and German
+have none), and the model verbs used by the practice "Hint" excerpt. The
+``key`` of each tense matches the keys in that language's
+``languages/<code>/conjugations.json``.
 
 Tense fields: ``label_native`` (label in the conjugated language) /
 ``label_en``, and ``hint_native`` / ``hint_en`` (the one-line pattern blurb;
@@ -122,6 +123,102 @@ CONJ_LANGS = {
         # Model verbs (one per -ar/-er/-ir group) used to illustrate a tense's
         # regular pattern in the practice "Hint" excerpt. All in the global pool.
         "hint_model_verbs": ["hablar", "comer", "vivir"],
+    },
+    "it": {
+        "tenses": [
+            {
+                "key": "indicativo/presente",
+                "label_native": "Presente",
+                "label_en": "Present",
+                "default_on": True,
+                "hint_en": "Drop -are/-ere/-ire and add the present endings; many -ire verbs insert -isc- (capire → capisco).",
+                "hint_native": "Togli -are/-ere/-ire e aggiungi le desinenze del presente; molti verbi in -ire inseriscono -isc- (capire → capisco).",
+            },
+            {
+                "key": "indicativo/passato-prossimo",
+                "label_native": "Passato prossimo",
+                "label_en": "Present perfect",
+                "default_on": False,
+                "hint_en": "The everyday spoken past: present of avere or essere + past participle (-ato/-uto/-ito).",
+                "hint_native": "Il passato del parlato: presente di avere o essere + participio passato (-ato/-uto/-ito).",
+            },
+            {
+                "key": "indicativo/imperfetto",
+                "label_native": "Imperfetto",
+                "label_en": "Imperfect",
+                "default_on": False,
+                "hint_en": "Ongoing/repeated past ('used to'): -avo, -evo, -ivo endings on the stem.",
+                "hint_native": "Passato continuo o abituale: desinenze -avo, -evo, -ivo sulla radice.",
+            },
+            {
+                "key": "indicativo/futuro",
+                "label_native": "Futuro semplice",
+                "label_en": "Future",
+                "default_on": False,
+                "hint_en": "Drop the final -e and add -ò, -ai, -à, -emo, -ete, -anno; -are verbs change a→e (parlerò).",
+                "hint_native": "Togli la -e finale e aggiungi -ò, -ai, -à, -emo, -ete, -anno; i verbi in -are cambiano a→e (parlerò).",
+            },
+            {
+                "key": "condizionale/presente",
+                "label_native": "Condizionale",
+                "label_en": "Conditional",
+                "default_on": False,
+                "hint_en": "Same stem as the future + -ei, -esti, -ebbe, -emmo, -este, -ebbero (parlerei).",
+                "hint_native": "Stessa radice del futuro + -ei, -esti, -ebbe, -emmo, -este, -ebbero (parlerei).",
+            },
+            {
+                "key": "congiuntivo/presente",
+                "label_native": "Congiuntivo presente",
+                "label_en": "Present subjunctive",
+                "default_on": False,
+                "hint_en": "Wishes/doubt after 'che': -are takes -i endings, -ere/-ire take -a endings (che io parli, che io creda).",
+                "hint_native": "Desideri/dubbi dopo 'che': -are prende desinenze in -i, -ere/-ire in -a (che io parli, che io creda).",
+            },
+            {
+                "key": "congiuntivo/imperfetto",
+                "label_native": "Congiuntivo imperfetto",
+                "label_en": "Imperfect subjunctive",
+                "default_on": False,
+                "hint_en": "Hypotheticals and past subjunctive: -assi, -essi, -issi on the stem (se io parlassi).",
+                "hint_native": "Ipotesi e subordinate al passato: -assi, -essi, -issi sulla radice (se io parlassi).",
+            },
+            {
+                "key": "indicativo/trapassato-prossimo",
+                "label_native": "Trapassato prossimo",
+                "label_en": "Past perfect",
+                "default_on": False,
+                "hint_en": "Past before the past: imperfect of avere/essere (avevo, ero) + past participle.",
+                "hint_native": "Azione anteriore nel passato: imperfetto di avere/essere (avevo, ero) + participio passato.",
+            },
+            {
+                "key": "indicativo/passato-remoto",
+                "label_native": "Passato remoto",
+                "label_en": "Historic past",
+                "default_on": False,
+                "hint_en": "Literary/historical past: -ai, -asti, -ò…; many irregular stems (fui, feci, disse).",
+                "hint_native": "Passato letterario/storico: -ai, -asti, -ò…; molte radici irregolari (fui, feci, disse).",
+            },
+            {
+                "key": "imperativo/affermativo",
+                "label_native": "Imperativo",
+                "label_en": "Imperative",
+                "default_on": False,
+                "hint_en": "Commands; there is no io form. tu of -are verbs ends in -a (parla!); the lui/lei slot is the formal Lei command (parli!).",
+                "hint_native": "Ordini; non esiste la forma io. Il tu dei verbi in -are finisce in -a (parla!); la casella lui/lei è il Lei di cortesia (parli!).",
+            },
+        ],
+        "persons": [
+            {"index": 0, "key": "io", "label": "io", "optional": False},
+            {"index": 1, "key": "tu", "label": "tu", "optional": False},
+            {"index": 2, "key": "lui", "label": "lui/lei", "optional": False},
+            {"index": 3, "key": "noi", "label": "noi", "optional": False},
+            {"index": 4, "key": "voi", "label": "voi", "optional": False},
+            {"index": 5, "key": "loro", "label": "loro", "optional": False},
+        ],
+        # Italian has no optional person slot (all six are standard).
+        "optional_person_index": None,
+        # One model verb per -are/-ere/-ire group.
+        "hint_model_verbs": ["parlare", "credere", "dormire"],
     },
     "de": {
         "tenses": [
