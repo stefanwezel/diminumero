@@ -52,6 +52,18 @@ class TestIndexRoute:
         data = client.get("/").data.decode("utf-8")
         assert "conjugate-lang-modal" not in data
 
+    def test_index_seo_mentions_all_conjugation_languages(self, client):
+        data = client.get("/").data.decode("utf-8")
+        assert "Spanish, Italian and German verb conjugation" in data
+
+    def test_learn_conjugations_seo_localized_per_ui_language(self, client):
+        """The learn-conjugation SEO keys exist per learn language in every
+        UI block that had the old Spanish-only key (no English fallback)."""
+        with client.session_transaction() as sess:
+            sess["language"] = "it"
+        data = client.get("/de/learn/conjugations").data.decode("utf-8")
+        assert "Impara la coniugazione dei verbi tedeschi" in data
+
     def test_index_sets_default_language(self, client):
         """Test that index sets default UI language to English."""
         with client.session_transaction() as sess:
