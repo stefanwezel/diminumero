@@ -1,0 +1,15 @@
+{# Language picker opened by the home page's "Open Conjugation" CTA. #}
+<div id="conjugate-lang-modal" class="poll-modal" role="dialog" aria-modal="true" aria-labelledby="conjugate-lang-modal-title">
+    <div class="poll-modal-content conj-lang-modal-content">
+        <button type="button" id="conjugate-lang-close-btn" class="poll-close-btn" aria-label="{{ get_text('poll_close_btn') }}">&times;</button>
+        <h2 id="conjugate-lang-modal-title" class="poll-modal-title">{{ get_text('home_conjugate_modal_title') }}</h2>
+        <div class="conj-lang-options">
+            {% for code in conjugation_langs %}
+                <a class="btn btn-primary conj-lang-option" href="{{ url_for('conjugate', lang_code=code) }}">
+                    <span class="conj-lang-flag" aria-hidden="true">{{ languages[code].flag }}</span>
+                    <span>{{ languages[code].name }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>

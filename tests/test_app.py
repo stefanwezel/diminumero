@@ -38,6 +38,20 @@ class TestIndexRoute:
         # Should have Spanish and Nepalese options - check for native names
         assert "español" in data.lower() or "नेपाली" in data
 
+    def test_index_conjugation_cta_opens_language_picker(self, client):
+        """Logged in, the conjugation CTA opens a picker listing every
+        conjugation language instead of linking straight to one."""
+        with client.session_transaction() as sess:
+            sess["user"] = {"sub": "auth0|user-1", "name": "Ada"}
+        data = client.get("/").data.decode("utf-8")
+        assert "conjugate-lang-modal" in data
+        for code in ("es", "it", "de"):
+            assert f"/{code}/conjugate" in data
+
+    def test_index_no_language_picker_when_logged_out(self, client):
+        data = client.get("/").data.decode("utf-8")
+        assert "conjugate-lang-modal" not in data
+
     def test_index_sets_default_language(self, client):
         """Test that index sets default UI language to English."""
         with client.session_transaction() as sess:

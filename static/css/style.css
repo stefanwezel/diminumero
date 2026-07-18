@@ -1783,6 +1783,31 @@ body {
     }
 }
 
+/* Conjugation language picker (home page CTA) */
+.conj-lang-modal-content {
+    max-width: 380px;
+}
+
+.conj-lang-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.conj-lang-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.conj-lang-flag {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
 /* Learn Section */
 html {
     scroll-behavior: smooth;

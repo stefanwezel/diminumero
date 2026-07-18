@@ -338,7 +338,10 @@ def index():
         }
 
     return render_template(
-        "language_selection.html", languages=translated_languages, get_text=get_text
+        "language_selection.html",
+        languages=translated_languages,
+        conjugation_langs=get_languages_with_conjugation(),
+        get_text=get_text,
     )
 
 

@@ -54,9 +54,9 @@
                 <p class="new-feature-body">{{ get_text('home_conjugate_body') }}</p>
             </div>
             {% if user %}
-                <a href="{{ url_for('conjugate', lang_code=conjugation_lang) }}" class="btn btn-primary new-feature-cta">
+                <button type="button" id="conjugateLangBtn" class="btn btn-primary new-feature-cta">
                     {{ get_text('home_conjugate_cta_open') }}
-                </a>
+                </button>
             {% else %}
                 <a href="{{ url_for('login') }}" class="btn btn-primary new-feature-cta">
                     {{ get_text('home_conjugate_cta_login') }}
@@ -219,8 +219,15 @@
 }
 
 </style>
+
+{% if user %}
+    {% include "_conjugate_lang_modal.html" %}
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% if user %}
+<script src="{{ url_for('static', filename='js/conjugate_lang_modal.js') }}"></script>
+{% endif %}
 {% endblock %}

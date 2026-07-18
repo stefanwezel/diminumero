@@ -40,6 +40,7 @@ TRANSLATIONS = {
         "home_conjugate_body": "Sign in to build a verb pool and drill conjugations across tenses and pronouns.",
         "home_conjugate_cta_login": "Log in to try it",
         "home_conjugate_cta_open": "Open Conjugation",
+        "home_conjugate_modal_title": "Which language do you want to practice?",
         # Mode selection
         "mode_easy": "Easy",
         "mode_easy_desc": "Multiple choice with 4 options. Perfect for beginners!",
@@ -430,6 +431,7 @@ TRANSLATIONS = {
         "home_conjugate_body": "Melde dich an, um einen Verbpool aufzubauen und Konjugationen über Zeiten und Pronomen zu üben.",
         "home_conjugate_cta_login": "Anmelden und ausprobieren",
         "home_conjugate_cta_open": "Konjugation öffnen",
+        "home_conjugate_modal_title": "Welche Sprache möchtest du üben?",
         # Mode selection
         "mode_easy": "Einfach",
         "mode_easy_desc": "Multiple Choice mit 4 Optionen. Perfekt für Anfänger!",
