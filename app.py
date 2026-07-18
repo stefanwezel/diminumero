@@ -2694,6 +2694,27 @@ def _conj_asked_key(
     return f"{verb_id}:{tenses.index(tense_key)}:{person_index}"
 
 
+def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
+    """Every spelling accepted for the current conjugation question.
+
+    The German Sie-imperative is stored with its obligatory inverted pronoun
+    ("gehen Sie", "stehen Sie auf") since that's the grammatically complete
+    form, but every other cell expects just the verb form — so accept the
+    pronoun-less variant too.
+    """
+    correct = current["correct_answer"]
+    answers = [correct]
+    if (
+        lang_code == "de"
+        and current["tense_key"] == "imperativ"
+        and current["person_index"] == 5
+    ):
+        bare = " ".join(w for w in correct.split() if w != "Sie")
+        if bare:
+            answers.append(bare)
+    return answers
+
+
 def _load_next_conjugation(state: dict) -> dict | None:
     """Pick the next unasked (verb, tense, person) question; advance state.
 
@@ -2822,9 +2843,13 @@ def conjugate_practice(lang_code):
             # shown answer before advancing (client enforces too; never trust it).
             if state.get("reveal_mode", "type") == "type":
                 user_answer = (request.form.get("answer") or "").strip()
+                acceptable = _conj_acceptable_answers(lang_code, current)
                 if not (
                     user_answer
-                    and quiz_logic.check_answer_advanced(user_answer, correct_answer)
+                    and any(
+                        quiz_logic.check_answer_advanced(user_answer, a)
+                        for a in acceptable
+                    )
                 ):
                     return redirect(url_for("conjugate_practice", lang_code=lang_code))
             state["asked"].append(
@@ -2853,8 +2878,9 @@ def conjugate_practice(lang_code):
             and request.form.get("hint_used") == "1"
         )
         user_answer = (request.form.get("answer") or "").strip()
-        if user_answer and quiz_logic.check_answer_advanced(
-            user_answer, correct_answer
+        acceptable = _conj_acceptable_answers(lang_code, current)
+        if user_answer and any(
+            quiz_logic.check_answer_advanced(user_answer, a) for a in acceptable
         ):
             state["total"] += 1
             if hint_used:
@@ -2969,10 +2995,13 @@ def conjugate_validate_api():
     # `lang_code="es"` forces the word_based strategy regardless of the
     # session's conjugation language — right for conjugated forms too ("de"
     # would select the compound-number decomposer, which only fits numbers).
-    result = quiz_logic.validate_partial_answer(
-        user_input, current["correct_answer"], "es"
+    acceptable = _conj_acceptable_answers(
+        state.get("lang", DEFAULT_CONJUGATION_LANG), current
     )
-    return jsonify(result)
+    results = [
+        quiz_logic.validate_partial_answer(user_input, a, "es") for a in acceptable
+    ]
+    return jsonify(_pick_best_validation(results))
 
 
 @app.route("/robots.txt")

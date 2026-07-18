@@ -272,6 +272,72 @@ class TestGermanPractice:
             assert "conjugate_practice" in sess
 
 
+class TestSieImperativeLeniency:
+    """The pool stores the Sie-imperative with its obligatory pronoun
+    ("machen Sie"); the practice check also accepts the bare verb form."""
+
+    def _force_sie_imperative(self, client, verb_id, infinitive, difficulty="hardcore"):
+        client.post(
+            "/de/conjugate/practice/start",
+            data={
+                "tenses": "imperativ",
+                "difficulty": difficulty,
+                "sampling_mode": "random",
+                "count": "3",
+            },
+        )
+        correct = de_conjugations.get_verb_forms(infinitive)["imperativ"][5]
+        with client.session_transaction() as sess:
+            state = sess["conjugate_practice"]
+            state["current"] = {
+                "verb_id": verb_id,
+                "infinitive": infinitive,
+                "tense_key": "imperativ",
+                "person_index": 5,
+                "correct_answer": correct,
+            }
+            state["current_revealed"] = False
+            # Nested mutation alone doesn't mark the cookie session dirty.
+            sess["conjugate_practice"] = state
+
+    def test_bare_form_without_sie_counts_as_correct(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "machen")
+        login(client)
+        self._force_sie_imperative(client, verb_id, "machen")
+        client.post("/de/conjugate/practice", data={"answer": "machen"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+        with flask_app.app_context():
+            verb = db.session.get(VerbCard, verb_id)
+            assert verb.times_correct == 1
+
+    def test_full_form_with_sie_still_correct(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "machen")
+        login(client)
+        self._force_sie_imperative(client, verb_id, "machen")
+        client.post("/de/conjugate/practice", data={"answer": "machen Sie"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+
+    def test_separable_verb_drops_only_the_pronoun(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "aufstehen")
+        login(client)
+        self._force_sie_imperative(client, verb_id, "aufstehen")
+        # Stored form is "stehen Sie auf"; the bare variant keeps the prefix.
+        client.post("/de/conjugate/practice", data={"answer": "stehen auf"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["score"] == 1
+
+    def test_validate_api_accepts_bare_form(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "machen")
+        login(client)
+        self._force_sie_imperative(client, verb_id, "machen", difficulty="advanced")
+        resp = client.post("/api/conjugate/validate", json={"input": "machen"})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["is_complete"] and data["is_correct"]
+
+
 class TestDashboardLangScope:
     def test_stats_are_scoped_per_lang(self, client):
         add_verb(SAMPLE_USER["sub"], "machen", lang="de")
