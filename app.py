@@ -69,10 +69,11 @@ from conjugation_config import (
 )
 from languages.de import conjugations as de_conjugations
 from languages.es import conjugations as es_conjugations
+from languages.it import conjugations as it_conjugations
 
 # Committed global verb pools, one per conjugation language. Every language
 # with `has_conjugation: True` in languages/config.py must have an entry here.
-CONJ_POOLS = {"es": es_conjugations, "de": de_conjugations}
+CONJ_POOLS = {"es": es_conjugations, "it": it_conjugations, "de": de_conjugations}
 
 # Fallback language for globally-rendered conjugation links (nav, home page)
 # when the session's learn language has no conjugation section.

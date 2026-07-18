@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Impara la coniugazione dei verbi italiani</h1>
+      <p>
+        Questa pagina spiega i modelli fondamentali dei <strong>verbi italiani</strong> — le
+        desinenze regolari <em>-are / -ere / -ire</em>, i tempi che eserciterai qui, la scelta
+        tra avere ed essere al passato e i verbi irregolari che non puoi evitare.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">Le sei persone</a></li>
+        <li><a href="#patterns">Modelli regolari: -are / -ere / -ire</a></li>
+        <li><a href="#tenses">I tempi che eserciti</a></li>
+        <li><a href="#auxiliaries">Avere o essere?</a></li>
+        <li><a href="#irregular">Verbi irregolari</a></li>
+        <li><a href="#mistakes">Errori comuni</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>Le sei persone</h2>
+      <p>
+        Ogni tempo italiano ha una forma per <strong>persona</strong>. La desinenza dice già chi
+        compie l'azione, quindi il pronome soggetto di solito si omette.
+      </p>
+      <ul>
+        <li><strong>io</strong></li>
+        <li><strong>tu</strong> (informale)</li>
+        <li><strong>lui / lei</strong> (e il <em>Lei</em> di cortesia)</li>
+        <li><strong>noi</strong></li>
+        <li><strong>voi</strong></li>
+        <li><strong>loro</strong></li>
+      </ul>
+      <p>
+        La forma di cortesia usa <em>Lei</em> con la riga <strong>lui/lei</strong> — una sola
+        riga copre entrambi.
+      </p>
+    </section>
+
+    <section id="patterns" class="learn-section">
+      <h2>Modelli regolari: -are / -ere / -ire</h2>
+      <p>
+        Gli infiniti italiani finiscono in <strong>-are</strong>, <strong>-ere</strong> o
+        <strong>-ire</strong>. Togli la desinenza per ottenere la <strong>radice</strong>, poi
+        aggiungi la desinenza di persona e tempo. Al <strong>presente indicativo</strong>:
+      </p>
+      <ul>
+        <li><strong>-are</strong> (parlare → parl-): <em>-o, -i, -a, -iamo, -ate, -ano</em> → parlo, parli, parla, parliamo, parlate, parlano</li>
+        <li><strong>-ere</strong> (credere → cred-): <em>-o, -i, -e, -iamo, -ete, -ono</em> → credo, credi, crede, crediamo, credete, credono</li>
+        <li><strong>-ire</strong> (dormire → dorm-): <em>-o, -i, -e, -iamo, -ite, -ono</em> → dormo, dormi, dorme, dormiamo, dormite, dormono</li>
+      </ul>
+      <p>
+        Molti verbi in <strong>-ire</strong> inseriscono <strong>-isc-</strong> in tutte le
+        persone tranne noi/voi: <em>capire → capisco, capisci, capisce, capiamo, capite,
+        capiscono</em>. <em>Finire</em> e <em>preferire</em> funzionano allo stesso modo.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: tu di <em>lavorare</em>, noi di <em>vendere</em>, loro di <em>capire</em>?</summary>
+        <p><strong>lavori</strong> · <strong>vendiamo</strong> · <strong>capiscono</strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>I tempi che eserciti</h2>
+      <p>
+        Nelle impostazioni puoi combinare liberamente questi tempi (esempi con <em>parlare</em>):
+      </p>
+      <ul>
+        <li><strong>Presente</strong> — adesso / abitudini: <em>parlo</em>.</li>
+        <li><strong>Passato prossimo</strong> — il passato del parlato; avere/essere + participio: <em>ho parlato, sono andato</em>.</li>
+        <li><strong>Imperfetto</strong> — passato continuo o abituale: <em>parlavo</em>.</li>
+        <li><strong>Futuro semplice</strong> — accadrà: <em>parlerò</em> (nota -are → -er-).</li>
+        <li><strong>Condizionale</strong> — accadrebbe; stessa radice del futuro: <em>parlerei</em>.</li>
+        <li><strong>Congiuntivo presente</strong> — desideri, dubbi dopo <em>che</em>: <em>(che io) parli</em>.</li>
+        <li><strong>Congiuntivo imperfetto</strong> — ipotesi con <em>se</em>: <em>(se io) parlassi</em>.</li>
+        <li><strong>Trapassato prossimo</strong> — azione anteriore nel passato: <em>avevo parlato, ero andato</em>.</li>
+        <li><strong>Passato remoto</strong> — passato letterario/storico: <em>parlai</em>; serve soprattutto per leggere.</li>
+        <li><strong>Imperativo</strong> — ordini: <em>parla! (tu), parli! (Lei), parlate! (voi)</em>.</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: che tempo è <em>parlavi</em>? E <em>parlerai</em>?</summary>
+        <p><strong>parlavi</strong> = imperfetto · <strong>parlerai</strong> = futuro semplice</p>
+      </details>
+    </section>
+
+    <section id="auxiliaries" class="learn-section">
+      <h2>Avere o essere?</h2>
+      <p>
+        Il <strong>passato prossimo</strong> e il <strong>trapassato prossimo</strong> si formano
+        con un ausiliare + participio passato (<em>-ato / -uto / -ito</em>):
+      </p>
+      <ul>
+        <li>La maggior parte dei verbi usa <strong>avere</strong>: <em>ho parlato, ho creduto, ho dormito</em>.</li>
+        <li>I verbi di <strong>movimento o cambiamento di stato</strong> usano <strong>essere</strong>:
+          <em>sono andato, sono venuto, sono nato, sono diventato</em> — e anche
+          <em>piacere</em> e <em>riuscire</em> (<em>mi è piaciuto, sono riuscito</em>).</li>
+        <li>Con essere il participio <strong>concorda</strong>: <em>lei è andata, noi siamo andati</em>.</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: passato prossimo, io di <em>vedere</em> e io di <em>partire</em>?</summary>
+        <p><strong>ho visto</strong> · <strong>sono partito</strong></p>
+      </details>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Verbi irregolari</h2>
+      <p>
+        I verbi italiani più frequenti sono anche i più irregolari — impara prima questi:
+      </p>
+      <ul>
+        <li><strong>essere</strong>: sono, sei, è, siamo, siete, sono · participio <em>stato</em></li>
+        <li><strong>avere</strong>: ho, hai, ha, abbiamo, avete, hanno · <em>avuto</em></li>
+        <li><strong>fare</strong>: faccio, fai, fa, facciamo, fate, fanno · <em>fatto</em></li>
+        <li><strong>andare</strong>: vado, vai, va, andiamo, andate, vanno · <em>andato</em></li>
+        <li><strong>dire</strong>: dico, dici, dice, diciamo, dite, dicono · <em>detto</em></li>
+      </ul>
+      <p>
+        Attenzione ai <strong>participi irregolari</strong>: <em>fatto, detto, letto, scritto,
+        visto, preso, messo, aperto, chiuso, scelto, vinto, perso</em> — il passato prossimo di
+        tutti i giorni dipende da loro.
+      </p>
+      <p>
+        Il <strong>passato remoto</strong> ha radici irregolari proprie:
+        <em>essere → fui</em>, <em>fare → feci</em>, <em>dire → dissi</em>,
+        <em>nascere → nacqui</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: io di <em>fare</em> (presente) e il participio di <em>scrivere</em>?</summary>
+        <p><strong>faccio</strong> · <strong>scritto</strong></p>
+      </details>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errori comuni</h2>
+      <ol>
+        <li><strong>Dimenticare -isc-</strong>: <em>capisco</em>, non "capo"; ma <em>capiamo</em> (niente -isc- in noi/voi).</li>
+        <li><strong>Ausiliare sbagliato</strong>: <em>sono andato</em>, mai "ho andato"; <em>mi è piaciuto</em>, non "ho piaciuto".</li>
+        <li><strong>Radice del futuro in -are</strong>: si dice <em>parlerò</em>, non "parlarò" — la a diventa e.</li>
+        <li><strong>Participi irregolari</strong>: <em>ho fatto</em>, non "ho facuto"; <em>ho scritto</em>, non "ho scrivuto".</li>
+        <li><strong>Congiuntivo dopo che</strong>: <em>penso che sia</em>, non "penso che è" (nel parlato curato).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

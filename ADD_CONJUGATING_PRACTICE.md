@@ -3,7 +3,7 @@
 This guide explains how the verb-conjugation practice section works and how to
 maintain or extend it: regenerating the global verb pools, adjusting a language's
 tense checklist, and how to add another conjugation language. The section
-supports **Spanish and German** today.
+supports **Spanish, Italian and German** today.
 
 Related guides:
 - [ADD_NUMBERS.md](ADD_NUMBERS.md) — add a new language's number deck.
@@ -28,10 +28,12 @@ pool per language generated offline; the app only reads the committed JSON.
 |------|------|
 | `conjugation_config.py` (project root) | `CONJ_LANGS` — one entry per conjugation language with `tenses` (usefulness-ranked checklist; each `key` matches the language's JSON), `persons` (six pronoun slots), `optional_person_index` (the user-toggleable slot: vosotros/4 for Spanish, `None` for German), and `hint_model_verbs`. Plus `CONJ_QUESTIONS_DEFAULT = 10` and the lang-aware helpers `conj_tenses()`, `conj_persons()`, `tense_label()`, `tense_hint()`, `person_label()`. |
 | `languages/es/conjugations.json` | The committed Spanish pool (~840 popular verbs × the curated tenses). Each tense → a 6-element list aligned to `[yo, tú, él/ella/usted, nosotros, vosotros, ellos]`, with `null` where a person has no form. Kept in frequency order so autocomplete ranks common verbs first. |
+| `languages/it/conjugations.json` | The committed Italian pool (~250 popular verbs). Slots: `[io, tu, lui/lei, noi, voi, loro]`. Composite tenses store the masculine citation form ("sono andato", "siamo andati"); essere-auxiliary verbs are curated in the generator's `ESSERE_VERBS`. |
 | `languages/de/conjugations.json` | The committed German pool (~215 popular verbs). Slots: `[ich, du, er/sie/es, wir, ihr, sie/Sie]`. Composite tenses are stored as full multi-word strings ("habe gemacht", "werde aufstehen"); separable verbs split in finite forms ("stehe auf"). |
 | `languages/conjugation_loader.py` | Shared `ConjugationPool` class (lazy JSON load, `verb_exists`, `get_verb_forms`, `search_verbs` with accent-folding). |
 | `languages/<code>/conjugations.py` | Thin per-language module instantiating `ConjugationPool` and re-exporting its methods. `app.py` maps lang → module in `CONJ_POOLS`. |
 | `tools/generate_conjugations.py` | PEP-723 generator for the Spanish JSON (drives the `verbecc` library). |
+| `tools/generate_conjugations_it.py` | PEP-723 generator for the Italian JSON (also verbecc). Italian quirks handled in extraction: the congiuntivo's "che " lead-in, the imperative's "-" placeholder, slash-joined alternatives, gender variants, and a curated `ESSERE_VERBS` set that force-rebuilds composite tenses (verbecc wrongly gives avere to piacere/riuscire). ~29 self-checks. |
 | `tools/generate_conjugations_de.py` | PEP-723 generator for the German JSON. verbecc has no German support, so this is a **self-contained rule engine**: weak verbs by rule, strong/mixed/modal verbs from an explicit `IRREGULAR`/`FULL_OVERRIDES` table, separable verbs from `SEPARABLE`, sein-auxiliary verbs from `SEIN_VERBS`. Ends with ~65 hard-coded self-checks that abort generation on any wrong form. |
 | `models.py` | `VerbCard` (a user's verb + `lang` + rolling score) and `ConjugationStat` (per-`(lang, tense, person)` tally for the insights dashboard). |
 | `static/js/conjugate.js` | Wires the `/<lang>/conjugate` manage page (autocomplete, settings, start). Reads the page language from the add-section's `data-lang` and sends it on every `/api/verbs*` call; reads the delete endpoint from `data-delete-base`. |
@@ -114,6 +116,7 @@ The pools are generated offline and committed; the app only reads them.
 
 ```bash
 uv run tools/generate_conjugations.py      # Spanish (verbecc-based)
+uv run tools/generate_conjugations_it.py   # Italian (verbecc-based)
 uv run tools/generate_conjugations_de.py   # German (self-contained rule engine)
 ```
 
@@ -139,7 +142,8 @@ German notes:
   the engine rules.
 
 Both pools are kept in frequency order so autocomplete ranks common verbs first.
-After regenerating, run `uv run pytest tests/test_conjugate.py tests/test_conjugate_de.py`
+After regenerating, run
+`uv run pytest tests/test_conjugate.py tests/test_conjugate_it.py tests/test_conjugate_de.py`
 and spot-check a few verbs in the app.
 
 ## Adjusting a Tense Checklist
@@ -155,14 +159,15 @@ Edit the language's `tenses` list in `CONJ_LANGS` (`conjugation_config.py`). Eac
 
 The pronoun slots live in the language's `persons` list; `optional_person_index`
 names the one user-toggleable slot (Spanish vosotros, index 4) or is `None`
-(German — the template then hides the toggle entirely).
+(Italian and German — the template then hides the toggle entirely).
 
 ## Extending to Another Language
 
-With the per-language refactor in place, adding conjugation language number three
+With the per-language refactor in place, adding another conjugation language
 means:
 1. A generator + committed `languages/<code>/conjugations.json` (verbecc covers
-   ca/es/fr/it/pt/ro; otherwise write a rule engine like the German one).
+   ca/es/fr/it/pt/ro — start from the Italian generator; otherwise write a rule
+   engine like the German one).
 2. A thin `languages/<code>/conjugations.py` (copy the German one) and an entry in
    `CONJ_POOLS` in `app.py`.
 3. A `CONJ_LANGS["<code>"]` entry in `conjugation_config.py` (tenses, persons,
@@ -172,7 +177,7 @@ means:
 5. Per-language translation keys: `conjugate_title_<code>`,
    `conjugate_add_placeholder_<code>`, `conjugate_flash_unsupported_<code>` (and
    `seo_title_learn_conj_<code>` / `meta_desc_learn_conj_<code>` for the Learn page).
-6. Tests mirroring `tests/test_conjugate_de.py` (pool spot-checks, lang scoping).
+6. Tests mirroring `tests/test_conjugate_it.py` (pool spot-checks, lang scoping).
 
 No model or route changes are needed — `VerbCard`/`ConjugationStat` already carry
 `lang` and the routes are namespaced.
@@ -212,15 +217,17 @@ the vosotros toggle, the validate API, and the insights dashboard +
 (form spot-checks incl. separable verbs and modals) and everything
 multi-language: `lang` scoping of the API endpoints, pool isolation, the missing
 vosotros toggle, and per-language sessions/dashboards.
+`tests/test_conjugate_it.py` covers the Italian pool (-isc- verbs, avere/essere
+auxiliaries with plural agreement, the io-less imperative) and it-pool scoping.
 `tests/test_card_verb_sync.py` covers the index-card ↔ conjugation sync
 (detection incl. language, import-from-cards, page/practice exposure,
 additive-only deletes). Run:
 
 ```bash
-uv run pytest tests/test_conjugate.py tests/test_conjugate_de.py tests/test_card_verb_sync.py
+uv run pytest tests/test_conjugate.py tests/test_conjugate_it.py tests/test_conjugate_de.py tests/test_card_verb_sync.py
 ```
 
 ## Questions?
 
-Check `conjugation_config.py`, `languages/conjugation_loader.py`, and the two
+Check `conjugation_config.py`, `languages/conjugation_loader.py`, and the
 generators in `tools/` for reference, or contact the maintainer.

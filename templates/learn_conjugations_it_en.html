@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Learn Italian Verb Conjugations</h1>
+      <p>
+        This page teaches the core patterns behind <strong>Italian verbs</strong> — the regular
+        <em>-are / -ere / -ire</em> endings, the tenses you will practice here, the
+        avere/essere split in the past, and the irregular verbs you cannot avoid.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">The six persons</a></li>
+        <li><a href="#patterns">Regular patterns: -are / -ere / -ire</a></li>
+        <li><a href="#tenses">The tenses you practice</a></li>
+        <li><a href="#auxiliaries">Avere or essere?</a></li>
+        <li><a href="#irregular">Irregular verbs</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>The six persons</h2>
+      <p>
+        Every Italian tense has one form per <strong>person</strong>. The ending already tells
+        you who is doing the action, so subject pronouns are usually dropped in speech.
+      </p>
+      <ul>
+        <li><strong>io</strong> — I</li>
+        <li><strong>tu</strong> — you (informal)</li>
+        <li><strong>lui / lei</strong> — he / she (and the formal <em>Lei</em>, "you")</li>
+        <li><strong>noi</strong> — we</li>
+        <li><strong>voi</strong> — you all</li>
+        <li><strong>loro</strong> — they</li>
+      </ul>
+      <p>
+        Formal address uses <em>Lei</em> with the <strong>lui/lei</strong> form —
+        one row covers both.
+      </p>
+    </section>
+
+    <section id="patterns" class="learn-section">
+      <h2>Regular patterns: -are / -ere / -ire</h2>
+      <p>
+        Italian infinitives end in <strong>-are</strong>, <strong>-ere</strong> or <strong>-ire</strong>.
+        Drop that ending to get the <strong>stem</strong>, then add the ending for the person and tense.
+        In the <strong>present indicative</strong> the endings are:
+      </p>
+      <ul>
+        <li><strong>-are</strong> (parlare → parl-): <em>-o, -i, -a, -iamo, -ate, -ano</em> → parlo, parli, parla, parliamo, parlate, parlano</li>
+        <li><strong>-ere</strong> (credere → cred-): <em>-o, -i, -e, -iamo, -ete, -ono</em> → credo, credi, crede, crediamo, credete, credono</li>
+        <li><strong>-ire</strong> (dormire → dorm-): <em>-o, -i, -e, -iamo, -ite, -ono</em> → dormo, dormi, dorme, dormiamo, dormite, dormono</li>
+      </ul>
+      <p>
+        Many <strong>-ire</strong> verbs insert <strong>-isc-</strong> in all persons except
+        noi/voi: <em>capire → capisco, capisci, capisce, capiamo, capite, capiscono</em>.
+        <em>Finire</em> and <em>preferire</em> work the same way.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: tu of <em>lavorare</em>, noi of <em>vendere</em>, loro of <em>capire</em>?</summary>
+        <p><strong>lavori</strong> · <strong>vendiamo</strong> · <strong>capiscono</strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>The tenses you practice</h2>
+      <p>
+        The practice settings let you mix and match these tenses (examples with <em>parlare</em>):
+      </p>
+      <ul>
+        <li><strong>Presente</strong> — happening now / habits: <em>parlo</em>.</li>
+        <li><strong>Passato prossimo</strong> — the everyday spoken past; avere/essere + participle: <em>ho parlato, sono andato</em>.</li>
+        <li><strong>Imperfetto</strong> — ongoing / repeated past ("used to"): <em>parlavo</em>.</li>
+        <li><strong>Futuro semplice</strong> — will happen: <em>parlerò</em> (note -are → -er-).</li>
+        <li><strong>Condizionale</strong> — would happen; same stem as the future: <em>parlerei</em>.</li>
+        <li><strong>Congiuntivo presente</strong> — wishes, doubt after <em>che</em>: <em>(che io) parli</em>.</li>
+        <li><strong>Congiuntivo imperfetto</strong> — hypotheticals with <em>se</em>: <em>(se io) parlassi</em>.</li>
+        <li><strong>Trapassato prossimo</strong> — past before the past: <em>avevo parlato, ero andato</em>.</li>
+        <li><strong>Passato remoto</strong> — literary/historical past: <em>parlai</em>; you mostly need to recognize it when reading.</li>
+        <li><strong>Imperativo</strong> — commands: <em>parla! (tu), parli! (Lei), parlate! (voi)</em>.</li>
+      </ul>
+      <p>
+        The <strong>future</strong> and <strong>conditional</strong> share one stem: -are/-ere
+        verbs use <em>parler-/creder-</em>, -ire verbs use <em>dormir-</em>; then
+        <em>-ò, -ai, -à…</em> (future) or <em>-ei, -esti, -ebbe…</em> (conditional).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: which tense is <em>parlavi</em>? And <em>parlerai</em>?</summary>
+        <p><strong>parlavi</strong> = imperfetto (you used to speak) · <strong>parlerai</strong> = futuro (you will speak)</p>
+      </details>
+    </section>
+
+    <section id="auxiliaries" class="learn-section">
+      <h2>Avere or essere?</h2>
+      <p>
+        The <strong>passato prossimo</strong> and <strong>trapassato prossimo</strong> are built
+        with an auxiliary + past participle (<em>-ato / -uto / -ito</em>):
+      </p>
+      <ul>
+        <li>Most verbs take <strong>avere</strong>: <em>ho parlato, ho creduto, ho dormito</em>.</li>
+        <li>Verbs of <strong>movement or change of state</strong> take <strong>essere</strong>:
+          <em>sono andato, sono venuto, sono nato, sono diventato</em> — and so do
+          <em>piacere</em> and <em>riuscire</em> (<em>mi è piaciuto, sono riuscito</em>).</li>
+        <li>With essere the participle <strong>agrees</strong>: <em>lei è andata, noi siamo andati</em>.</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: passato prossimo, io of <em>vedere</em> and io of <em>partire</em>?</summary>
+        <p><strong>ho visto</strong> · <strong>sono partito</strong></p>
+      </details>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Irregular verbs</h2>
+      <p>
+        The most frequent Italian verbs are also the most irregular — memorize these first:
+      </p>
+      <ul>
+        <li><strong>essere</strong> (to be): sono, sei, è, siamo, siete, sono · participle <em>stato</em></li>
+        <li><strong>avere</strong> (to have): ho, hai, ha, abbiamo, avete, hanno · <em>avuto</em></li>
+        <li><strong>fare</strong> (to do/make): faccio, fai, fa, facciamo, fate, fanno · <em>fatto</em></li>
+        <li><strong>andare</strong> (to go): vado, vai, va, andiamo, andate, vanno · <em>andato</em></li>
+        <li><strong>dire</strong> (to say): dico, dici, dice, diciamo, dite, dicono · <em>detto</em></li>
+      </ul>
+      <p>
+        Watch for <strong>irregular participles</strong>: <em>fatto, detto, letto, scritto,
+        visto, preso, messo, aperto, chiuso, scelto, vinto, perso</em> — the everyday
+        passato prossimo depends on them.
+      </p>
+      <p>
+        The <strong>passato remoto</strong> has its own irregular stems:
+        <em>essere → fui</em>, <em>fare → feci</em>, <em>dire → dissi</em>,
+        <em>nascere → nacqui</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: io of <em>fare</em> (present), and the participle of <em>scrivere</em>?</summary>
+        <p><strong>faccio</strong> · <strong>scritto</strong></p>
+      </details>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>Forgetting -isc-</strong>: <em>capisco</em>, not "capo"; but <em>capiamo</em> (no -isc- in noi/voi).</li>
+        <li><strong>Wrong auxiliary</strong>: <em>sono andato</em>, never "ho andato"; <em>mi è piaciuto</em>, not "ho piaciuto".</li>
+        <li><strong>Future stem of -are</strong>: it is <em>parlerò</em>, not "parlarò" — the a becomes e.</li>
+        <li><strong>Irregular participles</strong>: <em>ho visto</em>, not "ho veduto" (colloquial standard); <em>ho fatto</em>, not "ho facuto".</li>
+        <li><strong>Congiuntivo after che</strong>: <em>penso che sia</em>, not "penso che è" (in careful speech).</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
