@@ -3,7 +3,7 @@
 import pytest
 
 from app import (
-    _card_verb_infinitive,
+    _card_verb_match,
     _importable_card_verbs,
     _verbs_missing_from_cards,
     app as flask_app,
@@ -55,17 +55,22 @@ class TestDetection:
     def test_front_side_verb_detected(self, app):
         with app.app_context():
             card = Card(user_sub="x", front="comer", back="to eat")
-            assert _card_verb_infinitive(card) == "comer"
+            assert _card_verb_match(card) == ("es", "comer")
 
     def test_back_side_verb_detected(self, app):
         with app.app_context():
             card = Card(user_sub="x", front="to live", back="Vivir")
-            assert _card_verb_infinitive(card) == "vivir"
+            assert _card_verb_match(card) == ("es", "vivir")
+
+    def test_german_verb_detected_with_lang(self, app):
+        with app.app_context():
+            card = Card(user_sub="x", front="machen", back="to do")
+            assert _card_verb_match(card) == ("de", "machen")
 
     def test_non_verb_card_not_detected(self, app):
         with app.app_context():
             card = Card(user_sub="x", front="hola", back="hello")
-            assert _card_verb_infinitive(card) is None
+            assert _card_verb_match(card) is None
 
     def test_importable_excludes_owned_and_dedupes(self, app):
         with app.app_context():
@@ -80,7 +85,21 @@ class TestDetection:
             db.session.add_all(cards)
             db.session.commit()
             importable = _importable_card_verbs(sub, cards)
-            assert [inf for _c, inf in importable] == ["comer"]
+            assert [(lang, inf) for _c, lang, inf in importable] == [("es", "comer")]
+
+    def test_importable_lang_filter(self, app):
+        with app.app_context():
+            sub = "auth0|user-1"
+            cards = [
+                Card(user_sub=sub, front="comer", back="to eat"),
+                Card(user_sub=sub, front="machen", back="to do"),
+            ]
+            db.session.add_all(cards)
+            db.session.commit()
+            es_only = _importable_card_verbs(sub, cards, "es")
+            de_only = _importable_card_verbs(sub, cards, "de")
+            assert [inf for _c, _l, inf in es_only] == ["comer"]
+            assert [inf for _c, _l, inf in de_only] == ["machen"]
 
     def test_verbs_missing_from_cards(self, app):
         with app.app_context():

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Deutsche Verbkonjugation lernen</h1>
+      <p>
+        Diese Seite erklärt die wichtigsten Muster hinter <strong>deutschen Verben</strong> — die
+        regelmäßigen ("schwachen") Endungen, die starken Verben mit Vokalwechsel, die Zeitformen,
+        die du hier übst, und die trennbaren Verben.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">Die sechs Personen</a></li>
+        <li><a href="#patterns">Regelmäßige ("schwache") Verben</a></li>
+        <li><a href="#strong">Starke Verben</a></li>
+        <li><a href="#tenses">Die Zeitformen</a></li>
+        <li><a href="#separable">Trennbare Verben</a></li>
+        <li><a href="#irregular">Die wichtigsten Unregelmäßigen</a></li>
+        <li><a href="#mistakes">Häufige Fehler</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>Die sechs Personen</h2>
+      <p>
+        Jede Zeitform hat eine Form pro <strong>Person</strong>. Anders als im Spanischen wird das
+        Pronomen nie weggelassen — <em>ich gehe</em>, nicht nur "gehe".
+      </p>
+      <ul>
+        <li><strong>ich</strong></li>
+        <li><strong>du</strong> (informell)</li>
+        <li><strong>er / sie / es</strong></li>
+        <li><strong>wir</strong></li>
+        <li><strong>ihr</strong> (informell, Plural)</li>
+        <li><strong>sie / Sie</strong> (Plural / Höflichkeitsform)</li>
+      </ul>
+      <p>
+        Die gute Nachricht: <strong>wir</strong> und <strong>sie/Sie</strong> sind fast immer
+        identisch mit dem Infinitiv (<em>wir machen, sie machen</em>).
+      </p>
+    </section>
+
+    <section id="patterns" class="learn-section">
+      <h2>Regelmäßige ("schwache") Verben</h2>
+      <p>
+        Deutsche Infinitive enden auf <strong>-en</strong> oder <strong>-n</strong>. Streiche die
+        Endung, um den <strong>Stamm</strong> zu erhalten, und hänge die Präsens-Endungen an:
+      </p>
+      <ul>
+        <li><strong>machen</strong> (mach-): <em>-e, -st, -t, -en, -t, -en</em> → mache, machst, macht, machen, macht, machen</li>
+        <li>Stämme auf <strong>-t/-d</strong> schieben ein <strong>e</strong> ein: arbeiten → du arbeit<strong>e</strong>st, er arbeit<strong>e</strong>t</li>
+        <li>Stämme auf <strong>-s/-ß/-z</strong> verschmelzen die du-Endung: reisen → du reis<strong>t</strong> (nicht "reisst")</li>
+      </ul>
+      <p>
+        Das <strong>Präteritum</strong> schwacher Verben schiebt <strong>-te-</strong> ein:
+        <em>machte, machtest, machte, machten, machtet, machten</em>. Das
+        <strong>Partizip II</strong> ist <strong>ge- + Stamm + -t</strong>: <em>gemacht</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: du von <em>lernen</em>, er von <em>warten</em>, ihr von <em>spielen</em>?</summary>
+        <p><strong>lernst</strong> · <strong>wartet</strong> · <strong>spielt</strong></p>
+      </details>
+    </section>
+
+    <section id="strong" class="learn-section">
+      <h2>Starke Verben</h2>
+      <p>
+        Starke Verben behalten die Endungen, <strong>ändern aber den Stammvokal</strong>. Im
+        Präsens passiert das nur bei <strong>du</strong> und <strong>er/sie/es</strong>:
+      </p>
+      <ul>
+        <li><strong>a → ä</strong>: fahren → du f<strong>ä</strong>hrst, er f<strong>ä</strong>hrt (aber: wir fahren)</li>
+        <li><strong>e → i</strong>: geben → du g<strong>i</strong>bst, er g<strong>i</strong>bt</li>
+        <li><strong>e → ie</strong>: sehen → du s<strong>ie</strong>hst, er s<strong>ie</strong>ht</li>
+      </ul>
+      <p>
+        Im Präteritum ändert sich der Vokal in <em>allen</em> Personen, ohne <em>-te-</em>:
+        <em>fahren → fuhr, geben → gab, sehen → sah</em>. Das Partizip II endet auf
+        <strong>-en</strong>: <em>gefahren, gegeben, gesehen</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: du von <em>schlafen</em> (Präsens) und er von <em>lesen</em>?</summary>
+        <p><strong>schläfst</strong> · <strong>liest</strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>Die Zeitformen</h2>
+      <p>
+        In den Übungseinstellungen kannst du diese Zeitformen frei kombinieren (Beispiele mit
+        <em>machen</em>):
+      </p>
+      <ul>
+        <li><strong>Präsens</strong> — jetzt / Gewohnheiten: <em>ich mache</em>.</li>
+        <li><strong>Präteritum</strong> — schriftliche Vergangenheit: <em>ich machte</em>.</li>
+        <li><strong>Perfekt</strong> — gesprochene Vergangenheit; <em>haben</em> oder <em>sein</em> + Partizip II: <em>ich habe gemacht, ich bin gefahren</em>.</li>
+        <li><strong>Plusquamperfekt</strong> — Vorvergangenheit: <em>ich hatte gemacht, ich war gefahren</em>.</li>
+        <li><strong>Futur I</strong> — <em>werden</em> + Infinitiv: <em>ich werde machen</em>.</li>
+        <li><strong>Konjunktiv II</strong> — würde / hypothetisch: <em>ich würde machen</em>; sein, haben, werden und die Modalverben haben eigene Formen (<em>wäre, hätte, würde, könnte…</em>).</li>
+        <li><strong>Imperativ</strong> — Aufforderungen: <em>mach! (du), macht! (ihr), machen Sie!</em></li>
+      </ul>
+      <p>
+        Verben der <strong>Bewegung oder Zustandsänderung</strong> bilden das Perfekt mit
+        <strong>sein</strong>: <em>ich bin gegangen, gekommen, aufgestanden, eingeschlafen</em>.
+        Alle anderen nehmen <strong>haben</strong>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: welche Zeitform ist <em>ich hatte gesehen</em>? Und <em>ich würde kommen</em>?</summary>
+        <p><strong>hatte gesehen</strong> = Plusquamperfekt · <strong>würde kommen</strong> = Konjunktiv II</p>
+      </details>
+    </section>
+
+    <section id="separable" class="learn-section">
+      <h2>Trennbare Verben</h2>
+      <p>
+        Viele Verben tragen ein <strong>trennbares Präfix</strong> (an-, auf-, ein-, mit-,
+        zurück-…), das in finiten Formen ans Satzende wandert:
+      </p>
+      <ul>
+        <li><strong>aufstehen</strong>: ich stehe <strong>auf</strong> · ich stand <strong>auf</strong></li>
+        <li>Im Partizip II steht das <em>ge-</em> in der Mitte: <em>auf<strong>ge</strong>standen, ein<strong>ge</strong>kauft</em></li>
+        <li>Futur und Konjunktiv II behalten den ganzen Infinitiv: <em>ich werde aufstehen, ich würde aufstehen</em></li>
+      </ul>
+      <p>
+        Untrennbare Präfixe (<strong>be-, er-, ver-, ent-, zer-…</strong>) trennen sich nie und
+        bekommen kein <em>ge-</em>: <em>besuchen → besucht, verstehen → verstanden</em>. Verben
+        auf <strong>-ieren</strong> lassen das <em>ge-</em> ebenfalls weg: <em>studieren →
+        studiert</em>.
+      </p>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Die wichtigsten Unregelmäßigen</h2>
+      <p>
+        Die häufigsten Verben sind die unregelmäßigsten — lerne diese zuerst:
+      </p>
+      <ul>
+        <li><strong>sein</strong>: bin, bist, ist, sind, seid, sind · war · gewesen</li>
+        <li><strong>haben</strong>: habe, hast, hat, haben, habt, haben · hatte · gehabt</li>
+        <li><strong>werden</strong>: werde, wirst, wird, werden, werdet, werden · wurde · geworden</li>
+        <li><strong>wissen</strong>: weiß, weißt, weiß, wissen, wisst, wissen · wusste · gewusst</li>
+      </ul>
+      <p>
+        Die <strong>Modalverben</strong> teilen ein Muster: ich- und er-Form sind identisch und
+        endungslos — <em>ich kann, er kann; ich muss, er muss; ich will, er will</em>. Ihre
+        Konjunktiv-II-Formen (<em>könnte, müsste, dürfte, möchte</em>) sind Alltagsdeutsch.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: er von <em>wissen</em> (Präsens) und ich von <em>sein</em> (Präteritum)?</summary>
+        <p><strong>weiß</strong> · <strong>war</strong></p>
+      </details>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Häufige Fehler</h2>
+      <ol>
+        <li><strong>Vokalwechsel vergessen</strong>: <em>du fährst</em>, nicht "du fahrst"; <em>er sieht</em>, nicht "er seht".</li>
+        <li><strong>Falsches Perfekt-Hilfsverb</strong>: Bewegungsverben nehmen <em>sein</em> — <em>ich bin gegangen</em>, nie "ich habe gegangen".</li>
+        <li><strong>ge- am falschen Verb</strong>: <em>besucht</em> und <em>studiert</em> bekommen kein <em>ge-</em>.</li>
+        <li><strong>Trennbare Verben nicht trennen</strong>: <em>ich stehe auf</em>, nicht "ich aufstehe".</li>
+        <li><strong>Modalverb-Endungen</strong>: <em>er kann</em>, nicht "er kannt" — ich und er sind bei Modalverben identisch.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

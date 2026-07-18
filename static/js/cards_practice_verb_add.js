@@ -36,13 +36,14 @@
 
     btn.addEventListener('click', async function () {
         const infinitive = (btn.getAttribute('data-infinitive') || '').trim();
+        const verbLang = btn.getAttribute('data-verb-lang') || 'es';
         if (!infinitive) return;
         btn.disabled = true;
         try {
             const res = await fetch('/api/verbs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ infinitive: infinitive })
+                body: JSON.stringify({ infinitive: infinitive, lang: verbLang })
             });
             const data = await res.json();
             if (!res.ok || !data.ok) {

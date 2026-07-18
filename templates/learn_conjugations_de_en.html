@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Learn German Verb Conjugations</h1>
+      <p>
+        This page teaches the core patterns behind <strong>German verbs</strong> — the regular
+        ("weak") endings, the strong verbs that change their vowel, the tenses you will practice
+        here, and the separable verbs that split in two.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">The six persons</a></li>
+        <li><a href="#patterns">Regular ("weak") verbs</a></li>
+        <li><a href="#strong">Strong verbs</a></li>
+        <li><a href="#tenses">The tenses you practice</a></li>
+        <li><a href="#separable">Separable verbs</a></li>
+        <li><a href="#irregular">The essential irregulars</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>The six persons</h2>
+      <p>
+        Every German tense has one form per <strong>person</strong>. Unlike Spanish, the pronoun
+        is never dropped — <em>ich gehe</em>, not just "gehe".
+      </p>
+      <ul>
+        <li><strong>ich</strong> — I</li>
+        <li><strong>du</strong> — you (informal)</li>
+        <li><strong>er / sie / es</strong> — he / she / it</li>
+        <li><strong>wir</strong> — we</li>
+        <li><strong>ihr</strong> — you all (informal)</li>
+        <li><strong>sie / Sie</strong> — they / you (formal)</li>
+      </ul>
+      <p>
+        Good news: the <strong>wir</strong> and <strong>sie/Sie</strong> forms are almost always
+        identical to the infinitive (<em>wir machen, sie machen</em>).
+      </p>
+    </section>
+
+    <section id="patterns" class="learn-section">
+      <h2>Regular ("weak") verbs</h2>
+      <p>
+        German infinitives end in <strong>-en</strong> or <strong>-n</strong>. Drop that ending to
+        get the <strong>stem</strong>, then add the present endings:
+      </p>
+      <ul>
+        <li><strong>machen</strong> (mach-): <em>-e, -st, -t, -en, -t, -en</em> → mache, machst, macht, machen, macht, machen</li>
+        <li>Stems ending in <strong>-t/-d</strong> insert an <strong>e</strong>: arbeiten → du arbeit<strong>e</strong>st, er arbeit<strong>e</strong>t</li>
+        <li>Stems ending in <strong>-s/-ß/-z</strong> merge the du ending: reisen → du reis<strong>t</strong> (not "reisst")</li>
+      </ul>
+      <p>
+        The simple past (<strong>Präteritum</strong>) of a weak verb inserts <strong>-te-</strong>:
+        <em>machte, machtest, machte, machten, machtet, machten</em>. The past participle
+        (<strong>Partizip II</strong>) is <strong>ge- + stem + -t</strong>: <em>gemacht</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: du of <em>lernen</em>, er of <em>warten</em>, ihr of <em>spielen</em>?</summary>
+        <p><strong>lernst</strong> · <strong>wartet</strong> · <strong>spielt</strong></p>
+      </details>
+    </section>
+
+    <section id="strong" class="learn-section">
+      <h2>Strong verbs</h2>
+      <p>
+        Strong verbs keep the same endings but <strong>change their stem vowel</strong>. In the
+        present this happens only in <strong>du</strong> and <strong>er/sie/es</strong>:
+      </p>
+      <ul>
+        <li><strong>a → ä</strong>: fahren → du f<strong>ä</strong>hrst, er f<strong>ä</strong>hrt (but: wir fahren)</li>
+        <li><strong>e → i</strong>: geben → du g<strong>i</strong>bst, er g<strong>i</strong>bt</li>
+        <li><strong>e → ie</strong>: sehen → du s<strong>ie</strong>hst, er s<strong>ie</strong>ht</li>
+      </ul>
+      <p>
+        In the Präteritum the vowel changes for <em>every</em> person and there is no
+        <em>-te-</em>: <em>fahren → fuhr, geben → gab, sehen → sah</em>. The Partizip II ends in
+        <strong>-en</strong>: <em>gefahren, gegeben, gesehen</em>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: du of <em>schlafen</em> (present), and er of <em>lesen</em>?</summary>
+        <p><strong>schläfst</strong> · <strong>liest</strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>The tenses you practice</h2>
+      <p>
+        The practice settings let you mix and match these tenses (examples with <em>machen</em>):
+      </p>
+      <ul>
+        <li><strong>Präsens</strong> — happening now / habits: <em>ich mache</em>.</li>
+        <li><strong>Präteritum</strong> — simple past, used in writing: <em>ich machte</em>.</li>
+        <li><strong>Perfekt</strong> — spoken past; <em>haben</em> or <em>sein</em> + Partizip II: <em>ich habe gemacht, ich bin gefahren</em>.</li>
+        <li><strong>Plusquamperfekt</strong> — past before the past: <em>ich hatte gemacht, ich war gefahren</em>.</li>
+        <li><strong>Futur I</strong> — <em>werden</em> + infinitive: <em>ich werde machen</em>.</li>
+        <li><strong>Konjunktiv II</strong> — would / hypothetical: <em>ich würde machen</em>; sein, haben, werden and the modals use their own forms (<em>wäre, hätte, würde, könnte…</em>).</li>
+        <li><strong>Imperativ</strong> — commands: <em>mach! (du), macht! (ihr), machen Sie!</em></li>
+      </ul>
+      <p>
+        Verbs of <strong>movement or change of state</strong> build the Perfekt with
+        <strong>sein</strong>: <em>ich bin gegangen, gekommen, aufgestanden, eingeschlafen</em>.
+        Everything else takes <strong>haben</strong>.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: which tense is <em>ich hatte gesehen</em>? And <em>ich würde kommen</em>?</summary>
+        <p><strong>hatte gesehen</strong> = Plusquamperfekt · <strong>würde kommen</strong> = Konjunktiv II</p>
+      </details>
+    </section>
+
+    <section id="separable" class="learn-section">
+      <h2>Separable verbs</h2>
+      <p>
+        Many verbs carry a <strong>separable prefix</strong> (an-, auf-, ein-, mit-, zurück-…)
+        that jumps to the end of the sentence in finite forms:
+      </p>
+      <ul>
+        <li><strong>aufstehen</strong>: ich stehe <strong>auf</strong> · ich stand <strong>auf</strong></li>
+        <li>Partizip II sandwiches the <em>ge-</em>: <em>auf<strong>ge</strong>standen, ein<strong>ge</strong>kauft</em></li>
+        <li>Futur and Konjunktiv II keep the infinitive whole: <em>ich werde aufstehen, ich würde aufstehen</em></li>
+      </ul>
+      <p>
+        Inseparable prefixes (<strong>be-, er-, ver-, ent-, zer-…</strong>) never split and take
+        no <em>ge-</em> in the participle: <em>besuchen → besucht, verstehen → verstanden</em>.
+        Verbs in <strong>-ieren</strong> also skip the <em>ge-</em>: <em>studieren → studiert</em>.
+      </p>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>The essential irregulars</h2>
+      <p>
+        The most frequent German verbs are the most irregular — memorize these first:
+      </p>
+      <ul>
+        <li><strong>sein</strong> (to be): bin, bist, ist, sind, seid, sind · war · gewesen</li>
+        <li><strong>haben</strong> (to have): habe, hast, hat, haben, habt, haben · hatte · gehabt</li>
+        <li><strong>werden</strong> (to become): werde, wirst, wird, werden, werdet, werden · wurde · geworden</li>
+        <li><strong>wissen</strong> (to know): weiß, weißt, weiß, wissen, wisst, wissen · wusste · gewusst</li>
+      </ul>
+      <p>
+        The <strong>modal verbs</strong> share a pattern: the ich and er forms are identical and
+        have no ending — <em>ich kann, er kann; ich muss, er muss; ich will, er will</em>. Their
+        Konjunktiv II forms (<em>könnte, müsste, dürfte, möchte</em>) are everyday German.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: er of <em>wissen</em> (present), and ich of <em>sein</em> (Präteritum)?</summary>
+        <p><strong>weiß</strong> · <strong>war</strong></p>
+      </details>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>Forgetting the vowel change</strong>: <em>du fährst</em>, not "du fahrst"; <em>er sieht</em>, not "er seht".</li>
+        <li><strong>Wrong Perfekt auxiliary</strong>: movement verbs take <em>sein</em> — <em>ich bin gegangen</em>, never "ich habe gegangen".</li>
+        <li><strong>ge- on the wrong verbs</strong>: <em>besucht</em> and <em>studiert</em> take no <em>ge-</em>.</li>
+        <li><strong>Not splitting separable verbs</strong>: <em>ich stehe auf</em>, not "ich aufstehe".</li>
+        <li><strong>Modal endings</strong>: <em>er kann</em>, not "er kannt" — ich and er are identical for modals.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

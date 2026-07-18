@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from "_progress_ring.html" import progress_ring %}
 
-{% block title %}{{ get_text('conjugate_title') }} - diminumero{% endblock %}
+{% block title %}{{ conj_text('conjugate_title') }} - diminumero{% endblock %}
 {% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
-{% block og_title %}{{ get_text('conjugate_title') }} - diminumero{% endblock %}
-{% block twitter_title %}{{ get_text('conjugate_title') }} - diminumero{% endblock %}
+{% block og_title %}{{ conj_text('conjugate_title') }} - diminumero{% endblock %}
+{% block twitter_title %}{{ conj_text('conjugate_title') }} - diminumero{% endblock %}
 
 {% block content %}
 <div class="cards-page conjugate-page">
@@ -15,11 +15,12 @@
     </div>
 
     <section class="cards-create-section">
-        <h2 class="cards-section-heading">{{ get_text('conjugate_title') }}</h2>
+        <h2 class="cards-section-heading">{{ conj_text('conjugate_title') }}</h2>
         <p class="cards-subtitle">{{ get_text('conjugate_subtitle') }}</p>
     </section>
 
     <section class="cards-create-section conjugate-add-section"
+             data-lang="{{ lang_code }}"
              data-i18n-added="{{ get_text('conjugate_flash_verb_added') }}"
              data-i18n-duplicate="{{ get_text('conjugate_flash_verb_duplicate') }}"
              data-i18n-delete="{{ get_text('conjugate_delete_btn') }}"
@@ -41,7 +42,7 @@
                            data-gramm="false" data-gramm_editor="false"
                            data-enable-grammarly="false"
                            data-lpignore="true" data-1p-ignore data-form-type="other"
-                           placeholder="{{ get_text('conjugate_add_placeholder') }}">
+                           placeholder="{{ conj_text('conjugate_add_placeholder') }}">
                     <ul class="conjugate-suggestions" id="conjugate-suggestions" role="listbox" hidden></ul>
                 </div>
                 <button type="submit" class="btn btn-primary" id="conjugate-add-btn">
@@ -91,13 +92,14 @@
                 <label class="cards-radio conjugate-tense-check">
                     <input type="checkbox" name="tenses" value="{{ tense.key }}"
                            {% if tense.default_on %}checked{% endif %}>
-                    <span>{{ tense.label_es }}
+                    <span>{{ tense.label_native }}
                         <span class="conjugate-tense-en">· {{ tense.label_en }}</span>
                     </span>
                 </label>
                 {% endfor %}
             </fieldset>
 
+            {% if optional_person_index is not none %}
             <fieldset class="cards-direction-fieldset conjugate-vosotros-fieldset">
                 <legend>{{ get_text('conjugate_vosotros_label') }}</legend>
                 <label class="cards-radio">
@@ -105,6 +107,7 @@
                     <span>{{ get_text('conjugate_vosotros_label') }}</span>
                 </label>
             </fieldset>
+            {% endif %}
 
             <fieldset class="cards-direction-fieldset cards-difficulty-fieldset">
                 <legend>{{ get_text('conjugate_difficulty_label') }}</legend>

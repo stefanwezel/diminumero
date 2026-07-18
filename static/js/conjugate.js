@@ -23,6 +23,9 @@
         addToCards: addSection.getAttribute('data-i18n-add-to-cards') || 'Add to cards'
     };
     const toastIcon = addSection.getAttribute('data-toast-icon') || '';
+    // The conjugation language of this page; sent along on the un-namespaced
+    // /api/verbs* calls so they operate on the right pool.
+    const conjLang = addSection.getAttribute('data-lang') || 'es';
     // Lang-aware delete endpoint, e.g. "/es/conjugate/0/delete" (0 is swapped
     // for the real verb id when rebuilding the no-JS fallback form).
     const deleteBase = addSection.getAttribute('data-delete-base') || '/es/conjugate/0/delete';
@@ -217,7 +220,10 @@
 
     async function fetchSuggestions(q) {
         try {
-            const res = await fetch('/api/verbs/search?q=' + encodeURIComponent(q));
+            const res = await fetch(
+                '/api/verbs/search?q=' + encodeURIComponent(q) +
+                '&lang=' + encodeURIComponent(conjLang)
+            );
             if (!res.ok) return;
             const data = await res.json();
             renderSuggestions(data.results || []);
@@ -279,7 +285,7 @@
             const res = await fetch('/api/verbs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ infinitive: verb })
+                body: JSON.stringify({ infinitive: verb, lang: conjLang })
             });
             const data = await res.json();
             if (!res.ok || !data.ok) {
@@ -548,7 +554,8 @@
                 try {
                     const res = await fetch('/api/verbs/import-from-cards', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lang: conjLang })
                     });
                     const data = await res.json();
                     if (!res.ok || !data.ok) {

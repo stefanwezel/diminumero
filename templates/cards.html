@@ -275,12 +275,12 @@
                 <li class="cards-list-item {% if edit_card and edit_card.id == card.id %}cards-list-item-editing{% endif %}"
                     data-card-id="{{ card.id }}"
                     data-created-at="{{ card.created_at.isoformat() }}"
-                    {% if card.id in importable_verb_infinitives %}data-verb-infinitive="{{ importable_verb_infinitives[card.id] }}"{% endif %}>
+                    {% if card.id in importable_verbs %}data-verb-infinitive="{{ importable_verbs[card.id].infinitive }}" data-verb-lang="{{ importable_verbs[card.id].lang }}"{% endif %}>
                     <div class="cards-list-text">
                         <div class="cards-list-line">
                             <span class="cards-list-label cards-list-label-front">{{ get_text('cards_front_label') }}</span>
                             <span class="cards-list-front">{{ card.front }}</span>
-                            {% if card.id in importable_verb_infinitives %}
+                            {% if card.id in importable_verbs %}
                             <span class="cards-verb-badge">{{ get_text('cards_verb_badge') }}</span>
                             {% endif %}
                         </div>
@@ -291,10 +291,11 @@
                     </div>
                     {{ progress_ring(card) }}
                     <div class="cards-list-actions">
-                        {% if card.id in importable_verb_infinitives %}
+                        {% if card.id in importable_verbs %}
                         <button type="button"
                                 class="btn btn-secondary cards-list-btn cards-verb-add-btn"
-                                data-infinitive="{{ importable_verb_infinitives[card.id] }}">
+                                data-infinitive="{{ importable_verbs[card.id].infinitive }}"
+                                data-verb-lang="{{ importable_verbs[card.id].lang }}">
                             {{ get_text('cards_add_to_conjugation_btn') }}
                         </button>
                         {% endif %}

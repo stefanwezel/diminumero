@@ -58,7 +58,7 @@
         }, 800);
     }
 
-    function buildCardLi(card, verbInfinitive) {
+    function buildCardLi(card, verbInfinitive, verbLang) {
         const li = document.createElement('li');
         li.className = 'cards-list-item';
         li.setAttribute('data-card-id', String(card.id));
@@ -101,7 +101,7 @@
         li.appendChild(text);
         li.appendChild(progress);
         li.appendChild(actions);
-        applyVerbAffordance(li, verbInfinitive);
+        applyVerbAffordance(li, verbInfinitive, verbLang);
         return li;
     }
 
@@ -262,7 +262,7 @@
                 showToast(i18n.duplicate);
                 return;
             }
-            const li = buildCardLi(data.card, data.verb_infinitive);
+            const li = buildCardLi(data.card, data.verb_infinitive, data.verb_lang);
             list.insertBefore(li, list.firstChild);
             if (typeof window.diminumeroCardsApplySort === 'function') {
                 window.diminumeroCardsApplySort();
@@ -342,6 +342,7 @@
         const currentFront = li.querySelector('.cards-list-front').textContent;
         const currentBack = li.querySelector('.cards-list-back').textContent;
         const currentVerbInfinitive = li.getAttribute('data-verb-infinitive');
+        const currentVerbLang = li.getAttribute('data-verb-lang');
 
         const form = document.createElement('form');
         form.className = 'cards-inline-edit-form';
@@ -380,18 +381,19 @@
         frontInput.focus();
         frontInput.select();
 
-        const restoreView = function (newFront, newBack, verbInfinitive) {
+        const restoreView = function (newFront, newBack, verbInfinitive, verbLang) {
             const front = typeof newFront === 'string' ? newFront : currentFront;
             const back = typeof newBack === 'string' ? newBack : currentBack;
             const verbInf =
                 arguments.length >= 3 ? verbInfinitive : currentVerbInfinitive;
+            const verbLg = arguments.length >= 4 ? verbLang : currentVerbLang;
             const newText = document.createElement('div');
             newText.className = 'cards-list-text';
             newText.appendChild(buildLine('front', i18n.front, front));
             newText.appendChild(buildLine('back', i18n.back, back));
             form.replaceWith(newText);
             li.appendChild(buildActions(cardId));
-            applyVerbAffordance(li, verbInf);
+            applyVerbAffordance(li, verbInf, verbLg);
             refreshImportAllCount();
         };
 
@@ -421,11 +423,17 @@
                 if (data.duplicate) {
                     // Server kept the original card unchanged; close the edit
                     // row and let the user know nothing was applied.
-                    restoreView(data.card.front, data.card.back, data.verb_infinitive);
+                    restoreView(
+                        data.card.front, data.card.back,
+                        data.verb_infinitive, data.verb_lang
+                    );
                     showToast(i18n.duplicateEdit);
                     return;
                 }
-                restoreView(data.card.front, data.card.back, data.verb_infinitive);
+                restoreView(
+                    data.card.front, data.card.back,
+                    data.verb_infinitive, data.verb_lang
+                );
                 flash(li);
             } catch (err) {
                 saveBtn.disabled = false;
@@ -493,15 +501,17 @@
         const badge = li.querySelector('.cards-verb-badge');
         if (badge) badge.remove();
         li.removeAttribute('data-verb-infinitive');
+        li.removeAttribute('data-verb-lang');
     }
 
     // Add the "verb" badge + "add to conjugation" button to a card row when the
     // server reports it as an importable verb. Idempotent: clears any existing
     // affordance first so it can also be used to refresh after an edit.
-    function applyVerbAffordance(li, verbInfinitive) {
+    function applyVerbAffordance(li, verbInfinitive, verbLang) {
         clearVerbAffordances(li);
         if (!verbInfinitive) return;
         li.setAttribute('data-verb-infinitive', verbInfinitive);
+        li.setAttribute('data-verb-lang', verbLang || 'es');
         const frontLine = li.querySelector('.cards-list-line');
         if (frontLine) {
             const badge = document.createElement('span');
@@ -515,6 +525,7 @@
             btn.type = 'button';
             btn.className = 'btn btn-secondary cards-list-btn cards-verb-add-btn';
             btn.setAttribute('data-infinitive', verbInfinitive);
+            btn.setAttribute('data-verb-lang', verbLang || 'es');
             btn.textContent = i18n.verbAdd;
             actions.insertBefore(btn, actions.firstChild);
         }
@@ -526,13 +537,14 @@
         if (!btn) return;
         const li = btn.closest('.cards-list-item');
         const infinitive = (btn.getAttribute('data-infinitive') || '').trim();
+        const verbLang = btn.getAttribute('data-verb-lang') || 'es';
         if (!li || !infinitive) return;
         btn.disabled = true;
         try {
             const res = await fetch('/api/verbs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ infinitive: infinitive })
+                body: JSON.stringify({ infinitive: infinitive, lang: verbLang })
             });
             const data = await res.json();
             if (!res.ok || !data.ok) {
