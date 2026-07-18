@@ -288,10 +288,16 @@ def inject_seo_context():
     }
 
 
-def get_text(key):
-    """Get translated text for the current language."""
+def get_text(key, learn_language=None):
+    """Get translated text for the current language.
+
+    `learn_language` overrides the session's learn language for keys whose
+    text names the practiced language (LANGUAGE_NAME_PLACEHOLDER) — used by
+    pages with their own language in the URL, e.g. /<lang>/conjugate.
+    """
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    learn_language = session.get("learn_language", "es")
+    if learn_language is None:
+        learn_language = session.get("learn_language", "es")
 
     # Language name/description keys are resolved from languages/config.py
     if key.startswith("lang_") and key.endswith("_name"):
@@ -2331,11 +2337,13 @@ def conjugate(lang_code):
     """Manage page: add verbs (autocomplete) + practice settings + start."""
     _require_conjugation_lang(lang_code)
     verbs = _user_verbs(lang_code)
-    practice_lang = session.get("learn_language")
-    if practice_lang and is_language_ready(practice_lang):
-        practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
-    else:
-        practice_numbers_url = url_for("mode_selection", lang_code=lang_code)
+    # The back link follows the page's own language, not the session's learn
+    # language — a German conjugation page must not point at the Spanish
+    # overview. Every conjugation language is a ready numbers language.
+    practice_numbers_url = url_for("mode_selection", lang_code=lang_code)
+    practice_numbers_label = get_text(
+        "cards_practice_numbers_btn", learn_language=lang_code
+    )
     dashboard = _build_conjugate_dashboard_stats(_current_user_sub(), verbs, lang_code)
     user_sub = _current_user_sub()
     user_cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
@@ -2355,6 +2363,7 @@ def conjugate(lang_code):
         optional_person_index=conj_optional_person_index(lang_code),
         default_count=CONJ_QUESTIONS_DEFAULT,
         practice_numbers_url=practice_numbers_url,
+        practice_numbers_label=practice_numbers_label,
         dashboard=dashboard,
         get_text=get_text,
         conj_text=lambda key: _conj_text(key, lang_code),

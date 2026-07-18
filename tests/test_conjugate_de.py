@@ -357,6 +357,20 @@ class TestDashboardLangScope:
         assert "conjugate-stats-section" not in es_html
 
 
+def test_back_link_follows_page_language_not_session(client):
+    """The overview back-link on /<lang>/conjugate names the page's own
+    language even when the session's learn language is another one."""
+    login(client)
+    with client.session_transaction() as sess:
+        sess["learn_language"] = "es"
+    de_html = client.get("/de/conjugate").data.decode("utf-8")
+    assert "German Overview" in de_html
+    assert "Spanish Overview" not in de_html
+    assert 'href="/de"' in de_html
+    it_html = client.get("/it/conjugate").data.decode("utf-8")
+    assert "Italian Overview" in it_html
+
+
 def test_sitemap_lists_german_conjugation_learn_page(client):
     xml = client.get("/sitemap.xml").data.decode("utf-8")
     assert "/de/learn/conjugations" in xml
