@@ -929,6 +929,12 @@ body {
     grid-column: 1 / -1;
 }
 
+/* Two-button variant (e.g. cards results): keep Try Again and the back
+   link side by side instead of stacking the form full-width. */
+.results-actions--pair form {
+    grid-column: auto;
+}
+
 .results-actions .btn {
     display: flex;
     align-items: center;

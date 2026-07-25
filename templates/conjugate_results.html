@@ -26,9 +26,34 @@
                 {{ get_text('cards_results_keep_going') }}
             {% endif %}
         </p>
-        <div class="feedback-section">
-            <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
-                {{ conj_text('conjugate_title') }}
+        <div class="results-actions">
+            <form action="{{ url_for('conjugate_practice_start', lang_code=lang_code) }}" method="POST">
+                {% for t in practice_settings.tenses %}
+                <input type="hidden" name="tenses" value="{{ t }}">
+                {% endfor %}
+                {% for p in practice_settings.persons %}
+                <input type="hidden" name="persons" value="{{ p }}">
+                {% endfor %}
+                {% for vid in practice_settings.verb_ids %}
+                <input type="hidden" name="verb_ids" value="{{ vid }}">
+                {% endfor %}
+                <input type="hidden" name="difficulty" value="{{ practice_settings.difficulty }}">
+                <input type="hidden" name="sampling_mode" value="{{ practice_settings.sampling_mode }}">
+                <input type="hidden" name="reveal_mode" value="{{ practice_settings.reveal_mode }}">
+                <input type="hidden" name="count" value="{{ practice_settings.count }}">
+                <button type="submit" class="btn-try-again">
+                    <img src="{{ url_for('static', filename='icons/icon-tryagain.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('results_try_again') }}
+                </button>
+            </form>
+
+            {% if has_conjugation_materials %}
+            <a href="{{ url_for('learn_conjugations', lang_code=lang_code) }}" class="btn btn-primary btn-large">
+                <img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="btn-icon" aria-hidden="true" loading="lazy"> {{ get_text('footer_learn') }}
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary btn-large">
+                <img src="{{ url_for('static', filename='icons/icon-home.svg') }}" alt="" class="btn-icon" aria-hidden="true" loading="lazy"> {{ get_text('conjugate_results_back_btn') }}
             </a>
         </div>
     </div>

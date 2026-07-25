@@ -1780,6 +1780,7 @@ def cards_practice_start():
         "reveal_mode": reveal_mode,
         "count": count,
         "weak_only": weak_only,
+        "recap": recap,
         "allowed_card_ids": allowed_card_ids,
         "asked_ids": [],
         "score": 0,
@@ -1963,6 +1964,15 @@ def cards_practice_results():
         score=score,
         total=total,
         percentage=percentage,
+        # Settings echoed back so "Try Again" can restart the same session.
+        practice_settings={
+            "direction": state.get("direction", "back_to_front"),
+            "sampling_mode": state.get("sampling_mode", "prioritized"),
+            "difficulty": state.get("difficulty", "advanced"),
+            "reveal_mode": state.get("reveal_mode", "type"),
+            "count": state.get("count", 10),
+            "recap": state.get("recap"),
+        },
         get_text=get_text,
     )
 
@@ -3008,6 +3018,18 @@ def conjugate_practice_results(lang_code):
         score=score,
         total=total,
         percentage=percentage,
+        has_conjugation_materials=lang_code
+        in get_languages_with_conjugation_materials(),
+        # Settings echoed back so "Try Again" can restart the same session.
+        practice_settings={
+            "tenses": state.get("tenses", []),
+            "persons": state.get("persons", []),
+            "verb_ids": state.get("verb_ids", []),
+            "difficulty": state.get("difficulty", "advanced"),
+            "sampling_mode": state.get("sampling_mode", "prioritized"),
+            "reveal_mode": state.get("reveal_mode", "type"),
+            "count": state.get("count", CONJ_QUESTIONS_DEFAULT),
+        },
         get_text=get_text,
         conj_text=lambda key: _conj_text(key, lang_code),
     )
