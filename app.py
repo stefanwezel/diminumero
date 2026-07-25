@@ -607,8 +607,18 @@ def quiz_advanced(lang_code):
             return redirect(url_for("quiz_advanced", lang_code=lang_code))
 
         # Advance from a revealed question. The wrong attempt was already
-        # recorded; just clear the current question + reveal flag.
+        # recorded; the user must retype the shown answer before advancing (the
+        # client enforces this too, but never trust the client). A wrong or
+        # empty answer keeps the question mounted and revealed.
         if "next" in request.form:
+            user_answer = request.form.get("answer", "").strip()
+            correct_answer = session.get("correct_answer")
+            if not (
+                user_answer
+                and correct_answer
+                and quiz_logic.check_answer_advanced(user_answer, correct_answer)
+            ):
+                return redirect(url_for("quiz_advanced", lang_code=lang_code))
             session["current_revealed"] = False
             session.pop("current_number", None)
             session.pop("correct_answer", None)
@@ -745,8 +755,18 @@ def quiz_hardcore(lang_code):
             return redirect(url_for("quiz_hardcore", lang_code=lang_code))
 
         # Advance from a revealed question. The wrong attempt was already
-        # recorded; just clear the current question + reveal flag.
+        # recorded; the user must retype the shown answer before advancing (the
+        # client enforces this too, but never trust the client). A wrong or
+        # empty answer keeps the question mounted and revealed.
         if "next" in request.form:
+            user_answer = request.form.get("answer", "").strip()
+            correct_answer = session.get("correct_answer")
+            if not (
+                user_answer
+                and correct_answer
+                and quiz_logic.check_answer_advanced(user_answer, correct_answer)
+            ):
+                return redirect(url_for("quiz_hardcore", lang_code=lang_code))
             session["current_revealed"] = False
             session.pop("current_number", None)
             session.pop("correct_answer", None)

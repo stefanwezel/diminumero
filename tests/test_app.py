@@ -345,6 +345,29 @@ class TestQuizAdvanced:
         assert question1 == question2
         assert answer1 == answer2
 
+    def test_reveal_requires_retyping_answer(self, client):
+        """After reveal, advancing is gated on retyping the shown answer."""
+        client.post("/es/start", data={"mode": "advanced"})
+        client.get("/es/quiz/advanced")
+
+        # Reveal the current question
+        client.post("/es/quiz/advanced", data={"reveal": "1"})
+        with client.session_transaction() as sess:
+            assert sess.get("current_revealed") is True
+            answer = sess.get("correct_answer")
+
+        # A wrong retype keeps the question mounted and revealed
+        client.post("/es/quiz/advanced", data={"next": "1", "answer": "zzz"})
+        with client.session_transaction() as sess:
+            assert sess.get("current_revealed") is True
+            assert sess.get("correct_answer") == answer
+
+        # The correct retype advances (clears the current question)
+        client.post("/es/quiz/advanced", data={"next": "1", "answer": answer})
+        with client.session_transaction() as sess:
+            assert sess.get("current_revealed") is False
+            assert "current_number" not in sess
+
 
 class TestResultsPage:
     """Tests for results page."""

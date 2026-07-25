@@ -69,13 +69,25 @@
         <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
         <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
         <div class="reveal-modal-answer">{{ correct_answer }}</div>
-        <form action="{{ url_for('quiz_advanced', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions">
-            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
+        <form action="{{ url_for('quiz_advanced', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions" id="revealForm">
+            <input
+                type="text"
+                name="answer"
+                id="revealInput"
+                class="answer-input reveal-modal-input"
+                placeholder="{{ get_text('cards_reveal_type_placeholder') }}"
+                autocomplete="off"
+                autocapitalize="off"
+                autofocus
+                data-correct-answer="{{ correct_answer }}"
+            >
+            <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next">
                 {{ get_text('cards_reveal_next_btn') }}
             </button>
         </form>
     </div>
 </div>
+<script src="{{ url_for('static', filename='js/cards_practice_reveal.js') }}"></script>
 {% else %}
 <script src="{{ url_for('static', filename='js/quiz_advanced.js') }}"></script>
 {% endif %}
