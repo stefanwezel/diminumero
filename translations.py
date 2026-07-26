@@ -38,6 +38,8 @@ TRANSLATIONS = {
         "menu_numbers_title": "Number practice",
         "menu_numbers_body": "Translate LANGUAGE_NAME_PLACEHOLDER numbers. Pick a difficulty to begin.",
         "menu_numbers_cta": "Choose a mode",
+        "menu_restructure_notice": "We've reorganised this menu — number practice, listening, cards and verb conjugation now each have their own tile.",
+        "menu_restructure_dismiss": "Got it",
         "home_conjugate_title": "Verb conjugation",
         "home_conjugate_badge": "Beta · Spanish, Italian & German",
         "home_conjugate_body": "Sign in to build a verb pool and drill conjugations across tenses and pronouns.",
