@@ -389,6 +389,39 @@ def mode_selection(lang_code):
     )
 
 
+@app.route("/<lang_code>/numbers")
+def number_modes(lang_code):
+    """Number-practice page: pick a difficulty (easy/advanced/hardcore).
+
+    Split out of the language menu so it has its own URL and browser Back
+    returns to the language menu rather than the landing page.
+    """
+    if not is_language_ready(lang_code):
+        flash(get_text("flash_invalid_language"), "error")
+        return redirect(url_for("index"))
+
+    session["learn_language"] = lang_code
+
+    try:
+        numbers = get_language_numbers(lang_code)
+        total_numbers = len(numbers)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("index"))
+
+    has_learn_materials = lang_code in get_languages_with_learn_materials()
+
+    return render_template(
+        "numbers.html",
+        total_numbers=total_numbers,
+        questions_per_quiz=QUESTIONS_PER_QUIZ,
+        lang_code=lang_code,
+        get_text=get_text,
+        has_learn_materials=has_learn_materials,
+        magnitude_level=session.get("magnitude_level", 1),
+    )
+
+
 @app.route("/set_language/<lang>")
 def set_language(lang):
     """Set the UI language preference (not learning language)."""
@@ -1780,6 +1813,7 @@ def cards_practice_start():
         "reveal_mode": reveal_mode,
         "count": count,
         "weak_only": weak_only,
+        "recap": recap,
         "allowed_card_ids": allowed_card_ids,
         "asked_ids": [],
         "score": 0,
@@ -1963,6 +1997,15 @@ def cards_practice_results():
         score=score,
         total=total,
         percentage=percentage,
+        # Settings echoed back so "Try Again" can restart the same session.
+        practice_settings={
+            "direction": state.get("direction", "back_to_front"),
+            "sampling_mode": state.get("sampling_mode", "prioritized"),
+            "difficulty": state.get("difficulty", "advanced"),
+            "reveal_mode": state.get("reveal_mode", "type"),
+            "count": state.get("count", 10),
+            "recap": state.get("recap"),
+        },
         get_text=get_text,
     )
 
@@ -3008,6 +3051,18 @@ def conjugate_practice_results(lang_code):
         score=score,
         total=total,
         percentage=percentage,
+        has_conjugation_materials=lang_code
+        in get_languages_with_conjugation_materials(),
+        # Settings echoed back so "Try Again" can restart the same session.
+        practice_settings={
+            "tenses": state.get("tenses", []),
+            "persons": state.get("persons", []),
+            "verb_ids": state.get("verb_ids", []),
+            "difficulty": state.get("difficulty", "advanced"),
+            "sampling_mode": state.get("sampling_mode", "prioritized"),
+            "reveal_mode": state.get("reveal_mode", "type"),
+            "count": state.get("count", CONJ_QUESTIONS_DEFAULT),
+        },
         get_text=get_text,
         conj_text=lambda key: _conj_text(key, lang_code),
     )

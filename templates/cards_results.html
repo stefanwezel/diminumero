@@ -26,9 +26,23 @@
                 {{ get_text('cards_results_keep_going') }}
             {% endif %}
         </p>
-        <div class="feedback-section">
-            <a href="{{ url_for('cards') }}" class="btn btn-primary">
-                {{ get_text('cards_results_back_btn') }}
+        <div class="results-actions results-actions--pair">
+            <form action="{{ url_for('cards_practice_start') }}" method="POST">
+                <input type="hidden" name="direction" value="{{ practice_settings.direction }}">
+                <input type="hidden" name="sampling_mode" value="{{ practice_settings.sampling_mode }}">
+                <input type="hidden" name="difficulty" value="{{ practice_settings.difficulty }}">
+                <input type="hidden" name="reveal_mode" value="{{ practice_settings.reveal_mode }}">
+                <input type="hidden" name="count" value="{{ practice_settings.count }}">
+                {% if practice_settings.recap %}
+                <input type="hidden" name="recap" value="{{ practice_settings.recap }}">
+                {% endif %}
+                <button type="submit" class="btn-try-again">
+                    <img src="{{ url_for('static', filename='icons/icon-tryagain.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('results_try_again') }}
+                </button>
+            </form>
+
+            <a href="{{ url_for('cards') }}" class="btn btn-primary btn-large">
+                <img src="{{ url_for('static', filename='icons/icon-home.svg') }}" alt="" class="btn-icon" aria-hidden="true" loading="lazy"> {{ get_text('cards_results_back_btn') }}
             </a>
         </div>
     </div>

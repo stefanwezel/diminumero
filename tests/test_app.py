@@ -85,13 +85,34 @@ class TestModeSelection:
         response = client.get("/es")
         assert response.status_code == 200
 
-    def test_mode_selection_contains_modes(self, client):
-        """Test that mode selection page contains game modes."""
+    def test_mode_selection_links_to_numbers(self, client):
+        """The language menu links to the dedicated number-practice page."""
         response = client.get("/es")
+        assert response.status_code == 200
+        assert "/es/numbers" in response.data.decode("utf-8")
+
+    def test_mode_selection_shows_restructure_notice(self, client):
+        """The language menu renders the one-time 'menu restructured' notice."""
+        response = client.get("/es")
+        assert "menu-restructure-notice" in response.data.decode("utf-8")
+
+    def test_number_modes_page_loads(self, client):
+        """The number-practice page loads for Spanish."""
+        response = client.get("/es/numbers")
+        assert response.status_code == 200
+
+    def test_number_modes_contains_modes(self, client):
+        """Test that the number-practice page contains game modes."""
+        response = client.get("/es/numbers")
         data = response.data.decode("utf-8")
         # Should have mode selection forms (in German or English)
         assert "easy" in data.lower() or "einfach" in data.lower()
         assert "advanced" in data.lower() or "schwierig" in data.lower()
+
+    def test_number_modes_invalid_language_rejected(self, client):
+        """Invalid language codes are rejected on the number-practice page."""
+        response = client.get("/notalang/numbers", follow_redirects=True)
+        assert response.status_code == 200
 
     def test_invalid_language_rejected(self, client):
         """Test that invalid language codes are rejected."""
@@ -222,9 +243,9 @@ class TestMagnitudeLevel:
         with client.session_transaction() as sess:
             assert sess.get("magnitude_level") == 1
 
-    def test_mode_selection_contains_magnitude_dial(self, client):
-        """Test that mode selection page contains the magnitude dial."""
-        response = client.get("/es")
+    def test_number_modes_contains_magnitude_dial(self, client):
+        """Test that the number-practice page contains the magnitude dial."""
+        response = client.get("/es/numbers")
         data = response.data.decode("utf-8")
         assert "magnitude-slider" in data
         assert "magnitude-hidden-input" in data

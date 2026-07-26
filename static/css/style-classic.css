@@ -328,6 +328,221 @@ body {
 }
 
 /* Mode Selection */
+/* ===== "Menu restructured" one-time notice ===== */
+.menu-restructure-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 720px;
+    margin: 24px auto 0;
+    padding: 12px 16px;
+    background: rgba(252, 158, 79, 0.12);
+    border: 1px solid rgba(252, 158, 79, 0.45);
+    border-radius: 12px;
+    text-align: left;
+}
+.menu-restructure-notice[hidden] {
+    display: none;
+}
+.menu-restructure-badge {
+    flex-shrink: 0;
+    padding: 3px 9px;
+    background: #E54F6D;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.75px;
+    text-transform: uppercase;
+    border-radius: 10px;
+    line-height: 1.2;
+}
+.menu-restructure-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #4a4a5e;
+}
+.menu-restructure-dismiss {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #020122;
+    background: #FC9E4F;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+}
+.menu-restructure-dismiss:hover {
+    filter: brightness(1.05);
+}
+@media (max-width: 600px) {
+    .menu-restructure-notice {
+        flex-wrap: wrap;
+    }
+    .menu-restructure-dismiss {
+        margin-left: auto;
+    }
+}
+
+/* ===== Home 2x2 practice menu ===== */
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 720px;
+    margin: 34px auto 10px;
+}
+
+.menu-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 28px 22px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #F2F3AE 100%);
+    border: 3px solid #EDD382;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(2, 1, 34, 0.08);
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    width: 100%;
+    font: inherit;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+@media (hover: hover) {
+    .menu-tile:hover {
+        background: linear-gradient(135deg, #FFFBF2 0%, #FFE9C7 100%);
+        border-color: #FC9E4F;
+        transform: translateY(-4px);
+        box-shadow: 0 15px 36px rgba(252, 158, 79, 0.32);
+    }
+}
+
+.menu-tile-form {
+    margin: 0;
+    display: flex;
+}
+.menu-tile-btn {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.menu-tile-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+    background: rgba(252, 158, 79, 0.14);
+    border: 1px solid rgba(252, 158, 79, 0.35);
+}
+.menu-tile-icon-img {
+    width: 28px;
+    height: 28px;
+}
+/* Monochrome icons (ear, verbs) recoloured to the accent via a CSS mask. */
+.menu-tile-mask {
+    width: 28px;
+    height: 28px;
+    background-color: #C1440E;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+.menu-tile-mask--ear {
+    -webkit-mask-image: url(../icons/icon-ear.svg);
+    mask-image: url(../icons/icon-ear.svg);
+}
+.menu-tile-mask--verbs {
+    -webkit-mask-image: url(../icons/icon-verbs.svg);
+    mask-image: url(../icons/icon-verbs.svg);
+}
+.menu-tile-icon-numbers {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #C1440E;
+}
+
+.menu-tile-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #020122;
+    line-height: 1.25;
+}
+
+.menu-tile-body {
+    margin: 0;
+    font-size: 0.92rem;
+    color: #6B7280;
+    line-height: 1.45;
+    max-width: 34ch;
+}
+
+.menu-tile-cta {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #C1440E;
+}
+
+.menu-tile-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.menu-tile-numbers {
+    padding: 0;
+}
+.menu-tile-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 22px;
+    list-style: none;
+    cursor: pointer;
+}
+.menu-tile-summary::-webkit-details-marker {
+    display: none;
+}
+.menu-tile-numbers[open] {
+    grid-column: 1 / -1;
+    cursor: default;
+}
+.menu-tile-numbers[open] .menu-tile-chevron {
+    transform: rotate(180deg);
+}
+.menu-tile-expanded {
+    padding: 0 22px 24px;
+}
+.menu-tile-expanded .mode-selection {
+    margin: 8px 0 20px;
+}
+.menu-tile-expanded .magnitude-dial-section {
+    margin-top: 0;
+}
+
+@media (max-width: 600px) {
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .mode-selection {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -940,6 +1155,12 @@ body {
 
 .results-actions form {
     grid-column: 1 / -1;
+}
+
+/* Two-button variant (e.g. cards results): keep Try Again and the back
+   link side by side instead of stacking the form full-width. */
+.results-actions--pair form {
+    grid-column: auto;
 }
 
 .results-actions .btn {
