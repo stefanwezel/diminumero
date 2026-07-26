@@ -329,6 +329,164 @@ body {
 }
 
 /* Mode Selection */
+/* ===== Home 2x2 practice menu ===== */
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 720px;
+    margin: 34px auto 10px;
+}
+
+/* Base tile: shared by the <a>, <button> and <details> variants. */
+.menu-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 28px 22px;
+    background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
+    border: 2px solid rgba(194, 249, 112, 0.28);
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.18);
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    width: 100%;
+    font: inherit;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (hover: hover) {
+    .menu-tile:hover {
+        transform: translateY(-4px);
+        border-color: rgba(194, 249, 112, 0.7);
+        box-shadow: 0 15px 36px rgba(0, 0, 0, 0.32), 0 0 18px rgba(194, 249, 112, 0.12);
+    }
+}
+
+/* The Listening tile is a submit button inside a form. */
+.menu-tile-form {
+    margin: 0;
+    display: flex;
+}
+.menu-tile-btn {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.menu-tile-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+    background: rgba(194, 249, 112, 0.12);
+    border: 1px solid rgba(194, 249, 112, 0.3);
+}
+.menu-tile-icon-img {
+    width: 28px;
+    height: 28px;
+}
+/* Monochrome icons (ear, verbs) are recoloured to the accent via a CSS mask so
+   they don't render as dark-on-dark inside the tile badge. */
+.menu-tile-mask {
+    width: 28px;
+    height: 28px;
+    background-color: #C2F970;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+.menu-tile-mask--ear {
+    -webkit-mask-image: url(../icons/icon-ear.svg);
+    mask-image: url(../icons/icon-ear.svg);
+}
+.menu-tile-mask--verbs {
+    -webkit-mask-image: url(../icons/icon-verbs.svg);
+    mask-image: url(../icons/icon-verbs.svg);
+}
+.menu-tile-icon-numbers {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #C2F970;
+}
+
+.menu-tile-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.25;
+}
+
+.menu-tile-body {
+    margin: 0;
+    font-size: 0.92rem;
+    color: #A89BB8;
+    line-height: 1.45;
+    max-width: 34ch;
+}
+
+.menu-tile-cta {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #C2F970;
+}
+
+.menu-tile-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+/* The Number-practice tile is a <details> that expands to the mode picker. */
+.menu-tile-numbers {
+    padding: 0;
+}
+.menu-tile-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 22px;
+    list-style: none;
+    cursor: pointer;
+}
+.menu-tile-summary::-webkit-details-marker {
+    display: none;
+}
+.menu-tile-numbers[open] {
+    grid-column: 1 / -1;
+    cursor: default;
+}
+.menu-tile-numbers[open] .menu-tile-chevron {
+    transform: rotate(180deg);
+}
+.menu-tile-expanded {
+    padding: 0 22px 24px;
+}
+.menu-tile-expanded .mode-selection {
+    margin: 8px 0 20px;
+}
+.menu-tile-expanded .magnitude-dial-section {
+    margin-top: 0;
+}
+
+@media (max-width: 600px) {
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .mode-selection {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

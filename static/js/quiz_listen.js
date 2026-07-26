@@ -63,17 +63,35 @@
     function swapFrom(html, url) {
         var doc = new DOMParser().parseFromString(html, 'text/html');
         // Anything that isn't a listening-quiz page (e.g. the results page) is a
-        // real navigation — let the browser go there normally.
+        // terminal navigation. Use replace() so the finished listening entry is
+        // discarded — otherwise "back" from results would return to a stale
+        // (already completed) listening page.
         if (!doc.querySelector('.quiz-page')) {
-            window.location.href = url;
+            window.location.replace(url);
             return;
         }
         var newContainer = doc.querySelector('.container');
         container.innerHTML = newContainer ? newContainer.innerHTML : '';
         if (url) {
             try {
-                var samePath = new URL(url, window.location.href).pathname === window.location.pathname;
-                history[samePath ? 'replaceState' : 'pushState']({ listen: true }, '', url);
+                var newPath = new URL(url, window.location.href).pathname;
+                var curPath = window.location.pathname;
+                if (newPath === curPath) {
+                    // In-session transition (answer / reveal / next): collapse
+                    // into a single history entry so the whole listening run is
+                    // one "back" step, not one per question.
+                    history.replaceState({ listen: true }, '', url);
+                } else {
+                    // Entering the listening quiz from another page (mode page,
+                    // landing, or results). Anchor the back button to the
+                    // language's mode page so "back" is consistent no matter
+                    // where listening was launched from.
+                    var modeUrl = newPath.replace(/\/listen(\/.*)?$/, '') || '/';
+                    if (modeUrl !== curPath) {
+                        history.replaceState(null, '', modeUrl);
+                    }
+                    history.pushState({ listen: true }, '', url);
+                }
             } catch (e) {}
         }
         refreshToasts(doc);

@@ -389,6 +389,39 @@ def mode_selection(lang_code):
     )
 
 
+@app.route("/<lang_code>/numbers")
+def number_modes(lang_code):
+    """Number-practice page: pick a difficulty (easy/advanced/hardcore).
+
+    Split out of the language menu so it has its own URL and browser Back
+    returns to the language menu rather than the landing page.
+    """
+    if not is_language_ready(lang_code):
+        flash(get_text("flash_invalid_language"), "error")
+        return redirect(url_for("index"))
+
+    session["learn_language"] = lang_code
+
+    try:
+        numbers = get_language_numbers(lang_code)
+        total_numbers = len(numbers)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("index"))
+
+    has_learn_materials = lang_code in get_languages_with_learn_materials()
+
+    return render_template(
+        "numbers.html",
+        total_numbers=total_numbers,
+        questions_per_quiz=QUESTIONS_PER_QUIZ,
+        lang_code=lang_code,
+        get_text=get_text,
+        has_learn_materials=has_learn_materials,
+        magnitude_level=session.get("magnitude_level", 1),
+    )
+
+
 @app.route("/set_language/<lang>")
 def set_language(lang):
     """Set the UI language preference (not learning language)."""

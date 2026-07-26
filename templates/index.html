@@ -41,137 +41,47 @@
             {{ get_text('home_hero_description') }}
         </p>
 
-        {% if has_conjugation %}
-        <aside class="new-feature-callout" aria-label="{{ get_text('conjugate_title_' + lang_code) }}">
-            <span class="new-feature-badge">{{ get_text('home_new_feature_badge') }}</span>
-            <div class="new-feature-text">
-                <h2 class="new-feature-title">{{ get_text('conjugate_title_' + lang_code) }}</h2>
-                <p class="new-feature-body">{{ get_text('conjugate_subtitle') }}</p>
-            </div>
-            {% if user %}
-                <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary new-feature-cta">
-                    {{ get_text('conjugate_start_btn') }}
-                </a>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="btn btn-primary new-feature-cta">
-                    {{ get_text('home_new_feature_cta_login') }}
-                </a>
-            {% endif %}
-        </aside>
-        {% endif %}
+        <div class="menu-grid" id="menu-grid">
+            <!-- 1. Number practice -->
+            <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="menu-tile">
+                <span class="menu-tile-icon menu-tile-icon-numbers" aria-hidden="true">123</span>
+                <span class="menu-tile-title">{{ get_text('menu_numbers_title') }}</span>
+                <span class="menu-tile-body">{{ get_text('menu_numbers_body') }}</span>
+                <span class="menu-tile-cta">{{ get_text('menu_numbers_cta') }} →</span>
+            </a>
 
-        {% if has_audio_mode %}
-        <aside class="new-feature-callout" aria-label="{{ get_text('home_audio_mode_title') }}">
-            <div class="new-feature-text">
-                <h2 class="new-feature-title">{{ get_text('home_audio_mode_title') }}</h2>
-                <p class="new-feature-body">{{ get_text('home_audio_mode_body') }}</p>
-            </div>
-            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="new-feature-cta-form" data-listen-pjax>
+            <!-- 2. Listening -->
+            {% if has_audio_mode %}
+            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="menu-tile-form" data-listen-pjax>
                 <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
-                <button type="submit" class="btn btn-primary new-feature-cta">
-                    {{ get_text('home_audio_mode_cta') }}
+                <button type="submit" class="menu-tile menu-tile-btn">
+                    <span class="menu-tile-icon" aria-hidden="true"><span class="menu-tile-mask menu-tile-mask--ear"></span></span>
+                    <span class="menu-tile-title">{{ get_text('home_audio_mode_title') }}</span>
+                    <span class="menu-tile-body">{{ get_text('home_audio_mode_body') }}</span>
+                    <span class="menu-tile-cta">{{ get_text('home_audio_mode_cta') }} →</span>
                 </button>
             </form>
-        </aside>
-        {% endif %}
-
-        <aside class="new-feature-callout" aria-label="{{ get_text('home_new_feature_title') }}">
-            <div class="new-feature-text">
-                <h2 class="new-feature-title">{{ get_text('home_new_feature_title') }}</h2>
-                <p class="new-feature-body">{{ get_text('home_new_feature_body') }}</p>
-            </div>
-            {% if user %}
-                <a href="{{ url_for('cards') }}" class="btn btn-primary new-feature-cta">
-                    {{ get_text('home_new_feature_cta_open') }}
-                </a>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="btn btn-primary new-feature-cta">
-                    {{ get_text('home_new_feature_cta_login') }}
-                </a>
             {% endif %}
-        </aside>
 
-        <div class="mode-selection" id="mode-selection">
-            <div class="mode-card">
-                <h3 class="mode-title">{{ get_text('mode_easy') }}</h3>
-                <p class="mode-description">{{ get_text('mode_easy_desc') }}</p>
-                <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
-                    <input type="hidden" name="mode" value="easy">
-                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
-                    <button type="submit" class="btn btn-primary">
-                        {{ get_text('mode_easy_btn') }}
-                    </button>
-                </form>
-            </div>
+            <!-- 3. Vocabulary cards -->
+            <a href="{{ url_for('cards') if user else url_for('login') }}" class="menu-tile">
+                <span class="menu-tile-icon" aria-hidden="true"><img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="menu-tile-icon-img" loading="lazy"></span>
+                <span class="menu-tile-title">{{ get_text('home_new_feature_title') }}</span>
+                <span class="menu-tile-body">{{ get_text('home_new_feature_body') }}</span>
+                <span class="menu-tile-cta">{{ get_text('home_new_feature_cta_open') if user else get_text('home_new_feature_cta_login') }} →</span>
+            </a>
 
-            <div class="mode-card">
-                <h3 class="mode-title">{{ get_text('mode_advanced') }}</h3>
-                <p class="mode-description">{{ get_text('mode_advanced_desc') }}</p>
-                <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
-                    <input type="hidden" name="mode" value="advanced">
-                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
-                    <button type="submit" class="btn btn-primary">
-                        {{ get_text('mode_advanced_btn') }}
-                    </button>
-                </form>
-            </div>
-
-            <div class="mode-card">
-                <h3 class="mode-title">{{ get_text('mode_hardcore') }}</h3>
-                <p class="mode-description">{{ get_text('mode_hardcore_desc') }}</p>
-                <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
-                    <input type="hidden" name="mode" value="hardcore">
-                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
-                    <button type="submit" class="btn btn-primary">
-                        {{ get_text('mode_hardcore_btn') }}
-                    </button>
-                </form>
-            </div>
+            <!-- 4. Verb conjugation -->
+            {% if has_conjugation %}
+            <a href="{{ url_for('conjugate', lang_code=lang_code) if user else url_for('login') }}" class="menu-tile">
+                <span class="menu-tile-icon" aria-hidden="true"><span class="menu-tile-mask menu-tile-mask--verbs"></span></span>
+                <span class="menu-tile-title">{{ get_text('conjugate_title_' + lang_code) }}</span>
+                <span class="menu-tile-body">{{ get_text('conjugate_subtitle') }}</span>
+                <span class="menu-tile-cta">{{ get_text('conjugate_start_btn') if user else get_text('home_new_feature_cta_login') }} →</span>
+            </a>
+            {% endif %}
         </div>
 
-        <div class="magnitude-dial-section">
-            <label class="magnitude-label" for="magnitude-slider">{{ get_text('magnitude_label') }}</label>
-            <div class="magnitude-slider-row">
-                <span class="magnitude-end-label">{{ get_text('magnitude_small') }}</span>
-                <input type="range" id="magnitude-slider" class="magnitude-slider" min="1" max="5" value="{{ magnitude_level }}" step="1">
-                <span class="magnitude-end-label">{{ get_text('magnitude_large') }}</span>
-            </div>
-            <p class="magnitude-level-desc" id="magnitude-level-desc">{{ get_text('magnitude_level_' ~ magnitude_level) }}</p>
-        </div>
-
-        <script>
-        (function() {
-            var slider = document.getElementById('magnitude-slider');
-            var desc = document.getElementById('magnitude-level-desc');
-            var hiddenInputs = document.querySelectorAll('.magnitude-hidden-input');
-            var descriptions = {
-                1: {{ get_text('magnitude_level_1')|tojson }},
-                2: {{ get_text('magnitude_level_2')|tojson }},
-                3: {{ get_text('magnitude_level_3')|tojson }},
-                4: {{ get_text('magnitude_level_4')|tojson }},
-                5: {{ get_text('magnitude_level_5')|tojson }}
-            };
-            slider.addEventListener('input', function() {
-                var val = this.value;
-                desc.textContent = descriptions[val];
-                for (var i = 0; i < hiddenInputs.length; i++) {
-                    hiddenInputs[i].value = val;
-                }
-            });
-        })();
-        </script>
-
-        <div class="info">
-            <div class="info-item">
-                <span class="info-number">{{ questions_per_quiz }}</span>
-                <span class="info-label">{{ get_text('info_questions') }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-number">{{ total_numbers }}</span>
-                <span class="info-label">{{ get_text('info_numbers') }}</span>
-            </div>
-        </div>
-        
         <div class="learn-cta">
             {% if has_learn_materials %}
             <a href="{{ url_for('learn', lang_code=lang_code) }}" class="learn-card">
@@ -215,7 +125,7 @@
 </div>
 <script>
 if (window.innerWidth <= 768) {
-    var el = document.getElementById('mode-selection');
+    var el = document.getElementById('menu-grid');
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
 }
 </script>
