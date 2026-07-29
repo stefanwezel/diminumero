@@ -2277,14 +2277,13 @@ html {
     font-size: 1.1rem;
 }
 
-/* Learn CTA on Index Page */
+/* Learn CTA on Index Page — same 2-column geometry as .menu-grid above it. */
 .learn-cta {
     margin: 30px auto;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-    max-width: 1040px;
+    max-width: 720px;
 }
 
 .learn-card {
@@ -2292,15 +2291,27 @@ html {
     background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
     border: 1px solid rgba(168, 155, 184, 0.18);
     border-radius: 15px;
-    padding: 30px;
+    padding: 28px 22px;
     text-decoration: none;
     color: #E8DFF0;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     text-align: center;
-    flex: 1 1 320px;
-    max-width: 500px;
+    width: 100%;
     margin: 0;
+}
+
+/* Pages with a single learn card (numbers page) keep it centred, not half-width. */
+.learn-cta > :only-child {
+    grid-column: 1 / -1;
+    max-width: 500px;
+    margin-inline: auto;
+}
+
+@media (max-width: 600px) {
+    .learn-cta {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (hover: hover) {
@@ -2720,14 +2731,13 @@ html {
     padding: 15px 40px;
 }
 
-/* Learn CTA Card on Index Page */
+/* Learn CTA Card on Index Page — same 2-column geometry as .menu-grid above it. */
 .learn-cta {
     margin: 30px auto;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-    max-width: 1040px;
+    max-width: 720px;
 }
 
 .learn-card {
@@ -2736,12 +2746,24 @@ html {
     color: white;
     text-decoration: none;
     border-radius: 15px;
-    padding: 30px;
+    padding: 28px 22px;
     transition: all 0.3s ease;
     box-shadow: 0 8px 25px rgba(114, 78, 145, 0.3);
     text-align: center;
-    flex: 1 1 320px;
+    width: 100%;
+}
+
+/* Pages with a single learn card (numbers page) keep it centred, not half-width. */
+.learn-cta > :only-child {
+    grid-column: 1 / -1;
     max-width: 500px;
+    margin-inline: auto;
+}
+
+@media (max-width: 600px) {
+    .learn-cta {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (hover: hover) {
