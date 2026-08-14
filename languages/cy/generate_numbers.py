@@ -134,7 +134,7 @@ def number_to_welsh(n):
 random.seed(42)
 numbers_set = set()
 
-numbers_set.update(range(1, 101))
+numbers_set.update(range(0, 101))
 numbers_set.update(random.sample(range(101, 1001), 200))
 numbers_set.update(random.sample(range(1001, 10001), 300))
 numbers_set.update(random.sample(range(10001, 100001), 200))

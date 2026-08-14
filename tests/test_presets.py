@@ -257,10 +257,11 @@ class TestShareLinkControl:
     """The copy-link control on the config screen."""
 
     def test_builder_is_rendered_with_deck_bounds(self, client):
+        """Bounds come from the deck, so they can't drift out of date here."""
         data = client.get("/es/numbers").data.decode("utf-8")
         assert 'id="preset-share"' in data
-        assert 'data-deck-min="1"' in data
-        assert 'data-deck-max="9990306"' in data
+        assert f'data-deck-min="{min(NUMBERS_ES)}"' in data
+        assert f'data-deck-max="{max(NUMBERS_ES)}"' in data
         assert "js/preset_link.js" in data
 
     def test_listening_option_only_for_audio_languages(self, client):

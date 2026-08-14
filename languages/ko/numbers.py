@@ -1,6 +1,7 @@
 """Korean (Sino-Korean) numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "영",
     1: "일",
     2: "이",
     3: "삼",

@@ -48,7 +48,7 @@ AVAILABLE_LANGUAGES = {
         },
         # Description shown on the language selection page, in each UI language
         'ui_descriptions': {
-            'en': 'Learn LanguageName numbers from 1 to 10 million',
+            'en': 'Learn LanguageName numbers from 0 to 10 million',
             'de': 'Lerne Sprachname Zahlen von 1 bis 10 Millionen',
             'es': 'Aprende los números en NombreLengua del 1 al 10 millones',
             'it': 'Impara i numeri in NomeLingua da 1 a 10 milioni',
@@ -80,12 +80,17 @@ Create `languages/<lang_code>/numbers.py`:
 """<Language> numbers data for diminumero."""
 
 NUMBERS = {
+    0: "zero",
     1: "one",
     2: "two",
     3: "three",
     # Add more numbers...
 }
 ```
+
+**Start at 0.** Every deck includes zero — it is a normal quiz and worksheet
+answer. Listening mode is the one exception, and it excludes zero on its own
+because there is no `0.mp3`, so nothing extra is needed for it.
 
 ### 4. Create Number Generator (Optional but Recommended)
 
@@ -187,7 +192,7 @@ touch languages/qu/__init__.py
     'native_name': 'Runasimi',
     'flag': '🇵🇪',
     'ready': False,
-    'description': 'Learn Quechua numbers from 1 to millions!',
+    'description': 'Learn Quechua numbers from 0 to millions!',
     'validation_strategy': 'word_based',
     'ui_names': {
         'en': 'Quechua', 'de': 'Quechua', 'es': 'Quechua',
@@ -195,7 +200,7 @@ touch languages/qu/__init__.py
         'ar': 'كيتشوا', 'uk': 'Кечуа',
     },
     'ui_descriptions': {
-        'en': 'Learn Quechua numbers from 1 to 10 million',
+        'en': 'Learn Quechua numbers from 0 to 10 million',
         'de': 'Lerne Quechua Zahlen von 1 bis 10 Millionen',
         'es': 'Aprende los números en quechua del 1 al 10 millones',
         'it': 'Impara i numeri in quechua da 1 a 10 milioni',
@@ -221,7 +226,7 @@ elif lang_code == 'qu':
 ## Number Generation Best Practices
 
 1. **Coverage**: Include variety across magnitudes
-   - 1-100: All numbers
+   - 0-100: All numbers (the generator's `range(0, 101)` — don't drop the 0)
    - 100-1000: Good coverage
    - 1000+: Sample representative numbers
 

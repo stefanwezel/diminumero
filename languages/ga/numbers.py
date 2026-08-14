@@ -1,6 +1,7 @@
 """Irish numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "náid",
     1: "a haon",
     2: "a dó",
     3: "a trí",

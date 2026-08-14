@@ -126,7 +126,7 @@ numbers_set = set()
 
 # Include some specific ranges to ensure variety
 # 1-100: 100 numbers
-numbers_set.update(range(1, 101))
+numbers_set.update(range(0, 101))
 
 # 101-1000: 200 numbers
 numbers_set.update(random.sample(range(101, 1001), 200))

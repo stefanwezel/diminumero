@@ -3,6 +3,7 @@
 # Placeholder data - to be replaced with actual Nepalese numbers
 # Currently using sample data for demonstration purposes
 NUMBERS = {
+    0: "शून्य",
     1: "एक",
     2: "दुई",
     3: "तीन",
