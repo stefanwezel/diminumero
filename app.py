@@ -8,6 +8,7 @@ from urllib.parse import quote_plus, urlencode
 from flask import (
     Flask,
     Response,
+    g,
     render_template,
     request,
     redirect,
@@ -206,6 +207,14 @@ def add_static_cache_bust(endpoint, values):
 def set_cache_headers(response):
     """Set Cache-Control headers based on the route."""
     path = request.path
+    if g.get("no_store"):
+        # A quiz rendered from a shared preset link lives on an otherwise
+        # cacheable URL (/<lang>/numbers) but carries a live question and a
+        # Set-Cookie — never let a proxy hand it to the next student.
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
+        return response
     if path in ("/about", "/privacy", "/imprint", "/"):
         response.headers["Cache-Control"] = "public, max-age=3600"
     elif path in ("/sitemap.xml", "/robots.txt"):
@@ -285,6 +294,12 @@ def inject_seo_context():
         "breadcrumbs": breadcrumbs,
         "user": session.get("user"),
         "conjugation_lang": _current_conjugation_lang(),
+        # Inline banner for a shared preset link whose params were adjusted.
+        "preset_notices": g.get("preset_notices") or [],
+        # Any URL carrying quiz params is a duplicate of the clean route as
+        # far as a crawler is concerned: canonical_url above already drops the
+        # query string, and base.html adds noindex when this is set.
+        "has_quiz_params": _has_preset_params(),
     }
 
 
@@ -389,6 +404,169 @@ def mode_selection(lang_code):
     )
 
 
+# ===== Shareable drill presets =====
+# A teacher pastes one URL into Moodle or Teams and a student lands straight in
+# the configured drill, e.g. /es/numbers?range=1-100&mode=listening&magnitude=2
+# The params fully determine the drill, so the link works from a cold browser
+# with no session, no cookies and no account.
+
+PRESET_PARAM_KEYS = ("mode", "range", "magnitude")
+
+# Public mode names accepted in a link -> internal session mode. The listening
+# drill is "audio" internally, but "listening" is what a teacher would write.
+PRESET_MODE_ALIASES = {
+    "easy": "easy",
+    "advanced": "advanced",
+    "hardcore": "hardcore",
+    "listening": "audio",
+    "listen": "audio",
+    "audio": "audio",
+}
+
+PRESET_DEFAULT_MODE = "easy"
+
+# Where listening degrades to when the language has no playable audio.
+PRESET_NO_AUDIO_FALLBACK_MODE = "advanced"
+
+# Fewest numbers a range may leave in the deck: easy mode draws its three
+# distractors from the deck, and the no-repeat rule needs room to move.
+MIN_PRESET_DECK = 4
+
+# "1-100", tolerating the dashes a word processor produces.
+_RANGE_RE = re.compile(r"^(\d+)\s*[-–—]\s*(\d+)$")
+
+
+def _has_preset_params():
+    """True when the URL carries at least one recognised preset param.
+
+    Unknown params (utm_source and friends) must not start a drill.
+    """
+    return any(key in request.args for key in PRESET_PARAM_KEYS)
+
+
+def _numbers_in_range(numbers, num_range):
+    """The deck narrowed to an inclusive (low, high) range."""
+    if not num_range:
+        return numbers
+    low, high = num_range
+    return {num: word for num, word in numbers.items() if low <= num <= high}
+
+
+def _parse_range(value, numbers):
+    """Parse a "min-max" range against what the language actually has.
+
+    Returns (range_or_None, notice_key_or_None). Decks are sparse above 1000,
+    so a syntactically fine range can still leave too few numbers to build a
+    quiz from — that falls back to the full deck just like garbage does.
+    """
+    if value is None:
+        return None, None
+
+    match = _RANGE_RE.match(value.strip())
+    if not match:
+        return None, "preset_notice_range"
+
+    low, high = int(match.group(1)), int(match.group(2))
+    if low > high:
+        low, high = high, low
+
+    if len(_numbers_in_range(numbers, (low, high))) < MIN_PRESET_DECK:
+        return None, "preset_notice_range_empty"
+
+    return (low, high), None
+
+
+def _parse_magnitude(value):
+    """Parse a magnitude dial value. Returns (level, notice_key_or_None)."""
+    if value is None:
+        return 1, None
+    try:
+        level = int(value)
+    except (TypeError, ValueError):
+        return 1, "preset_notice_magnitude"
+    if level not in range(1, 6):
+        return 1, "preset_notice_magnitude"
+    return level, None
+
+
+def _playable_audio_numbers(lang_code, numbers):
+    """The subset of `numbers` we have a pre-generated MP3 for."""
+    available = _available_audio_numbers(lang_code)
+    return {num: word for num, word in numbers.items() if num in available}
+
+
+def _parse_preset(lang_code, numbers):
+    """Resolve the query params into a drill. Never raises.
+
+    Returns (mode, magnitude_level, num_range, notices), where notices are
+    already-translated strings for the inline banner.
+    """
+    notice_keys = []
+
+    raw_mode = (request.args.get("mode") or "").strip().lower()
+    mode = PRESET_MODE_ALIASES.get(raw_mode, PRESET_DEFAULT_MODE)
+    if raw_mode and raw_mode not in PRESET_MODE_ALIASES:
+        notice_keys.append("preset_notice_mode")
+
+    num_range, range_notice = _parse_range(request.args.get("range"), numbers)
+    if range_notice:
+        notice_keys.append(range_notice)
+
+    magnitude_level, magnitude_notice = _parse_magnitude(request.args.get("magnitude"))
+    if magnitude_notice:
+        notice_keys.append(magnitude_notice)
+
+    # Listening needs both the language flag and MP3s that survive the range
+    # filter — otherwise the student gets a player with nothing to play.
+    if mode == "audio":
+        ranged = _numbers_in_range(numbers, num_range)
+        if lang_code not in get_languages_with_audio_mode() or not (
+            _playable_audio_numbers(lang_code, ranged)
+        ):
+            mode = PRESET_NO_AUDIO_FALLBACK_MODE
+            notice_keys.append("preset_notice_no_audio")
+
+    notices = [get_text(key, learn_language=lang_code) for key in notice_keys]
+    return mode, magnitude_level, num_range, notices
+
+
+def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None):
+    """Start a fresh quiz session, keeping only the UI language and any login.
+
+    Shared by the two form-post seeders and the preset link path.
+    """
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    saved_user = session.get("user")
+    session.clear()
+    session["language"] = ui_language
+    if saved_user is not None:
+        session["user"] = saved_user
+    session["learn_language"] = lang_code
+    session["score"] = 0
+    session["total_questions"] = 0
+    session["asked_numbers"] = []
+    session["mode"] = mode
+    session["magnitude_level"] = magnitude_level
+    if num_range:
+        session["number_range"] = list(num_range)
+    session["quiz_start_time"] = time.time()
+
+
+def _session_numbers(lang_code):
+    """The deck for the running quiz.
+
+    The language's numbers, narrowed to the session's range when the quiz was
+    started from a link that set one. Every question of the drill goes through
+    here, so question 2 stays inside the teacher's range just like question 1.
+    """
+    numbers = get_language_numbers(lang_code)
+    num_range = session.get("number_range")
+    if not num_range or len(num_range) != 2:
+        return numbers
+    # Never hand back an empty deck: a stale range must not blank the quiz.
+    return _numbers_in_range(numbers, (num_range[0], num_range[1])) or numbers
+
+
 @app.route("/<lang_code>/numbers")
 def number_modes(lang_code):
     """Number-practice page: pick a difficulty (easy/advanced/hardcore).
@@ -409,6 +587,10 @@ def number_modes(lang_code):
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
 
+    # A shared preset link renders the drill itself instead of this page.
+    if _has_preset_params():
+        return _start_preset_drill(lang_code, numbers)
+
     has_learn_materials = lang_code in get_languages_with_learn_materials()
 
     return render_template(
@@ -418,6 +600,9 @@ def number_modes(lang_code):
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
+        has_audio_mode=lang_code in get_languages_with_audio_mode(),
+        deck_min=min(numbers),
+        deck_max=max(numbers),
         magnitude_level=session.get("magnitude_level", 1),
     )
 
@@ -474,27 +659,19 @@ def start_quiz(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     # Read magnitude level from form, validate (int 1-5, default 1)
-    try:
-        magnitude_level = int(request.form.get("magnitude_level", 1))
-    except (TypeError, ValueError):
-        magnitude_level = 1
-    if magnitude_level not in range(1, 6):
-        magnitude_level = 1
+    magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    # Clear quiz-related session data but keep UI language and any logged-in user
-    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    saved_user = session.get("user")
-    session.clear()
-    session["language"] = ui_language
-    if saved_user is not None:
-        session["user"] = saved_user
-    session["learn_language"] = lang_code
-    session["score"] = 0
-    session["total_questions"] = 0
-    session["asked_numbers"] = []
-    session["mode"] = mode
-    session["magnitude_level"] = magnitude_level
-    session["quiz_start_time"] = time.time()
+    # The share-link builder on the config screen also feeds its range into
+    # these forms, so pressing Start gives the teacher the same drill the
+    # link they just copied produces.
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+    num_range, _ = _parse_range(request.form.get("range"), numbers)
+
+    _seed_quiz_session(lang_code, mode, magnitude_level, num_range)
 
     # Redirect to appropriate quiz
     if mode == "easy":
@@ -517,9 +694,9 @@ def quiz_easy(lang_code):
     if session.get("mode") != "easy":
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    # Load numbers for this language
+    # Load numbers for this language (narrowed to a shared link's range)
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -624,9 +801,9 @@ def quiz_advanced(lang_code):
     if session.get("mode") != "advanced":
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    # Load numbers for this language
+    # Load numbers for this language (narrowed to a shared link's range)
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -772,9 +949,9 @@ def quiz_hardcore(lang_code):
     if session.get("mode") != "hardcore":
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    # Load numbers for this language
+    # Load numbers for this language (narrowed to a shared link's range)
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -912,26 +1089,9 @@ def listen_start(lang_code):
         flash(get_text("flash_invalid_language"), "error")
         return redirect(url_for("index"))
 
-    try:
-        magnitude_level = int(request.form.get("magnitude_level", 1))
-    except (TypeError, ValueError):
-        magnitude_level = 1
-    if magnitude_level not in range(1, 6):
-        magnitude_level = 1
+    magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    saved_user = session.get("user")
-    session.clear()
-    session["language"] = ui_language
-    if saved_user is not None:
-        session["user"] = saved_user
-    session["learn_language"] = lang_code
-    session["score"] = 0
-    session["total_questions"] = 0
-    session["asked_numbers"] = []
-    session["mode"] = "audio"
-    session["magnitude_level"] = magnitude_level
-    session["quiz_start_time"] = time.time()
+    _seed_quiz_session(lang_code, "audio", magnitude_level)
 
     return redirect(url_for("listen_quiz", lang_code=lang_code))
 
@@ -949,13 +1109,12 @@ def listen_quiz(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    available = _available_audio_numbers(lang_code)
-    playable_numbers = {n: word for n, word in numbers.items() if n in available}
+    playable_numbers = _playable_audio_numbers(lang_code, numbers)
     if not playable_numbers:
         flash(get_text("flash_audio_missing"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -1045,6 +1204,29 @@ def listen_quiz(lang_code):
         lang_code=lang_code,
         get_text=get_text,
     )
+
+
+def _start_preset_drill(lang_code, numbers):
+    """Render the drill described by the query params, in this response.
+
+    Deliberately not a redirect: the student must land in the configured quiz
+    from one cold GET, and the parameterised URL itself has to carry the
+    canonical/noindex tags. The quiz's own forms post to the real quiz route,
+    so from question 2 the drill runs on its canonical URL.
+    """
+    mode, magnitude_level, num_range, notices = _parse_preset(lang_code, numbers)
+    _seed_quiz_session(lang_code, mode, magnitude_level, num_range)
+
+    g.preset_notices = notices
+    g.no_store = True
+
+    views = {
+        "easy": quiz_easy,
+        "advanced": quiz_advanced,
+        "hardcore": quiz_hardcore,
+        "audio": listen_quiz,
+    }
+    return views[mode](lang_code)
 
 
 @app.route("/<lang_code>/results")

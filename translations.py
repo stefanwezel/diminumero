@@ -65,6 +65,21 @@ TRANSLATIONS = {
         "magnitude_level_3": "Balanced mix of all sizes",
         "magnitude_level_4": "Many larger numbers",
         "magnitude_level_5": "All sizes equally likely",
+        # Shareable drill links (teacher presets). English source strings —
+        # the other UI languages fall back to these per key until translated.
+        "preset_share_title": "Share this drill",
+        "preset_share_desc": "Copy a link that drops students straight into these settings. No account or sign-in needed.",
+        "preset_share_mode_label": "Mode",
+        "preset_share_range_label": "Number range (optional)",
+        "preset_share_from": "From",
+        "preset_share_to": "To",
+        "preset_share_copy": "Copy link",
+        "preset_share_copied": "Copied!",
+        "preset_notice_mode": "We didn't recognise the practice mode in that link, so we started the multiple-choice drill instead.",
+        "preset_notice_range": "The number range in that link isn't valid, so we're using the full LANGUAGE_NAME_PLACEHOLDER range.",
+        "preset_notice_range_empty": "There aren't enough LANGUAGE_NAME_PLACEHOLDER numbers in the range from that link, so we're using the full range.",
+        "preset_notice_magnitude": "The number-size setting in that link isn't valid, so we reset it to the smallest numbers.",
+        "preset_notice_no_audio": "Listening practice isn't available for LANGUAGE_NAME_PLACEHOLDER yet, so we started the typing drill instead.",
         # Info section
         "info_questions": "Questions",
         "info_numbers": "Numbers",

@@ -1,0 +1,10 @@
+{# Inline notice for a drill started from a shared preset link whose params
+   had to be adjusted (unknown mode, unusable range, listening without audio).
+   `preset_notices` is empty on every other request. #}
+{% if preset_notices %}
+<div class="preset-notice" role="status">
+    {% for notice in preset_notices %}
+    <p class="preset-notice-text">{{ notice }}</p>
+    {% endfor %}
+</div>
+{% endif %}
