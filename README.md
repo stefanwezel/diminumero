@@ -24,7 +24,7 @@ An interactive web application to practice number translations in multiple langu
 - **Theme Toggle**: Default dark-purple palette plus a classic light theme, toggled from the header and persisted in `localStorage`
 - **Feedback Poll**: In-app modal collects colour-scheme preference, cards-awareness, device, and free-form feedback; responses land in the `poll_responses` table and can be analysed via `tools/analyze_poll.py`
 - **Multilingual UI**: Interface available in English, German, Spanish, Italian, French, Portuguese, Arabic, and Ukrainian
-- **Cookie Consent**: A consent banner discloses Google AdSense usage and remembers the choice in `localStorage`
+- **No ads, minimal cookies**: No advertising of any kind. The only cookie is the Flask session cookie (plus Auth0's, if you log in), so there is no consent banner — just a footer note linking to the privacy policy
 - **Responsive Design**: Works seamlessly on desktop and mobile, with touch-friendly interactions
 - **Keyboard Shortcuts**: Use keys 1-4 for quick answer selection
 
@@ -109,7 +109,6 @@ diminumero/
         ├── cards_sort.js         # Client-side card sorting
         ├── cards_share.js        # Share-link modal + clipboard
         ├── cards_dashboard.js    # Foldable performance panel + Chart.js
-        ├── cookie-banner.js      # Cookie consent banner
         └── poll.js               # Feedback poll modal
 ```
 

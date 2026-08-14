@@ -431,12 +431,12 @@ class TestPdfFormat:
 class TestPrintableOutput:
     """The sheet is a document: no chrome, and it prints correctly."""
 
-    def test_no_nav_ads_or_cookie_banner(self, client):
+    def test_carries_no_site_chrome(self, client):
+        """The sheet must not pick up anything base.html renders."""
         html = sheet_html(client, "count=10&seed=p1")
-        assert "adsbygoogle" not in html
-        assert "cookie-banner" not in html
         assert "language-switcher" not in html
         assert "top-controls" not in html
+        assert "site-note" not in html
 
     def test_links_the_print_stylesheet_and_nothing_else(self, client):
         html = sheet_html(client, "count=10&seed=p2")
