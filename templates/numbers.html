@@ -159,17 +159,6 @@
             </div>
         </div>
 
-        <div class="info">
-            <div class="info-item">
-                <span class="info-number">{{ questions_per_quiz }}</span>
-                <span class="info-label">{{ get_text('info_questions') }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-number">{{ total_numbers }}</span>
-                <span class="info-label">{{ get_text('info_numbers') }}</span>
-            </div>
-        </div>
-
         {% if has_learn_materials %}
         <div class="learn-cta">
             <a href="{{ url_for('learn', lang_code=lang_code) }}" class="learn-card">

@@ -584,7 +584,6 @@ def number_modes(lang_code):
 
     try:
         numbers = get_language_numbers(lang_code)
-        total_numbers = len(numbers)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
@@ -597,8 +596,6 @@ def number_modes(lang_code):
 
     return render_template(
         "numbers.html",
-        total_numbers=total_numbers,
-        questions_per_quiz=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
