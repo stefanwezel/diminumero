@@ -23,10 +23,12 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
+import hashlib
 import jinja2
 import logging
 import quiz_logic
 import os
+import random
 import re
 import secrets
 import sys
@@ -604,6 +606,358 @@ def number_modes(lang_code):
         deck_min=min(numbers),
         deck_max=max(numbers),
         magnitude_level=session.get("magnitude_level", 1),
+    )
+
+
+# ===== Printable worksheets =====
+# A teacher configures a sheet at /<lang>/worksheet, prints it on paper and
+# hands it out. Everything on the sheet is a pure function of the URL
+# (language, range, count, direction, seed), so re-opening that URL next term
+# reprints the identical sheet — answer key included. Every number word is
+# read straight out of the language's verified NUMBERS deck; nothing here
+# builds a number word from rules.
+
+WORKSHEET_PARAM_KEYS = (
+    "count",
+    "direction",
+    "format",
+    "range",
+    "min",
+    "max",
+    "seed",
+)
+
+# `?format=pdf` renders the sheet server-side; anything else is the HTML page.
+WORKSHEET_FORMAT_PDF = "pdf"
+WORKSHEET_FORMATS = ("html", WORKSHEET_FORMAT_PDF)
+
+# URL value -> internal direction. The short aliases are for a hand-typed URL.
+WORKSHEET_DIRECTIONS = {
+    "digits_to_words": "digits_to_words",
+    "words_to_digits": "words_to_digits",
+    "to_words": "digits_to_words",
+    "to_digits": "words_to_digits",
+}
+WORKSHEET_DEFAULT_DIRECTION = "digits_to_words"
+
+WORKSHEET_COUNT_DEFAULT = 20
+WORKSHEET_COUNT_MIN = 1
+WORKSHEET_COUNT_MAX = 60
+
+# Sheet IDs get read off a printout and retyped, so the alphabet leaves out
+# the characters that look alike in print (0/o, 1/l).
+WORKSHEET_SEED_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"
+WORKSHEET_SEED_LENGTH = 6
+
+# What we accept back as a seed. Anything else is treated as no seed at all.
+_WORKSHEET_SEED_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$")
+
+# Answer lengths above these stop fitting in a column on a portrait page, so
+# the sheet drops to fewer, wider columns.
+WORKSHEET_TWO_COLUMN_MAX_CHARS = 28
+WORKSHEET_KEY_THREE_COLUMN_MAX_CHARS = 18
+WORKSHEET_KEY_TWO_COLUMN_MAX_CHARS = 40
+
+
+def _text_for_language(lang_code):
+    """``get_text`` bound to one learn language.
+
+    Worksheet pages are anonymous and stateless — the language comes from the
+    URL, not the session — so LANGUAGE_NAME_PLACEHOLDER has to be resolved
+    against `lang_code` explicitly.
+    """
+
+    def text(key):
+        return get_text(key, learn_language=lang_code)
+
+    return text
+
+
+def _worksheet_pdf_bytes(html):
+    """Render a worksheet's HTML to PDF bytes. Raises if PDF support is broken.
+
+    WeasyPrint is imported here rather than at module scope so a machine
+    without its native libraries (pango/harfbuzz) still boots the whole app —
+    only the PDF path fails, and the route degrades to the HTML sheet.
+
+    The stylesheet is handed over from disk instead of being left as a <link>
+    in the template: its URL is an app route, and letting the PDF renderer
+    fetch it over HTTP would have a worker call back into itself.
+    """
+    from weasyprint import CSS, HTML
+
+    stylesheet = os.path.join(app.static_folder, "css", "worksheet.css")
+    # base_url is the static dir so any future relative asset resolves from
+    # disk; url_fetcher is never asked for an http:// URL as things stand.
+    return HTML(string=html, base_url=app.static_folder).write_pdf(
+        stylesheets=[CSS(filename=stylesheet)]
+    )
+
+
+def _worksheet_pdf_filename(lang_code, sheet):
+    """A filename a teacher can tell apart in a downloads folder.
+
+    Carries the direction as well as the range: a batch run drops both
+    directions of the same range into one directory.
+    """
+    span = f"{sheet['range_low']}-{sheet['range_high']}"
+    direction = sheet["direction"].replace("_", "-")
+    return f"diminumero-{lang_code}-numbers-{span}-{direction}-{sheet['seed']}.pdf"
+
+
+def _mint_worksheet_seed():
+    """A fresh sheet ID."""
+    return "".join(
+        secrets.choice(WORKSHEET_SEED_ALPHABET) for _ in range(WORKSHEET_SEED_LENGTH)
+    )
+
+
+def _worksheet_rng(seed):
+    """The random generator a sheet's seed fixes.
+
+    Hashing the seed here, rather than handing the string to random.seed(),
+    keeps the draw independent of how CPython happens to turn text into
+    Mersenne Twister state — a sheet printed today must reprint identically
+    after an interpreter upgrade.
+    """
+    digest = hashlib.sha256(seed.encode("utf-8")).digest()
+    return random.Random(int.from_bytes(digest[:8], "big"))
+
+
+def _worksheet_range_arg(numbers):
+    """The requested range as a "min-max" string, from either spelling.
+
+    The setup form submits two number inputs (min/max) so it needs no JS; a
+    hand-written link more likely carries the same `range=1-100` the drill
+    links use. A one-sided form entry is completed from the deck's bounds.
+    """
+    raw = request.args.get("range")
+    if raw is not None and raw.strip():
+        return raw
+    low = (request.args.get("min") or "").strip()
+    high = (request.args.get("max") or "").strip()
+    if not low and not high:
+        return None
+    return f"{low or min(numbers)}-{high or max(numbers)}"
+
+
+def _parse_worksheet_range(value, numbers):
+    """Parse a "min-max" range against what the language actually has.
+
+    Returns (range_or_None, notice_key_or_None). Decks are sparse above 1000,
+    so a syntactically fine range can still contain no numbers at all — that
+    falls back to the whole deck just like garbage does.
+    """
+    if value is None:
+        return None, None
+
+    match = _RANGE_RE.match(value.strip())
+    if not match:
+        return None, "worksheet_notice_range"
+
+    low, high = int(match.group(1)), int(match.group(2))
+    if low > high:
+        low, high = high, low
+
+    if not _numbers_in_range(numbers, (low, high)):
+        return None, "worksheet_notice_range_empty"
+
+    return (low, high), None
+
+
+def _parse_worksheet_count(value):
+    """Parse the exercise count. Returns (count, notice_key_or_None).
+
+    A field the teacher left blank is not a mistake — it just means "default".
+    """
+    if value is None or not str(value).strip():
+        return WORKSHEET_COUNT_DEFAULT, None
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        return WORKSHEET_COUNT_DEFAULT, "worksheet_notice_count"
+    if count < WORKSHEET_COUNT_MIN:
+        return WORKSHEET_COUNT_MIN, "worksheet_notice_count"
+    if count > WORKSHEET_COUNT_MAX:
+        return WORKSHEET_COUNT_MAX, "worksheet_notice_count"
+    return count, None
+
+
+def _build_worksheet(numbers, seed):
+    """Resolve the query params into a sheet. Never raises.
+
+    The draw is a shuffle of the in-range numbers seeded from `seed` alone, so
+    the same seed and range always produce the same sequence and the exercise
+    count only decides how much of it gets printed.
+    """
+    notice_keys = []
+
+    raw_direction = (request.args.get("direction") or "").strip().lower()
+    direction = WORKSHEET_DIRECTIONS.get(raw_direction, WORKSHEET_DEFAULT_DIRECTION)
+    if raw_direction and raw_direction not in WORKSHEET_DIRECTIONS:
+        notice_keys.append("worksheet_notice_direction")
+
+    raw_format = (request.args.get("format") or "").strip().lower()
+    sheet_format = raw_format if raw_format in WORKSHEET_FORMATS else "html"
+    if raw_format and raw_format not in WORKSHEET_FORMATS:
+        notice_keys.append("worksheet_notice_format")
+
+    num_range, range_notice = _parse_worksheet_range(
+        _worksheet_range_arg(numbers), numbers
+    )
+    if range_notice:
+        notice_keys.append(range_notice)
+
+    count, count_notice = _parse_worksheet_count(request.args.get("count"))
+    if count_notice:
+        notice_keys.append(count_notice)
+
+    pool = sorted(_numbers_in_range(numbers, num_range))
+    if count > len(pool):
+        count = len(pool)
+        notice_keys.append("worksheet_notice_count_capped")
+
+    rng = _worksheet_rng(seed)
+    rng.shuffle(pool)
+
+    # The words come from the deck, never from a rule.
+    exercises = [
+        {"index": index, "number": number, "word": numbers[number]}
+        for index, number in enumerate(pool[:count], start=1)
+    ]
+
+    longest = max((len(item["word"]) for item in exercises), default=0)
+    low, high = num_range if num_range else (min(numbers), max(numbers))
+
+    return {
+        "exercises": exercises,
+        "direction": direction,
+        "format": sheet_format,
+        "count": count,
+        "range": num_range,
+        "range_low": low,
+        "range_high": high,
+        "seed": seed,
+        "columns": 2 if longest <= WORKSHEET_TWO_COLUMN_MAX_CHARS else 1,
+        "key_columns": (
+            3
+            if longest <= WORKSHEET_KEY_THREE_COLUMN_MAX_CHARS
+            else 2
+            if longest <= WORKSHEET_KEY_TWO_COLUMN_MAX_CHARS
+            else 1
+        ),
+        "notice_keys": notice_keys,
+    }
+
+
+@app.route("/<lang_code>/worksheet")
+def worksheet(lang_code):
+    """Printable number worksheet: the setup form, or the sheet it describes.
+
+    Anonymous GET, no login and no session state — a teacher must be able to
+    open, print and re-open this from any browser. With no worksheet params
+    this is the setup form; with params it is the sheet itself, rendered from
+    a standalone print template (no nav, no ads, no cookie banner).
+    """
+    if not is_language_ready(lang_code):
+        flash(get_text("flash_invalid_language"), "error")
+        return redirect(url_for("index"))
+
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("index"))
+
+    text = _text_for_language(lang_code)
+
+    if not any(key in request.args for key in WORKSHEET_PARAM_KEYS):
+        return render_template(
+            "worksheet.html",
+            lang_code=lang_code,
+            get_text=text,
+            deck_min=min(numbers),
+            deck_max=max(numbers),
+            total_numbers=len(numbers),
+            count_default=WORKSHEET_COUNT_DEFAULT,
+            count_min=WORKSHEET_COUNT_MIN,
+            count_max=WORKSHEET_COUNT_MAX,
+            default_direction=WORKSHEET_DEFAULT_DIRECTION,
+        )
+
+    # A sheet with no seed can't be reprinted, so mint one and bounce to the
+    # URL that can. Only the seed changes, so the teacher lands on the sheet
+    # they asked for and the address bar now holds the reprintable link.
+    seed = (request.args.get("seed") or "").strip()
+    if not _WORKSHEET_SEED_RE.match(seed):
+        carried = {
+            key: value
+            for key, value in request.args.items()
+            if key in WORKSHEET_PARAM_KEYS and key != "seed"
+        }
+        return redirect(
+            url_for(
+                "worksheet", lang_code=lang_code, seed=_mint_worksheet_seed(), **carried
+            )
+        )
+
+    sheet = _build_worksheet(numbers, seed)
+    notices = [text(key) for key in sheet["notice_keys"]]
+
+    # The footer prints the canonical spelling of this sheet's URL, so a
+    # printout is enough to get the sheet back even without the original link.
+    # The PDF and the page share it: both are the same sheet.
+    canonical_args = {
+        "count": sheet["count"],
+        "direction": sheet["direction"],
+        "range": (
+            f"{sheet['range'][0]}-{sheet['range'][1]}" if sheet["range"] else None
+        ),
+        "seed": sheet["seed"],
+    }
+    sheet_path = url_for("worksheet", lang_code=lang_code, **canonical_args)
+    sheet_url = SITE_URL.rstrip("/") + sheet_path
+
+    if sheet["format"] == WORKSHEET_FORMAT_PDF:
+        try:
+            pdf = _worksheet_pdf_bytes(
+                render_template(
+                    "worksheet_sheet.html",
+                    lang_code=lang_code,
+                    get_text=text,
+                    sheet=sheet,
+                    notices=[],
+                    sheet_url=sheet_url,
+                    pdf_mode=True,
+                )
+            )
+        except Exception:
+            # A missing native library or font must not take the feature down:
+            # the printable page does the same job through the browser.
+            app.logger.exception("Worksheet PDF rendering failed for %s", lang_code)
+            notices = notices + [text("worksheet_notice_pdf_failed")]
+        else:
+            return Response(
+                pdf,
+                mimetype="application/pdf",
+                headers={
+                    "Content-Disposition": (
+                        "attachment; "
+                        f'filename="{_worksheet_pdf_filename(lang_code, sheet)}"'
+                    )
+                },
+            )
+
+    return render_template(
+        "worksheet_sheet.html",
+        lang_code=lang_code,
+        get_text=text,
+        sheet=sheet,
+        notices=notices,
+        sheet_url=sheet_url,
+        pdf_url=url_for(
+            "worksheet", lang_code=lang_code, format="pdf", **canonical_args
+        ),
     )
 
 
@@ -3308,6 +3662,8 @@ def sitemap_xml():
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
             urls.append(f"{base}/{lang_code}")
+            # The worksheet setup form (no params) is a real landing page.
+            urls.append(f"{base}/{lang_code}/worksheet")
     for lc in get_languages_with_learn_materials():
         urls.append(f"{base}/{lc}/learn")
     for lc in get_languages_with_conjugation_materials():

@@ -4,6 +4,30 @@ FROM python:3.12-slim
 # Set the working directory
 WORKDIR /app
 
+# WeasyPrint (worksheet PDFs) needs Pango/HarfBuzz at runtime, and fonts —
+# python:3.12-slim ships literally none, so without this block every PDF comes
+# out as blank boxes while still looking fine in a local dev checkout. Each
+# font package is here for a specific set of languages:
+#   fonts-dejavu-core  Latin incl. Latin Extended-A — Welsh ŵŷ, Turkish ğşı,
+#                      Nordic æøå, Irish/Spanish accents (~2 MB)
+#   fonts-noto-cjk     Japanese, Korean, Chinese (~91 MB, the bulk of the image
+#                      growth; there is no smaller Debian package covering all
+#                      three)
+#   fonts-lohit-deva   Devanagari for Nepali (~0.2 MB)
+# fc-cache runs at build time so the first PDF request doesn't pay for it.
+# tests/test_worksheet_fonts.py asserts each of these scripts still renders.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        libharfbuzz-subset0 \
+        fontconfig \
+        fonts-dejavu-core \
+        fonts-noto-cjk \
+        fonts-lohit-deva \
+    && fc-cache -f \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 RUN pip install --no-cache-dir uv
 

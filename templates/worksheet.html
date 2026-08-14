@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('worksheet_page_title') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('worksheet_intro') }}">{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero">
+        <div class="back-nav">
+            <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="btn btn-secondary btn-back-nav">
+                {{ get_text('learn_btn_back') }}
+            </a>
+        </div>
+
+        <h1 class="title">{{ get_text('worksheet_title') }}</h1>
+
+        {# Plain GET form: the sheet is entirely described by the query string,
+           so submitting this is the same as pasting a link. No JS involved. #}
+        <form class="preset-share" method="get" action="{{ url_for('worksheet', lang_code=lang_code) }}">
+            <p class="preset-share-desc">{{ get_text('worksheet_intro') }}</p>
+
+            <div class="preset-share-controls">
+                <fieldset class="preset-share-field">
+                    <legend class="preset-share-label">{{ get_text('worksheet_direction_label') }}</legend>
+                    <div class="preset-share-modes">
+                        {% set directions = [
+                            ('digits_to_words', get_text('worksheet_direction_digits_to_words')),
+                            ('words_to_digits', get_text('worksheet_direction_words_to_digits'))
+                        ] %}
+                        {% for value, label in directions %}
+                        <label class="preset-share-mode">
+                            <input type="radio" name="direction" value="{{ value }}"
+                                   {% if value == default_direction %}checked{% endif %}>
+                            <span>{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <div class="preset-share-field">
+                    <label class="preset-share-label" for="worksheet-count">{{ get_text('worksheet_count_label') }}</label>
+                    <div class="preset-share-range">
+                        <input type="number" id="worksheet-count" name="count" class="preset-share-range-input"
+                               min="{{ count_min }}" max="{{ count_max }}" step="1"
+                               value="{{ count_default }}" inputmode="numeric">
+                    </div>
+                </div>
+            </div>
+
+            <div class="preset-share-controls">
+                <div class="preset-share-field">
+                    <span class="preset-share-label">{{ get_text('worksheet_range_label') }}</span>
+                    <div class="preset-share-range">
+                        <label class="preset-share-range-label">
+                            <span>{{ get_text('worksheet_from') }}</span>
+                            <input type="number" name="min" class="preset-share-range-input"
+                                   min="{{ deck_min }}" max="{{ deck_max }}" step="1"
+                                   placeholder="{{ deck_min }}" inputmode="numeric">
+                        </label>
+                        <label class="preset-share-range-label">
+                            <span>{{ get_text('worksheet_to') }}</span>
+                            <input type="number" name="max" class="preset-share-range-input"
+                                   min="{{ deck_min }}" max="{{ deck_max }}" step="1"
+                                   placeholder="{{ deck_max }}" inputmode="numeric">
+                        </label>
+                    </div>
+                    <p class="preset-share-hint">{{ get_text('worksheet_range_hint') }}</p>
+                </div>
+
+                <div class="preset-share-field">
+                    <label class="preset-share-label" for="worksheet-seed">{{ get_text('worksheet_seed_label') }}</label>
+                    <div class="preset-share-range">
+                        <input type="text" id="worksheet-seed" name="seed" class="preset-share-range-input"
+                               maxlength="32" autocapitalize="none" autocomplete="off" spellcheck="false">
+                    </div>
+                    <p class="preset-share-hint">{{ get_text('worksheet_seed_hint') }}</p>
+                </div>
+            </div>
+
+            <div class="preset-share-row">
+                <button type="submit" class="btn btn-primary">{{ get_text('worksheet_generate') }}</button>
+            </div>
+        </form>
+
+        <div class="info">
+            <div class="info-item">
+                <span class="info-number">{{ total_numbers }}</span>
+                <span class="info-label">{{ get_text('info_numbers') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

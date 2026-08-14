@@ -1,0 +1,29 @@
+/* Small-screen adjustments for the worksheet *preview* only.
+ *
+ * Split out of worksheet.css because that file is also handed to WeasyPrint
+ * for ?format=pdf, and WeasyPrint understands no media features — a
+ * (max-width: …) query there is dropped with a warning on every PDF request.
+ * Keeping these rules here means the PDF renderer never sees them and its log
+ * stays quiet enough that a genuine font-loading warning stands out.
+ *
+ * Nothing here affects paper: a printed page is always wider than 700px.
+ */
+
+@media (max-width: 700px) {
+    body.worksheet-body {
+        padding: 16px 10px 32px;
+    }
+
+    .ws-sheet {
+        padding: 20px 16px;
+    }
+
+    .ws-items,
+    .ws-key {
+        column-count: 1;
+    }
+
+    .ws-meta {
+        white-space: normal;
+    }
+}

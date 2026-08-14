@@ -4751,6 +4751,13 @@ html {
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 8px;
 }
+/* Small explanatory line under a field (worksheet setup form). */
+.preset-share-hint {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: #C9BCD8;
+}
 .preset-share-row {
     display: flex;
     gap: 10px;

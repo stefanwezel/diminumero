@@ -147,6 +147,18 @@
             </div>
         </div>
 
+        <!-- Paper counterpart to the share link above: a printable sheet for a
+             class with no devices. -->
+        <div class="preset-share">
+            <h2 class="preset-share-title">{{ get_text('worksheet_cta_title') }}</h2>
+            <p class="preset-share-desc">{{ get_text('worksheet_cta_desc') }}</p>
+            <div class="preset-share-row">
+                <a href="{{ url_for('worksheet', lang_code=lang_code) }}" class="btn btn-primary">
+                    {{ get_text('worksheet_generate') }}
+                </a>
+            </div>
+        </div>
+
         <div class="info">
             <div class="info-item">
                 <span class="info-number">{{ questions_per_quiz }}</span>
