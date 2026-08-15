@@ -10,6 +10,7 @@ import importlib.util
 import re
 import shutil
 import subprocess
+import time
 
 import pytest
 from app import (
@@ -426,6 +427,118 @@ class TestPdfFormat:
         assert response.status_code == 200
         assert response.mimetype == "text/html"
         assert "couldn&#39;t be generated" in response.data.decode("utf-8")
+
+
+@pytest.mark.skipif(not HAS_WEASYPRINT, reason="weasyprint not installed")
+class TestPdfCacheAndBudget:
+    """Rendering is slow enough to be a liability on an anonymous route.
+
+    A sheet costs seconds of CPU and prod runs three *sync* workers, so a
+    handful of concurrent renders serves nothing else. The cache absorbs
+    repeat traffic and the budget caps what one worker will spend; both
+    are off in the rest of the suite (see conftest), so these switch them
+    on deliberately.
+    """
+
+    @pytest.fixture
+    def cache_dir(self, app, tmp_path):
+        app.config["WORKSHEET_PDF_CACHE_DIR"] = str(tmp_path)
+        yield tmp_path
+        app.config["WORKSHEET_PDF_CACHE_DIR"] = None
+
+    def test_second_request_is_served_from_cache(self, client, cache_dir, monkeypatch):
+        """The expensive path runs once per distinct sheet."""
+        import app as app_module
+
+        url = "/es/worksheet?count=10&range=1-100&seed=k1&format=pdf"
+        first = client.get(url)
+        assert first.mimetype == "application/pdf"
+        assert len(list(cache_dir.glob("*.pdf"))) == 1
+
+        # Anything reaching the renderer now is a cache that didn't work.
+        def boom(_html):
+            raise AssertionError("re-rendered a sheet that was already cached")
+
+        monkeypatch.setattr(app_module, "_worksheet_pdf_bytes", boom)
+        assert client.get(url).data == first.data
+
+    def test_ui_language_is_part_of_the_cache_key(self, client, cache_dir):
+        """The sheet's chrome is in the UI language, so it can't be shared.
+
+        Without the UI language in the key, a German teacher would be handed
+        the English sheet an earlier visitor happened to render.
+        """
+        url = "/es/worksheet?count=10&range=1-100&seed=k2&format=pdf"
+        english = client.get(url).data
+        with client.session_transaction() as sess:
+            sess["language"] = "de"
+        german = client.get(url).data
+
+        assert english != german
+        assert len(list(cache_dir.glob("*.pdf"))) == 2
+
+    def test_a_failed_render_is_not_cached(self, client, cache_dir, monkeypatch):
+        """A transient failure must not poison the sheet forever."""
+        import app as app_module
+
+        monkeypatch.setattr(
+            app_module,
+            "_worksheet_pdf_bytes",
+            lambda _html: (_ for _ in ()).throw(RuntimeError("no pango")),
+        )
+        response = client.get("/es/worksheet?count=10&seed=k3&format=pdf")
+
+        assert response.mimetype == "text/html"
+        assert list(cache_dir.glob("*.pdf")) == []
+
+    def test_budget_degrades_to_the_page_instead_of_rendering(self, client, app):
+        """Past the budget the worker stops spending CPU on PDFs."""
+        import app as app_module
+
+        app.config["WORKSHEET_PDF_BUDGET"] = 2
+        app_module._worksheet_pdf_renders.clear()
+        try:
+            kinds = [
+                client.get(f"/es/worksheet?count=10&seed=b{i}&format=pdf").mimetype
+                for i in range(4)
+            ]
+        finally:
+            app.config["WORKSHEET_PDF_BUDGET"] = 0
+            app_module._worksheet_pdf_renders.clear()
+
+        assert kinds[:2] == ["application/pdf", "application/pdf"]
+        assert kinds[2:] == ["text/html", "text/html"]
+
+    def test_budget_does_not_apply_to_a_cached_sheet(self, client, app, cache_dir):
+        """A cache hit costs nothing, so it must not be rationed."""
+        import app as app_module
+
+        url = "/es/worksheet?count=10&range=1-100&seed=b9&format=pdf"
+        assert client.get(url).mimetype == "application/pdf"
+
+        app.config["WORKSHEET_PDF_BUDGET"] = 1
+        app_module._worksheet_pdf_renders.extend([time.monotonic()] * 5)
+        try:
+            assert client.get(url).mimetype == "application/pdf"
+        finally:
+            app.config["WORKSHEET_PDF_BUDGET"] = 0
+            app_module._worksheet_pdf_renders.clear()
+
+    def test_pdfs_are_cacheable_but_a_fallback_page_is_not(self, client, monkeypatch):
+        """A deterministic PDF may be held for a year; the HTML fallback mustn't."""
+        pdf = client.get("/es/worksheet?count=10&range=1-100&seed=k4&format=pdf")
+        assert "immutable" in pdf.headers["Cache-Control"]
+
+        import app as app_module
+
+        monkeypatch.setattr(
+            app_module,
+            "_worksheet_pdf_bytes",
+            lambda _html: (_ for _ in ()).throw(RuntimeError("no pango")),
+        )
+        fallback = client.get("/es/worksheet?count=10&seed=k5&format=pdf")
+        assert fallback.mimetype == "text/html"
+        assert "immutable" not in fallback.headers["Cache-Control"]
 
 
 class TestPrintableOutput:

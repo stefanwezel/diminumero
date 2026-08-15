@@ -36,8 +36,13 @@ from languages import AVAILABLE_LANGUAGES  # noqa: E402
 # The standard set, one entry per sheet shape: (low, high, exercise count).
 # Deliberately small — four shapes per direction is enough to cover a course
 # without burying a portal in near-identical files.
+#
+# The beginner sheet starts at 0 because every deck does, and its count is the
+# full 21 numbers of that range: at 20 the draw would drop one of them at
+# random, which for the one block a learner is meant to know completely is the
+# wrong kind of variety.
 STANDARD_RANGES = [
-    (1, 20, 20),
+    (0, 20, 21),
     (1, 100, 24),
     (1, 1000, 20),
     (1000, 9999999, 14),
@@ -120,6 +125,11 @@ def main():
 
     rows = []
     failures = []
+
+    # Burning CPU on 120 sheets back to back is what this tool is for, so the
+    # per-worker render budget that protects the live site must not apply. The
+    # PDF cache stays on: a re-run then costs almost nothing.
+    app.config["WORKSHEET_PDF_BUDGET"] = 0
     client = app.test_client()
 
     for index, (lang, params) in enumerate(plan, start=1):

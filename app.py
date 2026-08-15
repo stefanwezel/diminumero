@@ -1,6 +1,7 @@
 """Flask application for diminumero."""
 
 import json
+from collections import deque
 from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import quote_plus, urlencode
@@ -32,6 +33,7 @@ import random
 import re
 import secrets
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -216,6 +218,13 @@ def set_cache_headers(response):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
         )
+        return response
+    if response.mimetype == "application/pdf":
+        # A worksheet PDF is seed-addressed and deterministic, so this URL is
+        # always this exact document — worth a CDN or browser holding on to.
+        # Keyed off the mimetype, not the path, so an HTML fallback served
+        # after a failed render is never marked immutable.
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
     if path in ("/about", "/privacy", "/imprint", "/"):
         response.headers["Cache-Control"] = "public, max-age=3600"
@@ -691,6 +700,117 @@ def _worksheet_pdf_bytes(html):
     )
 
 
+# ===== Worksheet PDF cache and render budget =====
+# A rendered sheet is a pure function of (language, UI language, direction,
+# count, range, seed) — the same property the byte-identical test pins — so it
+# can be cached and served without going near WeasyPrint.
+#
+# This is not only a speed-up. One sheet costs roughly 0.8s (10 exercises) to
+# 6.5s (the 60-exercise maximum) of CPU, dominated by the multi-column
+# balancing in worksheet.css; prod runs three *sync* gunicorn workers, and the
+# route is anonymous. Three concurrent renders and the site serves nothing else
+# — not a quiz, not /login. The cache absorbs genuine repeat traffic (a teacher
+# reloading, a portal re-downloading, the batch tool re-running) and the budget
+# below bounds what a script asking for endless fresh seeds can take.
+#
+# The cache lives under instance/, which prod bind-mounts, so all three workers
+# share one copy of it and it survives a restart.
+WORKSHEET_PDF_CACHE_MAX_FILES = 2000
+_WORKSHEET_PDF_BUDGET_WINDOW = 60.0
+
+# A cache dir of None disables caching and a budget of 0 disables the limit.
+# The tests want a real render every time, and for the batch tool spending the
+# CPU is the entire point of running it.
+app.config.setdefault(
+    "WORKSHEET_PDF_CACHE_DIR", os.path.join(app.instance_path, "worksheet_pdf")
+)
+app.config.setdefault(
+    "WORKSHEET_PDF_BUDGET", int(os.getenv("WORKSHEET_PDF_BUDGET", "10"))
+)
+
+_worksheet_pdf_renders = deque()
+_worksheet_pdf_lock = threading.Lock()
+
+
+def _worksheet_pdf_cache_key(lang_code, sheet):
+    """Everything the rendered bytes depend on, hashed.
+
+    The UI language belongs in the key: the sheet's chrome — the instructions,
+    the Name/Class/Date labels — is rendered in it, so an English and a German
+    request for the same sheet are different documents.
+    """
+    parts = (
+        lang_code,
+        session.get("language", DEFAULT_UI_LANGUAGE),
+        sheet["direction"],
+        str(sheet["count"]),
+        f"{sheet['range_low']}-{sheet['range_high']}",
+        sheet["seed"],
+    )
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
+
+
+def _worksheet_pdf_cached(key):
+    """The cached bytes for this sheet, or None when it isn't cached."""
+    cache_dir = app.config["WORKSHEET_PDF_CACHE_DIR"]
+    if not cache_dir:
+        return None
+    try:
+        with open(os.path.join(cache_dir, f"{key}.pdf"), "rb") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
+def _worksheet_pdf_store(key, pdf):
+    """Cache a rendered sheet. Never raises — a full disk must not 500."""
+    cache_dir = app.config["WORKSHEET_PDF_CACHE_DIR"]
+    if not cache_dir:
+        return
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        # Write somewhere unique and rename into place: with three workers on
+        # one directory, a reader must never catch a half-written file.
+        tmp = os.path.join(cache_dir, f".{key}.{os.getpid()}")
+        with open(tmp, "wb") as handle:
+            handle.write(pdf)
+        os.replace(tmp, os.path.join(cache_dir, f"{key}.pdf"))
+        _worksheet_pdf_trim(cache_dir)
+    except OSError:
+        app.logger.warning("Could not cache worksheet PDF", exc_info=True)
+
+
+def _worksheet_pdf_trim(cache_dir):
+    """Bound the cache, oldest out first."""
+    entries = [e for e in os.scandir(cache_dir) if e.name.endswith(".pdf")]
+    if len(entries) <= WORKSHEET_PDF_CACHE_MAX_FILES:
+        return
+    entries.sort(key=lambda entry: entry.stat().st_mtime)
+    for entry in entries[: len(entries) - WORKSHEET_PDF_CACHE_MAX_FILES]:
+        try:
+            os.unlink(entry.path)
+        except OSError:
+            pass
+
+
+def _worksheet_pdf_budget_ok():
+    """Whether this worker may spend CPU on another render right now."""
+    budget = app.config["WORKSHEET_PDF_BUDGET"]
+    if not budget:
+        return True
+    now = time.monotonic()
+    with _worksheet_pdf_lock:
+        while (
+            _worksheet_pdf_renders
+            and now - _worksheet_pdf_renders[0] > _WORKSHEET_PDF_BUDGET_WINDOW
+        ):
+            _worksheet_pdf_renders.popleft()
+        if len(_worksheet_pdf_renders) >= budget:
+            return False
+        _worksheet_pdf_renders.append(now)
+        return True
+
+
 def _worksheet_pdf_filename(lang_code, sheet):
     """A filename a teacher can tell apart in a downloads folder.
 
@@ -916,24 +1036,37 @@ def worksheet(lang_code):
     sheet_url = SITE_URL.rstrip("/") + sheet_path
 
     if sheet["format"] == WORKSHEET_FORMAT_PDF:
-        try:
-            pdf = _worksheet_pdf_bytes(
-                render_template(
-                    "worksheet_sheet.html",
-                    lang_code=lang_code,
-                    get_text=text,
-                    sheet=sheet,
-                    notices=[],
-                    sheet_url=sheet_url,
-                    pdf_mode=True,
-                )
-            )
-        except Exception:
-            # A missing native library or font must not take the feature down:
-            # the printable page does the same job through the browser.
-            app.logger.exception("Worksheet PDF rendering failed for %s", lang_code)
+        cache_key = _worksheet_pdf_cache_key(lang_code, sheet)
+        pdf = _worksheet_pdf_cached(cache_key)
+
+        if pdf is None and not _worksheet_pdf_budget_ok():
+            # This worker has rendered enough for one minute. A render holds a
+            # sync worker for seconds, so past the budget the printable page —
+            # which does the same job through the browser — is a far better
+            # answer than queueing more CPU ahead of everyone else's request.
             notices = notices + [text("worksheet_notice_pdf_failed")]
-        else:
+        elif pdf is None:
+            try:
+                pdf = _worksheet_pdf_bytes(
+                    render_template(
+                        "worksheet_sheet.html",
+                        lang_code=lang_code,
+                        get_text=text,
+                        sheet=sheet,
+                        notices=[],
+                        sheet_url=sheet_url,
+                        pdf_mode=True,
+                    )
+                )
+            except Exception:
+                # A missing native library or font must not take the feature
+                # down: the printable page does the same job in the browser.
+                app.logger.exception("Worksheet PDF rendering failed for %s", lang_code)
+                notices = notices + [text("worksheet_notice_pdf_failed")]
+            else:
+                _worksheet_pdf_store(cache_key, pdf)
+
+        if pdf is not None:
             return Response(
                 pdf,
                 mimetype="application/pdf",

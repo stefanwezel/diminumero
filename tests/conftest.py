@@ -24,6 +24,14 @@ import pytest  # noqa: E402
 from app import app as flask_app  # noqa: E402
 from models import db  # noqa: E402
 
+# Render every worksheet PDF for real. A cache hit would let a test pass on
+# bytes an earlier test produced — the degradation test in particular patches
+# the renderer to raise and would silently be served a cached PDF instead. The
+# budget is off for the same reason: the suite renders more sheets per minute
+# than a browsing human ever would.
+flask_app.config["WORKSHEET_PDF_CACHE_DIR"] = None
+flask_app.config["WORKSHEET_PDF_BUDGET"] = 0
+
 
 @pytest.fixture(autouse=True)
 def _db_setup():

@@ -15,7 +15,9 @@ WORKDIR /app
 #                      three)
 #   fonts-lohit-deva   Devanagari for Nepali (~0.2 MB)
 # fc-cache runs at build time so the first PDF request doesn't pay for it.
-# tests/test_worksheet_fonts.py asserts each of these scripts still renders.
+# tools/check_worksheet_fonts.py is the gate — run it against the BUILT image
+# (`docker run --rm <image> python tools/check_worksheet_fonts.py`). Nothing in
+# pytest covers this: CI has no CJK fonts.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libpango-1.0-0 \
