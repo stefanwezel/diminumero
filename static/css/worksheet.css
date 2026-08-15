@@ -1,0 +1,403 @@
+/* Printable worksheet.
+ *
+ * Standalone: this page never loads the app themes, so everything it needs is
+ * here. Designed for the paper first — on screen it is a preview of the sheet
+ * that comes out of the printer. Black ink on white, no background fills, so
+ * it prints the same on a school laser printer as on a home inkjet.
+ */
+
+:root {
+    --ws-ink: #16181d;
+    --ws-muted: #5b6068;
+    --ws-rule: #9aa0a8;
+    --ws-hairline: #d8dbe0;
+    --ws-page: #e9eaee;
+    --ws-accent: #2f5bd7;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body.worksheet-body {
+    margin: 0;
+    padding: 24px 16px 48px;
+    background: var(--ws-page);
+    color: var(--ws-ink);
+    /* DejaVu leads because it is the face installed in the container, so a
+       server-rendered PDF and a Linux browser's Ctrl+P agree. Its Latin
+       Extended coverage is also what carries Welsh ŵŷ, Turkish ğşı and the
+       Nordic æøå; CJK and Devanagari come from fontconfig's fallback (Noto
+       CJK / Lohit Devanagari) rather than from this list. */
+    font-family: "DejaVu Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+/* Han script: the container has no fontconfig language preferences, so all
+ * four Noto CJK faces match a Chinese run equally and the Japanese one wins by
+ * family order — a Chinese sheet would silently print Japanese glyph variants.
+ * Naming the regional face per lang= pins it. Browsers that don't have these
+ * families installed just fall through to the stack on body. The zh deck is
+ * Simplified (万, never 萬), hence SC.
+ */
+[lang="zh"] {
+    font-family: "Noto Sans CJK SC", "Noto Sans SC", "DejaVu Sans", sans-serif;
+}
+
+[lang="ja"] {
+    font-family: "Noto Sans CJK JP", "Noto Sans JP", "DejaVu Sans", sans-serif;
+}
+
+[lang="ko"] {
+    font-family: "Noto Sans CJK KR", "Noto Sans KR", "DejaVu Sans", sans-serif;
+}
+
+/* ---- Screen-only chrome ------------------------------------------------ */
+
+.ws-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 210mm;
+    margin: 0 auto 16px;
+}
+
+.ws-toolbar-link {
+    color: var(--ws-accent);
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+
+.ws-toolbar-link:hover {
+    text-decoration: underline;
+}
+
+.ws-toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ws-print-btn {
+    padding: 10px 22px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: var(--ws-accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.ws-print-btn:hover {
+    background: #24499f;
+}
+
+.ws-notices {
+    max-width: 210mm;
+    margin: 0 auto 16px;
+    padding: 12px 16px;
+    background: #fff8e1;
+    border: 1px solid #e3c86b;
+    border-radius: 8px;
+}
+
+.ws-notice {
+    margin: 0 0 6px;
+    font-size: 0.9rem;
+    color: #5c4a10;
+}
+
+.ws-notice:last-child {
+    margin-bottom: 0;
+}
+
+/* ---- The sheet --------------------------------------------------------- */
+
+.ws-sheet {
+    max-width: 210mm;
+    margin: 0 auto 24px;
+    padding: 18mm 16mm;
+    background: #fff;
+    border: 1px solid var(--ws-hairline);
+    border-radius: 2px;
+}
+
+/* Screen-only lift, so the preview reads as a sheet of paper. Kept out of the
+   base rule because WeasyPrint has no box-shadow and would log a warning for
+   it on every PDF — and those logs need to stay worth reading. */
+@media screen {
+    .ws-sheet {
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
+    }
+}
+
+.ws-head {
+    margin-bottom: 10mm;
+}
+
+.ws-head-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--ws-ink);
+}
+
+/* Explicit flex sizing: WeasyPrint and the browsers only agree on the title
+   staying on one line if neither is left to guess an auto basis. */
+.ws-title {
+    flex: 1 1 auto;
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.ws-meta {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--ws-muted);
+    white-space: nowrap;
+}
+
+.ws-instructions {
+    margin: 10px 0 0;
+    font-size: 0.98rem;
+}
+
+.ws-instructions-muted {
+    color: var(--ws-muted);
+    font-size: 0.85rem;
+}
+
+/* Name / class / date line the student fills in. */
+.ws-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin-top: 12px;
+}
+
+.ws-field {
+    display: flex;
+    flex: 1 1 30%;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 140px;
+}
+
+.ws-field-label {
+    font-size: 0.8rem;
+    color: var(--ws-muted);
+    white-space: nowrap;
+}
+
+.ws-field-rule {
+    flex: 1 1 auto;
+    border-bottom: 1px solid var(--ws-rule);
+    height: 1.1em;
+}
+
+/* ---- Exercises --------------------------------------------------------- */
+
+/* Column count is decided server-side from the longest answer on the sheet:
+   two columns for short number words, one once the words run long. */
+.ws-items {
+    column-count: var(--ws-cols, 2);
+    column-gap: 12mm;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ws-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 6px 8px;
+    margin-bottom: 7mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.ws-item-index {
+    min-width: 1.9em;
+    color: var(--ws-muted);
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.ws-item-prompt {
+    font-size: 1.02rem;
+    font-weight: 600;
+}
+
+.ws-item-rule {
+    flex: 1 1 40%;
+    min-width: 5em;
+    height: 1.5em;
+    border-bottom: 1px solid var(--ws-rule);
+}
+
+/* ---- Answer key -------------------------------------------------------- */
+
+.ws-sheet-answers {
+    break-before: page;
+    page-break-before: always;
+}
+
+.ws-key {
+    column-count: var(--ws-cols, 3);
+    column-gap: 10mm;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ws-key-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 6px;
+    margin-bottom: 2.5mm;
+    font-size: 0.88rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.ws-key-digits {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.ws-key-sep {
+    color: var(--ws-muted);
+}
+
+.ws-key-word {
+    color: var(--ws-ink);
+}
+
+/* ---- Footer (carried by every sheet) ----------------------------------- */
+
+.ws-footer {
+    margin-top: 12mm;
+    padding-top: 4mm;
+    border-top: 1px solid var(--ws-hairline);
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.ws-footer-url,
+.ws-footer-note {
+    margin: 0 0 2px;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--ws-muted);
+    overflow-wrap: anywhere;
+}
+
+.ws-footer-label {
+    font-weight: 600;
+}
+
+/* ---- Small screens ----------------------------------------------------- */
+
+/* Phone-sized preview rules live in worksheet-screen.css, which only the HTML
+   page links. WeasyPrint supports no media *features* at all, so a
+   (max-width: …) query there would be dropped with a warning on every single
+   PDF — and the WeasyPrint log has to stay quiet enough that a real font
+   failure is visible in it. */
+
+/* ---- Print ------------------------------------------------------------- */
+
+@media print {
+    /* No `size` on purpose: A4 and Letter both come out right. */
+    @page {
+        margin: 15mm 14mm;
+    }
+
+    body.worksheet-body {
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        font-size: 11.5pt;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .ws-sheet {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+    }
+
+    .ws-head {
+        margin-bottom: 8mm;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .ws-title {
+        font-size: 15pt;
+    }
+
+    .ws-meta,
+    .ws-field-label {
+        font-size: 8.5pt;
+    }
+
+    .ws-instructions {
+        font-size: 11pt;
+    }
+
+    .ws-instructions-muted {
+        font-size: 9pt;
+    }
+
+    .ws-item {
+        margin-bottom: 7mm;
+    }
+
+    /* Tight enough that a sheet whose exercises nearly fill the page still
+       fits its footer, instead of spilling one onto a page of its own. */
+    .ws-footer {
+        margin-top: 6mm;
+        padding-top: 3mm;
+    }
+
+    .ws-item-prompt {
+        font-size: 11.5pt;
+    }
+
+    .ws-key-item {
+        font-size: 9.5pt;
+    }
+
+    .ws-footer-url,
+    .ws-footer-note {
+        font-size: 7.5pt;
+    }
+
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+}

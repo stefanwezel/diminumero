@@ -1,6 +1,7 @@
 """Flask application for diminumero."""
 
 import json
+from collections import deque
 from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import quote_plus, urlencode
@@ -8,6 +9,7 @@ from urllib.parse import quote_plus, urlencode
 from flask import (
     Flask,
     Response,
+    g,
     render_template,
     request,
     redirect,
@@ -22,13 +24,16 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
+import hashlib
 import jinja2
 import logging
 import quiz_logic
 import os
+import random
 import re
 import secrets
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -206,6 +211,21 @@ def add_static_cache_bust(endpoint, values):
 def set_cache_headers(response):
     """Set Cache-Control headers based on the route."""
     path = request.path
+    if g.get("no_store"):
+        # A quiz rendered from a shared preset link lives on an otherwise
+        # cacheable URL (/<lang>/numbers) but carries a live question and a
+        # Set-Cookie — never let a proxy hand it to the next student.
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
+        return response
+    if response.mimetype == "application/pdf":
+        # A worksheet PDF is seed-addressed and deterministic, so this URL is
+        # always this exact document — worth a CDN or browser holding on to.
+        # Keyed off the mimetype, not the path, so an HTML fallback served
+        # after a failed render is never marked immutable.
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
     if path in ("/about", "/privacy", "/imprint", "/"):
         response.headers["Cache-Control"] = "public, max-age=3600"
     elif path in ("/sitemap.xml", "/robots.txt"):
@@ -285,6 +305,12 @@ def inject_seo_context():
         "breadcrumbs": breadcrumbs,
         "user": session.get("user"),
         "conjugation_lang": _current_conjugation_lang(),
+        # Inline banner for a shared preset link whose params were adjusted.
+        "preset_notices": g.get("preset_notices") or [],
+        # Any URL carrying quiz params is a duplicate of the clean route as
+        # far as a crawler is concerned: canonical_url above already drops the
+        # query string, and base.html adds noindex when this is set.
+        "has_quiz_params": _has_preset_params(),
     }
 
 
@@ -389,6 +415,169 @@ def mode_selection(lang_code):
     )
 
 
+# ===== Shareable drill presets =====
+# A teacher pastes one URL into Moodle or Teams and a student lands straight in
+# the configured drill, e.g. /es/numbers?range=1-100&mode=listening&magnitude=2
+# The params fully determine the drill, so the link works from a cold browser
+# with no session, no cookies and no account.
+
+PRESET_PARAM_KEYS = ("mode", "range", "magnitude")
+
+# Public mode names accepted in a link -> internal session mode. The listening
+# drill is "audio" internally, but "listening" is what a teacher would write.
+PRESET_MODE_ALIASES = {
+    "easy": "easy",
+    "advanced": "advanced",
+    "hardcore": "hardcore",
+    "listening": "audio",
+    "listen": "audio",
+    "audio": "audio",
+}
+
+PRESET_DEFAULT_MODE = "easy"
+
+# Where listening degrades to when the language has no playable audio.
+PRESET_NO_AUDIO_FALLBACK_MODE = "advanced"
+
+# Fewest numbers a range may leave in the deck: easy mode draws its three
+# distractors from the deck, and the no-repeat rule needs room to move.
+MIN_PRESET_DECK = 4
+
+# "1-100", tolerating the dashes a word processor produces.
+_RANGE_RE = re.compile(r"^(\d+)\s*[-–—]\s*(\d+)$")
+
+
+def _has_preset_params():
+    """True when the URL carries at least one recognised preset param.
+
+    Unknown params (utm_source and friends) must not start a drill.
+    """
+    return any(key in request.args for key in PRESET_PARAM_KEYS)
+
+
+def _numbers_in_range(numbers, num_range):
+    """The deck narrowed to an inclusive (low, high) range."""
+    if not num_range:
+        return numbers
+    low, high = num_range
+    return {num: word for num, word in numbers.items() if low <= num <= high}
+
+
+def _parse_range(value, numbers):
+    """Parse a "min-max" range against what the language actually has.
+
+    Returns (range_or_None, notice_key_or_None). Decks are sparse above 1000,
+    so a syntactically fine range can still leave too few numbers to build a
+    quiz from — that falls back to the full deck just like garbage does.
+    """
+    if value is None:
+        return None, None
+
+    match = _RANGE_RE.match(value.strip())
+    if not match:
+        return None, "preset_notice_range"
+
+    low, high = int(match.group(1)), int(match.group(2))
+    if low > high:
+        low, high = high, low
+
+    if len(_numbers_in_range(numbers, (low, high))) < MIN_PRESET_DECK:
+        return None, "preset_notice_range_empty"
+
+    return (low, high), None
+
+
+def _parse_magnitude(value):
+    """Parse a magnitude dial value. Returns (level, notice_key_or_None)."""
+    if value is None:
+        return 1, None
+    try:
+        level = int(value)
+    except (TypeError, ValueError):
+        return 1, "preset_notice_magnitude"
+    if level not in range(1, 6):
+        return 1, "preset_notice_magnitude"
+    return level, None
+
+
+def _playable_audio_numbers(lang_code, numbers):
+    """The subset of `numbers` we have a pre-generated MP3 for."""
+    available = _available_audio_numbers(lang_code)
+    return {num: word for num, word in numbers.items() if num in available}
+
+
+def _parse_preset(lang_code, numbers):
+    """Resolve the query params into a drill. Never raises.
+
+    Returns (mode, magnitude_level, num_range, notices), where notices are
+    already-translated strings for the inline banner.
+    """
+    notice_keys = []
+
+    raw_mode = (request.args.get("mode") or "").strip().lower()
+    mode = PRESET_MODE_ALIASES.get(raw_mode, PRESET_DEFAULT_MODE)
+    if raw_mode and raw_mode not in PRESET_MODE_ALIASES:
+        notice_keys.append("preset_notice_mode")
+
+    num_range, range_notice = _parse_range(request.args.get("range"), numbers)
+    if range_notice:
+        notice_keys.append(range_notice)
+
+    magnitude_level, magnitude_notice = _parse_magnitude(request.args.get("magnitude"))
+    if magnitude_notice:
+        notice_keys.append(magnitude_notice)
+
+    # Listening needs both the language flag and MP3s that survive the range
+    # filter — otherwise the student gets a player with nothing to play.
+    if mode == "audio":
+        ranged = _numbers_in_range(numbers, num_range)
+        if lang_code not in get_languages_with_audio_mode() or not (
+            _playable_audio_numbers(lang_code, ranged)
+        ):
+            mode = PRESET_NO_AUDIO_FALLBACK_MODE
+            notice_keys.append("preset_notice_no_audio")
+
+    notices = [get_text(key, learn_language=lang_code) for key in notice_keys]
+    return mode, magnitude_level, num_range, notices
+
+
+def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None):
+    """Start a fresh quiz session, keeping only the UI language and any login.
+
+    Shared by the two form-post seeders and the preset link path.
+    """
+    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
+    saved_user = session.get("user")
+    session.clear()
+    session["language"] = ui_language
+    if saved_user is not None:
+        session["user"] = saved_user
+    session["learn_language"] = lang_code
+    session["score"] = 0
+    session["total_questions"] = 0
+    session["asked_numbers"] = []
+    session["mode"] = mode
+    session["magnitude_level"] = magnitude_level
+    if num_range:
+        session["number_range"] = list(num_range)
+    session["quiz_start_time"] = time.time()
+
+
+def _session_numbers(lang_code):
+    """The deck for the running quiz.
+
+    The language's numbers, narrowed to the session's range when the quiz was
+    started from a link that set one. Every question of the drill goes through
+    here, so question 2 stays inside the teacher's range just like question 1.
+    """
+    numbers = get_language_numbers(lang_code)
+    num_range = session.get("number_range")
+    if not num_range or len(num_range) != 2:
+        return numbers
+    # Never hand back an empty deck: a stale range must not blank the quiz.
+    return _numbers_in_range(numbers, (num_range[0], num_range[1])) or numbers
+
+
 @app.route("/<lang_code>/numbers")
 def number_modes(lang_code):
     """Number-practice page: pick a difficulty (easy/advanced/hardcore).
@@ -404,21 +593,501 @@ def number_modes(lang_code):
 
     try:
         numbers = get_language_numbers(lang_code)
-        total_numbers = len(numbers)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
+
+    # A shared preset link renders the drill itself instead of this page.
+    if _has_preset_params():
+        return _start_preset_drill(lang_code, numbers)
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
 
     return render_template(
         "numbers.html",
-        total_numbers=total_numbers,
-        questions_per_quiz=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
+        has_audio_mode=lang_code in get_languages_with_audio_mode(),
+        deck_min=min(numbers),
+        deck_max=max(numbers),
         magnitude_level=session.get("magnitude_level", 1),
+    )
+
+
+# ===== Printable worksheets =====
+# A teacher configures a sheet at /<lang>/worksheet, prints it on paper and
+# hands it out. Everything on the sheet is a pure function of the URL
+# (language, range, count, direction, seed), so re-opening that URL next term
+# reprints the identical sheet — answer key included. Every number word is
+# read straight out of the language's verified NUMBERS deck; nothing here
+# builds a number word from rules.
+
+WORKSHEET_PARAM_KEYS = (
+    "count",
+    "direction",
+    "format",
+    "range",
+    "min",
+    "max",
+    "seed",
+)
+
+# `?format=pdf` renders the sheet server-side; anything else is the HTML page.
+WORKSHEET_FORMAT_PDF = "pdf"
+WORKSHEET_FORMATS = ("html", WORKSHEET_FORMAT_PDF)
+
+# URL value -> internal direction. The short aliases are for a hand-typed URL.
+WORKSHEET_DIRECTIONS = {
+    "digits_to_words": "digits_to_words",
+    "words_to_digits": "words_to_digits",
+    "to_words": "digits_to_words",
+    "to_digits": "words_to_digits",
+}
+WORKSHEET_DEFAULT_DIRECTION = "digits_to_words"
+
+WORKSHEET_COUNT_DEFAULT = 20
+WORKSHEET_COUNT_MIN = 1
+WORKSHEET_COUNT_MAX = 60
+
+# Sheet IDs get read off a printout and retyped, so the alphabet leaves out
+# the characters that look alike in print (0/o, 1/l).
+WORKSHEET_SEED_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"
+WORKSHEET_SEED_LENGTH = 6
+
+# What we accept back as a seed. Anything else is treated as no seed at all.
+_WORKSHEET_SEED_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$")
+
+# Answer lengths above these stop fitting in a column on a portrait page, so
+# the sheet drops to fewer, wider columns.
+WORKSHEET_TWO_COLUMN_MAX_CHARS = 28
+WORKSHEET_KEY_THREE_COLUMN_MAX_CHARS = 18
+WORKSHEET_KEY_TWO_COLUMN_MAX_CHARS = 40
+
+
+def _text_for_language(lang_code):
+    """``get_text`` bound to one learn language.
+
+    Worksheet pages are anonymous and stateless — the language comes from the
+    URL, not the session — so LANGUAGE_NAME_PLACEHOLDER has to be resolved
+    against `lang_code` explicitly.
+    """
+
+    def text(key):
+        return get_text(key, learn_language=lang_code)
+
+    return text
+
+
+def _worksheet_pdf_bytes(html):
+    """Render a worksheet's HTML to PDF bytes. Raises if PDF support is broken.
+
+    WeasyPrint is imported here rather than at module scope so a machine
+    without its native libraries (pango/harfbuzz) still boots the whole app —
+    only the PDF path fails, and the route degrades to the HTML sheet.
+
+    The stylesheet is handed over from disk instead of being left as a <link>
+    in the template: its URL is an app route, and letting the PDF renderer
+    fetch it over HTTP would have a worker call back into itself.
+    """
+    from weasyprint import CSS, HTML
+
+    stylesheet = os.path.join(app.static_folder, "css", "worksheet.css")
+    # base_url is the static dir so any future relative asset resolves from
+    # disk; url_fetcher is never asked for an http:// URL as things stand.
+    return HTML(string=html, base_url=app.static_folder).write_pdf(
+        stylesheets=[CSS(filename=stylesheet)]
+    )
+
+
+# ===== Worksheet PDF cache and render budget =====
+# A rendered sheet is a pure function of (language, UI language, direction,
+# count, range, seed) — the same property the byte-identical test pins — so it
+# can be cached and served without going near WeasyPrint.
+#
+# This is not only a speed-up. One sheet costs roughly 0.8s (10 exercises) to
+# 6.5s (the 60-exercise maximum) of CPU, dominated by the multi-column
+# balancing in worksheet.css; prod runs three *sync* gunicorn workers, and the
+# route is anonymous. Three concurrent renders and the site serves nothing else
+# — not a quiz, not /login. The cache absorbs genuine repeat traffic (a teacher
+# reloading, a portal re-downloading, the batch tool re-running) and the budget
+# below bounds what a script asking for endless fresh seeds can take.
+#
+# The cache lives under instance/, which prod bind-mounts, so all three workers
+# share one copy of it and it survives a restart.
+WORKSHEET_PDF_CACHE_MAX_FILES = 2000
+_WORKSHEET_PDF_BUDGET_WINDOW = 60.0
+
+# A cache dir of None disables caching and a budget of 0 disables the limit.
+# The tests want a real render every time, and for the batch tool spending the
+# CPU is the entire point of running it.
+app.config.setdefault(
+    "WORKSHEET_PDF_CACHE_DIR", os.path.join(app.instance_path, "worksheet_pdf")
+)
+app.config.setdefault(
+    "WORKSHEET_PDF_BUDGET", int(os.getenv("WORKSHEET_PDF_BUDGET", "10"))
+)
+
+_worksheet_pdf_renders = deque()
+_worksheet_pdf_lock = threading.Lock()
+
+
+def _worksheet_pdf_cache_key(lang_code, sheet):
+    """Everything the rendered bytes depend on, hashed.
+
+    The UI language belongs in the key: the sheet's chrome — the instructions,
+    the Name/Class/Date labels — is rendered in it, so an English and a German
+    request for the same sheet are different documents.
+    """
+    parts = (
+        lang_code,
+        session.get("language", DEFAULT_UI_LANGUAGE),
+        sheet["direction"],
+        str(sheet["count"]),
+        f"{sheet['range_low']}-{sheet['range_high']}",
+        sheet["seed"],
+    )
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
+
+
+def _worksheet_pdf_cached(key):
+    """The cached bytes for this sheet, or None when it isn't cached."""
+    cache_dir = app.config["WORKSHEET_PDF_CACHE_DIR"]
+    if not cache_dir:
+        return None
+    try:
+        with open(os.path.join(cache_dir, f"{key}.pdf"), "rb") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
+def _worksheet_pdf_store(key, pdf):
+    """Cache a rendered sheet. Never raises — a full disk must not 500."""
+    cache_dir = app.config["WORKSHEET_PDF_CACHE_DIR"]
+    if not cache_dir:
+        return
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        # Write somewhere unique and rename into place: with three workers on
+        # one directory, a reader must never catch a half-written file.
+        tmp = os.path.join(cache_dir, f".{key}.{os.getpid()}")
+        with open(tmp, "wb") as handle:
+            handle.write(pdf)
+        os.replace(tmp, os.path.join(cache_dir, f"{key}.pdf"))
+        _worksheet_pdf_trim(cache_dir)
+    except OSError:
+        app.logger.warning("Could not cache worksheet PDF", exc_info=True)
+
+
+def _worksheet_pdf_trim(cache_dir):
+    """Bound the cache, oldest out first."""
+    entries = [e for e in os.scandir(cache_dir) if e.name.endswith(".pdf")]
+    if len(entries) <= WORKSHEET_PDF_CACHE_MAX_FILES:
+        return
+    entries.sort(key=lambda entry: entry.stat().st_mtime)
+    for entry in entries[: len(entries) - WORKSHEET_PDF_CACHE_MAX_FILES]:
+        try:
+            os.unlink(entry.path)
+        except OSError:
+            pass
+
+
+def _worksheet_pdf_budget_ok():
+    """Whether this worker may spend CPU on another render right now."""
+    budget = app.config["WORKSHEET_PDF_BUDGET"]
+    if not budget:
+        return True
+    now = time.monotonic()
+    with _worksheet_pdf_lock:
+        while (
+            _worksheet_pdf_renders
+            and now - _worksheet_pdf_renders[0] > _WORKSHEET_PDF_BUDGET_WINDOW
+        ):
+            _worksheet_pdf_renders.popleft()
+        if len(_worksheet_pdf_renders) >= budget:
+            return False
+        _worksheet_pdf_renders.append(now)
+        return True
+
+
+def _worksheet_pdf_filename(lang_code, sheet):
+    """A filename a teacher can tell apart in a downloads folder.
+
+    Carries the direction as well as the range: a batch run drops both
+    directions of the same range into one directory.
+    """
+    span = f"{sheet['range_low']}-{sheet['range_high']}"
+    direction = sheet["direction"].replace("_", "-")
+    return f"diminumero-{lang_code}-numbers-{span}-{direction}-{sheet['seed']}.pdf"
+
+
+def _mint_worksheet_seed():
+    """A fresh sheet ID."""
+    return "".join(
+        secrets.choice(WORKSHEET_SEED_ALPHABET) for _ in range(WORKSHEET_SEED_LENGTH)
+    )
+
+
+def _worksheet_rng(seed):
+    """The random generator a sheet's seed fixes.
+
+    Hashing the seed here, rather than handing the string to random.seed(),
+    keeps the draw independent of how CPython happens to turn text into
+    Mersenne Twister state — a sheet printed today must reprint identically
+    after an interpreter upgrade.
+    """
+    digest = hashlib.sha256(seed.encode("utf-8")).digest()
+    return random.Random(int.from_bytes(digest[:8], "big"))
+
+
+def _worksheet_range_arg(numbers):
+    """The requested range as a "min-max" string, from either spelling.
+
+    The setup form submits two number inputs (min/max) so it needs no JS; a
+    hand-written link more likely carries the same `range=1-100` the drill
+    links use. A one-sided form entry is completed from the deck's bounds.
+    """
+    raw = request.args.get("range")
+    if raw is not None and raw.strip():
+        return raw
+    low = (request.args.get("min") or "").strip()
+    high = (request.args.get("max") or "").strip()
+    if not low and not high:
+        return None
+    return f"{low or min(numbers)}-{high or max(numbers)}"
+
+
+def _parse_worksheet_range(value, numbers):
+    """Parse a "min-max" range against what the language actually has.
+
+    Returns (range_or_None, notice_key_or_None). Decks are sparse above 1000,
+    so a syntactically fine range can still contain no numbers at all — that
+    falls back to the whole deck just like garbage does.
+    """
+    if value is None:
+        return None, None
+
+    match = _RANGE_RE.match(value.strip())
+    if not match:
+        return None, "worksheet_notice_range"
+
+    low, high = int(match.group(1)), int(match.group(2))
+    if low > high:
+        low, high = high, low
+
+    if not _numbers_in_range(numbers, (low, high)):
+        return None, "worksheet_notice_range_empty"
+
+    return (low, high), None
+
+
+def _parse_worksheet_count(value):
+    """Parse the exercise count. Returns (count, notice_key_or_None).
+
+    A field the teacher left blank is not a mistake — it just means "default".
+    """
+    if value is None or not str(value).strip():
+        return WORKSHEET_COUNT_DEFAULT, None
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        return WORKSHEET_COUNT_DEFAULT, "worksheet_notice_count"
+    if count < WORKSHEET_COUNT_MIN:
+        return WORKSHEET_COUNT_MIN, "worksheet_notice_count"
+    if count > WORKSHEET_COUNT_MAX:
+        return WORKSHEET_COUNT_MAX, "worksheet_notice_count"
+    return count, None
+
+
+def _build_worksheet(numbers, seed):
+    """Resolve the query params into a sheet. Never raises.
+
+    The draw is a shuffle of the in-range numbers seeded from `seed` alone, so
+    the same seed and range always produce the same sequence and the exercise
+    count only decides how much of it gets printed.
+    """
+    notice_keys = []
+
+    raw_direction = (request.args.get("direction") or "").strip().lower()
+    direction = WORKSHEET_DIRECTIONS.get(raw_direction, WORKSHEET_DEFAULT_DIRECTION)
+    if raw_direction and raw_direction not in WORKSHEET_DIRECTIONS:
+        notice_keys.append("worksheet_notice_direction")
+
+    raw_format = (request.args.get("format") or "").strip().lower()
+    sheet_format = raw_format if raw_format in WORKSHEET_FORMATS else "html"
+    if raw_format and raw_format not in WORKSHEET_FORMATS:
+        notice_keys.append("worksheet_notice_format")
+
+    num_range, range_notice = _parse_worksheet_range(
+        _worksheet_range_arg(numbers), numbers
+    )
+    if range_notice:
+        notice_keys.append(range_notice)
+
+    count, count_notice = _parse_worksheet_count(request.args.get("count"))
+    if count_notice:
+        notice_keys.append(count_notice)
+
+    pool = sorted(_numbers_in_range(numbers, num_range))
+    if count > len(pool):
+        count = len(pool)
+        notice_keys.append("worksheet_notice_count_capped")
+
+    rng = _worksheet_rng(seed)
+    rng.shuffle(pool)
+
+    # The words come from the deck, never from a rule.
+    exercises = [
+        {"index": index, "number": number, "word": numbers[number]}
+        for index, number in enumerate(pool[:count], start=1)
+    ]
+
+    longest = max((len(item["word"]) for item in exercises), default=0)
+    low, high = num_range if num_range else (min(numbers), max(numbers))
+
+    return {
+        "exercises": exercises,
+        "direction": direction,
+        "format": sheet_format,
+        "count": count,
+        "range": num_range,
+        "range_low": low,
+        "range_high": high,
+        "seed": seed,
+        "columns": 2 if longest <= WORKSHEET_TWO_COLUMN_MAX_CHARS else 1,
+        "key_columns": (
+            3
+            if longest <= WORKSHEET_KEY_THREE_COLUMN_MAX_CHARS
+            else 2
+            if longest <= WORKSHEET_KEY_TWO_COLUMN_MAX_CHARS
+            else 1
+        ),
+        "notice_keys": notice_keys,
+    }
+
+
+@app.route("/<lang_code>/worksheet")
+def worksheet(lang_code):
+    """Printable number worksheet: the setup form, or the sheet it describes.
+
+    Anonymous GET, no login and no session state — a teacher must be able to
+    open, print and re-open this from any browser. With no worksheet params
+    this is the setup form; with params it is the sheet itself, rendered from
+    a standalone print template (no nav, no ads, no cookie banner).
+    """
+    if not is_language_ready(lang_code):
+        flash(get_text("flash_invalid_language"), "error")
+        return redirect(url_for("index"))
+
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("index"))
+
+    text = _text_for_language(lang_code)
+
+    if not any(key in request.args for key in WORKSHEET_PARAM_KEYS):
+        return render_template(
+            "worksheet.html",
+            lang_code=lang_code,
+            get_text=text,
+            deck_min=min(numbers),
+            deck_max=max(numbers),
+            total_numbers=len(numbers),
+            count_default=WORKSHEET_COUNT_DEFAULT,
+            count_min=WORKSHEET_COUNT_MIN,
+            count_max=WORKSHEET_COUNT_MAX,
+            default_direction=WORKSHEET_DEFAULT_DIRECTION,
+        )
+
+    # A sheet with no seed can't be reprinted, so mint one and bounce to the
+    # URL that can. Only the seed changes, so the teacher lands on the sheet
+    # they asked for and the address bar now holds the reprintable link.
+    seed = (request.args.get("seed") or "").strip()
+    if not _WORKSHEET_SEED_RE.match(seed):
+        carried = {
+            key: value
+            for key, value in request.args.items()
+            if key in WORKSHEET_PARAM_KEYS and key != "seed"
+        }
+        return redirect(
+            url_for(
+                "worksheet", lang_code=lang_code, seed=_mint_worksheet_seed(), **carried
+            )
+        )
+
+    sheet = _build_worksheet(numbers, seed)
+    notices = [text(key) for key in sheet["notice_keys"]]
+
+    # The footer prints the canonical spelling of this sheet's URL, so a
+    # printout is enough to get the sheet back even without the original link.
+    # The PDF and the page share it: both are the same sheet.
+    canonical_args = {
+        "count": sheet["count"],
+        "direction": sheet["direction"],
+        "range": (
+            f"{sheet['range'][0]}-{sheet['range'][1]}" if sheet["range"] else None
+        ),
+        "seed": sheet["seed"],
+    }
+    sheet_path = url_for("worksheet", lang_code=lang_code, **canonical_args)
+    sheet_url = SITE_URL.rstrip("/") + sheet_path
+
+    if sheet["format"] == WORKSHEET_FORMAT_PDF:
+        cache_key = _worksheet_pdf_cache_key(lang_code, sheet)
+        pdf = _worksheet_pdf_cached(cache_key)
+
+        if pdf is None and not _worksheet_pdf_budget_ok():
+            # This worker has rendered enough for one minute. A render holds a
+            # sync worker for seconds, so past the budget the printable page —
+            # which does the same job through the browser — is a far better
+            # answer than queueing more CPU ahead of everyone else's request.
+            notices = notices + [text("worksheet_notice_pdf_failed")]
+        elif pdf is None:
+            try:
+                pdf = _worksheet_pdf_bytes(
+                    render_template(
+                        "worksheet_sheet.html",
+                        lang_code=lang_code,
+                        get_text=text,
+                        sheet=sheet,
+                        notices=[],
+                        sheet_url=sheet_url,
+                        pdf_mode=True,
+                    )
+                )
+            except Exception:
+                # A missing native library or font must not take the feature
+                # down: the printable page does the same job in the browser.
+                app.logger.exception("Worksheet PDF rendering failed for %s", lang_code)
+                notices = notices + [text("worksheet_notice_pdf_failed")]
+            else:
+                _worksheet_pdf_store(cache_key, pdf)
+
+        if pdf is not None:
+            return Response(
+                pdf,
+                mimetype="application/pdf",
+                headers={
+                    "Content-Disposition": (
+                        "attachment; "
+                        f'filename="{_worksheet_pdf_filename(lang_code, sheet)}"'
+                    )
+                },
+            )
+
+    return render_template(
+        "worksheet_sheet.html",
+        lang_code=lang_code,
+        get_text=text,
+        sheet=sheet,
+        notices=notices,
+        sheet_url=sheet_url,
+        pdf_url=url_for(
+            "worksheet", lang_code=lang_code, format="pdf", **canonical_args
+        ),
     )
 
 
@@ -474,27 +1143,19 @@ def start_quiz(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     # Read magnitude level from form, validate (int 1-5, default 1)
-    try:
-        magnitude_level = int(request.form.get("magnitude_level", 1))
-    except (TypeError, ValueError):
-        magnitude_level = 1
-    if magnitude_level not in range(1, 6):
-        magnitude_level = 1
+    magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    # Clear quiz-related session data but keep UI language and any logged-in user
-    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    saved_user = session.get("user")
-    session.clear()
-    session["language"] = ui_language
-    if saved_user is not None:
-        session["user"] = saved_user
-    session["learn_language"] = lang_code
-    session["score"] = 0
-    session["total_questions"] = 0
-    session["asked_numbers"] = []
-    session["mode"] = mode
-    session["magnitude_level"] = magnitude_level
-    session["quiz_start_time"] = time.time()
+    # The share-link builder on the config screen also feeds its range into
+    # these forms, so pressing Start gives the teacher the same drill the
+    # link they just copied produces.
+    try:
+        numbers = get_language_numbers(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+    num_range, _ = _parse_range(request.form.get("range"), numbers)
+
+    _seed_quiz_session(lang_code, mode, magnitude_level, num_range)
 
     # Redirect to appropriate quiz
     if mode == "easy":
@@ -517,9 +1178,9 @@ def quiz_easy(lang_code):
     if session.get("mode") != "easy":
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    # Load numbers for this language
+    # Load numbers for this language (narrowed to a shared link's range)
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -624,9 +1285,9 @@ def quiz_advanced(lang_code):
     if session.get("mode") != "advanced":
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    # Load numbers for this language
+    # Load numbers for this language (narrowed to a shared link's range)
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -772,9 +1433,9 @@ def quiz_hardcore(lang_code):
     if session.get("mode") != "hardcore":
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    # Load numbers for this language
+    # Load numbers for this language (narrowed to a shared link's range)
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -912,26 +1573,9 @@ def listen_start(lang_code):
         flash(get_text("flash_invalid_language"), "error")
         return redirect(url_for("index"))
 
-    try:
-        magnitude_level = int(request.form.get("magnitude_level", 1))
-    except (TypeError, ValueError):
-        magnitude_level = 1
-    if magnitude_level not in range(1, 6):
-        magnitude_level = 1
+    magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    saved_user = session.get("user")
-    session.clear()
-    session["language"] = ui_language
-    if saved_user is not None:
-        session["user"] = saved_user
-    session["learn_language"] = lang_code
-    session["score"] = 0
-    session["total_questions"] = 0
-    session["asked_numbers"] = []
-    session["mode"] = "audio"
-    session["magnitude_level"] = magnitude_level
-    session["quiz_start_time"] = time.time()
+    _seed_quiz_session(lang_code, "audio", magnitude_level)
 
     return redirect(url_for("listen_quiz", lang_code=lang_code))
 
@@ -949,13 +1593,12 @@ def listen_quiz(lang_code):
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = _session_numbers(lang_code)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
 
-    available = _available_audio_numbers(lang_code)
-    playable_numbers = {n: word for n, word in numbers.items() if n in available}
+    playable_numbers = _playable_audio_numbers(lang_code, numbers)
     if not playable_numbers:
         flash(get_text("flash_audio_missing"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
@@ -1045,6 +1688,29 @@ def listen_quiz(lang_code):
         lang_code=lang_code,
         get_text=get_text,
     )
+
+
+def _start_preset_drill(lang_code, numbers):
+    """Render the drill described by the query params, in this response.
+
+    Deliberately not a redirect: the student must land in the configured quiz
+    from one cold GET, and the parameterised URL itself has to carry the
+    canonical/noindex tags. The quiz's own forms post to the real quiz route,
+    so from question 2 the drill runs on its canonical URL.
+    """
+    mode, magnitude_level, num_range, notices = _parse_preset(lang_code, numbers)
+    _seed_quiz_session(lang_code, mode, magnitude_level, num_range)
+
+    g.preset_notices = notices
+    g.no_store = True
+
+    views = {
+        "easy": quiz_easy,
+        "advanced": quiz_advanced,
+        "hardcore": quiz_hardcore,
+        "audio": listen_quiz,
+    }
+    return views[mode](lang_code)
 
 
 @app.route("/<lang_code>/results")
@@ -3126,6 +3792,8 @@ def sitemap_xml():
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
             urls.append(f"{base}/{lang_code}")
+            # The worksheet setup form (no params) is a real landing page.
+            urls.append(f"{base}/{lang_code}/worksheet")
     for lc in get_languages_with_learn_materials():
         urls.append(f"{base}/{lc}/learn")
     for lc in get_languages_with_conjugation_materials():

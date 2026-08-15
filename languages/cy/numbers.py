@@ -1,6 +1,7 @@
 """Welsh numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "dim",
     1: "un",
     2: "dau",
     3: "tri",

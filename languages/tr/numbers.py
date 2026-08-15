@@ -1,6 +1,7 @@
 """Turkish numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "sıfır",
     1: "bir",
     2: "iki",
     3: "üç",

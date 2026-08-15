@@ -1,6 +1,7 @@
 """French numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "zéro",
     1: "un",
     2: "deux",
     3: "trois",

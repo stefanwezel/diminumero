@@ -1,6 +1,7 @@
 """Chinese (Mandarin) numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "零",
     1: "一",
     2: "二",
     3: "三",

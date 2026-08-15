@@ -33,7 +33,7 @@
 }
 
 /* Touch interaction improvements */
-button, .btn, .option-btn, a.btn, .cookie-accept-btn, .mode-card, .learn-card {
+button, .btn, .option-btn, a.btn, .mode-card, .learn-card {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
 }
@@ -1686,8 +1686,12 @@ body {
     }
 }
 
-/* Cookie Banner */
-.cookie-banner {
+/* Shared modal overlay geometry.
+ * Extracted from the old cookie banner when that was removed: the poll modal
+ * had a copy of these exact rules, so this is now the one place the overlay
+ * geometry lives. `.show` toggles visibility.
+ */
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -1695,7 +1699,7 @@ body {
     bottom: 0;
     background: rgba(2, 1, 34, 0.7);
     backdrop-filter: blur(5px);
-    z-index: 9999;
+    z-index: 9998;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1705,120 +1709,30 @@ body {
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
-.cookie-banner.show {
+.modal-overlay.show {
     opacity: 1;
     visibility: visible;
 }
 
-.cookie-banner-content {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 30px;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: 0 10px 40px rgba(2, 1, 34, 0.3);
-    border: 3px solid #FC9E4F;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    transform: scale(0.9);
-    transition: transform 0.3s ease-in-out;
-}
-
-.cookie-banner.show .cookie-banner-content {
-    transform: scale(1);
-}
-
-.cookie-banner-text {
-    flex: 1;
-}
-
-.cookie-banner-text p {
-    margin: 0 0 8px 0;
-    color: #020122;
-    font-size: 0.95rem;
-    line-height: 1.5;
+/* Standing note where the consent banner used to be: no consent to collect,
+ * just a link to the policy that describes the cookies. */
+.site-note {
+    margin: 32px auto 20px;
+    padding: 0 20px;
     text-align: center;
 }
 
-.cookie-banner-text p:last-child {
-    margin-bottom: 0;
-}
-
-.cookie-banner-text small {
-    color: #666;
-    font-size: 0.85rem;
-}
-
-.cookie-banner-text a {
-    color: #FC9E4F;
+.site-note-link {
+    color: #4a4a5e;
+    font-size: 0.82rem;
     text-decoration: none;
-    font-weight: 600;
-    transition: color 0.2s;
+    border-bottom: 1px solid rgba(74, 74, 94, 0.3);
+    transition: color 0.2s, border-color 0.2s;
 }
 
-.cookie-banner-text a:hover {
-    color: #e68a3b;
-    text-decoration: underline;
-}
-
-.cookie-banner-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-}
-
-.cookie-accept-btn {
-    background: linear-gradient(135deg, #FC9E4F 0%, #EDD382 100%);
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(252, 158, 79, 0.3);
-    white-space: nowrap;
-}
-
-@media (hover: hover) {
-    .cookie-accept-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(252, 158, 79, 0.4);
-    }
-}
-.cookie-accept-btn:active {
-    box-shadow: 0 6px 20px rgba(252, 158, 79, 0.4);
-}
-
-.cookie-accept-btn:active {
-    transform: translateY(0);
-}
-
-@media (max-width: 768px) {
-    .cookie-banner {
-        padding: 15px;
-    }
-    
-    .cookie-banner-content {
-        padding: 25px 20px;
-        max-width: 90%;
-    }
-    
-    .cookie-banner-text p {
-        font-size: 0.9rem;
-    }
-    
-    .cookie-banner-text small {
-        font-size: 0.8rem;
-    }
-    
-    .cookie-accept-btn {
-        width: 100%;
-    }
+.site-note-link:hover {
+    color: #020122;
+    border-bottom-color: #020122;
 }
 
 /* Learn Section */
@@ -4098,29 +4012,11 @@ html {
    by the conjugation language picker), and the home-page CTA form.
    ============================================================ */
 
-/* ----- Feedback-poll modal shell (reused by the conj-lang picker) ----- */
+/* ----- Feedback-poll modal shell (reused by the conj-lang picker) -----
+   Overlay geometry now lives in .modal-overlay, which both markup users carry;
+   this is only what makes it a poll-shaped modal. */
 .poll-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(45, 30, 12, 0.6);
-    backdrop-filter: blur(5px);
-    z-index: 9998;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
     overflow-y: auto;
-}
-
-.poll-modal.show {
-    opacity: 1;
-    visibility: visible;
 }
 
 .poll-modal-content {
@@ -4634,4 +4530,134 @@ html {
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+/* ===== Shareable drill presets ===== */
+.preset-notice {
+    max-width: 720px;
+    margin: 0 auto 18px;
+    padding: 12px 16px;
+    background: rgba(252, 158, 79, 0.12);
+    border: 1px solid rgba(252, 158, 79, 0.45);
+    border-radius: 12px;
+    text-align: left;
+}
+.preset-notice-text {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #4a4a5e;
+}
+.preset-notice-text + .preset-notice-text {
+    margin-top: 6px;
+}
+.preset-share {
+    max-width: 720px;
+    margin: 28px auto 0;
+    padding: 18px 20px;
+    background: rgba(2, 1, 34, 0.03);
+    border: 1px solid rgba(2, 1, 34, 0.12);
+    border-radius: 14px;
+    text-align: left;
+}
+.preset-share-title {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+    color: #020122;
+}
+.preset-share-desc {
+    margin: 0 0 14px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: #4a4a5e;
+}
+.preset-share-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 14px;
+}
+.preset-share-field {
+    flex: 1 1 240px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+.preset-share-label {
+    display: block;
+    margin-bottom: 8px;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #B3541E;
+}
+.preset-share-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+}
+.preset-share-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #020122;
+    cursor: pointer;
+}
+.preset-share-range {
+    display: flex;
+    gap: 12px;
+}
+.preset-share-range-label {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #4a4a5e;
+}
+.preset-share-range-input {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #020122;
+    background: #ffffff;
+    border: 1px solid rgba(2, 1, 34, 0.2);
+    border-radius: 8px;
+}
+/* Small explanatory line under a field (worksheet setup form). */
+.preset-share-hint {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: #4a4a5e;
+}
+.preset-share-row {
+    display: flex;
+    gap: 10px;
+}
+.preset-share-url {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: #020122;
+    background: #ffffff;
+    border: 1px solid rgba(2, 1, 34, 0.2);
+    border-radius: 8px;
+}
+.preset-share-copy {
+    flex-shrink: 0;
+}
+@media (max-width: 600px) {
+    .preset-share-row {
+        flex-direction: column;
+    }
 }

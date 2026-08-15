@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7963483579984328"
-     crossorigin="anonymous"></script>
 
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
@@ -23,7 +19,10 @@
     
     <title>{% block title %}diminumero{% endblock %}</title>
     {% block meta_description %}{% endblock %}
-    {% block meta_robots %}{% endblock %}
+    {# A URL carrying quiz params (a shared preset link) is a duplicate of the
+       clean route, so it is never indexed; canonical below already points at
+       the query-free path. Otherwise pages set their own robots meta. #}
+    {% if has_quiz_params %}<meta name="robots" content="noindex, nofollow">{% else %}{% block meta_robots %}{% endblock %}{% endif %}
     {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
     <link rel="alternate" hreflang="x-default" href="{{ canonical_url }}">
 
@@ -168,7 +167,20 @@
     </div>
 
     <div class="container">
+        {% include "_preset_notice.html" %}
         {% block content %}{% endblock %}
+
+        {# Replaces the old consent banner. The site sets only the Flask session
+           cookie (plus Auth0's, for users who choose to log in) — both strictly
+           necessary for a service the user asked for, so § 25(2) TDDDG requires
+           no consent and there is nothing to click away. The privacy policy
+           carries the Art. 13 detail, including the analytics.
+
+           Inside .container on purpose: <body> is a centring flex row, so a
+           direct child here becomes a second column beside the page. #}
+        <footer class="site-note">
+            <a href="{{ url_for('privacy') }}" class="site-note-link">{{ get_text('footer_cookie_note') }}</a>
+        </footer>
     </div>
     
     <!-- Toast notifications -->
@@ -184,20 +196,6 @@
     {% endwith %}
     
     <script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
-    <!-- Cookie Banner -->
-    <div id="cookie-banner" class="cookie-banner" role="dialog" aria-modal="true" aria-labelledby="cookie-banner-title">
-        <div class="cookie-banner-content">
-            <div class="cookie-banner-text">
-                <p id="cookie-banner-title"><strong>🍪 {{ get_text('cookie_banner_text') }}</strong></p>
-                <p><small>{{ get_text('cookie_banner_adsense') }} <a href="{{ url_for('privacy') }}">{{ get_text('cookie_banner_learn_more') }}</a></small></p>
-            </div>
-            <div class="cookie-banner-actions">
-                <button id="cookie-accept" class="cookie-accept-btn" aria-label="Accept cookies and close">{{ get_text('cookie_banner_accept') }}</button>
-            </div>
-        </div>
-    </div>
-    
-    <script src="{{ url_for('static', filename='js/cookie-banner.js') }}"></script>
 
     {# Feedback poll deprecated — kept in place (template, JS, /api/poll, PollResponse
        model) for a possible future poll. Re-enable by uncommenting the two lines below. #}

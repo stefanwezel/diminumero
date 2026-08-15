@@ -1,6 +1,7 @@
 """Brazilian Portuguese numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "zero",
     1: "um",
     2: "dois",
     3: "três",

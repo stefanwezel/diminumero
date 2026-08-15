@@ -22,6 +22,7 @@
                 <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="easy">
                     <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
+                    <input type="hidden" name="range" value="" class="preset-range-hidden-input">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_easy_btn') }}
                     </button>
@@ -34,6 +35,7 @@
                 <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="advanced">
                     <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
+                    <input type="hidden" name="range" value="" class="preset-range-hidden-input">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_advanced_btn') }}
                     </button>
@@ -46,6 +48,7 @@
                 <form action="{{ url_for('start_quiz', lang_code=lang_code) }}" method="POST">
                     <input type="hidden" name="mode" value="hardcore">
                     <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
+                    <input type="hidden" name="range" value="" class="preset-range-hidden-input">
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_hardcore_btn') }}
                     </button>
@@ -85,14 +88,74 @@
         })();
         </script>
 
-        <div class="info">
-            <div class="info-item">
-                <span class="info-number">{{ questions_per_quiz }}</span>
-                <span class="info-label">{{ get_text('info_questions') }}</span>
+        <!-- Shareable preset link: builds a URL from the selections above so a
+             teacher can drop students straight into this drill. -->
+        <div class="preset-share" id="preset-share"
+             data-base-url="{{ url_for('number_modes', lang_code=lang_code, _external=True) }}"
+             data-deck-min="{{ deck_min }}"
+             data-deck-max="{{ deck_max }}">
+            <h2 class="preset-share-title">{{ get_text('preset_share_title') }}</h2>
+            <p class="preset-share-desc">{{ get_text('preset_share_desc') }}</p>
+
+            <div class="preset-share-controls">
+                <fieldset class="preset-share-field">
+                    <legend class="preset-share-label">{{ get_text('preset_share_mode_label') }}</legend>
+                    <div class="preset-share-modes">
+                        {% set share_modes = [('easy', get_text('mode_easy')), ('advanced', get_text('mode_advanced')), ('hardcore', get_text('mode_hardcore'))] %}
+                        {% for value, label in share_modes %}
+                        <label class="preset-share-mode">
+                            <input type="radio" name="preset-mode" value="{{ value }}" {% if loop.first %}checked{% endif %}>
+                            <span>{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                        {% if has_audio_mode %}
+                        <label class="preset-share-mode">
+                            <input type="radio" name="preset-mode" value="listening">
+                            <span>{{ get_text('home_audio_mode_title') }}</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <div class="preset-share-field">
+                    <span class="preset-share-label">{{ get_text('preset_share_range_label') }}</span>
+                    <div class="preset-share-range">
+                        <label class="preset-share-range-label">
+                            <span>{{ get_text('preset_share_from') }}</span>
+                            <input type="number" id="preset-range-min" class="preset-share-range-input"
+                                   min="{{ deck_min }}" max="{{ deck_max }}" step="1"
+                                   placeholder="{{ deck_min }}" inputmode="numeric">
+                        </label>
+                        <label class="preset-share-range-label">
+                            <span>{{ get_text('preset_share_to') }}</span>
+                            <input type="number" id="preset-range-max" class="preset-share-range-input"
+                                   min="{{ deck_min }}" max="{{ deck_max }}" step="1"
+                                   placeholder="{{ deck_max }}" inputmode="numeric">
+                        </label>
+                    </div>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="info-number">{{ total_numbers }}</span>
-                <span class="info-label">{{ get_text('info_numbers') }}</span>
+
+            <div class="preset-share-row">
+                <input type="text" id="preset-share-url" class="preset-share-url" readonly
+                       aria-label="{{ get_text('preset_share_title') }}">
+                <button type="button" id="preset-share-copy" class="btn btn-primary preset-share-copy"
+                        data-i18n-copy="{{ get_text('preset_share_copy') }}"
+                        data-i18n-copied="{{ get_text('preset_share_copied') }}">
+                    {{ get_text('preset_share_copy') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Paper counterpart to the share link above: a printable sheet for a
+             class with no devices. -->
+        <div class="preset-share">
+            <h2 class="preset-share-title">{{ get_text('worksheet_cta_title') }}</h2>
+            <p class="preset-share-desc">{{ get_text('worksheet_cta_desc') }}</p>
+            <div class="preset-share-row">
+                <a href="{{ url_for('worksheet', lang_code=lang_code) }}" class="btn btn-primary">
+                    {{ get_text('worksheet_generate') }}
+                </a>
             </div>
         </div>
 
@@ -107,4 +170,8 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/preset_link.js') }}"></script>
 {% endblock %}

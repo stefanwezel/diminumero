@@ -18,5 +18,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
+      # WeasyPrint's native stack, so the worksheet PDF tests actually run
+      # instead of skipping, plus poppler for reading the generated PDFs back.
+      # Fonts are deliberately NOT installed here: glyph coverage is verified
+      # against the built image with tools/check_worksheet_fonts.py.
+      - name: Install PDF rendering libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 poppler-utils
+
       - name: Run tests
         run: uv run pytest

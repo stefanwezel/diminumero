@@ -1,6 +1,7 @@
 """German numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "Null",
     1: "Eins",
     2: "Zwei",
     3: "Drei",

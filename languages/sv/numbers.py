@@ -1,6 +1,7 @@
 """Swedish numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "noll",
     1: "en",
     2: "två",
     3: "tre",

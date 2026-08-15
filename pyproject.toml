@@ -13,6 +13,10 @@ dependencies = [
     "flask-sqlalchemy>=3.1.0",
     "flask-migrate>=4.0.0",
     "psycopg[binary]>=3.1.0",
+    # Server-side worksheet PDFs. Renders the same HTML + print CSS the
+    # browser prints, and picks fonts up through fontconfig — which is why the
+    # Dockerfile has to install font packages (see the Unicode note there).
+    "weasyprint>=66",
 ]
 
 [dependency-groups]

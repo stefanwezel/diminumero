@@ -1,0 +1,120 @@
+{# Standalone print document — deliberately does NOT extend base.html: a sheet
+   a teacher prints must carry no nav, no ads, no cookie banner and no theme.
+   Everything on it comes from the URL, so the same URL reprints it exactly.
+
+   Rendered twice from the same source: as this page (printed with Ctrl+P) and,
+   with pdf_mode set, as the input to WeasyPrint for ?format=pdf. In pdf_mode
+   the screen-only chrome is left out entirely and the stylesheet is handed to
+   WeasyPrint from disk instead of linked, so the renderer never has to fetch
+   anything back off the running app. #}
+<!DOCTYPE html>
+<html lang="{{ ui_language|default('en') }}" dir="{{ ui_dir|default('ltr') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ get_text('worksheet_sheet_heading') }} · {{ sheet.range_low }}–{{ sheet.range_high }} · diminumero</title>
+{% if not pdf_mode %}
+    {# A generated sheet is one of endless parameterised variants of the setup
+       page — never an index entry of its own. #}
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="{{ site_url.rstrip('/') }}{{ url_for('worksheet', lang_code=lang_code) }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/worksheet.css') }}">
+    {# Preview-only responsive tweaks; the PDF renderer is given worksheet.css
+       alone. See the note at the top of worksheet-screen.css. #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/worksheet-screen.css') }}">
+    <script data-goatcounter="https://stefanwezel.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+{% endif %}
+</head>
+<body class="worksheet-body">
+
+{% if not pdf_mode %}
+<div class="ws-toolbar no-print">
+    <a class="ws-toolbar-link" href="{{ url_for('worksheet', lang_code=lang_code) }}">← {{ get_text('worksheet_back_to_settings') }}</a>
+    <span class="ws-toolbar-actions">
+        <a class="ws-toolbar-link ws-pdf-link" href="{{ pdf_url }}">{{ get_text('worksheet_download_pdf') }}</a>
+        <button type="button" class="ws-print-btn" onclick="window.print()">{{ get_text('worksheet_print') }}</button>
+    </span>
+</div>
+{% endif %}
+
+{% if notices %}
+<div class="ws-notices no-print" role="status">
+    {% for notice in notices %}
+    <p class="ws-notice">{{ notice }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% set meta_line = sheet.range_low ~ '–' ~ sheet.range_high ~ ' · ' ~ sheet.count ~ ' ' ~ get_text('worksheet_exercises_label') ~ ' · ' ~ get_text('worksheet_sheet_id') ~ ' ' ~ sheet.seed %}
+
+<article class="ws-sheet">
+    <header class="ws-head">
+        <div class="ws-head-row">
+            <h1 class="ws-title">{{ get_text('worksheet_sheet_heading') }}</h1>
+            <p class="ws-meta">{{ meta_line }}</p>
+        </div>
+        <p class="ws-instructions">
+            {% if sheet.direction == 'words_to_digits' %}
+                {{ get_text('worksheet_instructions_words_to_digits') }}
+            {% else %}
+                {{ get_text('worksheet_instructions_digits_to_words') }}
+            {% endif %}
+        </p>
+        <div class="ws-fields">
+            <span class="ws-field"><span class="ws-field-label">{{ get_text('worksheet_field_name') }}</span><span class="ws-field-rule"></span></span>
+            <span class="ws-field"><span class="ws-field-label">{{ get_text('worksheet_field_class') }}</span><span class="ws-field-rule"></span></span>
+            <span class="ws-field ws-field-date"><span class="ws-field-label">{{ get_text('worksheet_field_date') }}</span><span class="ws-field-rule"></span></span>
+        </div>
+    </header>
+
+    <ol class="ws-items" style="--ws-cols: {{ sheet.columns }}">
+        {% for item in sheet.exercises %}
+        {# lang= on the number words, not just on <html>: the page's chrome is
+           in the UI language but the words are in the target one. Without the
+           hint fontconfig hands every Han sheet the Japanese face, so a
+           Chinese worksheet would print Japanese glyph variants. #}
+        <li class="ws-item">
+            <span class="ws-item-index">{{ item.index }}.</span>
+            <span class="ws-item-prompt"{% if sheet.direction == 'words_to_digits' %} lang="{{ lang_code }}"{% endif %}>{% if sheet.direction == 'words_to_digits' %}{{ item.word }}{% else %}{{ item.number }}{% endif %}</span>
+            <span class="ws-item-rule"></span>
+        </li>
+        {% endfor %}
+    </ol>
+
+    {% include "_worksheet_footer.html" %}
+</article>
+
+<article class="ws-sheet ws-sheet-answers">
+    <header class="ws-head">
+        <div class="ws-head-row">
+            <h1 class="ws-title">{{ get_text('worksheet_answer_key') }}</h1>
+            <p class="ws-meta">{{ meta_line }}</p>
+        </div>
+        <p class="ws-instructions ws-instructions-muted">{{ get_text('worksheet_answer_key_note') }}</p>
+    </header>
+
+    <ol class="ws-key" style="--ws-cols: {{ sheet.key_columns }}">
+        {# Prompt first, answer second — the same order the student reads. #}
+        {% for item in sheet.exercises %}
+        <li class="ws-key-item">
+            <span class="ws-item-index">{{ item.index }}.</span>
+            {% if sheet.direction == 'words_to_digits' %}
+            <span class="ws-key-word" lang="{{ lang_code }}">{{ item.word }}</span>
+            <span class="ws-key-sep">=</span>
+            <span class="ws-key-digits">{{ item.number }}</span>
+            {% else %}
+            <span class="ws-key-digits">{{ item.number }}</span>
+            <span class="ws-key-sep">=</span>
+            <span class="ws-key-word" lang="{{ lang_code }}">{{ item.word }}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+
+    {% include "_worksheet_footer.html" %}
+</article>
+
+</body>
+</html>

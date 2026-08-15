@@ -1,6 +1,7 @@
 """Norwegian (Bokmål) numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "null",
     1: "en",
     2: "to",
     3: "tre",

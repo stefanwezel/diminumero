@@ -1,6 +1,7 @@
 """Italian numbers data for the quiz application."""
 
 NUMBERS = {
+    0: "zero",
     1: "uno",
     2: "due",
     3: "tre",
