@@ -12,7 +12,13 @@ QUESTIONS_PER_QUIZ = 10
 DEFAULT_UI_LANGUAGE = "en"
 
 # Supported UI language codes
-SUPPORTED_UI_LANGUAGES = {"en", "de", "es", "it", "fr", "pt", "ar", "uk"}
+SUPPORTED_UI_LANGUAGES = {"en", "de", "es", "it", "fr", "pt", "ar", "uk", "cy"}
+
+# UI languages that are still being translated. They are selectable, but most
+# strings still fall back to English (see get_text in app.py), so the pages say
+# so instead of quietly looking finished. Remove a code from here once its dict
+# in translations.py is complete — nothing else has to change.
+PARTIAL_UI_LANGUAGES = {"cy"}
 
 # UI languages that use right-to-left text direction
 RTL_UI_LANGUAGES = {"ar"}

@@ -1,0 +1,22 @@
+# Notes for French numbers. See ADD_NOTES.md for the format.
+
+language = "fr"
+authored_in = "en"
+
+[[note]]
+id = "fr-soixante-dix"
+applies_to = "70-79"
+text = "Standard French has no separate word for seventy: it counts on from sixty, so 70 is soixante-dix, sixty-ten, and 71 is soixante et onze."
+reviewed = false
+
+[[note]]
+id = "fr-quatre-vingts"
+applies_to = "80-99"
+text = "quatre-vingts is literally four twenties — a survival of counting in twenties, the same base the traditional Welsh and Danish systems use. 90 continues it as quatre-vingt-dix, four-twenty-ten."
+reviewed = false
+
+[[note]]
+id = "fr-septante-nonante"
+applies_to = "70-79,90-99"
+text = "Belgium and Switzerland use septante for 70 and nonante for 90, and Switzerland also uses huitante for 80. This drill teaches the standard French forms."
+reviewed = false

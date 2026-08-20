@@ -27,6 +27,16 @@ def _get_magnitude_band(num):
         return 4
 
 
+def spans_multiple_magnitudes(numbers_dict):
+    """Whether a deck covers more than one order-of-magnitude band.
+
+    A deck confined to one band (traditional Welsh, which stops around 100)
+    gets identical weights at every magnitude level, so the dial that sets them
+    has nothing to do and should not be shown.
+    """
+    return len({_get_magnitude_band(num) for num in numbers_dict}) > 1
+
+
 def get_random_question(numbers_dict, exclude_numbers=None, magnitude_level=1):
     """
     Get a random number from the available numbers with weighted probability.
@@ -94,6 +104,17 @@ def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
 
     # Extract only answers
     wrong_answers = [answer for num, answer in same_magnitude_numbers]
+
+    # A sparse deck may not have three numbers of the same digit length — a
+    # deck capped at 100 has exactly one three-digit number — which would leave
+    # the question with fewer than four options. Top up from the rest of the
+    # deck so the shape of the question never depends on how full the deck is.
+    if len(wrong_answers) < 3:
+        wrong_answers += [
+            answer
+            for num, answer in numbers_dict.items()
+            if num != correct_number and len(str(num)) != digit_length
+        ]
 
     # Use secrets for cryptographically secure random selection
     selected_wrong = []

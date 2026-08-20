@@ -5,6 +5,7 @@ This guide explains how to add a new learning language to diminumero's **number-
 Related guides:
 - [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) — add the spoken-number Listening quiz to a language that already has numbers.
 - [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md) — add a Learn/tutorial page for a language.
+- [ADD_NOTES.md](ADD_NOTES.md) — add a short per-number note (the lightbulb).
 - [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) — the Spanish verb-conjugation section (regenerating the pool, extending it).
 
 ## Overview
@@ -222,6 +223,111 @@ elif lang_code == 'qu':
 
 # 6. When ready, set ready: True in languages/config.py
 ```
+
+## Languages with More Than One Numeral System
+
+Some languages have two ways of saying the same number, both current, used in
+different situations:
+
+| Language | Systems |
+|---|---|
+| **Welsh (`cy`)** | decimal (`dau ddeg pump`) and traditional/vigesimal (`pump ar hugain`) — the traditional one is obligatory for the time, dates and age |
+| Korean (`ko`) | Sino-Korean (`일, 이, 삼`) and native (`하나, 둘, 셋`) — only Sino ships today |
+| Japanese (`ja`) | Sino-Japanese and native *wago* (`ひとつ, ふたつ`) — only Sino ships today |
+| French (`fr`) | standard (`soixante-dix`) and Belgian/Swiss (`septante`, `nonante`) |
+
+A language declares its systems in `languages/config.py`. **A language that
+declares nothing has exactly one system and behaves as it always has** — this is
+purely additive.
+
+```python
+"cy": {
+    ...
+    "number_systems": [
+        {"key": "decimal", "module": "numbers", "default": True},
+        {
+            "key": "traditional",
+            "module": "numbers_traditional",
+            "requires_complete": (1, 100),   # the completeness gate, below
+            "has_audio": False,              # no MP3s for this system
+        },
+    ],
+},
+```
+
+| Field | Meaning |
+|---|---|
+| `key` | Used in URLs (`/cy/numbers?system=traditional`) and in note scoping. Also the i18n key suffix: add `number_system_name_<key>` and `number_system_desc_<key>` to **all** UI languages in `translations.py`. |
+| `module` | The file under `languages/<code>/` holding this system's `NUMBERS` dict. |
+| `default` | The system a bare `/<lang>` URL drills. Exactly one system should have it. |
+| `requires_complete` | `(low, high)` — the range that must be filled before the system is offered. |
+| `has_audio` | Whether the Listening quiz may use this deck. |
+
+### The completeness gate
+
+A second system is **offered only when its deck is actually usable**, and that is
+derived from the data, not from a flag someone has to remember to flip. Gaps are
+written as `None`:
+
+```python
+NUMBERS = {
+    20: "ugain",
+    21: "un ar hugain",
+    22: None,   # TODO: nobody has given us this form yet
+}
+```
+
+`None` entries are dropped when the deck is loaded, so an unfinished list can
+never put a blank in front of a learner. While any number in
+`requires_complete` is missing, the system does not appear in the UI at all —
+no toggle, no dead control, no half-empty drill. The pull request that fills the
+last gap turns the feature on with no code change.
+
+This is what lets the code and the data land in either order, which matters when
+the data depends on volunteers.
+
+### Walkthrough: fill in a missing number
+
+**This one does need a file ending in `.py`** — see the note at the end.
+
+1. Open the deck on GitHub, e.g.
+   [`languages/cy/numbers_traditional.py`](languages/cy/numbers_traditional.py).
+2. Click the pencil (**Edit this file**). GitHub makes your own copy.
+3. Find the number you know:
+
+   ```python
+       45: None,  # TODO: see docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md
+   ```
+
+4. Replace `None` with the word in double quotes and delete the `# TODO`:
+
+   ```python
+       45: "pump ar ddeugain",
+   ```
+
+   Rules: lowercase; single spaces between words; include any mutation that
+   happens **inside** the number word (`un ar hugain`, not `un ar ugain`). A
+   mutation caused by the noun that comes *after* the number does not belong
+   here — that is a note ([ADD_NOTES.md](ADD_NOTES.md)).
+5. **If you are unsure, leave the `None`.** A gap is correct and harmless; a
+   plausible guess teaches someone the wrong thing with full confidence.
+6. Scroll down and choose **Create a new branch and start a pull request**. Say
+   in the description how you know the form (course, dictionary, native speaker).
+
+> **Honest caveat.** Step 1 opens a Python file. It contains nothing but
+> `number: "word",` lines and comments, but the extension is real. We keep this
+> format because all fifteen existing decks, the generator scripts and the tests
+> use it, and a second format for the same data would rot. Notes files
+> (`notes.toml`) are the plain-text path and need no source file at all.
+
+### Checklist for a second system
+
+- [ ] `number_systems` declared in `languages/config.py`, one entry with `default: True`
+- [ ] `languages/<code>/<module>.py` created, with `None` for everything unverified
+- [ ] `number_system_name_<key>` and `number_system_desc_<key>` added to all UI languages in `translations.py`
+- [ ] A test asserting the new deck contains no invented forms (see `tests/test_number_systems.py`)
+- [ ] Listening: `has_audio: False` unless MP3s exist for that system
+- [ ] Native-speaker review before the gate opens
 
 ## Number Generation Best Practices
 

@@ -1,0 +1,24 @@
+# Notes for Spanish numbers. See ADD_NOTES.md for the format.
+
+language = "es"
+authored_in = "en"
+
+[[note]]
+id = "es-16-29-one-word"
+applies_to = "16-29"
+text = "16 to 29 are written as single words, and the spelling changes as they contract: dieciséis rather than diez y seis, veintiuno rather than veinte y uno. From 31 upward the three-word pattern returns."
+reviewed = false
+
+  [[note.examples]]
+  phrase = "dieciséis"
+  gloss = "sixteen"
+
+  [[note.examples]]
+  phrase = "veintidós"
+  gloss = "twenty-two"
+
+[[note]]
+id = "es-cien-ciento"
+applies_to = "100-199"
+text = "A hundred on its own is cien, but with anything following it becomes ciento: cien, ciento uno, ciento cincuenta."
+reviewed = false

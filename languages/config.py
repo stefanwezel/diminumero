@@ -1,5 +1,7 @@
 """Language configuration for diminumero multi-language support."""
 
+import importlib
+
 # Available languages with metadata
 AVAILABLE_LANGUAGES = {
     "es": {
@@ -412,8 +414,25 @@ AVAILABLE_LANGUAGES = {
         "flag": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Welsh numbers from 0 to 10 million",
+        "description": "Learn modern decimal Welsh numbers from 0 to 10 million",
         "validation_strategy": "word_based",
+        # Welsh counts two ways. The decimal system ("cyfrif degol") is what
+        # school teaches and what arithmetic uses; the traditional vigesimal
+        # system is obligatory for the time, dates and age. Neither is a
+        # dialect of the other, so both live under /cy — see
+        # docs/plans/welsh-traditional-numbers.md.
+        "number_systems": [
+            {"key": "decimal", "module": "numbers", "default": True},
+            {
+                "key": "traditional",
+                "module": "numbers_traditional",
+                # Offered only once every number in this range is filled in;
+                # the deck ships with verified forms and explicit gaps.
+                "requires_complete": (1, 100),
+                # No traditional MP3s exist, so Listening stays decimal-only.
+                "has_audio": False,
+            },
+        ],
         "ui_names": {
             "en": "Welsh",
             "de": "Walisisch",
@@ -424,15 +443,19 @@ AVAILABLE_LANGUAGES = {
             "ar": "الويلزية",
             "uk": "Валлійська",
         },
+        # Names the system on the language card: the deck is decimal Welsh,
+        # and saying so is the point of docs/plans/welsh-traditional-numbers.md
+        # phase 0. Reworded rather than replaced so the toggle can drop the
+        # qualifier again once the traditional deck is usable.
         "ui_descriptions": {
-            "en": "Learn Welsh numbers from 0 to 10 million",
-            "de": "Lerne Walisische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en galés del 0 al 10 millones",
-            "it": "Impara i numeri in gallese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en gallois de 0 à 10 millions",
-            "pt": "Aprenda os números em galês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالويلزية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте валлійські числа від 0 до 10 мільйонів",
+            "en": "Learn modern decimal Welsh numbers from 0 to 10 million",
+            "de": "Lerne moderne dezimale walisische Zahlen von 0 bis 10 Millionen",
+            "es": "Aprende los números galeses decimales modernos del 0 al 10 millones",
+            "it": "Impara i numeri gallesi decimali moderni da 0 a 10 milioni",
+            "fr": "Apprenez les nombres gallois décimaux modernes de 0 à 10 millions",
+            "pt": "Aprenda os números galeses decimais modernos de 0 a 10 milhões",
+            "ar": "تعلم الأرقام الويلزية العشرية الحديثة من 0 إلى 10 ملايين",
+            "uk": "Вивчайте сучасні десяткові валлійські числа від 0 до 10 мільйонів",
         },
         "feedback_expression": "Da iawn!",
     },
@@ -505,12 +528,165 @@ def get_languages_with_audio_mode():
     ]
 
 
-def get_language_numbers(lang_code):
+# ===== Numeral systems =====
+# Most languages have one way of saying a number. Some have two: Welsh decimal
+# vs traditional, Korean Sino vs native, standard vs Belgian/Swiss French. A
+# language declares them with `number_systems`; one that declares nothing has
+# exactly one implicit system and behaves exactly as it always has.
+
+# The key reported for a language that declares no systems of its own. It never
+# reaches the UI: the system control only renders when a language has two.
+DEFAULT_NUMBER_SYSTEM = "default"
+
+# Every field a system entry may carry, with the value assumed when omitted.
+_NUMBER_SYSTEM_DEFAULTS = {
+    "module": "numbers",
+    # Which system a bare /<lang> URL drills.
+    "default": False,
+    # Numbers this system must cover before it is offered, as (low, high), or
+    # None to accept any non-empty deck. Checked against the data itself so a
+    # deck can be filled in gradually without a flag to remember to flip.
+    "requires_complete": None,
+    # Whether the Listening quiz may use this system's deck.
+    "has_audio": True,
+}
+
+# Cache for decks loaded out of a non-default module.
+_SYSTEM_NUMBER_CACHE = {}
+
+
+def get_number_systems(lang_code):
+    """Every numeral system a language declares, with defaults filled in.
+
+    A language with no declaration reports a single implicit system, so callers
+    never need to special-case the one-system majority.
+    """
+    lang_info = AVAILABLE_LANGUAGES.get(lang_code) or {}
+    declared = lang_info.get("number_systems")
+    if not declared:
+        implicit = dict(_NUMBER_SYSTEM_DEFAULTS)
+        implicit.update({"key": DEFAULT_NUMBER_SYSTEM, "default": True})
+        return [implicit]
+
+    systems = []
+    for entry in declared:
+        system = dict(_NUMBER_SYSTEM_DEFAULTS)
+        system.update(entry)
+        systems.append(system)
+    return systems
+
+
+def get_number_system(lang_code, system_key):
+    """One declared system by key, or None if the language has no such system."""
+    for system in get_number_systems(lang_code):
+        if system["key"] == system_key:
+            return system
+    return None
+
+
+def get_default_number_system(lang_code):
+    """The system key a bare /<lang> URL drills."""
+    systems = get_number_systems(lang_code)
+    for system in systems:
+        if system.get("default"):
+            return system["key"]
+    return systems[0]["key"]
+
+
+def is_number_system_ready(lang_code, system_key):
+    """Whether a declared system has enough data to be offered to a learner.
+
+    Derived from the deck itself rather than a flag, the same way the Listening
+    quiz derives its playable numbers from the MP3s actually on disk: a system
+    whose deck is still full of gaps stays hidden, and the PR that fills the
+    last gap turns it on with no code change.
+    """
+    system = get_number_system(lang_code, system_key)
+    if system is None:
+        return False
+
+    try:
+        numbers = get_language_numbers(lang_code, system_key)
+    except ValueError:
+        return False
+
+    if not numbers:
+        return False
+
+    required = system.get("requires_complete")
+    if not required:
+        return True
+
+    low, high = required
+    return all(num in numbers for num in range(low, high + 1))
+
+
+def get_ready_number_systems(lang_code):
+    """Declared systems whose deck passes the completeness gate."""
+    return [
+        system
+        for system in get_number_systems(lang_code)
+        if is_number_system_ready(lang_code, system["key"])
+    ]
+
+
+def resolve_number_system(lang_code, requested):
+    """Resolve a requested system key to one this language can actually drill.
+
+    Never raises: an unknown key, a key belonging to another language, or a
+    system whose deck is still incomplete all fall back to the default, exactly
+    like an unusable range or magnitude in a shared drill link.
+    """
+    default = get_default_number_system(lang_code)
+    if not requested or requested == default:
+        return default
+    if get_number_system(lang_code, requested) is None:
+        return default
+    if not is_number_system_ready(lang_code, requested):
+        return default
+    return requested
+
+
+def _load_system_numbers(lang_code, module_name):
+    """Load `NUMBERS` from a non-default deck module, dropping unfilled gaps.
+
+    A deck under construction marks what it doesn't know yet as ``None`` (see
+    languages/cy/numbers_traditional.py). Those entries are stripped here, so
+    nothing downstream — quiz, worksheet, validation — can ever be handed a
+    number without a word.
+    """
+    cache_key = (lang_code, module_name)
+    if cache_key in _SYSTEM_NUMBER_CACHE:
+        return _SYSTEM_NUMBER_CACHE[cache_key]
+
+    try:
+        module = importlib.import_module(f".{lang_code}.{module_name}", __package__)
+    except ImportError as exc:
+        raise ValueError(
+            f"Failed to load numbers for language '{lang_code}' "
+            f"system module '{module_name}': {exc}"
+        )
+
+    raw = getattr(module, "NUMBERS", None)
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"Module '{module_name}' for language '{lang_code}' has no NUMBERS dict"
+        )
+
+    numbers = {num: word for num, word in raw.items() if word}
+    _SYSTEM_NUMBER_CACHE[cache_key] = numbers
+    return numbers
+
+
+def get_language_numbers(lang_code, system=None):
     """
     Load and return the NUMBERS dictionary for a specific language.
 
     Args:
         lang_code: Language code (e.g., 'es', 'ne')
+        system: Optional numeral system key (e.g. 'traditional' for Welsh).
+            Omitted means the language's default system, which is what every
+            single-system language has.
 
     Returns:
         Dictionary mapping numbers to their translations
@@ -520,6 +696,15 @@ def get_language_numbers(lang_code):
     """
     if not is_language_available(lang_code):
         raise ValueError(f"Language '{lang_code}' is not available")
+
+    system_key = system or get_default_number_system(lang_code)
+    system_entry = get_number_system(lang_code, system_key)
+    if system_entry is None:
+        raise ValueError(f"Language '{lang_code}' has no number system '{system_key}'")
+
+    module_name = system_entry.get("module", "numbers")
+    if module_name != "numbers":
+        return _load_system_numbers(lang_code, module_name)
 
     try:
         if lang_code == "es":

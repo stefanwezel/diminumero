@@ -1,0 +1,153 @@
+# Notes for Welsh numbers. See ADD_NOTES.md for the format.
+#
+# These were written from the r/learnwelsh review thread of August 2026 — in
+# our words, not a native speaker's, which is why every one of them still says
+# reviewed = false. Corrections are very welcome: a note that is subtly wrong
+# teaches with more authority than a bare word list ever could.
+#
+# Notes scoped to systems = ["traditional"] are inert until the traditional
+# deck is complete (languages/cy/numbers_traditional.py) — they cost nothing
+# and are ready the moment it is.
+
+language = "cy"
+authored_in = "en"
+
+[[note]]
+id = "cy-deg-before-m"
+applies_to = "10"
+text = "Before a word beginning with m-, deg becomes deng."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+  [[note.examples]]
+  phrase = "deng munud"
+  gloss = "ten minutes"
+
+  [[note.examples]]
+  phrase = "deng mil"
+  gloss = "ten thousand"
+
+[[note]]
+id = "cy-gender-2-3-4"
+applies_to = "2,3,4"
+text = "2, 3 and 4 change with the gender of the noun they count: dau/dwy, tri/tair, pedwar/pedair. A bare number has no noun to agree with, so this drill shows the masculine form."
+source = "diminumero maintainers; see docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md"
+reviewed = false
+
+  [[note.examples]]
+  phrase = "dau gi"
+  gloss = "two dogs (masculine)"
+
+  [[note.examples]]
+  phrase = "dwy gath"
+  gloss = "two cats (feminine)"
+
+[[note]]
+id = "cy-trad-when-to-use"
+applies_to = "all"
+systems = ["traditional"]
+text = "The traditional system is what you use for telling the time, for dates and for age, whatever the size of the number."
+source = "r/learnwelsh review thread, August 2026"
+reveals_answer = false
+reviewed = false
+
+[[note]]
+id = "cy-trad-money-split"
+applies_to = "all"
+systems = ["traditional"]
+text = "For money the traditional system is usual up to roughly thirty, and the decimal system above that."
+source = "r/learnwelsh review thread, August 2026"
+reveals_answer = false
+reviewed = false
+
+[[note]]
+id = "cy-trad-pymtheg-after-ar"
+applies_to = "15"
+systems = ["traditional"]
+text = "pymtheg becomes bymtheg after ar, which is why 16 to 19 are built the way they are."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+  [[note.examples]]
+  phrase = "un ar bymtheg"
+  gloss = "sixteen"
+
+[[note]]
+id = "cy-trad-17-not-ordinal"
+applies_to = "17"
+systems = ["traditional"]
+text = "The cardinal is dau ar bymtheg. ail ar bymtheg is the ordinal, seventeenth."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+[[note]]
+id = "cy-trad-deunaw"
+applies_to = "18"
+systems = ["traditional"]
+text = "deunaw is literally two nines."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+[[note]]
+id = "cy-trad-19-namyn"
+applies_to = "19"
+systems = ["traditional"]
+text = "ugain namyn un, twenty less one, also exists, but it is older and rural and most speakers do not use it."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+[[note]]
+id = "cy-trad-ugain-after-ar"
+applies_to = "20"
+systems = ["traditional"]
+text = "ugain becomes hugain after ar, which gives un ar hugain for 21."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+[[note]]
+id = "cy-trad-counted-noun-mutates"
+applies_to = "20"
+systems = ["traditional"]
+text = "The noun being counted mutates too: blynedd becomes mlynedd after ugain."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+  [[note.examples]]
+  phrase = "ugain mlynedd"
+  gloss = "twenty years"
+
+[[note]]
+id = "cy-trad-deugain"
+applies_to = "40"
+systems = ["traditional"]
+text = "deugain is literally two twenties."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+[[note]]
+id = "cy-trad-hanner-cant"
+applies_to = "50"
+systems = ["traditional"]
+text = "hanner cant is literally half a hundred. Before a noun cant becomes can."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+  [[note.examples]]
+  phrase = "hanner can punt"
+  gloss = "fifty pounds"
+
+[[note]]
+id = "cy-trad-pedwar-ugain"
+applies_to = "80"
+systems = ["traditional"]
+text = "pedwar ugain is literally four twenties."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false
+
+[[note]]
+id = "cy-trad-cant-before-noun"
+applies_to = "100"
+systems = ["traditional"]
+text = "Before a noun, cant becomes can."
+source = "r/learnwelsh review thread, August 2026"
+reviewed = false

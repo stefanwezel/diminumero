@@ -4675,3 +4675,221 @@ html {
         flex-direction: column;
     }
 }
+
+/* ===== Numeral systems ===== */
+/* Only ever rendered for a language that declares more than one (Welsh
+   decimal vs traditional). Single-system languages get no markup at all. */
+.number-system-section {
+    max-width: 720px;
+    margin: 0 auto 22px;
+}
+.number-system-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+.number-system-label {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #C9BCD8;
+}
+.number-system-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+.number-system-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 160px;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #F3EFF8;
+    text-decoration: none;
+    text-align: left;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.number-system-option:hover,
+.number-system-option:focus-visible {
+    border-color: rgba(194, 249, 112, 0.5);
+    background: rgba(194, 249, 112, 0.08);
+}
+.number-system-option.active {
+    border-color: #C2F970;
+    background: rgba(194, 249, 112, 0.14);
+}
+.number-system-option-label {
+    font-weight: 600;
+}
+.number-system-option-desc {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #C9BCD8;
+}
+.number-system-note {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    text-align: left;
+}
+.number-system-note-text {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #C9BCD8;
+}
+.number-system-note-text + .number-system-note-text {
+    margin-top: 6px;
+}
+.number-system-note-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.88rem;
+    color: #C2F970;
+    text-decoration: none;
+}
+.number-system-note-link:hover {
+    text-decoration: underline;
+}
+.number-system-range {
+    margin-top: 10px;
+    text-align: center;
+}
+.menu-tile-badge {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(194, 249, 112, 0.4);
+    border-radius: 999px;
+    color: #C2F970;
+}
+
+/* ===== Per-number notes (the lightbulb) ===== */
+/* Tap-first: the trigger is a real button, never a hover-only tooltip. */
+.number-notes {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+.number-notes-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    color: #C2F970;
+    cursor: pointer;
+}
+.number-notes-toggle:hover,
+.number-notes-toggle:focus-visible {
+    border-color: rgba(194, 249, 112, 0.6);
+    background: rgba(194, 249, 112, 0.12);
+}
+.number-notes-toggle[aria-expanded="true"] {
+    border-color: #C2F970;
+    background: rgba(194, 249, 112, 0.18);
+}
+.number-notes-panel {
+    max-width: 520px;
+    margin: 10px auto 0;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(24, 16, 43, 0.96);
+    text-align: left;
+}
+.number-notes:not(.number-notes-static) .number-notes-panel {
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90vw, 520px);
+    z-index: 40;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+.number-notes-title {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #C2F970;
+    margin-bottom: 8px;
+}
+.number-note + .number-note {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.number-note-text {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #F3EFF8;
+}
+.number-note-examples {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 0.88rem;
+    color: #C9BCD8;
+}
+.number-note-phrase {
+    font-weight: 600;
+    color: #F3EFF8;
+}
+.number-note-gloss::before {
+    content: " — ";
+}
+.number-note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    color: #9C8FAE;
+}
+.number-note-flag {
+    padding: 1px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+}
+
+/* Tables inside a learn page (the Welsh usage table is the first one). */
+.learn-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.94rem;
+}
+.learn-table th,
+.learn-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    vertical-align: top;
+}
+.learn-table th {
+    color: #C2F970;
+    font-weight: 600;
+}
+
+/* Notice shown while a UI language is still being translated. */
+.site-note-partial {
+    margin: 0 auto 16px;
+    font-size: 0.82rem;
+    color: #C9BCD8;
+}

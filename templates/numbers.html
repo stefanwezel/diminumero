@@ -15,6 +15,45 @@
 
         <h1 class="title">{{ get_text('menu_numbers_title') }}</h1>
 
+        {# Numeral system: only rendered for a language that declares more than
+           one, and only as a choice once a second system's deck is complete.
+           The options are plain links, so the whole thing works with no JS and
+           the server re-renders the deck range and the dial to match. #}
+        {% if number_systems %}
+        <div class="number-system-section">
+            {% if number_systems.has_choice %}
+            <div class="number-system-toggle" role="group" aria-label="{{ get_text('number_system_label') }}">
+                <span class="number-system-label">{{ get_text('number_system_label') }}</span>
+                <div class="number-system-options">
+                    {% for option in number_systems.options %}
+                    <a class="number-system-option{% if option.active %} active{% endif %}"
+                       href="{{ url_for('number_modes', lang_code=lang_code, system=option.key) }}"
+                       {% if option.active %}aria-current="true"{% endif %}>
+                        <span class="number-system-option-label">{{ option.label }}</span>
+                        {% if option.desc %}<span class="number-system-option-desc">{{ option.desc }}</span>{% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="number-system-note" role="status">
+                {% for notice in number_systems.notices %}
+                <p class="number-system-note-text">{{ notice }}</p>
+                {% endfor %}
+                {% if has_learn_materials %}
+                <a class="number-system-note-link" href="{{ url_for('learn', lang_code=lang_code) }}">
+                    {{ get_text('learn_nav_button') }} →
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if number_system_range_notice %}
+            <p class="number-system-note-text number-system-range">{{ number_system_range_notice }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="mode-selection" id="mode-selection">
             <div class="mode-card">
                 <h3 class="mode-title">{{ get_text('mode_easy') }}</h3>
@@ -23,6 +62,7 @@
                     <input type="hidden" name="mode" value="easy">
                     <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                     <input type="hidden" name="range" value="" class="preset-range-hidden-input">
+                    {% if number_systems %}<input type="hidden" name="system" value="{{ number_systems.active }}">{% endif %}
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_easy_btn') }}
                     </button>
@@ -36,6 +76,7 @@
                     <input type="hidden" name="mode" value="advanced">
                     <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                     <input type="hidden" name="range" value="" class="preset-range-hidden-input">
+                    {% if number_systems %}<input type="hidden" name="system" value="{{ number_systems.active }}">{% endif %}
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_advanced_btn') }}
                     </button>
@@ -49,6 +90,7 @@
                     <input type="hidden" name="mode" value="hardcore">
                     <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
                     <input type="hidden" name="range" value="" class="preset-range-hidden-input">
+                    {% if number_systems %}<input type="hidden" name="system" value="{{ number_systems.active }}">{% endif %}
                     <button type="submit" class="btn btn-primary">
                         {{ get_text('mode_hardcore_btn') }}
                     </button>
@@ -56,6 +98,7 @@
             </div>
         </div>
 
+        {% if show_magnitude %}
         <div class="magnitude-dial-section">
             <label class="magnitude-label" for="magnitude-slider">{{ get_text('magnitude_label') }}</label>
             <div class="magnitude-slider-row">
@@ -69,6 +112,7 @@
         <script>
         (function() {
             var slider = document.getElementById('magnitude-slider');
+            if (!slider) return;
             var desc = document.getElementById('magnitude-level-desc');
             var hiddenInputs = document.querySelectorAll('.magnitude-hidden-input');
             var descriptions = {
@@ -87,13 +131,15 @@
             });
         })();
         </script>
+        {% endif %}
 
         <!-- Shareable preset link: builds a URL from the selections above so a
              teacher can drop students straight into this drill. -->
         <div class="preset-share" id="preset-share"
              data-base-url="{{ url_for('number_modes', lang_code=lang_code, _external=True) }}"
              data-deck-min="{{ deck_min }}"
-             data-deck-max="{{ deck_max }}">
+             data-deck-max="{{ deck_max }}"
+             {% if number_systems and number_systems.has_choice %}data-system="{{ number_systems.active }}"{% endif %}>
             <h2 class="preset-share-title">{{ get_text('preset_share_title') }}</h2>
             <p class="preset-share-desc">{{ get_text('preset_share_desc') }}</p>
 

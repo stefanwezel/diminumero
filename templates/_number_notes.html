@@ -1,0 +1,61 @@
+{# Per-number notes: the lightbulb.
+
+   Callers pass `notes` (from app._notes_for / languages.notes_loader.get_notes)
+   and are responsible for asking for the right ones: a live prompt must be
+   rendered with when="prompt", which only ever returns notes that reveal
+   nothing. This partial does not second-guess that — it just draws what it is
+   given, so the leak rule lives in one place instead of in every template.
+
+   `notes_static` draws the same content with no button, for print. #}
+{% if notes %}
+{% set panel_id = 'number-notes-' ~ (notes_id | default('main')) %}
+<div class="number-notes{% if notes_static %} number-notes-static{% endif %}">
+  {% if not notes_static %}
+  <button type="button"
+          class="number-notes-toggle"
+          id="{{ panel_id }}-toggle"
+          aria-expanded="false"
+          aria-controls="{{ panel_id }}"
+          aria-label="{{ get_text('notes_toggle_label') }}"
+          title="{{ get_text('notes_toggle_label') }}">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"
+         fill="none" stroke="currentColor" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 18h6"/>
+      <path d="M10 21h4"/>
+      <path d="M12 3a6 6 0 0 0-3.6 10.8c.5.4.8.9.9 1.5l.1.7h5.2l.1-.7c.1-.6.4-1.1.9-1.5A6 6 0 0 0 12 3z"/>
+    </svg>
+  </button>
+  {% endif %}
+
+  <div class="number-notes-panel" id="{{ panel_id }}" {% if not notes_static %}hidden{% endif %}>
+    <div class="number-notes-title">{{ get_text('notes_panel_title') }}</div>
+    {% for note in notes %}
+    <div class="number-note" {% if not note.translated %}lang="{{ note.lang }}"{% endif %}>
+      <p class="number-note-text">{{ note.text }}</p>
+      {% if note.examples %}
+      <ul class="number-note-examples">
+        {% for example in note.examples %}
+        <li>
+          <span class="number-note-phrase" lang="{{ lang_code }}">{{ example.phrase }}</span>
+          {% if example.gloss %}<span class="number-note-gloss">{{ example.gloss }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <p class="number-note-meta">
+        {% if not note.translated %}
+        <span class="number-note-flag">{{ get_text('notes_untranslated') }}</span>
+        {% endif %}
+        {% if not note.reviewed %}
+        <span class="number-note-flag">{{ get_text('notes_unreviewed') }}</span>
+        {% endif %}
+        {% if note.source %}
+        <span class="number-note-source">{{ get_text('notes_source_label') }}: {{ note.source }}</span>
+        {% endif %}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

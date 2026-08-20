@@ -78,6 +78,10 @@
         <p class="result-message">{{ get_text('results_speed_bonus') }}</p>
         {% endif %}
 
+        {# The round is over, so notes about the numbers it asked can finally be
+           shown in full — including for easy mode, which has no reveal step. #}
+        {% include '_number_notes.html' %}
+
         <!-- Action buttons -->
         <div class="results-actions">
             {% if session.get('mode') == 'audio' %}
@@ -131,4 +135,5 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% if notes %}<script src="{{ url_for('static', filename='js/number_notes.js') }}"></script>{% endif %}
 {% endblock %}

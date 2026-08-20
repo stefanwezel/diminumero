@@ -49,12 +49,31 @@
             </button>
         </div>
 
+        {# A language with two numeral systems says which one it is drilling —
+           on the menu as well as inside it, because this is where someone
+           decides whether the site teaches what they came for. #}
+        {% if number_systems and not number_systems.has_choice %}
+        <div class="number-system-note" role="status">
+            {% for notice in number_systems.notices %}
+            <p class="number-system-note-text">{{ notice }}</p>
+            {% endfor %}
+            {% if has_learn_materials %}
+            <a class="number-system-note-link" href="{{ url_for('learn', lang_code=lang_code) }}">
+                {{ get_text('learn_nav_button') }} →
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="menu-grid" id="menu-grid">
             <!-- 1. Number practice -->
             <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="menu-tile">
                 <span class="menu-tile-icon menu-tile-icon-numbers" aria-hidden="true">123</span>
                 <span class="menu-tile-title">{{ get_text('menu_numbers_title') }}</span>
                 <span class="menu-tile-body">{{ get_text('menu_numbers_body') }}</span>
+                {% if number_systems %}
+                <span class="menu-tile-badge">{{ number_systems.active_label }}</span>
+                {% endif %}
                 <span class="menu-tile-cta">{{ get_text('menu_numbers_cta') }} →</span>
             </a>
 

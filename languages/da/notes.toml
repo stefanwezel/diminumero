@@ -1,0 +1,16 @@
+# Notes for Danish numbers. See ADD_NOTES.md for the format.
+
+language = "da"
+authored_in = "en"
+
+[[note]]
+id = "da-vigesimal-tens"
+applies_to = "50-99"
+text = "The Danish tens above forty count in twenties. halvtreds is short for half-third times twenty, meaning two and a half twenties, which is fifty; halvfjerds is three and a half twenties, seventy. The long forms are no longer used, but they explain why the short ones look the way they do."
+reviewed = false
+
+[[note]]
+id = "da-units-before-tens"
+applies_to = "21-99"
+text = "Danish says the units before the tens, joined by og: enogtyve is one-and-twenty."
+reviewed = false

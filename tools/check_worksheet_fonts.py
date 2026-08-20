@@ -29,6 +29,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from languages import AVAILABLE_LANGUAGES, get_language_numbers  # noqa: E402
+from languages.config import get_number_systems  # noqa: E402
+from languages.notes_loader import (  # noqa: E402
+    languages_with_notes,
+    load_notes,
+    notes_path,
+)
 from translations import TRANSLATIONS  # noqa: E402
 
 # Worksheet UI strings live under this prefix; the sheet also prints a couple
@@ -38,14 +44,52 @@ EXTRA_KEYS = ("info_numbers", "learn_btn_back")
 
 
 def deck_characters():
-    """Every character used by any ready language's number words."""
+    """Every character used by any ready language's number words.
+
+    Every numeral system of every ready language: a second system is a second
+    set of words, and traditional Welsh or native Korean could easily bring a
+    character the default deck never uses.
+    """
     found = {}
     for code, info in AVAILABLE_LANGUAGES.items():
         if not info.get("ready"):
             continue
-        for word in get_language_numbers(code).values():
-            for char in word:
-                found.setdefault(char, set()).add(code)
+        for system in get_number_systems(code):
+            try:
+                deck = get_language_numbers(code, system["key"])
+            except ValueError:
+                continue
+            for word in deck.values():
+                for char in word:
+                    found.setdefault(char, set()).add(f"{code}:{system['key']}")
+    return found
+
+
+def note_characters():
+    """Every character in a notes file, in every language it is written in.
+
+    Notes print on the worksheet answer key, so their text is as much a font
+    requirement as a number word — and it is free-form prose written by
+    contributors, which is exactly the kind of text that quietly arrives with a
+    character no installed font can draw.
+    """
+    found = {}
+    for code in languages_with_notes():
+        sources = [(None, code)]
+        for path in notes_path(code).parent.glob("notes.*.toml"):
+            parts = path.name.split(".")
+            if len(parts) == 3:
+                sources.append((parts[1], code))
+        for ui_lang, lang_code in sources:
+            for note in load_notes(lang_code, ui_lang):
+                strings = [note["text"], note.get("source") or ""]
+                for example in note["examples"]:
+                    strings.append(example["phrase"])
+                    strings.append(example.get("gloss") or "")
+                label = f"notes:{lang_code}" + (f".{ui_lang}" if ui_lang else "")
+                for value in strings:
+                    for char in value:
+                        found.setdefault(char, set()).add(label)
     return found
 
 
@@ -64,8 +108,9 @@ def ui_characters():
 def required_characters():
     """The full character set a worksheet can put on a page, with sources."""
     required = deck_characters()
-    for char, sources in ui_characters().items():
-        required.setdefault(char, set()).update(sources)
+    for source in (ui_characters(), note_characters()):
+        for char, sources in source.items():
+            required.setdefault(char, set()).update(sources)
     # ASCII is covered by any font that exists at all; keeping it in the check
     # would only add noise to the failure output.
     return {char: sources for char, sources in required.items() if ord(char) > 127}

@@ -24,6 +24,9 @@
     const baseUrl = root.getAttribute('data-base-url') || window.location.href;
     const deckMin = parseInt(root.getAttribute('data-deck-min'), 10);
     const deckMax = parseInt(root.getAttribute('data-deck-max'), 10);
+    // Only set for a language that actually has a choice of numeral system;
+    // everywhere else the link stays exactly as short as it was.
+    const numberSystem = root.getAttribute('data-system');
 
     const labels = {
         copy: copyBtn ? (copyBtn.getAttribute('data-i18n-copy') || 'Copy link') : '',
@@ -65,6 +68,7 @@
         const range = rangeValue();
         if (range) params.push('range=' + encodeURIComponent(range));
         if (slider) params.push('magnitude=' + encodeURIComponent(slider.value));
+        if (numberSystem) params.push('system=' + encodeURIComponent(numberSystem));
 
         if (urlField) urlField.value = baseUrl + '?' + params.join('&');
 

@@ -20,6 +20,24 @@
             <p class="preset-share-desc">{{ get_text('worksheet_intro') }}</p>
 
             <div class="preset-share-controls">
+                {# Only for a language with a real choice of numeral system —
+                   and still a plain radio, so the sheet stays a pure function
+                   of the URL the form builds. #}
+                {% if number_systems and number_systems.has_choice %}
+                <fieldset class="preset-share-field">
+                    <legend class="preset-share-label">{{ get_text('preset_share_system_label') }}</legend>
+                    <div class="preset-share-modes">
+                        {% for option in number_systems.options %}
+                        <label class="preset-share-mode">
+                            <input type="radio" name="system" value="{{ option.key }}"
+                                   {% if option.active %}checked{% endif %}>
+                            <span>{{ option.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {% endif %}
+
                 <fieldset class="preset-share-field">
                     <legend class="preset-share-label">{{ get_text('worksheet_direction_label') }}</legend>
                     <div class="preset-share-modes">
