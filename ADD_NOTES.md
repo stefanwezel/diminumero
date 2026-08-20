@@ -66,8 +66,8 @@ authored_in = "en"     # the language the note text is written in
 | `applies_to` | no (default `"all"`) | Which numbers this is about — see below. |
 | `systems` | no | Which numeral systems this applies to. Omit for all of them. |
 | `examples` | no | `phrase` + optional `gloss` pairs. |
-| `source` | no | Where the fact came from: a thread, a grammar, a person. |
-| `reviewed` | no (default `false`) | `true` once a native speaker has checked it. |
+| `source` | no | Where the fact came from: a thread, a grammar, a person. **If a machine wrote or revised it, say so** — "LLM-assisted review, not yet confirmed by a speaker" is an honest `source`, and it is what the seed notes carry. |
+| `reviewed` | no (default `false`) | `true` once a native speaker has checked it. Never set this because a note *looks* right. |
 | `reveals_answer` | no (default `true`) | Whether the note gives a drill answer away — see [The lightbulb rule](#the-lightbulb-rule). |
 
 ### `applies_to`
@@ -198,6 +198,16 @@ At runtime the loader is deliberately forgiving: a broken notes file costs the
 notes and nothing else — the drill keeps working.
 
 ---
+
+## Getting notes reviewed
+
+```bash
+uv run tools/export_unconfirmed_forms.py --lang cy --include-notes
+```
+
+Adds every note still marked `reviewed = false` to the review table, next to the
+number forms awaiting confirmation. Prose is harder to check than a word list and
+easier to be subtly wrong in, so it belongs in the same ask.
 
 ## Which languages have notes today
 

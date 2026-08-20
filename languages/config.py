@@ -422,13 +422,28 @@ AVAILABLE_LANGUAGES = {
         # dialect of the other, so both live under /cy — see
         # docs/plans/welsh-traditional-numbers.md.
         "number_systems": [
-            {"key": "decimal", "module": "numbers", "default": True},
+            {
+                "key": "decimal",
+                "module": "numbers",
+                "default": True,
+                # UI strings live under number_system_{name,desc}_<label_key>.
+                # Welsh names its own systems, so the buttons read "Degol" and
+                # "Ugeiniol" rather than an English gloss — a learner meeting
+                # the traditional system needs the Welsh word for it anyway.
+                # Scoping the key by language also stops a future Korean
+                # `decimal` system from inheriting a Welsh label.
+                "label_key": "cy_degol",
+            },
             {
                 "key": "traditional",
                 "module": "numbers_traditional",
-                # Offered only once every number in this range is filled in;
-                # the deck ships with verified forms and explicit gaps.
-                "requires_complete": (1, 100),
+                "label_key": "cy_ugeiniol",
+                # 1-21 is what speakers have given us in full. Above that the
+                # deck is deliberately sparse — the round numbers only — until
+                # the review round comes back; the config screen says so.
+                # Rule-derived forms exist for the gaps but are withheld (see
+                # config.SERVE_RECONSTRUCTED), so they cannot open this gate.
+                "requires_complete": (1, 21),
                 # No traditional MP3s exist, so Listening stays decimal-only.
                 "has_audio": False,
             },

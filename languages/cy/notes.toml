@@ -1,13 +1,13 @@
 # Notes for Welsh numbers. See ADD_NOTES.md for the format.
 #
-# These were written from the r/learnwelsh review thread of August 2026 — in
-# our words, not a native speaker's, which is why every one of them still says
-# reviewed = false. Corrections are very welcome: a note that is subtly wrong
-# teaches with more authority than a bare word list ever could.
+# These were written from the r/learnwelsh review thread of August 2026 and
+# revised in an LLM-assisted pass — in our words, not a native speaker's, which
+# is why every one of them still says reviewed = false. Corrections are very
+# welcome: a note that is subtly wrong teaches with more authority than a bare
+# word list ever could. `source` records which of the two a note came from.
 #
-# Notes scoped to systems = ["traditional"] are inert until the traditional
-# deck is complete (languages/cy/numbers_traditional.py) — they cost nothing
-# and are ready the moment it is.
+# tools/export_unconfirmed_forms.py --include-notes puts these in a table for
+# review alongside the unconfirmed number forms.
 
 language = "cy"
 authored_in = "en"
@@ -15,8 +15,8 @@ authored_in = "en"
 [[note]]
 id = "cy-deg-before-m"
 applies_to = "10"
-text = "Before a word beginning with m-, deg becomes deng."
-source = "r/learnwelsh review thread, August 2026"
+text = "Before a nasal, deg becomes deng — and it triggers the nasal mutation in the word that follows."
+source = "LLM-assisted review, August 2026 — not yet confirmed by a speaker"
 reviewed = false
 
   [[note.examples]]
@@ -24,14 +24,18 @@ reviewed = false
   gloss = "ten minutes"
 
   [[note.examples]]
-  phrase = "deng mil"
-  gloss = "ten thousand"
+  phrase = "deng mlynedd"
+  gloss = "ten years (from blynedd)"
+
+  [[note.examples]]
+  phrase = "deng niwrnod"
+  gloss = "ten days (from diwrnod)"
 
 [[note]]
 id = "cy-gender-2-3-4"
-applies_to = "2,3,4"
-text = "2, 3 and 4 change with the gender of the noun they count: dau/dwy, tri/tair, pedwar/pedair. A bare number has no noun to agree with, so this drill shows the masculine form."
-source = "diminumero maintainers; see docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md"
+applies_to = "2,3,4,13,14,17,19"
+text = "2, 3 and 4 change with the gender of the noun they count — dau/dwy, tri/tair, pedwar/pedair — and so does every compound built on them: tri/tair ar ddeg for 13, dau/dwy ar hugain for 22, pedwar/pedair a phedwar ugain for 84. Only the unit changes; the score it is added to does not. A bare number has no noun to agree with, so this drill shows the masculine form."
+source = "LLM-assisted review, August 2026 — not yet confirmed by a speaker"
 reviewed = false
 
   [[note.examples]]
@@ -46,17 +50,17 @@ reviewed = false
 id = "cy-trad-when-to-use"
 applies_to = "all"
 systems = ["traditional"]
-text = "The traditional system is what you use for telling the time, for dates and for age, whatever the size of the number."
-source = "r/learnwelsh review thread, August 2026"
+text = "The traditional system is what you use for telling the time, for dates and for age, regardless of size — though very large numbers often go decimal in practice."
+source = "r/learnwelsh review thread, August 2026, softened in LLM-assisted review"
 reveals_answer = false
 reviewed = false
 
 [[note]]
-id = "cy-trad-money-split"
+id = "cy-trad-money-fixed-forms"
 applies_to = "all"
 systems = ["traditional"]
-text = "For money the traditional system is usual up to roughly thirty, and the decimal system above that."
-source = "r/learnwelsh review thread, August 2026"
+text = "Certain money amounts have fixed traditional forms that survive in ordinary speech, such as hanner can punt for fifty pounds and chweugain, once ten shillings and later slang for fifty pence."
+source = "LLM-assisted review, August 2026 — not yet confirmed by a speaker"
 reveals_answer = false
 reviewed = false
 

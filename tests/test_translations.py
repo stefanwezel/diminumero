@@ -72,13 +72,16 @@ class TestNewFeatureKeys:
 
     NEW_KEYS = [
         "number_system_label",
-        "number_system_name_decimal",
-        "number_system_name_traditional",
-        "number_system_desc_decimal",
-        "number_system_desc_traditional",
+        # Language-scoped: Welsh names its own systems, so a future Korean
+        # `decimal` system cannot inherit a Welsh label.
+        "number_system_name_cy_degol",
+        "number_system_name_cy_ugeiniol",
+        "number_system_desc_cy_degol",
+        "number_system_desc_cy_ugeiniol",
         "number_system_only_note",
         "number_system_unavailable_note",
         "number_system_partial_range_note",
+        "number_system_sparse_note",
         "number_system_wrong_system_flash",
         "preset_notice_system",
         "preset_share_system_label",
@@ -97,6 +100,19 @@ class TestNewFeatureKeys:
 
     def test_range_note_takes_three_values(self):
         rendered = TRANSLATIONS["en"]["number_system_partial_range_note"].format(
-            "Traditional", 1, 100
+            "Ugeiniol", 1, 100
         )
-        assert "Traditional" in rendered and "100" in rendered
+        assert "Ugeiniol" in rendered and "100" in rendered
+
+    def test_sparse_note_takes_four_values(self):
+        """Count first: "covers 1-100" would overstate a 30-number deck."""
+        rendered = TRANSLATIONS["en"]["number_system_sparse_note"].format(
+            "Ugeiniol", 30, 1, 100
+        )
+        assert "30" in rendered and "Ugeiniol" in rendered
+
+    def test_system_names_are_welsh_in_every_locale(self):
+        """A learner meeting the traditional system needs the Welsh word for it."""
+        for locale in COMPLETE_LOCALES:
+            assert TRANSLATIONS[locale]["number_system_name_cy_degol"] == "Degol"
+            assert TRANSLATIONS[locale]["number_system_name_cy_ugeiniol"] == "Ugeiniol"

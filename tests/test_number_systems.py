@@ -41,17 +41,18 @@ def client(app):
 
 
 @pytest.fixture
-def complete_traditional():
-    """Pretend the traditional deck has been filled in by a native speaker.
+def incomplete_traditional():
+    """Pretend the traditional deck has a hole in the range the gate checks.
 
-    Nothing else changes — no flag, no config edit — which is the point: the
-    gate is derived from the data, so finishing the data is what turns the
-    feature on.
+    The real deck now passes the gate (1-21 is complete), so what has to be
+    simulated is the state it was in before speakers filled that block — and
+    the state any *future* second system starts in.
     """
     key = ("cy", "numbers_traditional")
     original = languages_config._SYSTEM_NUMBER_CACHE.get(key)
     languages_config._SYSTEM_NUMBER_CACHE[key] = {
-        num: f"trad-{num}" for num in range(1, 101)
+        num: f"trad-{num}"
+        for num in range(1, 21)  # 21 missing
     }
     yield languages_config._SYSTEM_NUMBER_CACHE[key]
     if original is None:
@@ -158,29 +159,27 @@ class TestWelshDeclaration:
 class TestCompletenessGate:
     """The system appears when its data is usable, and not one commit before."""
 
-    def test_incomplete_deck_keeps_the_system_closed(self):
-        assert is_number_system_ready("cy", "traditional") is False
-        assert [s["key"] for s in get_ready_number_systems("cy")] == ["decimal"]
-
-    def test_incomplete_deck_falls_back_to_default(self):
-        assert resolve_number_system("cy", "traditional") == "decimal"
-
-    def test_no_toggle_while_the_gate_is_shut(self, client):
-        body = client.get("/cy/numbers").get_data(as_text=True)
-        assert "number-system-toggle" not in body
-        # …but the page does say which system it is teaching.
-        assert "number-system-note" in body
-
-    def test_complete_deck_opens_the_gate(self, complete_traditional):
+    def test_gate_is_open_now_that_1_to_21_is_complete(self):
         assert is_number_system_ready("cy", "traditional") is True
-        assert resolve_number_system("cy", "traditional") == "traditional"
+        assert [s["key"] for s in get_ready_number_systems("cy")] == [
+            "decimal",
+            "traditional",
+        ]
 
-    def test_toggle_appears_once_the_deck_is_complete(
-        self, client, complete_traditional
-    ):
+    def test_toggle_is_rendered(self, client):
         body = client.get("/cy/numbers").get_data(as_text=True)
         assert "number-system-toggle" in body
         assert 'href="/cy/numbers?system=traditional"' in body
+
+    def test_a_hole_in_the_gated_range_closes_it_again(self, incomplete_traditional):
+        assert is_number_system_ready("cy", "traditional") is False
+        assert resolve_number_system("cy", "traditional") == "decimal"
+
+    def test_no_toggle_while_the_gate_is_shut(self, client, incomplete_traditional):
+        body = client.get("/cy/numbers").get_data(as_text=True)
+        assert "number-system-toggle" not in body
+        # …but the page still says which system it is teaching.
+        assert "number-system-note" in body
 
 
 class TestHonestLabelling:
@@ -194,9 +193,16 @@ class TestHonestLabelling:
         body = client.get("/").get_data(as_text=True)
         assert "modern decimal Welsh" in body
 
-    def test_menu_page_names_the_system(self, client):
+    def test_menu_page_names_the_active_system(self, client):
+        """With two systems live the tile carries the badge, not the notice."""
         body = client.get("/cy").get_data(as_text=True)
-        assert "Decimal" in body
+        assert "menu-tile-badge" in body
+        assert "Degol" in body
+
+    def test_menu_page_falls_back_to_the_notice_when_only_one_is_ready(
+        self, client, incomplete_traditional
+    ):
+        body = client.get("/cy").get_data(as_text=True)
         assert "number-system-note" in body
 
     def test_learn_page_explains_both_systems(self, client):
@@ -212,9 +218,7 @@ class TestHonestLabelling:
 
 
 class TestChoosingASystem:
-    def test_system_param_renders_the_config_screen_not_a_drill(
-        self, client, complete_traditional
-    ):
+    def test_system_param_renders_the_config_screen_not_a_drill(self, client):
         """`?system=` is deliberately not a preset param.
 
         If it were, this URL would skip the config screen into a drill and pick
@@ -226,46 +230,46 @@ class TestChoosingASystem:
         assert "mode-selection" in body
         assert "noindex" not in body
 
-    def test_choice_is_remembered_for_the_session(self, client, complete_traditional):
+    def test_choice_is_remembered_for_the_session(self, client):
         client.get("/cy/numbers?system=traditional")
         with client.session_transaction() as sess:
             assert sess["number_system"] == "traditional"
 
-    def test_drill_runs_in_the_chosen_system(self, client, complete_traditional):
+    def test_drill_runs_in_the_chosen_system(self, client):
+        traditional = get_language_numbers("cy", "traditional")
         client.get("/cy/numbers?system=traditional")
         client.post("/cy/start", data={"mode": "advanced", "system": "traditional"})
         with client.session_transaction() as sess:
             assert sess["number_system"] == "traditional"
         client.get("/cy/quiz/advanced")
         with client.session_transaction() as sess:
-            assert sess["correct_answer"].startswith("trad-")
+            number = sess["current_number"]
+            assert sess["correct_answer"] == traditional[number]
 
-    def test_system_survives_the_session_reset_between_rounds(
-        self, client, complete_traditional
-    ):
+    def test_system_survives_the_session_reset_between_rounds(self, client):
         client.get("/cy/numbers?system=traditional")
         # A round started without an explicit system keeps the one in force.
         client.post("/cy/start", data={"mode": "easy"})
         with client.session_transaction() as sess:
             assert sess["number_system"] == "traditional"
 
-    def test_another_language_never_inherits_the_choice(
-        self, client, complete_traditional
-    ):
+    def test_another_language_never_inherits_the_choice(self, client):
         client.get("/cy/numbers?system=traditional")
         client.get("/es/numbers")
         with client.session_transaction() as sess:
             assert sess["number_system"] == DEFAULT_NUMBER_SYSTEM
 
-    def test_shared_link_can_carry_a_system(self, client, complete_traditional):
+    def test_shared_link_can_carry_a_system(self, client):
         response = client.get("/cy/numbers?mode=hardcore&system=traditional")
         assert response.status_code == 200
         with client.session_transaction() as sess:
             assert sess["mode"] == "hardcore"
             assert sess["number_system"] == "traditional"
 
-    def test_shared_link_with_an_unusable_system_degrades_with_a_notice(self, client):
-        """The traditional deck is incomplete, so this link must still work."""
+    def test_shared_link_with_an_unusable_system_degrades_with_a_notice(
+        self, client, incomplete_traditional
+    ):
+        """A link for a system whose deck regressed must still start a drill."""
         response = client.get("/cy/numbers?mode=advanced&system=traditional")
         assert response.status_code == 200
         with client.session_transaction() as sess:
@@ -280,9 +284,7 @@ class TestChoosingASystem:
 
 
 class TestWrongSystemFeedback:
-    def test_other_system_answer_is_named_not_just_marked_wrong(
-        self, client, complete_traditional
-    ):
+    def test_other_system_answer_is_named_not_just_marked_wrong(self, client):
         """A decimal answer in a traditional drill is not wrong Welsh.
 
         It is the wrong system, and saying so is the difference between a
@@ -292,26 +294,25 @@ class TestWrongSystemFeedback:
         client.post("/cy/start", data={"mode": "advanced", "system": "traditional"})
         with client.session_transaction() as sess:
             sess["current_number"] = 20
-            sess["correct_answer"] = "trad-20"
+            sess["correct_answer"] = "ugain"
 
+        # "dau ddeg" is 20 in decimal Welsh: right word, wrong system.
         response = client.post(
             "/cy/quiz/advanced", data={"answer": "dau ddeg"}, follow_redirects=True
         )
-        assert "Decimal" in response.get_data(as_text=True)
+        assert "Degol" in response.get_data(as_text=True)
 
-    def test_plainly_wrong_answer_gets_no_system_nudge(
-        self, client, complete_traditional
-    ):
+    def test_plainly_wrong_answer_gets_no_system_nudge(self, client):
         client.get("/cy/numbers?system=traditional")
         client.post("/cy/start", data={"mode": "advanced", "system": "traditional"})
         with client.session_transaction() as sess:
             sess["current_number"] = 20
-            sess["correct_answer"] = "trad-20"
+            sess["correct_answer"] = "ugain"
 
         response = client.post(
             "/cy/quiz/advanced", data={"answer": "qqqq"}, follow_redirects=True
         )
-        assert "Decimal" not in response.get_data(as_text=True)
+        assert "Degol" not in response.get_data(as_text=True)
 
 
 class TestPartialRange:
@@ -320,7 +321,7 @@ class TestPartialRange:
         assert quiz_logic.spans_multiple_magnitudes({1: "a", 99: "b"}) is False
         assert quiz_logic.spans_multiple_magnitudes({1: "a", 100: "b"}) is True
 
-    def test_range_notice_when_a_system_covers_less(self, client, complete_traditional):
+    def test_range_notice_when_a_system_covers_less(self, client):
         body = client.get("/cy/numbers?system=traditional").get_data(as_text=True)
         assert "number-system-range" in body
         # The range inputs clamp to what this system actually has.
@@ -343,9 +344,7 @@ class TestPartialRange:
 
 
 class TestListeningStaysOnADeckItCanPronounce:
-    def test_system_without_audio_is_not_used_for_listening(
-        self, client, complete_traditional
-    ):
+    def test_system_without_audio_is_not_used_for_listening(self, client):
         """Traditional Welsh has no MP3s, and audio is stored per language."""
         client.get("/cy/numbers?system=traditional")
         response = client.get("/cy/numbers?mode=listening&system=traditional")
@@ -356,14 +355,16 @@ class TestListeningStaysOnADeckItCanPronounce:
 
 
 class TestWorksheets:
-    def test_sheet_url_carries_a_non_default_system(self, client, complete_traditional):
+    def test_sheet_url_carries_a_non_default_system(self, client):
         response = client.get(
             "/cy/worksheet?range=1-20&count=10&seed=abc123&system=traditional"
         )
         body = response.get_data(as_text=True)
         assert response.status_code == 200
         assert "system=traditional" in body
-        assert "trad-20" in body
+        # The traditional word for 20, not the decimal "dau ddeg".
+        assert "ugain" in body
+        assert "dau ddeg" not in body
 
     def test_default_system_sheets_keep_their_old_urls(self, client):
         body = client.get("/cy/worksheet?range=1-20&count=10&seed=abc123").get_data(
@@ -371,7 +372,7 @@ class TestWorksheets:
         )
         assert "system=" not in body
 
-    def test_pdf_cache_key_separates_systems(self, client, complete_traditional):
+    def test_pdf_cache_key_separates_systems(self, client):
         """Two systems are two documents; one must never be served for the other."""
         from app import _worksheet_pdf_cache_key
 

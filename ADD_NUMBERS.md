@@ -266,25 +266,88 @@ purely additive.
 ### The completeness gate
 
 A second system is **offered only when its deck is actually usable**, and that is
-derived from the data, not from a flag someone has to remember to flip. Gaps are
-written as `None`:
-
-```python
-NUMBERS = {
-    20: "ugain",
-    21: "un ar hugain",
-    22: None,   # TODO: nobody has given us this form yet
-}
-```
-
-`None` entries are dropped when the deck is loaded, so an unfinished list can
-never put a blank in front of a learner. While any number in
-`requires_complete` is missing, the system does not appear in the UI at all —
-no toggle, no dead control, no half-empty drill. The pull request that fills the
-last gap turns the feature on with no code change.
+derived from the data, not from a flag someone has to remember to flip. While any
+number in `requires_complete` is missing, the system does not appear in the UI at
+all — no toggle, no dead control, no half-empty drill. The pull request that
+fills the last gap turns the feature on with no code change.
 
 This is what lets the code and the data land in either order, which matters when
 the data depends on volunteers.
+
+### Provenance: where a form came from
+
+A deck being assembled from public review is a set of claims, and the difference
+between "a speaker told us this" and "a rule produced this" matters more than the
+spelling does — a plausible wrong form teaches with exactly the same confidence
+as a right one.
+
+Welsh traditional is the first deck to track this. Instead of `{number: "word"}`
+it carries a list of forms per number, each with a `source`:
+
+```python
+SPEAKER_FORMS = {
+    13: [
+        {"text": "tri ar ddeg",  "gender": "m", "source": "single"},
+        {"text": "tair ar ddeg", "gender": "f", "source": "reconstructed"},
+    ],
+}
+```
+
+| `source` | Means | Served to learners? |
+|---|---|---|
+| `confirmed` | two or more speakers agreed, or one corrected another | yes |
+| `single` | one speaker, uncorroborated | yes |
+| `reconstructed` | derived from a grammatical rule, by a script or an LLM — **no speaker has confirmed it** | **no**, unless `SERVE_RECONSTRUCTED` |
+
+`config.SERVE_RECONSTRUCTED` (default `False`) is the switch. While it is off, a
+number whose only forms are reconstructed is **absent from the deck entirely** —
+the drill skips it. It does not fall back to the other system and it does not
+render a blank. Reconstructed forms are committed anyway for two reasons, and
+only two: so they can be exported for review, and so they can be switched on in
+one line when they come back confirmed.
+
+`languages/provenance.py` holds the machinery (`build_numbers`, `merge_forms`,
+`validate_forms`); the deck module derives a plain `NUMBERS` dict from its forms,
+so the loader and every caller see the same `dict[int, str]` as any other
+language.
+
+Two files, on purpose:
+
+- `numbers_traditional.py` — **hand-edited**, holds what speakers told us. No
+  script ever writes it, so an editorial comment or a newly confirmed form cannot
+  be clobbered by a rerun.
+- `numbers_traditional_generated.py` — **machine-owned**, holds rule-derived
+  forms, entirely `reconstructed`. Never edited by hand; to correct one of these,
+  add the speaker's form to the hand-edited file, which wins.
+
+### Generating rule-governed forms
+
+`languages/cy/generate_numbers_traditional.py` is the model. Welsh 41–99 is not
+54 facts but one rule (`[unit] + connective + [score]`), and the generator
+encodes it, along with the mutation the connective triggers — the two are one
+choice, not two.
+
+Two things it must do, and both are the point rather than polish:
+
+1. **Reproduce every confirmed form, or abort.** If the rule can't produce
+   `deg a thrigain`, the rule is wrong, not the expectation. Flipping the
+   unresolved connective to its other value fails the run with a message naming
+   the confirmed forms it contradicts, instead of quietly emitting 54 wrong ones.
+2. **Report disagreements rather than resolving them.** Where the rule and a
+   speaker differ (Welsh 45), the speaker's form is what gets served, the rule's
+   form is kept as a withheld alternative, and the run prints the conflict as a
+   question for the next review round.
+
+### Getting forms confirmed
+
+```bash
+uv run tools/export_unconfirmed_forms.py --source single    # the smallest ask
+uv run tools/export_unconfirmed_forms.py --include-notes    # everything
+```
+
+Dumps a markdown table of every form no speaker has confirmed, ready to post
+where speakers are. Withholding unconfirmed forms is only half a policy; the
+other half is making them cheap to check.
 
 ### Walkthrough: fill in a missing number
 
@@ -293,22 +356,30 @@ the data depends on volunteers.
 1. Open the deck on GitHub, e.g.
    [`languages/cy/numbers_traditional.py`](languages/cy/numbers_traditional.py).
 2. Click the pencil (**Edit this file**). GitHub makes your own copy.
-3. Find the number you know:
+3. Find the number you know, or add it if it isn't there:
 
    ```python
-       45: None,  # TODO: see docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md
+       45: [{"text": "pump ar ddeugain", "source": "single"}],
    ```
 
-4. Replace `None` with the word in double quotes and delete the `# TODO`:
+4. Add your form, or correct the one there. `source` is the important field —
+   `single` if you are the only person we have heard it from, `confirmed` if you
+   are agreeing with a form already listed:
 
    ```python
-       45: "pump ar ddeugain",
+       45: [{"text": "pump ar ddeugain", "source": "confirmed"}],
    ```
+
+   If your form differs from one the generator produced, leave the generated one
+   alone — it lives in `numbers_traditional_generated.py`, it is never shown to
+   anyone, and the next run will report the disagreement.
 
    Rules: lowercase; single spaces between words; include any mutation that
    happens **inside** the number word (`un ar hugain`, not `un ar ugain`). A
    mutation caused by the noun that comes *after* the number does not belong
-   here — that is a note ([ADD_NOTES.md](ADD_NOTES.md)).
+   here — that is a note ([ADD_NOTES.md](ADD_NOTES.md)). Add
+   `"gender": "m"` / `"f"` only where the form actually changes with the noun's
+   gender.
 5. **If you are unsure, leave the `None`.** A gap is correct and harmless; a
    plausible guess teaches someone the wrong thing with full confidence.
 6. Scroll down and choose **Create a new branch and start a pull request**. Say
@@ -323,11 +394,12 @@ the data depends on volunteers.
 ### Checklist for a second system
 
 - [ ] `number_systems` declared in `languages/config.py`, one entry with `default: True`
-- [ ] `languages/<code>/<module>.py` created, with `None` for everything unverified
+- [ ] `languages/<code>/<module>.py` created; anything unverified is either absent or marked `reconstructed`
 - [ ] `number_system_name_<key>` and `number_system_desc_<key>` added to all UI languages in `translations.py`
 - [ ] A test asserting the new deck contains no invented forms (see `tests/test_number_systems.py`)
 - [ ] Listening: `has_audio: False` unless MP3s exist for that system
-- [ ] Native-speaker review before the gate opens
+- [ ] Native-speaker review of every `single` form before the gate opens
+- [ ] `uv run tools/export_unconfirmed_forms.py` posted somewhere speakers will see it
 
 ## Number Generation Best Practices
 

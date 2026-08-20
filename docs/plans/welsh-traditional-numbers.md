@@ -981,3 +981,67 @@ keeps the system out of the UI. Filling the gaps is a data-only pull request.
 - `tests/test_number_systems.py::TestCompletenessGate` — proof the toggle appears exactly
   when the data is ready and not before.
 
+---
+
+## Part 8 — Provenance round (follow-up change)
+
+A second pass, driven by a review of the first: the traditional data now carries
+**where each form came from**, and the 41-99 gap turned out to be one question rather
+than fifty-four.
+
+### What changed
+
+| Area | Before | After |
+|---|---|---|
+| Deck shape | `{20: "ugain"}` | `{20: [{"text": "ugain", "source": "confirmed"}]}`, with `NUMBERS` derived |
+| Provenance | `# OK` / `# ??` comments | `confirmed` / `single` / `reconstructed`, machine-readable |
+| 41-99 | 54 unknowns | one rule; one unresolved connective; forms generated and **withheld** |
+| Gender | a note saying 2/3/4 vary | both series stored, propagating into every compound |
+| Gate | `(1, 100)`, shut | `(1, 21)`, **open** — the toggle is live |
+| Toggle labels | "Decimal" / "Traditional" | `Degol` / `Ugeiniol`, untranslated in all 8 locales |
+| Review loop | hand-written questions doc | `tools/export_unconfirmed_forms.py` |
+
+### The rules that now exist in code
+
+`languages/cy/generate_numbers_traditional.py` encodes 21-39 as `[unit] ar hugain` and
+41-99 as `[unit] + connective + [score]`, with the connective and its mutation as a single
+switch (`a` → aspirate, `ar` → soft). Two behaviours are the point:
+
+- it **aborts** if the rule stops reproducing `deg a thrigain` / `deg a phedwar ugain`,
+  so flipping `TENS_CONNECTIVE` to `ar` fails the run rather than emitting 54 wrong forms;
+- it **reports** rather than resolves disagreements. Welsh 45 is live: speakers say
+  `pump ar ddeugain`, the rule says `pump a deugain`. The speaker's form is served, the
+  rule's is kept as a withheld alternative, and the run prints the conflict.
+
+### What a learner sees
+
+Nothing reconstructed. `SERVE_RECONSTRUCTED = False` means a number whose only forms are
+rule-derived is absent from the deck entirely — not blank, not silently decimal. The
+traditional drill serves exactly the 30 speaker-sourced forms: 1-21 and the round numbers.
+
+**Five of those are single-source** (12-16), which the maintainer accepted deliberately
+after it was raised; `--source single` puts them at the top of the review table.
+
+### Departures from the spec as written
+
+1. **Two data files, not one.** The spec implied the generator writes the deck. It writes
+   a *sibling* (`numbers_traditional_generated.py`) instead, so no script can ever
+   overwrite what a speaker said or the editorial comments around it. Merge is at import.
+2. **The note corrections are labelled as LLM-sourced.** They were described as
+   corrections that "check out", but the source is an LLM — which is exactly the
+   `reconstructed` tier the rule exists for. They are applied (deleting an unsupported
+   claim is safe either way) with `reviewed = false` and a `source` that says so, and
+   `--include-notes` puts them in the same review table as the forms.
+3. **The export gained a notes section** (`--include-notes`), a small scope addition on
+   the same reasoning.
+4. **A sparse-deck notice was added.** With the gate at `(1, 21)` the deck is 30 numbers
+   spanning 1-100, and the existing "only covers 1-100" string would have overstated it.
+   `number_system_sparse_note` names the count instead. One new key across 8 locales.
+5. **`label_key` on a system declaration.** Needed so Welsh can name its systems in Welsh
+   without a future Korean `decimal` system inheriting "Degol".
+
+### Still open
+
+The connective (question 1 of the review doc) is the one value that unblocks 54 forms.
+Until it comes back, `TENS_CONNECTIVE = "a"` — chosen because it is what the two
+*confirmed* datapoints support — and every form it produces stays invisible.

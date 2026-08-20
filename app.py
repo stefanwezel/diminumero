@@ -376,16 +376,28 @@ def _conj_text(key: str, lang_code: str) -> str:
 # control to the 14 languages that have nothing to choose between.
 
 
+def _number_system_text_key(lang_code, system_key):
+    """The i18n key suffix a system's UI strings live under.
+
+    Defaults to the system key, so a language that doesn't care gets
+    `number_system_name_<key>` for free. Welsh overrides it to name its systems
+    in Welsh (Degol / Ugeiniol) without claiming the generic `decimal` key for
+    every language that might declare one later.
+    """
+    system = get_number_system(lang_code, system_key) or {}
+    return system.get("label_key", system_key)
+
+
 def _number_system_label(lang_code, system_key):
-    """Translated name of a numeral system ('Decimal', 'Traditional')."""
-    key = f"number_system_name_{system_key}"
+    """Translated name of a numeral system ('Degol', 'Ugeiniol')."""
+    key = f"number_system_name_{_number_system_text_key(lang_code, system_key)}"
     label = get_text(key, learn_language=lang_code)
     return system_key.capitalize() if label == key else label
 
 
 def _number_system_desc(lang_code, system_key):
     """One-line 'what it's for' blurb, or '' when the system has none."""
-    key = f"number_system_desc_{system_key}"
+    key = f"number_system_desc_{_number_system_text_key(lang_code, system_key)}"
     desc = get_text(key, learn_language=lang_code)
     return "" if desc == key else desc
 
@@ -479,18 +491,27 @@ def _number_system_context(lang_code, active=None):
 def _number_system_range_notice(lang_code, system_key, numbers):
     """Notice for a system that covers less than the language's usual range.
 
-    A traditional Welsh deck stops around 100 while the decimal one runs to ten
-    million; the magnitude dial and the range inputs both have to say so.
+    Two different shortfalls, and conflating them would overstate what the
+    learner is getting: a system can stop early (traditional Welsh ends around
+    100 where decimal runs to ten million), and it can also be *sparse* inside
+    its range while speakers are still filling it in. A deck of 30 numbers
+    described as "covers 1-100" would be a small lie.
     """
-    context_systems = get_number_systems(lang_code)
-    if len(context_systems) < 2 or not numbers:
+    if len(get_number_systems(lang_code)) < 2 or not numbers:
         return None
     default_numbers = get_language_numbers(lang_code)
-    if max(numbers) >= max(default_numbers):
+    low, high = min(numbers), max(numbers)
+    if high >= max(default_numbers):
         return None
+
+    label = _number_system_label(lang_code, system_key)
+    if len(numbers) < high - low + 1:
+        return get_text("number_system_sparse_note", learn_language=lang_code).format(
+            label, len(numbers), low, high
+        )
     return get_text(
         "number_system_partial_range_note", learn_language=lang_code
-    ).format(_number_system_label(lang_code, system_key), min(numbers), max(numbers))
+    ).format(label, low, high)
 
 
 def _other_system_answer(lang_code, number, exclude_system):
