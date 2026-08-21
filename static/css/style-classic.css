@@ -4761,6 +4761,74 @@ html {
     color: #b4551f;
 }
 
+/* The picker in miniature, on the menu tile. The card is a <div> there and the
+   CTA link is stretched across it, so the pills stay clickable while the rest
+   of the card still follows the main link. */
+.menu-tile-stretch {
+    position: relative;
+}
+.menu-tile-stretch-link {
+    text-decoration: none;
+}
+.menu-tile-stretch-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+}
+.menu-tile-stretch:focus-within {
+    border-color: #FC9E4F;
+}
+.menu-tile-systems {
+    /* Lifted above the stretched CTA so the pills take their own clicks. */
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+.menu-tile-systems-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6B7280;
+}
+.menu-tile-system-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+.menu-tile-system {
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid rgba(252, 158, 79, 0.5);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    color: #4a4a5e;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.menu-tile-system:hover,
+.menu-tile-system:focus-visible {
+    border-color: #FC9E4F;
+    color: #C1440E;
+}
+.menu-tile-system.active {
+    background: rgba(252, 158, 79, 0.22);
+    border-color: #FC9E4F;
+    color: #C1440E;
+}
+.menu-tile-system-desc {
+    max-width: 30ch;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: #6B7280;
+}
+
 /* ===== Per-number notes (the lightbulb) ===== */
 /* Tap-first: the trigger is a real button, never a hover-only tooltip. */
 .number-notes {

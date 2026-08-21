@@ -67,15 +67,47 @@
 
         <div class="menu-grid" id="menu-grid">
             <!-- 1. Number practice -->
+            {# With both systems live the tile carries the picker itself. A bare
+               "Degol" badge only names the system it happens to be on; it gives
+               a learner who came for the traditional numbers no way out of it.
+               An <a> may not contain links, so the card becomes a <div> whose
+               CTA is stretched across it — clicking anywhere but a system pill
+               still opens the mode picker. #}
+            {% if number_systems and number_systems.has_choice %}
+            <div class="menu-tile menu-tile-stretch">
+                <span class="menu-tile-icon menu-tile-icon-numbers" aria-hidden="true">123</span>
+                <span class="menu-tile-title">{{ get_text('menu_numbers_title') }}</span>
+                <span class="menu-tile-body">{{ get_text('menu_numbers_body') }}</span>
+                <div class="menu-tile-systems" role="group" aria-label="{{ get_text('number_system_label') }}">
+                    <span class="menu-tile-systems-label">{{ get_text('number_system_label') }}</span>
+                    <span class="menu-tile-system-options">
+                        {% for option in number_systems.options %}
+                        <a class="menu-tile-system{% if option.active %} active{% endif %}"
+                           href="{{ url_for('mode_selection', lang_code=lang_code, system=option.key) }}"
+                           {% if option.active %}aria-current="true"{% endif %}>{{ option.label }}</a>
+                        {% endfor %}
+                    </span>
+                    {% if number_systems.active_desc %}
+                    <span class="menu-tile-system-desc">{{ number_systems.active_desc }}</span>
+                    {% endif %}
+                </div>
+                <a class="menu-tile-cta menu-tile-stretch-link" href="{{ url_for('number_modes', lang_code=lang_code) }}">
+                    {{ get_text('menu_numbers_cta') }} →
+                </a>
+            </div>
+            {% else %}
             <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="menu-tile">
                 <span class="menu-tile-icon menu-tile-icon-numbers" aria-hidden="true">123</span>
                 <span class="menu-tile-title">{{ get_text('menu_numbers_title') }}</span>
                 <span class="menu-tile-body">{{ get_text('menu_numbers_body') }}</span>
+                {# One usable system: naming it is honest, and the notice above
+                   says why the other one isn't here. #}
                 {% if number_systems %}
                 <span class="menu-tile-badge">{{ number_systems.active_label }}</span>
                 {% endif %}
                 <span class="menu-tile-cta">{{ get_text('menu_numbers_cta') }} →</span>
             </a>
+            {% endif %}
 
             <!-- 2. Listening -->
             {% if has_audio_mode %}

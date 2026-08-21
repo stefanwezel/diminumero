@@ -11,6 +11,8 @@ Two properties matter more than the feature itself:
   so the control and the data can land in either order.
 """
 
+import re
+
 import pytest
 
 from app import app as flask_app
@@ -193,17 +195,41 @@ class TestHonestLabelling:
         body = client.get("/").get_data(as_text=True)
         assert "modern decimal Welsh" in body
 
-    def test_menu_page_names_the_active_system(self, client):
-        """With two systems live the tile carries the badge, not the notice."""
-        body = client.get("/cy").get_data(as_text=True)
-        assert "menu-tile-badge" in body
-        assert "Degol" in body
+    def test_menu_page_offers_both_systems_on_the_tile(self, client):
+        """With two systems live the tile is a picker, not a label.
 
-    def test_menu_page_falls_back_to_the_notice_when_only_one_is_ready(
+        A badge naming the active system tells a learner which Welsh they are
+        about to be drilled on but gives them no way to ask for the other one.
+        """
+        body = client.get("/cy").get_data(as_text=True)
+        assert "menu-tile-badge" not in body
+        assert 'href="/cy?system=decimal"' in body
+        assert 'href="/cy?system=traditional"' in body
+        assert "Degol" in body
+        assert "Ugeiniol" in body
+
+    def test_menu_page_marks_the_active_system(self, client):
+        body = client.get("/cy?system=traditional").get_data(as_text=True)
+        pills = re.findall(r'<a class="menu-tile-system.*?</a>', body, re.S)
+        assert len(pills) == 2
+        active = [pill for pill in pills if "menu-tile-system active" in pill]
+        assert len(active) == 1
+        assert "system=traditional" in active[0]
+        assert 'aria-current="true"' in active[0]
+
+    def test_menu_page_falls_back_to_the_badge_when_only_one_is_ready(
         self, client, incomplete_traditional
     ):
+        """No choice to make, so no control — the badge and the notice explain."""
         body = client.get("/cy").get_data(as_text=True)
         assert "number-system-note" in body
+        assert "menu-tile-badge" in body
+        assert "menu-tile-system-options" not in body
+
+    def test_menu_page_of_a_single_system_language_has_no_picker(self, client):
+        body = client.get("/es").get_data(as_text=True)
+        assert "menu-tile-system" not in body
+        assert "menu-tile-badge" not in body
 
     def test_learn_page_explains_both_systems(self, client):
         body = client.get("/cy/learn").get_data(as_text=True)
@@ -234,6 +260,27 @@ class TestChoosingASystem:
         client.get("/cy/numbers?system=traditional")
         with client.session_transaction() as sess:
             assert sess["number_system"] == "traditional"
+
+    def test_menu_tile_picker_carries_into_the_config_screen(self, client):
+        """Switching on the menu is the same switch, not a second setting."""
+        client.get("/cy?system=traditional")
+        with client.session_transaction() as sess:
+            assert sess["number_system"] == "traditional"
+        body = client.get("/cy/numbers").get_data(as_text=True)
+        assert 'class="number-system-option active"' in body
+        assert "Ugeiniol" in body
+
+    def test_menu_tile_picker_switches_back(self, client):
+        client.get("/cy?system=traditional")
+        client.get("/cy?system=decimal")
+        with client.session_transaction() as sess:
+            assert sess["number_system"] == "decimal"
+
+    def test_garbage_system_on_the_menu_is_ignored(self, client):
+        response = client.get("/cy?system=nonsense")
+        assert response.status_code == 200
+        with client.session_transaction() as sess:
+            assert sess["number_system"] == "decimal"
 
     def test_drill_runs_in_the_chosen_system(self, client):
         traditional = get_language_numbers("cy", "traditional")

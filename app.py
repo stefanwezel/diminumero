@@ -482,6 +482,9 @@ def _number_system_context(lang_code, active=None):
     return {
         "active": active_key,
         "active_label": active_label,
+        # What the active system is *for*, so a compact picker (the menu tile)
+        # can explain the choice without repeating both blurbs.
+        "active_desc": _number_system_desc(lang_code, active_key),
         "options": options,
         "has_choice": len(options) > 1,
         "notices": notices,
@@ -598,8 +601,10 @@ def mode_selection(lang_code):
     # Store learning language in session
     session["learn_language"] = lang_code
 
-    # Load numbers for this language, in whichever numeral system is in force
-    number_system = _session_number_system(lang_code)
+    # Load numbers for this language, in whichever numeral system is in force.
+    # `?system=` switches it from the menu tile's own toggle — same param, same
+    # forgiving resolution, as on the number-practice config screen below.
+    number_system = _session_number_system(lang_code, request.args.get("system"))
     try:
         numbers = get_language_numbers(lang_code, number_system)
         total_numbers = len(numbers)
