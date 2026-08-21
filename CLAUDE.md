@@ -260,7 +260,7 @@ Each kind of content has a dedicated top-level guide. Point to these (and keep t
 
 Plans and open questions live under `docs/`:
 - **docs/plans/welsh-traditional-numbers.md** — the design behind numeral systems and notes, phase by phase, with the rejected alternatives.
-- **docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md** — what we still don't know about traditional Welsh; the 41–99 gap blocks the toggle going live.
+- **docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md** — what we still don't know about traditional Welsh, written to be handed to speakers. The toggle is live (gated on the complete 1–21 block); what the open questions still hold back is the *deck*, chiefly the 41–99 connective, which decides 54 forms at once and keeps them unserved until someone confirms it.
 
 ## Adding Number Practice (a new language)
 
