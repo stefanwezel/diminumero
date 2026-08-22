@@ -1,10 +1,12 @@
 """Tests for provenance-tracked number forms, and the Welsh traditional rules.
 
-The project's rule is that a form no speaker has confirmed does not reach a
-learner. That is easy to say and easy to erode, so it is asserted here from
-several directions: the tier a form carries, what `build_numbers` will and will
-not hand out, what the drill actually serves, and what happens when the rule
-that generates the unconfirmed forms disagrees with a speaker.
+The project's rule is that a form with nothing behind it — no speaker, no
+published source — does not reach a learner. That is easy to say and easy to
+erode, so it is asserted here from several directions: the tier a form carries,
+what `build_numbers` will and will not hand out, what the drill actually serves,
+what happens when the rule disagrees with a speaker, and whether the servable
+tier stays tied to the documentation rather than to whatever the generator last
+ran with.
 
 The generator's own checks live in the generator (it aborts on a rule that
 contradicts a confirmed form). These re-assert the important ones so a
@@ -66,14 +68,21 @@ class TestSchema:
                 if entry["source"] == "reconstructed":
                     assert number in hand_written_reconstructed
 
-    def test_generated_file_is_entirely_reconstructed(self):
+    def test_generated_file_never_claims_a_speaker(self):
+        """A script can produce a documented form; it cannot produce a witness."""
         for number, entries in deck.GENERATED.items():
             for entry in entries:
-                assert entry["source"] == "reconstructed", number
+                assert entry["source"] in ("attested", "reconstructed"), number
+
+    def test_generated_forms_are_attested_while_the_rule_is_documented(self):
+        assert generator.TENS_CONNECTIVE == generator.DOCUMENTED_CONNECTIVE
+        assert {
+            e["source"] for entries in deck.GENERATED.values() for e in entries
+        } == {"attested"}
 
 
 class TestWithholding:
-    """Nothing unconfirmed reaches a learner while the flag is off."""
+    """Nothing without a source behind it reaches a learner."""
 
     def test_reconstructed_forms_are_not_served(self):
         served = get_language_numbers("cy", "traditional")
@@ -82,27 +91,42 @@ class TestWithholding:
                 assert served.get(number) != entry["text"]
 
     def test_numbers_with_only_reconstructed_forms_are_absent(self):
-        """Skipped entirely — not blank, and not silently decimal."""
+        """Skipped entirely — not blank, and not silently decimal.
+
+        120 is the case that survived the review round: `chwe ugain` and
+        `chweugain` are both still guesses, so the drill does not ask 120.
+        """
         served = get_language_numbers("cy", "traditional")
-        assert sources_of(43) == {"reconstructed"}
-        assert 43 not in served
-        # …and the decimal word for 43 has not crept in as a substitute.
-        assert get_language_numbers("cy", "decimal")[43] not in served.values()
+        assert sources_of(120) == {"reconstructed"}
+        assert 120 not in served
+        # …and the decimal word for 120 has not crept in as a substitute.
+        assert get_language_numbers("cy", "decimal")[120] not in served.values()
 
     def test_a_speaker_form_wins_over_a_rule_that_disagrees(self):
-        """45 is the live disagreement: speakers say `ar`, the rule says `a`."""
-        assert {e["text"] for e in FORMS[45]} == {
-            "pump ar ddeugain",
-            "pump a deugain",
-        }
-        assert get_language_numbers("cy", "traditional")[45] == "pump ar ddeugain"
+        """50 is the live divergence: `hanner cant` is what people say."""
+        assert {e["text"] for e in FORMS[50]} == {"hanner cant", "deg a deugain"}
+        assert get_language_numbers("cy", "traditional")[50] == "hanner cant"
+
+    def test_the_corrected_minority_form_is_kept_but_not_taught(self):
+        """45: the review round corrected the thread, and neither form is lost."""
+        assert get_language_numbers("cy", "traditional")[45] == "pump a deugain"
+        minority = [e for e in FORMS[45] if e["text"] == "pump ar ddeugain"]
+        assert len(minority) == 1
+        assert minority[0]["variant"] == "minority"
 
     def test_flag_flips_them_on_without_touching_the_data(self):
         withheld = build_numbers(FORMS, serve_reconstructed=False)
         served = build_numbers(FORMS, serve_reconstructed=True)
-        assert 43 not in withheld
-        assert served[43] == "tri a deugain"
+        assert 120 not in withheld
+        assert served[120] == "chwe ugain"
         assert len(served) > len(withheld)
+
+    def test_attested_forms_are_served_and_reconstructed_ones_are_not(self):
+        forms = {
+            1: [{"text": "documented", "source": "attested"}],
+            2: [{"text": "guessed", "source": "reconstructed"}],
+        }
+        assert build_numbers(forms) == {1: "documented"}
 
     def test_drill_never_shows_a_reconstructed_form(self, client):
         client.get("/cy/numbers?system=traditional")
@@ -163,8 +187,13 @@ class TestGeneratorRules:
         [
             (30, "deg ar hugain"),
             (41, "un a deugain"),
+            # Named verbatim by the sources behind the `attested` tier.
+            (43, "tri a deugain"),
+            (44, "pedwar a deugain"),
             (51, "un ar ddeg a deugain"),
             (99, "pedwar ar bymtheg a phedwar ugain"),
+            # The arithmetic error two public lists share (they give 40 + 20).
+            (34, "pedwar ar ddeg ar hugain"),
         ],
     )
     def test_rule_shape(self, number, expected):
@@ -210,9 +239,25 @@ class TestGeneratorRules:
 
     def test_disagreements_are_reported_not_resolved(self):
         report = "\n".join(generator.report_disagreements(generator.generate()))
-        assert "45" in report and "DISAGREES" in report
         # 50's idiomatic form is expected to differ from the regular one.
         assert "50" in report and "variant" in report
+        # 45 was the live disagreement until the review round explained it; a
+        # form the sources corrected is not a standing question.
+        assert "DISAGREES" not in report
+
+    def test_an_undocumented_connective_cannot_serve_its_forms(self, monkeypatch):
+        """The documentation is what makes 41-99 servable, not the script.
+
+        Flipping the switch without new sources must put every form it touches
+        back behind config.SERVE_RECONSTRUCTED — otherwise the tier would just
+        mean "whatever the generator ran with last".
+        """
+        monkeypatch.setattr(generator, "TENS_CONNECTIVE", "ar")
+        generated = generator.generate()
+        assert generated[43][0]["source"] == "reconstructed"
+        assert generated[43][0]["text"] == "tri ar ddeugain"
+        # 22-39 is documented independently, so it is unaffected.
+        assert generated[35][0]["source"] == "attested"
 
 
 class TestMerge:

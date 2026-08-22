@@ -12,8 +12,22 @@ So every form in a provenance-tracked deck carries a `source`:
 
     confirmed      two or more speakers agreed, or one corrected another
     single         one speaker, uncorroborated
-    reconstructed  derived from a grammatical rule, by a script or an LLM.
-                   NOT verified by any speaker.
+    attested       a rule produced it, and that rule is documented in a
+                   published reference which a reviewer cited. No speaker
+                   checked this individual form — the *rule behind it* is what
+                   has a source.
+    reconstructed  derived from a grammatical rule, by a script or an LLM,
+                   with nothing published behind the rule. NOT verified by any
+                   speaker.
+
+`attested` is the tier the August 2026 review round created. A respondent
+answered the 41-99 connective question with Wiktionary's usage note at
+*deugain* (41-59 take `a`), a 19th-century citation for `tri a deugain`, a
+second modern source for `pedwar a deugain`, and the Cornish split
+(`warn ugens` 21-39 vs `ha dew-ugens` 41) as comparative evidence. That is a
+different kind of claim from "a script applied a rule nobody has checked", and
+collapsing the two would either withhold documented forms forever or serve
+undocumented ones — so it gets its own tier, and it is served.
 
 `reconstructed` forms are committed but **not served** unless
 ``config.SERVE_RECONSTRUCTED`` is turned on. They exist so they can be exported
@@ -27,10 +41,15 @@ outside this module has to know provenance exists.
 from config import SERVE_RECONSTRUCTED
 
 # Ordered weakest-claim-last, which is also the order tooling reports them in.
-SOURCES = ("confirmed", "single", "reconstructed")
+SOURCES = ("confirmed", "single", "attested", "reconstructed")
 
-# Sources a learner may be shown regardless of the flag.
+# A person who speaks the language said this form, in as many words.
 SPEAKER_SOURCES = ("confirmed", "single")
+
+# Sources a learner may be shown regardless of the flag. `attested` is here and
+# `reconstructed` is not: the line is whether anything outside this repo backs
+# the form, not whether a script happened to type it.
+SERVED_SOURCES = SPEAKER_SOURCES + ("attested",)
 
 # Gender values a form may declare. "both" (the default) means invariable.
 GENDERS = ("m", "f", "both")
@@ -48,7 +67,7 @@ def served_sources(serve_reconstructed=None):
         serve_reconstructed = SERVE_RECONSTRUCTED
     if serve_reconstructed:
         return set(SOURCES)
-    return set(SPEAKER_SOURCES)
+    return set(SERVED_SOURCES)
 
 
 def build_numbers(forms, serve_reconstructed=None, gender=DRILL_GENDER):

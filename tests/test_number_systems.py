@@ -22,11 +22,15 @@ from languages import (
     get_default_number_system,
     get_language_numbers,
     get_number_systems,
+    get_number_usage_weights,
     get_ready_number_systems,
     is_number_system_ready,
     resolve_number_system,
 )
 from languages import config as languages_config
+from languages.cy import (
+    generate_numbers_traditional as generator,
+)
 import quiz_logic
 
 
@@ -42,19 +46,56 @@ def client(app):
     return app.test_client()
 
 
+# Stated by a person, not derived from anything: the forms the r/learnwelsh
+# thread itself gave us. 45 is deliberately absent — a speaker offered a form
+# for it, but the follow-up round corrected that form to the rule's, so what
+# is served there is the rule's and is checked as such.
+SPEAKER_VERIFIED = {
+    1: "un",
+    2: "dau",
+    3: "tri",
+    4: "pedwar",
+    5: "pump",
+    6: "chwech",
+    7: "saith",
+    8: "wyth",
+    9: "naw",
+    10: "deg",
+    11: "un ar ddeg",
+    12: "deuddeg",
+    13: "tri ar ddeg",
+    14: "pedwar ar ddeg",
+    15: "pymtheg",
+    16: "un ar bymtheg",
+    17: "dau ar bymtheg",
+    18: "deunaw",
+    19: "pedwar ar bymtheg",
+    20: "ugain",
+    21: "un ar hugain",
+    30: "deg ar hugain",
+    40: "deugain",
+    50: "hanner cant",
+    60: "trigain",
+    70: "deg a thrigain",
+    80: "pedwar ugain",
+    90: "deg a phedwar ugain",
+    100: "cant",
+}
+
+
 @pytest.fixture
 def incomplete_traditional():
     """Pretend the traditional deck has a hole in the range the gate checks.
 
-    The real deck now passes the gate (1-21 is complete), so what has to be
-    simulated is the state it was in before speakers filled that block — and
+    The real deck now passes the gate (1-100 is complete), so what has to be
+    simulated is the state it was in while speakers were still filling it — and
     the state any *future* second system starts in.
     """
     key = ("cy", "numbers_traditional")
     original = languages_config._SYSTEM_NUMBER_CACHE.get(key)
     languages_config._SYSTEM_NUMBER_CACHE[key] = {
         num: f"trad-{num}"
-        for num in range(1, 21)  # 21 missing
+        for num in range(1, 100)  # 100 missing
     }
     yield languages_config._SYSTEM_NUMBER_CACHE[key]
     if original is None:
@@ -117,51 +158,36 @@ class TestWelshDeclaration:
         assert traditional[70] == "deg a thrigain"
 
     def test_traditional_contains_no_invented_forms(self):
-        """Every filled entry was stated verbatim in the review thread.
+        """Every served form is either a speaker's or the documented rule's.
 
-        A pattern was described for 22-29 and 31-39 but the forms were never
-        given, so those must stay empty: extrapolating a rule into a data file
-        is how a learner ends up being taught something wrong with confidence.
+        The review round replaced "speakers said it verbatim" with a second
+        admissible warrant: a rule stated in a published reference. What is
+        still inadmissible is a form that exists only because this repo's
+        script typed it — so every entry outside the speaker list below must be
+        exactly what the rule produces, character for character.
         """
-        verified = {
-            1: "un",
-            2: "dau",
-            3: "tri",
-            4: "pedwar",
-            5: "pump",
-            6: "chwech",
-            7: "saith",
-            8: "wyth",
-            9: "naw",
-            10: "deg",
-            11: "un ar ddeg",
-            12: "deuddeg",
-            13: "tri ar ddeg",
-            14: "pedwar ar ddeg",
-            15: "pymtheg",
-            16: "un ar bymtheg",
-            17: "dau ar bymtheg",
-            18: "deunaw",
-            19: "pedwar ar bymtheg",
-            20: "ugain",
-            21: "un ar hugain",
-            30: "deg ar hugain",
-            40: "deugain",
-            45: "pump ar ddeugain",
-            50: "hanner cant",
-            60: "trigain",
-            70: "deg a thrigain",
-            80: "pedwar ugain",
-            90: "deg a phedwar ugain",
-            100: "cant",
-        }
-        assert get_language_numbers("cy", "traditional") == verified
+        served = get_language_numbers("cy", "traditional")
+        rule_form = generator._rule_form
+        for number, word in served.items():
+            if number in SPEAKER_VERIFIED:
+                continue
+            assert word == rule_form(number), number
+
+    def test_speaker_verified_forms_are_unchanged(self):
+        """The forms people gave us are not quietly rewritten by a rule."""
+        served = get_language_numbers("cy", "traditional")
+        for number, word in SPEAKER_VERIFIED.items():
+            assert served[number] == word
+
+    def test_the_deck_now_covers_one_to_a_hundred(self):
+        served = get_language_numbers("cy", "traditional")
+        assert set(served) == set(range(1, 101))
 
 
 class TestCompletenessGate:
     """The system appears when its data is usable, and not one commit before."""
 
-    def test_gate_is_open_now_that_1_to_21_is_complete(self):
+    def test_gate_is_open_now_that_1_to_100_is_complete(self):
         assert is_number_system_ready("cy", "traditional") is True
         assert [s["key"] for s in get_ready_number_systems("cy")] == [
             "decimal",
@@ -436,3 +462,52 @@ class TestWorksheets:
                 "cy", {**sheet, "system": "traditional"}
             )
         assert decimal_key != traditional_key
+
+
+class TestUsageWeighting:
+    """Having a form is not a reason to drill it.
+
+    The traditional deck covers 1-100, but the review round was explicit that
+    the system is not used evenly: dates keep 1-31 alive, the 41-99 compounds
+    are for recognition, and the stacked ones are museum pieces. Ten questions
+    is a small budget, so the drill spends it accordingly.
+    """
+
+    def test_the_traditional_deck_declares_weights(self):
+        weights = get_number_usage_weights("cy", "traditional")
+        assert weights
+        assert set(weights) == set(get_language_numbers("cy", "traditional"))
+
+    def test_dates_outrank_museum_pieces(self):
+        weights = get_number_usage_weights("cy", "traditional")
+        assert weights[21] > weights[45] > weights[39]
+
+    def test_the_decimal_system_is_unweighted(self):
+        assert get_number_usage_weights("cy", "decimal") is None
+
+    def test_other_languages_declare_nothing(self):
+        for code in ("es", "de", "ja", "ga"):
+            assert get_number_usage_weights(code) is None
+
+    def test_the_drill_spends_its_questions_on_what_people_say(self):
+        """Sampled, because the weighting is only meaningful in aggregate."""
+        numbers = get_language_numbers("cy", "traditional")
+        weights = get_number_usage_weights("cy", "traditional")
+        draws = [
+            quiz_logic.get_random_question(numbers, usage_weights=weights)[0]
+            for _ in range(3000)
+        ]
+        museum = sum(1 for n in draws if n in (39, 59, 79, 99)) / len(draws)
+        fluency = sum(1 for n in draws if n <= 31) / len(draws)
+        # Uniform would give 4% and 31%; the point is that it is not uniform.
+        assert museum < 0.02
+        assert fluency > 0.5
+
+    def test_a_weighted_deck_still_reaches_every_number(self):
+        numbers = get_language_numbers("cy", "traditional")
+        weights = get_number_usage_weights("cy", "traditional")
+        drawn = {
+            quiz_logic.get_random_question(numbers, usage_weights=weights)[0]
+            for _ in range(6000)
+        }
+        assert 99 in drawn  # the rarest tier is rare, not unreachable

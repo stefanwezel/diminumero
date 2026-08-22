@@ -1045,3 +1045,76 @@ after it was raised; `--source single` puts them at the top of the review table.
 The connective (question 1 of the review doc) is the one value that unblocks 54 forms.
 Until it comes back, `TENS_CONNECTIVE = "a"` — chosen because it is what the two
 *confirmed* datapoints support — and every form it produces stays invisible.
+
+---
+
+## Round two — the connective answered (August 2026)
+
+A respondent answered question 1 with sources rather than recollection, and the answer
+turned out to dissolve the conflict instead of picking a side.
+
+**The evidence was never split.** The aspirate mutation reaches only p, t and c.
+`deugain` begins with `d`, so `a deugain` *cannot* show a mutation — which is the whole
+reason `deg a thrigain` (70) and `tri a deugain` (43) looked like different rules.
+Wiktionary's usage note at *deugain* states the 41-59 rule outright and carries
+`tri a deugain` as a headword with a 19th-century citation; a second modern source gives
+`pedwar a deugain` (44); Cornish splits the same way (`warn ugens` 21-39 vs
+`ha dew-ugens` 41), which suggests the division is old rather than a modern tidy-up.
+`TENS_CONNECTIVE` was already `a`, so **not one generated form changed**. What changed is
+what we are entitled to do with them.
+
+### The `attested` tier
+
+The three tiers had no room for "a rule with a published source behind it". Collapsing it
+into `reconstructed` would withhold documented forms indefinitely; collapsing it into
+`single` would claim a speaker we do not have. So `attested` sits between them and is
+**served**: the line for serving is now *whether anything outside this repo backs the
+form*, not whether a script typed it.
+
+`DOCUMENTED_CONNECTIVE` is deliberately a separate constant from `TENS_CONNECTIVE`.
+Flipping the switch to test a hypothesis demotes every 41-99 form it touches back to
+`reconstructed`, so the tier cannot decay into "whatever the generator last ran with".
+21-39 and the feminine series are documented independently of the connective and stay
+attested either way. A test asserts all of this.
+
+### What a learner sees now
+
+The deck runs **1-100**, the gate moved from `(1, 21)` to `(1, 100)`, and the sparse-deck
+notice no longer applies. Still absent: **0** and **120**, whose forms remain guesses.
+
+### Corrections that came with it
+
+- **45 is `pump a deugain`.** The thread's `pump ar ddeugain` is kept beside it, labelled
+  `variant: "minority"` — real, but most likely analogy from the heavily-used `ar hugain`
+  run. The standing `[DISAGREES]` line is gone; 50 (`hanner cant` over the regular
+  `deg a deugain`) is now the only divergence the generator reports, and it is a variant,
+  not a conflict.
+- **41 carries `deugain ac un`** as a reversed-order variant, with the regular form first
+  so it stays the one taught.
+- **A provenance caution, recorded in the questions doc**: two public lists share a
+  distinctive arithmetic error at 34 (`pedwar deg ar hugain`, which computes to 60). They
+  are one source with a copy. Neither ever entered this dataset — our tiers count people
+  in the thread — but the generator's docstring now names the trap so nobody "corrects"
+  our 34 to match them.
+
+### Usage weighting
+
+The same reply made an empirical point worth more than the forms: the system is not used
+evenly. Dates keep 1-31 alive, the 41-99 compounds are recognition material, and the
+stacked ones (39, 59, 79, 99) are museum pieces. A ten-question round spent uniformly over
+1-100 would spend most of itself in the wrong place.
+
+So a deck module may now declare `USAGE_WEIGHTS`, read by `get_number_usage_weights()`
+and multiplied into the existing magnitude weight in `get_random_question()`. Traditional
+Welsh declares fluency 1.0 / recognition 0.25 / museum 0.05. Every other deck declares
+nothing and draws exactly as before. The rarest tier stays reachable — rare is not
+removed, and a test pins that.
+
+### Deliberately not done
+
+- **Ordinals**, which the same reply argues carry more real-world load than the cardinals
+  for 1-31. They need data no rule can safely produce and a prompt the current deck
+  contract cannot express (`13eg`, not `13`). Written up separately in
+  `docs/plans/welsh-ordinals.md`.
+- **Worksheet weighting.** A sheet is a deterministic shuffle of its range; weighting it
+  would change what a reprinted seed produces. Left alone.

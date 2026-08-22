@@ -288,7 +288,7 @@ it carries a list of forms per number, each with a `source`:
 SPEAKER_FORMS = {
     13: [
         {"text": "tri ar ddeg",  "gender": "m", "source": "single"},
-        {"text": "tair ar ddeg", "gender": "f", "source": "reconstructed"},
+        {"text": "tair ar ddeg", "gender": "f", "source": "attested"},
     ],
 }
 ```
@@ -297,7 +297,13 @@ SPEAKER_FORMS = {
 |---|---|---|
 | `confirmed` | two or more speakers agreed, or one corrected another | yes |
 | `single` | one speaker, uncorroborated | yes |
-| `reconstructed` | derived from a grammatical rule, by a script or an LLM — **no speaker has confirmed it** | **no**, unless `SERVE_RECONSTRUCTED` |
+| `attested` | produced by a rule that a **published reference states**, cited by a reviewer. The rule has a source; this individual form has not been checked | yes |
+| `reconstructed` | produced by a rule with nothing published behind it — **no speaker has confirmed it and no source backs it** | **no**, unless `SERVE_RECONSTRUCTED` |
+
+The line for serving is whether anything outside this repo backs the form, not
+whether a script typed it. `attested` exists because collapsing it into
+`reconstructed` would withhold documented forms indefinitely, and collapsing it
+into `single` would claim a speaker we do not have.
 
 `config.SERVE_RECONSTRUCTED` (default `False`) is the switch. While it is off, a
 number whose only forms are reconstructed is **absent from the deck entirely** —
@@ -317,8 +323,9 @@ Two files, on purpose:
   script ever writes it, so an editorial comment or a newly confirmed form cannot
   be clobbered by a rerun.
 - `numbers_traditional_generated.py` — **machine-owned**, holds rule-derived
-  forms, entirely `reconstructed`. Never edited by hand; to correct one of these,
-  add the speaker's form to the hand-edited file, which wins.
+  forms, `attested` while the rule it applies is the documented one and
+  `reconstructed` otherwise. Never edited by hand; to correct one of these, add
+  the speaker's form to the hand-edited file, which wins.
 
 ### Generating rule-governed forms
 
@@ -334,9 +341,14 @@ Two things it must do, and both are the point rather than polish:
    unresolved connective to its other value fails the run with a message naming
    the confirmed forms it contradicts, instead of quietly emitting 54 wrong ones.
 2. **Report disagreements rather than resolving them.** Where the rule and a
-   speaker differ (Welsh 45), the speaker's form is what gets served, the rule's
-   form is kept as a withheld alternative, and the run prints the conflict as a
-   question for the next review round.
+   speaker differ (Welsh 50, `hanner cant` vs the regular `deg a deugain`), the
+   speaker's form is what gets served, the rule's is kept beside it, and the run
+   prints the divergence as a question for the next review round.
+3. **Tie the servable tier to the documented rule, not to the script.** Welsh
+   keeps `DOCUMENTED_CONNECTIVE` separate from the `TENS_CONNECTIVE` switch:
+   flipping the switch to test a hypothesis demotes everything it touches from
+   `attested` back to `reconstructed`, so the tier can never come to mean
+   "whatever the generator last ran with".
 
 ### Getting forms confirmed
 
@@ -345,9 +357,29 @@ uv run tools/export_unconfirmed_forms.py --source single    # the smallest ask
 uv run tools/export_unconfirmed_forms.py --include-notes    # everything
 ```
 
-Dumps a markdown table of every form no speaker has confirmed, ready to post
-where speakers are. Withholding unconfirmed forms is only half a policy; the
-other half is making them cheap to check.
+Dumps a markdown table of every form no speaker has confirmed *individually* —
+including the `single` and `attested` tiers, which are already being taught, so
+a correction there matters most. Withholding unconfirmed forms is only half a
+policy; the other half is making them cheap to check.
+
+### Optional: say which numbers are worth drilling
+
+A deck whose numbers are not used evenly in real life may declare
+`USAGE_WEIGHTS` — `{number: multiplier}` — beside its `NUMBERS`. It is read by
+`get_number_usage_weights()` and multiplied into the drill's existing magnitude
+weight, so a ten-question round is spent where a learner needs it.
+
+```python
+FLUENCY_NUMBERS = set(range(0, 32)) | {40, 50, 60, 80, 100}
+MUSEUM_NUMBERS = {39, 59, 79, 99}
+USAGE_TIER_WEIGHTS = {"fluency": 1.0, "recognition": 0.25, "museum": 0.05}
+```
+
+Traditional Welsh is the only deck that declares it: dates keep 1–31 in daily
+use while `pedwar ar bymtheg ar hugain` (39) is a museum piece. Two rules —
+weight from what speakers say they use, not from what looks hard; and never
+weight a number to zero, because rare must still mean reachable. A deck that
+declares nothing draws exactly as before.
 
 ### Walkthrough: fill in a missing number
 
@@ -359,7 +391,7 @@ other half is making them cheap to check.
 3. Find the number you know, or add it if it isn't there:
 
    ```python
-       45: [{"text": "pump ar ddeugain", "source": "single"}],
+       120: [{"text": "chwe ugain", "source": "reconstructed"}],
    ```
 
 4. Add your form, or correct the one there. `source` is the important field —
@@ -367,7 +399,7 @@ other half is making them cheap to check.
    are agreeing with a form already listed:
 
    ```python
-       45: [{"text": "pump ar ddeugain", "source": "confirmed"}],
+       120: [{"text": "chwe ugain", "source": "single"}],
    ```
 
    If your form differs from one the generator produced, leave the generated one
@@ -394,7 +426,7 @@ other half is making them cheap to check.
 ### Checklist for a second system
 
 - [ ] `number_systems` declared in `languages/config.py`, one entry with `default: True`
-- [ ] `languages/<code>/<module>.py` created; anything unverified is either absent or marked `reconstructed`
+- [ ] `languages/<code>/<module>.py` created; anything unverified is either absent or marked `reconstructed` (or `attested`, if a published reference backs the rule)
 - [ ] `number_system_name_<key>` and `number_system_desc_<key>` added to all UI languages in `translations.py`
 - [ ] A test asserting the new deck contains no invented forms (see `tests/test_number_systems.py`)
 - [ ] Listening: `has_audio: False` unless MP3s exist for that system

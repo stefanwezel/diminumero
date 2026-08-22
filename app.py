@@ -62,6 +62,7 @@ from languages import (
     get_languages_with_learn_materials,
     get_number_system,
     get_number_systems,
+    get_number_usage_weights,
     get_ready_number_systems,
     is_language_ready,
     resolve_number_system,
@@ -414,6 +415,19 @@ def _session_number_system(lang_code, requested=None):
     resolved = resolve_number_system(lang_code, requested)
     session["number_system"] = resolved
     return resolved
+
+
+def _session_usage_weights(lang_code, system_key=None):
+    """How often each number of the active deck is worth asking, or None.
+
+    Declared by the deck itself (traditional Welsh is the only one so far), so
+    every other language draws exactly as it did before.
+    """
+    if system_key is None:
+        system_key = session.get("number_system")
+    return get_number_usage_weights(
+        lang_code, resolve_number_system(lang_code, system_key)
+    )
 
 
 def _system_has_audio(lang_code, system_key):
@@ -1537,7 +1551,10 @@ def quiz_easy(lang_code):
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
         number, correct_answer = quiz_logic.get_random_question(
-            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+            numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
 
         # Generate multiple choice options
@@ -1678,7 +1695,10 @@ def quiz_advanced(lang_code):
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
         number, correct_answer = quiz_logic.get_random_question(
-            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+            numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
 
         # Store in session
@@ -1836,7 +1856,10 @@ def quiz_hardcore(lang_code):
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
         number, correct_answer = quiz_logic.get_random_question(
-            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+            numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
 
         # Store in session
@@ -1990,6 +2013,7 @@ def listen_quiz(lang_code):
             playable_numbers,
             asked_numbers,
             magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
         session["current_number"] = number
         session["correct_answer"] = correct_answer

@@ -11,12 +11,14 @@ from learners is only useful if there is a cheap way to get them confirmed, and
 that means handing a speaker a table they can correct in one pass rather than a
 Python file they have to read.
 
-`--source single` is the staged ask: thirteen forms one person gave us, which is
-a far smaller favour than ninety-odd reconstructed ones and unblocks more (those
-forms are already being drilled).
+`--source single` is the staged ask: a dozen forms one person gave us, which is
+a far smaller favour than the whole table and unblocks more (those forms are
+already being drilled).
 
-Nothing here reaches learners while config.SERVE_RECONSTRUCTED is False —
-see languages/provenance.py.
+Two of the three tiers here **are** being taught — `single` and `attested` —
+which is the reason to export them rather than only the withheld ones. Only
+`reconstructed` waits for config.SERVE_RECONSTRUCTED. See
+languages/provenance.py.
 """
 
 import argparse
@@ -38,10 +40,16 @@ SOURCE_BLURB = {
         "One person told us this and nobody corroborated it. **These are already "
         "being taught**, so a correction here matters most."
     ),
+    "attested": (
+        "Produced by a rule that a published reference states, cited by a "
+        "reviewer. **These are being taught**, but no speaker has checked these "
+        "individual forms — a spot-check is exactly what is wanted."
+    ),
     "reconstructed": (
-        "Produced by applying a grammatical rule — by a script or an LLM. "
-        "**No speaker has ever confirmed these**, and the site does not teach "
-        "them. They are guesses written down so they can be checked."
+        "Produced by applying a grammatical rule — by a script or an LLM — with "
+        "nothing published behind the rule. **No speaker has ever confirmed "
+        "these**, and the site does not teach them. They are guesses written "
+        "down so they can be checked."
     ),
 }
 

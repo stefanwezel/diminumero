@@ -438,12 +438,12 @@ AVAILABLE_LANGUAGES = {
                 "key": "traditional",
                 "module": "numbers_traditional",
                 "label_key": "cy_ugeiniol",
-                # 1-21 is what speakers have given us in full. Above that the
-                # deck is deliberately sparse — the round numbers only — until
-                # the review round comes back; the config screen says so.
-                # Rule-derived forms exist for the gaps but are withheld (see
-                # config.SERVE_RECONSTRUCTED), so they cannot open this gate.
-                "requires_complete": (1, 21),
+                # 1-100 complete, since the August 2026 review round answered
+                # the 41-99 connective with published sources and the forms it
+                # settles are served (`attested` — see languages/provenance.py).
+                # Forms with nothing but a script behind them are still withheld
+                # (config.SERVE_RECONSTRUCTED) and so still cannot open a gate.
+                "requires_complete": (1, 100),
                 # No traditional MP3s exist, so Listening stays decimal-only.
                 "has_audio": False,
             },
@@ -691,6 +691,32 @@ def _load_system_numbers(lang_code, module_name):
     numbers = {num: word for num, word in raw.items() if word}
     _SYSTEM_NUMBER_CACHE[cache_key] = numbers
     return numbers
+
+
+def get_number_usage_weights(lang_code, system=None):
+    """How often each number in a deck is worth asking, or None.
+
+    A deck module may declare ``USAGE_WEIGHTS`` — ``{number: multiplier}`` — for
+    a system whose numbers are not used evenly in real life. Traditional Welsh
+    is the case that motivated it: it holds 1-100, but dates keep 1-31 alive
+    while `pedwar ar bymtheg ar hugain` (39) is a museum piece, and drilling
+    them equally would spend a ten-question round in the wrong place.
+
+    None for every deck that declares nothing, which is all of them but one, so
+    the drill's weighting is untouched for every other language.
+    """
+    system_key = system or get_default_number_system(lang_code)
+    declared = get_number_system(lang_code, system_key)
+    module_name = (declared or {}).get("module", "numbers")
+    try:
+        module = importlib.import_module(f".{lang_code}.{module_name}", __package__)
+    except ImportError:
+        return None
+
+    weights = getattr(module, "USAGE_WEIGHTS", None)
+    if not isinstance(weights, dict) or not weights:
+        return None
+    return weights
 
 
 def get_language_numbers(lang_code, system=None):
