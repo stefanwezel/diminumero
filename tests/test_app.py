@@ -503,3 +503,24 @@ class TestSecretKeyConfiguration:
         import os
 
         assert os.environ.get("FLASK_SECRET_KEY") == test_secret
+
+
+class TestListeningAudioElement:
+    """The listening page must hand the browser exactly one way to start a clip.
+
+    The <audio> tag once carried `autoplay` while quiz_listen.js also called
+    play() after a deliberate lag. The two raced: the browser began the clip,
+    then the script rewound it to 0 — and since the recordings have only a few
+    tens of milliseconds of room tone before the number is spoken, the rewind
+    landed on the word and restarted it mid-syllable.
+    """
+
+    def test_audio_element_has_no_autoplay_attribute(self, client):
+        client.get("/es/numbers?mode=listening")
+        data = client.get("/es/listen").data.decode("utf-8")
+
+        assert "<audio" in data
+        audio_tag = data[data.index("<audio") : data.index(">", data.index("<audio"))]
+        assert "autoplay" not in audio_tag
+        # preload stays: buffering is what the script waits on before playing.
+        assert 'preload="auto"' in audio_tag

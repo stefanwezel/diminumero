@@ -12,23 +12,66 @@
     var MAX_DIGITS = 9;
 
     // ---- audio ----
+    // This controller is the *only* thing that starts a clip. The <audio> tag
+    // deliberately carries no `autoplay`, because the browser honouring that
+    // attribute and the code below were two independent starters racing each
+    // other: the browser began the clip, then START_LAG_MS later this code
+    // rewound it to 0. The recordings have only ~0-155ms of room tone before
+    // the speech, so that rewind landed on or just after the onset and you
+    // heard the number restart mid-word — audible on a phone (whose decoder
+    // reaches the word by then) and usually not on a laptop.
+    var START_LAG_MS = 150;
+    // A clip is ~20KB, so it is normally buffered long before this; the cap is
+    // only so a bad connection still gets its question rather than silence.
+    var BUFFER_WAIT_MS = 1200;
+
+    var pendingTimer = null;
+    var pendingWait = null;
+
+    function cancelPendingPlay() {
+        if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+        if (pendingWait) {
+            pendingWait.el.removeEventListener('canplaythrough', pendingWait.fn);
+            pendingWait.el.removeEventListener('error', pendingWait.fn);
+            pendingWait = null;
+        }
+    }
+
     function playAudio() {
         var audio = document.getElementById('audio-el');
         if (!audio) return;
-        var doPlay = function () {
-            // tiny lag so the audio doesn't start the very instant the
-            // question appears
-            setTimeout(function () {
+        // A second tap on play/replay, or a swap arriving over a queued start,
+        // must not leave two starts in flight.
+        cancelPendingPlay();
+
+        var started = false;
+        var start = function () {
+            if (started) return;
+            started = true;
+            cancelPendingPlay();
+            // Only a replay needs rewinding: a freshly rendered element is
+            // already at 0, and an unnecessary seek is exactly what makes a
+            // mobile decoder hiccup.
+            if (audio.currentTime > 0) {
                 try { audio.currentTime = 0; } catch (e) {}
-                var p = audio.play();
-                if (p && typeof p.catch === 'function') p.catch(function () {});
-            }, 100);
+            }
+            var p = audio.play();
+            if (p && typeof p.catch === 'function') p.catch(function () {});
         };
-        if (audio.readyState >= 2) {
-            doPlay();
-        } else {
-            audio.addEventListener('canplay', doPlay, { once: true });
-        }
+
+        // A deliberate lag so the audio doesn't start the very instant the
+        // question appears, then however long buffering still needs.
+        pendingTimer = setTimeout(function () {
+            pendingTimer = null;
+            // HAVE_ENOUGH_DATA. The old gate was HAVE_CURRENT_DATA, which
+            // promises only the current frame — on a phone the buffer can run
+            // dry a few frames in, which stutters too.
+            if (audio.readyState >= 4) { start(); return; }
+            pendingWait = { el: audio, fn: start };
+            audio.addEventListener('canplaythrough', start, { once: true });
+            audio.addEventListener('error', start, { once: true });
+            pendingTimer = setTimeout(start, BUFFER_WAIT_MS);
+        }, START_LAG_MS);
     }
 
     // ---- numpad input (looked up live so it survives content swaps) ----
@@ -70,6 +113,13 @@
             window.location.replace(url);
             return;
         }
+        // Stop the outgoing clip before its element is destroyed. Removing a
+        // playing <audio> pauses it eventually rather than immediately, and on
+        // a phone that tail overlaps the incoming clip.
+        var leaving = document.getElementById('audio-el');
+        if (leaving) { try { leaving.pause(); } catch (e) {} }
+        cancelPendingPlay();
+
         var newContainer = doc.querySelector('.container');
         container.innerHTML = newContainer ? newContainer.innerHTML : '';
         if (url) {

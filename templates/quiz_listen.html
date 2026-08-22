@@ -40,7 +40,10 @@
         <button type="button" id="audio-play-btn" class="audio-play-btn" aria-label="{{ get_text('audio_play_label') }}">
             <span class="audio-play-icon" aria-hidden="true">▶</span>
         </button>
-        <audio id="audio-el" src="{{ audio_url }}" preload="auto" autoplay></audio>
+        {# No `autoplay`: quiz_listen.js is the only thing allowed to start the
+           clip. The browser honouring the attribute *and* the script starting it
+           was a race that restarted the number mid-word. #}
+        <audio id="audio-el" src="{{ audio_url }}" preload="auto"></audio>
     </div>
 
     {% if not revealed %}
