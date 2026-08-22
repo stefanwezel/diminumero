@@ -114,8 +114,12 @@
             </div>
             {% endif %}
 
-            <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary btn-large">
-                <img src="{{ url_for('static', filename='icons/icon-home.svg') }}" alt="" class="btn-icon" aria-hidden="true" loading="lazy"> {{ get_text('results_back_home') }}
+            {# Back to the number-practice config screen, not the language menu:
+               the round that just ended started there, so that is where a
+               learner goes to change mode, range or numeral system and run
+               another one. #}
+            <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="btn btn-primary btn-large">
+                <img src="{{ url_for('static', filename='icons/icon-home.svg') }}" alt="" class="btn-icon" aria-hidden="true" loading="lazy"> {{ get_text('results_back_overview') }}
             </a>
         </div>
         
