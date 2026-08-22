@@ -328,66 +328,6 @@ body {
 }
 
 /* Mode Selection */
-/* ===== "Menu restructured" one-time notice ===== */
-.menu-restructure-notice {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    max-width: 720px;
-    margin: 24px auto 0;
-    padding: 12px 16px;
-    background: rgba(252, 158, 79, 0.12);
-    border: 1px solid rgba(252, 158, 79, 0.45);
-    border-radius: 12px;
-    text-align: left;
-}
-.menu-restructure-notice[hidden] {
-    display: none;
-}
-.menu-restructure-badge {
-    flex-shrink: 0;
-    padding: 3px 9px;
-    background: #E54F6D;
-    color: #fff;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.75px;
-    text-transform: uppercase;
-    border-radius: 10px;
-    line-height: 1.2;
-}
-.menu-restructure-text {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    color: #4a4a5e;
-}
-.menu-restructure-dismiss {
-    flex-shrink: 0;
-    padding: 6px 14px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #020122;
-    background: #FC9E4F;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: filter 0.15s ease;
-}
-.menu-restructure-dismiss:hover {
-    filter: brightness(1.05);
-}
-@media (max-width: 600px) {
-    .menu-restructure-notice {
-        flex-wrap: wrap;
-    }
-    .menu-restructure-dismiss {
-        margin-left: auto;
-    }
-}
-
 /* ===== Home 2x2 practice menu ===== */
 .menu-grid {
     display: grid;

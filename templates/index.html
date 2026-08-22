@@ -41,14 +41,6 @@
             {{ get_text('home_hero_description') }}
         </p>
 
-        <div class="menu-restructure-notice" id="menu-restructure-notice" role="status" hidden>
-            <span class="menu-restructure-badge">{{ get_text('home_new_feature_badge') }}</span>
-            <p class="menu-restructure-text">{{ get_text('menu_restructure_notice') }}</p>
-            <button type="button" class="menu-restructure-dismiss" id="menu-restructure-dismiss">
-                {{ get_text('menu_restructure_dismiss') }}
-            </button>
-        </div>
-
         {# A language with two numeral systems says which one it is drilling —
            on the menu as well as inside it, because this is where someone
            decides whether the site teaches what they came for. #}
@@ -187,23 +179,6 @@ if (window.innerWidth <= 768) {
     var el = document.getElementById('menu-grid');
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
 }
-</script>
-<script>
-(function() {
-    var KEY = 'diminumero_menu_restructure_seen';
-    var notice = document.getElementById('menu-restructure-notice');
-    if (!notice) return;
-    var seen;
-    try { seen = localStorage.getItem(KEY); } catch (e) { seen = null; }
-    if (!seen) notice.hidden = false;
-    var dismiss = document.getElementById('menu-restructure-dismiss');
-    if (dismiss) {
-        dismiss.addEventListener('click', function() {
-            notice.hidden = true;
-            try { localStorage.setItem(KEY, '1'); } catch (e) {}
-        });
-    }
-})();
 </script>
 {% endblock %}
 

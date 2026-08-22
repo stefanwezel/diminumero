@@ -91,11 +91,6 @@ class TestModeSelection:
         assert response.status_code == 200
         assert "/es/numbers" in response.data.decode("utf-8")
 
-    def test_mode_selection_shows_restructure_notice(self, client):
-        """The language menu renders the one-time 'menu restructured' notice."""
-        response = client.get("/es")
-        assert "menu-restructure-notice" in response.data.decode("utf-8")
-
     def test_number_modes_page_loads(self, client):
         """The number-practice page loads for Spanish."""
         response = client.get("/es/numbers")
