@@ -260,8 +260,7 @@ Each kind of content has a dedicated top-level guide. Point to these (and keep t
 - **ADD_UI_LANGUAGE.md** — add a new UI/interface translation, including partial locales (`PARTIAL_UI_LANGUAGES`).
 
 Plans and open questions live under `docs/`:
-- **docs/plans/welsh-traditional-numbers.md** — the design behind numeral systems and notes, phase by phase, with the rejected alternatives.
-- **docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md** — what we still don't know about traditional Welsh, written to be handed to speakers. The 41–99 connective is answered and 1–100 is live; what is still open is spot-checking the block that just went live, the forms resting on one witness, 120, zero, and the ordinals.
+- **docs/plans/welsh-traditional-numbers.md** — the design behind numeral systems and notes, phase by phase, with the rejected alternatives, each review round's findings, and a "What is still open" list at the foot. There is deliberately **no** standing questions-for-speakers document: the one that existed went stale the moment a round answered it, and the `/cy/learn` page now points speakers at the repository instead.
 - **docs/plans/welsh-ordinals.md** — the next piece: dates need ordinals and the site drills cardinals only. Not started; it needs a prompt-override capability (`13eg` on the card) and data no rule can safely produce.
 
 ## Adding Number Practice (a new language)

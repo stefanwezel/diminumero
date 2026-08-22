@@ -52,7 +52,9 @@ The data. Ordinals are **not** safely derivable from the cardinals by rule:
 
 A generator could produce the regular middle of that and would be wrong at both ends,
 confidently. So: no generated ordinal deck until speakers or a reference work supply the
-irregular spine. Question 9 in `docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md` is the ask.
+irregular spine. What to ask: which ordinals a learner actually needs (1st-31st only?),
+whether the feminine forms matter for dates, and whether `yr unfed ar hugain` is the
+everyday way to say 21st.
 
 ## Scope for a first version
 
@@ -68,7 +70,8 @@ irregular spine. Question 9 in `docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md` is the as
 
 ## Order of work
 
-1. Ask (question 9 of the review round). Nothing below can start honestly without it.
+1. Ask — the three questions under "What we do not have" above. Nothing below can start
+   honestly without them.
 2. `PROMPTS` support in the deck loader + the quiz templates, defaulted so no other
    language notices. Test: a language without it renders exactly as before.
 3. `languages/cy/numbers_ordinal.py` with provenance per form, gated at `(1, 31)`.

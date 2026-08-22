@@ -18,9 +18,9 @@ Two of the three things this change needs are **not Welsh features**:
 Only the traditional number data itself is Welsh-specific. The plan is built that way.
 
 **Ground rule applied throughout: no Welsh form is invented here.** Forms not stated
-verbatim in the review thread are recorded as gaps in
-[`docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md`](../QUESTIONS-FOR-NATIVE-SPEAKERS.md), never
-guessed into a data file.
+verbatim in the review thread are recorded as gaps in `docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md`,
+never guessed into a data file. (That file is gone — see "What is still open" at the foot
+of this document for why, and for what it was tracking.)
 
 ---
 
@@ -774,6 +774,10 @@ translate one key at a time.
 
 ## Part 4 — Contributor walkthroughs
 
+> **Superseded.** These were written against the `{number: None}` skeleton the plan
+> proposed; the deck ended up provenance-tracked (`FORMS`, a list of entries per number),
+> and the live walkthrough now lives in ADD_NUMBERS.md. Kept for the reasoning.
+
 ### A. Adding or fixing a traditional Welsh number
 
 1. Open <https://github.com/stefanwezel/diminumero/blob/main/languages/cy/numbers_traditional.py>.
@@ -884,7 +888,7 @@ task, which is the standard the deck format does not quite meet.
 ## Part 6 — Open questions
 
 Blocking Phase 4, in priority order, with the full text to post back to the sub in
-[`docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md`](../QUESTIONS-FOR-NATIVE-SPEAKERS.md):
+`docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md` (since deleted — see the foot of this document):
 
 1. **41–99** — the largest gap; no forms were given for 41–49, 51–59, 61–69, 71–79, 81–89,
    91–99. Only `pump ar ddeugain` (45) appeared, inside a counter-example.
@@ -1089,13 +1093,16 @@ notice no longer applies. Still absent: **0** and **120**, whose forms remain gu
   run. The standing `[DISAGREES]` line is gone; 50 (`hanner cant` over the regular
   `deg a deugain`) is now the only divergence the generator reports, and it is a variant,
   not a conflict.
-- **41 carries `deugain ac un`** as a reversed-order variant, with the regular form first
-  so it stays the one taught.
-- **A provenance caution, recorded in the questions doc**: two public lists share a
-  distinctive arithmetic error at 34 (`pedwar deg ar hugain`, which computes to 60). They
-  are one source with a copy. Neither ever entered this dataset — our tiers count people
-  in the thread — but the generator's docstring now names the trap so nobody "corrects"
-  our 34 to match them.
+- **41 carries `deugain ac un`** as a reversed-order variant — a third pattern in
+  circulation, given by Welsh Wikipedia beside the regular `un a deugain` — with the
+  regular form first so it stays the one taught.
+- **A provenance caution**: Omniglot and Parallel.cymru both give 34 as
+  `pedwar deg ar hugain`, which computes to 60 (the traditional form is
+  `pedwar ar ddeg ar hugain`, 14 + 20), and their 40–100 rows are otherwise identical in
+  content and ordering. Two sources sharing a distinctive arithmetic error are one source
+  with a copy. Neither ever entered this dataset — our tiers count people in the thread —
+  but the generator's docstring now names the trap so nobody "corrects" our 34 to match
+  them. The general lesson: appearing in two places online is not corroboration.
 
 ### Usage weighting
 
@@ -1118,3 +1125,28 @@ removed, and a test pins that.
   `docs/plans/welsh-ordinals.md`.
 - **Worksheet weighting.** A sheet is a deterministic shuffle of its range; weighting it
   would change what a reprinted seed produces. Left alone.
+
+### What is still open
+
+`docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md` used to carry this list. It was written for one
+review round, went stale the moment the round answered it, and a document that must be
+rewritten after every reply is a document that will eventually be wrong in public — so it
+is deleted, and the Learn page now points speakers at the repository itself. What it was
+tracking, kept here:
+
+- **Spot-check 22-99.** Served on the strength of a documented rule; no speaker has
+  checked the individual forms. `uv run tools/export_unconfirmed_forms.py --source
+  attested` prints them as a review table.
+- **Twelve forms rest on one witness** (12-16, 30, 40, 50, 60, 80, 90, 100). A second
+  person agreeing is what moves one to `confirmed`; `--source single` prints them.
+- **0 and 120** are still guesses and still withheld — `dim`/`sero`, and
+  `chwe ugain`/`chweugain`.
+- **Do `pump` and `chwech` shorten** to `pum`/`chwe` inside these compounds?
+- **`deuddeg` vs `deudeg`** for 12: we teach the first and carry the second as
+  colloquial. Right way round?
+- **Is the usage weighting the right shape?** It encodes one respondent's account of what
+  is alive.
+- **Masculine-by-default** in a bare-number drill, where there is no noun to agree with.
+- **`Degol` / `Ugeiniol`** as the button labels.
+- **Every note in `languages/cy/notes.toml`** is `reviewed = false` until a speaker signs
+  it off; `--include-notes` adds them to the same table.

@@ -52,7 +52,10 @@ which answered the connective question with published sources rather than
 recollection — see languages/provenance.py and the generator's docstring. That
 round settled 41-99 and opened 22-99 to learners.
 
-The questions still open are in docs/QUESTIONS-FOR-NATIVE-SPEAKERS.md.
+What is still open — the forms resting on one witness, the 22-99 block nobody has
+spot-checked, 0 and 120 — is listed at the foot of
+docs/plans/welsh-traditional-numbers.md, and dumped as a review table by
+tools/export_unconfirmed_forms.py.
 """
 
 from ..provenance import build_numbers, merge_forms
