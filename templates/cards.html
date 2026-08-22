@@ -118,26 +118,6 @@
                  id="cards-dashboard-panel"
                  aria-labelledby="cards-dashboard-toggle">
             {% if stats.total_attempts > 0 %}
-            <div class="cards-dashboard-charts"
-                 data-i18n-bucket-weak="{{ get_text('cards_dashboard_bucket_weak') }}"
-                 data-i18n-bucket-medium="{{ get_text('cards_dashboard_bucket_medium') }}"
-                 data-i18n-bucket-strong="{{ get_text('cards_dashboard_bucket_strong') }}"
-                 data-i18n-bucket-unpracticed="{{ get_text('cards_dashboard_bucket_unpracticed') }}"
-                 data-i18n-top-weak="{{ get_text('cards_dashboard_top_weak') }}">
-                <div class="cards-dashboard-chart">
-                    <h3 class="cards-dashboard-chart-title">{{ get_text('cards_dashboard_distribution') }}</h3>
-                    <div class="cards-dashboard-chart-canvas-wrap">
-                        <canvas id="cards-distribution-chart"></canvas>
-                    </div>
-                </div>
-                <div class="cards-dashboard-chart">
-                    <h3 class="cards-dashboard-chart-title">{{ get_text('cards_dashboard_top_weak') }}</h3>
-                    <div class="cards-dashboard-chart-canvas-wrap">
-                        <canvas id="cards-weakest-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
             <div class="cards-dashboard-toplists">
                 {# Strongest is only shown once the user has cleared at least one
                    of the earlier sections (new / weak / needs work). #}
@@ -191,7 +171,6 @@
                 {% endif %}
                 {% endfor %}
             </div>
-            <script type="application/json" id="cards-stats-data">{{ stats_json|safe }}</script>
             {% else %}
             <p class="cards-dashboard-empty-hint">{{ get_text('cards_dashboard_empty_practice_hint') }}</p>
             {% endif %}
@@ -323,31 +302,12 @@
 <script src="{{ url_for('static', filename='js/cards_practice_prefs.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_sort.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/cards_share.js') }}" defer></script>
-{% if cards and stats.total_attempts > 0 %}
-<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
-<script src="{{ url_for('static', filename='js/cards_dashboard.js') }}" defer></script>
-{% endif %}
 {% if cards %}
 <script>
 (function(){
     var btn=document.getElementById('cards-dashboard-toggle');
     var panel=document.getElementById('cards-dashboard-panel');
     if(!btn||!panel)return;
-    // The panel is open by default, so draw the charts on load. Wait for
-    // DOMContentLoaded so the deferred cards_dashboard.js has registered
-    // window.__initCardsDashboardCharts before we call it.
-    if(btn.getAttribute('aria-expanded')==='true'){
-        var drawCharts=function(){
-            if(typeof window.__initCardsDashboardCharts==='function'){
-                window.__initCardsDashboardCharts();
-            }
-        };
-        if(document.readyState==='loading'){
-            document.addEventListener('DOMContentLoaded',drawCharts);
-        }else{
-            drawCharts();
-        }
-    }
     btn.addEventListener('click',function(){
         var open=btn.getAttribute('aria-expanded')==='true';
         if(open){
@@ -358,11 +318,6 @@
             btn.setAttribute('aria-expanded','true');
             panel.hidden=false;
             btn.classList.add('cards-dashboard-toggle-open');
-            if(typeof window.__initCardsDashboardCharts==='function'){
-                // Defer one frame so the panel has real dimensions before
-                // Chart.js measures the canvas.
-                requestAnimationFrame(function(){window.__initCardsDashboardCharts();});
-            }
         }
     });
 

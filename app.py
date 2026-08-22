@@ -2291,7 +2291,7 @@ def cards():
         practice_numbers_url = url_for("mode_selection", lang_code=practice_lang)
     else:
         practice_numbers_url = url_for("index")
-    stats, stats_json = _build_cards_dashboard_stats(user_cards)
+    stats = _build_cards_dashboard_stats(user_cards)
     importable = _importable_card_verbs(_current_user_sub(), user_cards)
     importable_verbs = {
         card.id: {"lang": lang, "infinitive": inf} for card, lang, inf in importable
@@ -2304,20 +2304,13 @@ def cards():
         practice_numbers_url=practice_numbers_url,
         get_text=get_text,
         stats=stats,
-        stats_json=stats_json,
         importable_verbs=importable_verbs,
         importable_verb_count=len(importable),
     )
 
 
-def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
-    """Derive aggregate dashboard stats from a user's cards.
-
-    Returns (stats_dict_for_jinja, json_blob_for_chart_js). The JSON blob is
-    safe to drop into a <script type="application/json"> tag — Jinja's default
-    autoescaping is bypassed for that element type, so we emit it ourselves
-    with HTML-safe escaping.
-    """
+def _build_cards_dashboard_stats(user_cards: list[Card]) -> dict:
+    """Derive aggregate dashboard stats from a user's cards."""
     total_cards = len(user_cards)
     total_attempts = sum(c.times_practiced for c in user_cards)
     total_correct = sum(c.times_correct for c in user_cards)
@@ -2350,10 +2343,6 @@ def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
     rng.shuffle(needs_work)
     rng.shuffle(strongest)
 
-    # The "Top weak" bar chart stays a genuine ranking of the lowest scorers,
-    # independent of the shuffled preview lists above.
-    chart_weakest = sorted(practiced, key=lambda c: (c.score, -c.times_practiced))[:5]
-
     stats = {
         "total_cards": total_cards,
         "total_attempts": total_attempts,
@@ -2367,22 +2356,7 @@ def _build_cards_dashboard_stats(user_cards: list[Card]) -> tuple[dict, str]:
         "strongest": strongest,
     }
 
-    # Chart.js payload — keep it minimal and JSON-safe.
-    json_payload = {
-        "buckets": buckets,
-        "weakest": [
-            {
-                "id": c.id,
-                "front": c.front,
-                "back": c.back,
-                "score": c.score,
-                "times_practiced": c.times_practiced,
-            }
-            for c in chart_weakest
-        ],
-    }
-    stats_json = json.dumps(json_payload).replace("</", "<\\/")
-    return stats, stats_json
+    return stats
 
 
 @app.route("/cards", methods=["POST"])

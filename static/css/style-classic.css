@@ -3389,38 +3389,6 @@ html {
     font-size: 0.9em;
 }
 
-.cards-dashboard-charts {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin: 20px 0 24px;
-}
-
-.cards-dashboard-chart {
-    padding: 16px;
-    background-color: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-}
-
-.cards-dashboard-chart-title {
-    margin: 0 0 12px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #1e293b;
-}
-
-.cards-dashboard-chart-canvas-wrap {
-    position: relative;
-    height: 240px;
-}
-
-.cards-dashboard-chart-canvas-wrap canvas {
-    max-width: 100%;
-    height: 100% !important;
-    width: 100% !important;
-}
-
 .cards-dashboard-toplists {
     display: grid;
     /* minmax(0, 1fr) (not the default minmax(auto, 1fr)) keeps every column the
@@ -3570,9 +3538,6 @@ html {
 }
 
 @media (max-width: 800px) {
-    .cards-dashboard-charts {
-        grid-template-columns: 1fr;
-    }
     .cards-dashboard-toplists {
         grid-template-columns: 1fr;
     }

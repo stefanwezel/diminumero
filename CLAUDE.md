@@ -175,7 +175,7 @@ Auth (Auth0 OIDC):
 - `/logout` — Clear local session, then bounce through `https://<AUTH0_DOMAIN>/v2/logout`
 
 Cards (login required; ownership enforced by `Card.user_sub == session["user"]["sub"]`):
-- `/cards` — List + create form + foldable performance dashboard (GET); `?edit=<id>` opens an edit row. Dashboard stats (totals, accuracy, buckets, weak/strong tops) are built server-side by `_build_cards_dashboard_stats()` and also embedded as JSON for Chart.js.
+- `/cards` — List + create form + foldable performance dashboard (GET); `?edit=<id>` opens an edit row. Dashboard stats (totals, accuracy, buckets, weak/strong tops) are built server-side by `_build_cards_dashboard_stats()` and rendered as recap lists — there are no charts.
 - `/cards` (POST), `/cards/<id>/edit`, `/cards/<id>/delete` — Form-based CRUD (used as fallbacks)
 - `/api/cards` (POST), `/api/cards/<id>` (PATCH/DELETE) — JSON CRUD used by `static/js/cards.js` for in-place updates
 - `/api/cards/share` — POST: mint a `DeckShare` token containing a JSON snapshot of the current deck; returns the shareable URL

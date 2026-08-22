@@ -1091,21 +1091,15 @@ class TestCardsDashboard:
         body = client.get("/cards").data.decode("utf-8")
         assert "cards-dashboard-section" in body
         assert "cards-dashboard-empty-hint" in body
-        # No charts when there are no attempts yet.
-        assert 'id="cards-distribution-chart"' not in body
-        assert 'id="cards-weakest-chart"' not in body
-        # Chart.js bundle should not be loaded yet either.
-        assert "chart.umd.min.js" not in body
+        # No recap lists until something has been practiced.
+        assert "cards-dashboard-toplists" not in body
 
-    def test_dashboard_renders_charts_after_practice(self, client):
+    def test_dashboard_renders_toplists_after_practice(self, client):
         _make_card_with_history("weak1", "back1", "0000000000")
         login(client)
         body = client.get("/cards").data.decode("utf-8")
-        assert 'id="cards-distribution-chart"' in body
-        assert 'id="cards-weakest-chart"' in body
-        assert "chart.umd.min.js" in body
-        assert "cards_dashboard.js" in body
-        assert 'id="cards-stats-data"' in body
+        assert "cards-dashboard-toplists" in body
+        assert "cards-dashboard-empty-hint" not in body
 
     def test_buckets_classify_scores_correctly(self, client):
         with flask_app.app_context():
@@ -1143,7 +1137,7 @@ class TestCardsDashboard:
                     times_correct=0,
                 ),
             ]
-        stats, _ = _build_cards_dashboard_stats(cards)
+        stats = _build_cards_dashboard_stats(cards)
         assert stats["buckets"] == {
             "weak": 1,
             "medium": 1,
@@ -1187,7 +1181,7 @@ class TestCardsDashboard:
                     times_correct=0,
                 )
             )
-        stats, stats_json = _build_cards_dashboard_stats(cards)
+        stats = _build_cards_dashboard_stats(cards)
 
         # The three dashboard lists are the three non-unpracticed buckets, so
         # each card lands in exactly one (order within a list is randomised).
@@ -1200,22 +1194,13 @@ class TestCardsDashboard:
         # The unpracticed card is the sole member of the "new" list.
         assert [c.front for c in stats["new_cards"]] == ["u"]
 
-        # JSON chart payload still ranks the genuine weakest, capped at 5.
-        payload = json.loads(stats_json)
-        assert set(payload.keys()) == {"buckets", "weakest"}
-        assert len(payload["weakest"]) == 5
-        assert payload["weakest"][0]["score"] == 0.0
-
-    def test_stats_json_escapes_closing_script_tag(self, client):
-        # A card front containing "</script>" must not be able to break out
-        # of the <script type="application/json"> block.
-        _make_card_with_history("</script><b>x</b>", "back", "0000000000")
+    def test_card_text_is_escaped_on_the_dashboard(self, client):
+        # A card front containing markup must render as text, not as HTML.
+        _make_card_with_history("<b>x</b>", "back", "0000000000")
         login(client)
         body = client.get("/cards").data.decode("utf-8")
-        # Inside the JSON block, the slash should be escaped.
-        json_block = body.split('id="cards-stats-data">', 1)[1].split("</script>", 1)[0]
-        assert "</script" not in json_block
-        assert "<\\/script" in json_block or "<\\/" in json_block
+        assert "<b>x</b>" not in body
+        assert "&lt;b&gt;x&lt;/b&gt;" in body
 
     def test_toggle_button_rendered_when_cards_exist(self, client):
         # Toggle sits in the "My Cards (n)" heading row and controls the
