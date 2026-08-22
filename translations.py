@@ -454,6 +454,27 @@ TRANSLATIONS = {
         "conjugate_sync_skip_btn": "Skip",
         "conjugate_sync_create_btn": "Create card",
         "conjugate_sync_done_toast": "Added {n} card(s) to your deck.",
+        # Numeral systems (a language may have more than one; see ADD_NUMBERS.md)
+        "number_system_label": "Number system",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Used for arithmetic, counting and larger amounts.",
+        "number_system_desc_cy_ugeiniol": "Used for telling the time, dates and age.",
+        "number_system_only_note": "This drill teaches the “{}” number system.",
+        "number_system_unavailable_note": "The “{}” system isn't ready for practice yet.",
+        "number_system_partial_range_note": "The “{}” system only covers {}–{}.",
+        "number_system_sparse_note": "The “{}” system has {} numbers so far, between {} and {} — speakers are still filling in the rest.",
+        "number_system_wrong_system_flash": "That's the “{}” form — this drill is asking for the “{}” form.",
+        "preset_notice_system": "That link asked for a number system this language doesn't have, so we started the usual one.",
+        "preset_share_system_label": "Number system",
+        # Per-number notes (the lightbulb)
+        "notes_toggle_label": "Show note",
+        "notes_panel_title": "Good to know",
+        "notes_untranslated": "Not translated yet — shown in the language it was written in.",
+        "notes_unreviewed": "Not yet checked by a native speaker.",
+        "notes_source_label": "Source",
+        # Partly translated interface
+        "ui_language_partial_note": "This interface is only partly translated — untranslated text is shown in English.",
     },
     "de": {
         # General
@@ -904,6 +925,27 @@ TRANSLATIONS = {
         "menu_numbers_cta": "Modus wählen",
         "menu_restructure_notice": "Wir haben dieses Menü neu geordnet — Zahlentraining, Hören, Karteikarten und Verbkonjugation haben jetzt jeweils eine eigene Kachel.",
         "menu_restructure_dismiss": "Verstanden",
+        # Zahlensysteme
+        "number_system_label": "Zahlensystem",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Wird zum Rechnen, Zählen und für größere Beträge verwendet.",
+        "number_system_desc_cy_ugeiniol": "Wird für Uhrzeit, Datum und Alter verwendet.",
+        "number_system_only_note": "Diese Übung verwendet das Zahlensystem „{}“.",
+        "number_system_unavailable_note": "Das System „{}“ steht noch nicht zum Üben bereit.",
+        "number_system_partial_range_note": "Das System „{}“ deckt nur {}–{} ab.",
+        "number_system_sparse_note": "Das System „{}“ hat bisher {} Zahlen zwischen {} und {} — der Rest wird noch von Muttersprachlern ergänzt.",
+        "number_system_wrong_system_flash": "Das ist die Form aus dem System „{}“ — gefragt ist die aus dem System „{}“.",
+        "preset_notice_system": "Der Link wollte ein Zahlensystem, das es für diese Sprache nicht gibt — wir haben das übliche gestartet.",
+        "preset_share_system_label": "Zahlensystem",
+        # Hinweise zu einzelnen Zahlen (die Glühbirne)
+        "notes_toggle_label": "Hinweis anzeigen",
+        "notes_panel_title": "Gut zu wissen",
+        "notes_untranslated": "Noch nicht übersetzt — wird in der Sprache angezeigt, in der er verfasst wurde.",
+        "notes_unreviewed": "Noch nicht von einer muttersprachlichen Person geprüft.",
+        "notes_source_label": "Quelle",
+        # Teilweise übersetzte Oberfläche
+        "ui_language_partial_note": "Diese Oberfläche ist erst teilweise übersetzt — nicht übersetzte Texte erscheinen auf Englisch.",
     },
     "es": {
         "app_title": "diminumero",
@@ -1335,6 +1377,27 @@ TRANSLATIONS = {
         "home_conjugate_cta_login": "Inicia sesión para probarlo",
         "home_conjugate_cta_open": "Abrir conjugación",
         "home_conjugate_modal_title": "¿Qué idioma quieres practicar?",
+        # Sistemas numéricos
+        "number_system_label": "Sistema numérico",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Se usa para calcular, contar y para cantidades grandes.",
+        "number_system_desc_cy_ugeiniol": "Se usa para la hora, las fechas y la edad.",
+        "number_system_only_note": "Este ejercicio enseña el sistema numérico «{}».",
+        "number_system_unavailable_note": "El sistema «{}» todavía no está listo para practicar.",
+        "number_system_partial_range_note": "El sistema «{}» solo cubre del {} al {}.",
+        "number_system_sparse_note": "El sistema «{}» tiene {} números por ahora, entre el {} y el {}: los hablantes aún están completando el resto.",
+        "number_system_wrong_system_flash": "Esa es la forma del sistema «{}»: aquí se pide la del sistema «{}».",
+        "preset_notice_system": "Ese enlace pedía un sistema numérico que este idioma no tiene, así que empezamos con el habitual.",
+        "preset_share_system_label": "Sistema numérico",
+        # Notas por número (la bombilla)
+        "notes_toggle_label": "Mostrar la nota",
+        "notes_panel_title": "Bueno saberlo",
+        "notes_untranslated": "Todavía sin traducir: se muestra en el idioma en que se escribió.",
+        "notes_unreviewed": "Todavía sin revisar por un hablante nativo.",
+        "notes_source_label": "Fuente",
+        # Interfaz traducida en parte
+        "ui_language_partial_note": "Esta interfaz solo está traducida en parte: el texto sin traducir se muestra en inglés.",
     },
     "it": {
         "app_title": "diminumero",
@@ -1765,6 +1828,27 @@ TRANSLATIONS = {
         "conjugate_sync_skip_btn": "Salta",
         "conjugate_sync_create_btn": "Crea scheda",
         "conjugate_sync_done_toast": "Aggiunte {n} schede al tuo mazzo.",
+        # Sistemi numerici
+        "number_system_label": "Sistema numerico",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Si usa per i calcoli, per contare e per le quantità grandi.",
+        "number_system_desc_cy_ugeiniol": "Si usa per l'ora, le date e l'età.",
+        "number_system_only_note": "Questo esercizio insegna il sistema numerico «{}».",
+        "number_system_unavailable_note": "Il sistema «{}» non è ancora pronto per l'esercizio.",
+        "number_system_partial_range_note": "Il sistema «{}» copre solo da {} a {}.",
+        "number_system_sparse_note": "Il sistema «{}» ha per ora {} numeri, tra {} e {}: i madrelingua stanno ancora completando il resto.",
+        "number_system_wrong_system_flash": "Questa è la forma del sistema «{}»: qui si chiede quella del sistema «{}».",
+        "preset_notice_system": "Quel link chiedeva un sistema numerico che questa lingua non ha, quindi abbiamo avviato quello solito.",
+        "preset_share_system_label": "Sistema numerico",
+        # Note sui singoli numeri (la lampadina)
+        "notes_toggle_label": "Mostra la nota",
+        "notes_panel_title": "Buono a sapersi",
+        "notes_untranslated": "Non ancora tradotto: mostrato nella lingua in cui è stato scritto.",
+        "notes_unreviewed": "Non ancora verificato da un madrelingua.",
+        "notes_source_label": "Fonte",
+        # Interfaccia tradotta solo in parte
+        "ui_language_partial_note": "Questa interfaccia è tradotta solo in parte: il testo non tradotto è mostrato in inglese.",
     },
     "fr": {
         "app_title": "diminumero",
@@ -2195,6 +2279,27 @@ TRANSLATIONS = {
         "conjugate_sync_skip_btn": "Passer",
         "conjugate_sync_create_btn": "Créer la carte",
         "conjugate_sync_done_toast": "{n} carte(s) ajoutée(s) à votre paquet.",
+        # Systèmes de numération
+        "number_system_label": "Système de numération",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Sert au calcul, au comptage et aux grandes quantités.",
+        "number_system_desc_cy_ugeiniol": "Sert pour l'heure, les dates et l'âge.",
+        "number_system_only_note": "Cet exercice enseigne le système de numération « {} ».",
+        "number_system_unavailable_note": "Le système « {} » n'est pas encore prêt pour l'entraînement.",
+        "number_system_partial_range_note": "Le système « {} » ne couvre que {}–{}.",
+        "number_system_sparse_note": "Le système « {} » compte {} nombres pour l'instant, entre {} et {} — les locuteurs complètent encore le reste.",
+        "number_system_wrong_system_flash": "C'est la forme du système « {} » : ici on demande celle du système « {} ».",
+        "preset_notice_system": "Ce lien demandait un système de numération que cette langue n'a pas ; nous avons lancé le système habituel.",
+        "preset_share_system_label": "Système de numération",
+        # Notes par nombre (l'ampoule)
+        "notes_toggle_label": "Afficher la note",
+        "notes_panel_title": "Bon à savoir",
+        "notes_untranslated": "Pas encore traduit : affiché dans la langue de rédaction.",
+        "notes_unreviewed": "Pas encore vérifié par un locuteur natif.",
+        "notes_source_label": "Source",
+        # Interface partiellement traduite
+        "ui_language_partial_note": "Cette interface n'est que partiellement traduite : le texte non traduit s'affiche en anglais.",
     },
     "pt": {
         "app_title": "diminumero",
@@ -2625,6 +2730,27 @@ TRANSLATIONS = {
         "conjugate_sync_skip_btn": "Ignorar",
         "conjugate_sync_create_btn": "Criar ficha",
         "conjugate_sync_done_toast": "Adicionada(s) {n} ficha(s) ao seu baralho.",
+        # Sistemas numéricos
+        "number_system_label": "Sistema numérico",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Usado para cálculos, contagem e quantias maiores.",
+        "number_system_desc_cy_ugeiniol": "Usado para as horas, datas e idade.",
+        "number_system_only_note": "Este exercício ensina o sistema numérico «{}».",
+        "number_system_unavailable_note": "O sistema «{}» ainda não está pronto para praticar.",
+        "number_system_partial_range_note": "O sistema «{}» cobre apenas de {} a {}.",
+        "number_system_sparse_note": "O sistema «{}» tem {} números por agora, entre {} e {} — os falantes ainda estão a completar o resto.",
+        "number_system_wrong_system_flash": "Essa é a forma do sistema «{}»: aqui pedimos a do sistema «{}».",
+        "preset_notice_system": "Esse link pediu um sistema numérico que este idioma não tem, então começámos com o habitual.",
+        "preset_share_system_label": "Sistema numérico",
+        # Notas por número (a lâmpada)
+        "notes_toggle_label": "Mostrar a nota",
+        "notes_panel_title": "Bom saber",
+        "notes_untranslated": "Ainda sem tradução: apresentado no idioma em que foi escrito.",
+        "notes_unreviewed": "Ainda não verificado por um falante nativo.",
+        "notes_source_label": "Fonte",
+        # Interface traduzida em parte
+        "ui_language_partial_note": "Esta interface está traduzida apenas em parte: o texto sem tradução aparece em inglês.",
     },
     "ar": {
         "app_title": "diminumero",
@@ -3055,6 +3181,27 @@ TRANSLATIONS = {
         "conjugate_sync_skip_btn": "تخطٍّ",
         "conjugate_sync_create_btn": "إنشاء بطاقة",
         "conjugate_sync_done_toast": "تمت إضافة {n} بطاقة إلى مجموعتك.",
+        # أنظمة الأعداد
+        "number_system_label": "نظام الأعداد",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "يُستخدم في الحساب والعدّ والمبالغ الكبيرة.",
+        "number_system_desc_cy_ugeiniol": "يُستخدم للوقت والتواريخ والعمر.",
+        "number_system_only_note": "يُعلّم هذا التمرين نظام الأعداد «{}».",
+        "number_system_unavailable_note": "نظام «{}» غير جاهز للتدريب بعد.",
+        "number_system_partial_range_note": "نظام «{}» يغطي فقط من {} إلى {}.",
+        "number_system_sparse_note": "نظام «{}» يحتوي حتى الآن على {} عددًا بين {} و{} — ما زال المتحدثون يكملون البقية.",
+        "number_system_wrong_system_flash": "هذه صيغة نظام «{}» — المطلوب هنا صيغة نظام «{}».",
+        "preset_notice_system": "طلب هذا الرابط نظام أعداد لا تملكه هذه اللغة، لذلك بدأنا بالنظام المعتاد.",
+        "preset_share_system_label": "نظام الأعداد",
+        # ملاحظات لكل رقم
+        "notes_toggle_label": "إظهار الملاحظة",
+        "notes_panel_title": "معلومة مفيدة",
+        "notes_untranslated": "لم تُترجم بعد — تظهر باللغة التي كُتبت بها.",
+        "notes_unreviewed": "لم يراجعها متحدث أصلي بعد.",
+        "notes_source_label": "المصدر",
+        # واجهة مترجمة جزئيًا
+        "ui_language_partial_note": "هذه الواجهة مترجمة جزئيًا فقط — يظهر النص غير المترجم بالإنجليزية.",
     },
     "uk": {
         "app_title": "diminumero",
@@ -3485,5 +3632,39 @@ TRANSLATIONS = {
         "conjugate_sync_skip_btn": "Пропустити",
         "conjugate_sync_create_btn": "Створити картку",
         "conjugate_sync_done_toast": "Додано карток до вашої колоди: {n}.",
+        # Системи числення
+        "number_system_label": "Система числення",
+        "number_system_name_cy_degol": "Degol",
+        "number_system_name_cy_ugeiniol": "Ugeiniol",
+        "number_system_desc_cy_degol": "Використовується для обчислень, лічби та великих сум.",
+        "number_system_desc_cy_ugeiniol": "Використовується для часу, дат і віку.",
+        "number_system_only_note": "Ця вправа навчає системи числення «{}».",
+        "number_system_unavailable_note": "Система «{}» ще не готова для практики.",
+        "number_system_partial_range_note": "Система «{}» охоплює лише {}–{}.",
+        "number_system_sparse_note": "Система «{}» наразі має {} чисел між {} і {} — носії мови ще доповнюють решту.",
+        "number_system_wrong_system_flash": "Це форма системи «{}» — тут потрібна форма системи «{}».",
+        "preset_notice_system": "Це посилання просило систему числення, якої немає в цій мові, тож ми запустили звичайну.",
+        "preset_share_system_label": "Система числення",
+        # Примітки до чисел
+        "notes_toggle_label": "Показати примітку",
+        "notes_panel_title": "Корисно знати",
+        "notes_untranslated": "Ще не перекладено — показано мовою оригіналу.",
+        "notes_unreviewed": "Ще не перевірено носієм мови.",
+        "notes_source_label": "Джерело",
+        # Частково перекладений інтерфейс
+        "ui_language_partial_note": "Цей інтерфейс перекладено лише частково — неперекладений текст показано англійською.",
     },
+    # Welsh — deliberately empty rather than pre-filled with English.
+    #
+    # get_text() falls back to English per key, so every page already works;
+    # an English string sitting under a "cy" key would instead look translated
+    # when it isn't, and nobody could tell the two apart. Add keys here as you
+    # translate them, copying the key name from the "en" dict above — a Welsh
+    # speaker can do one string at a time and each one goes live on its own.
+    #
+    # While this dict is incomplete, "cy" stays in PARTIAL_UI_LANGUAGES
+    # (config.py) and every page carries a line saying the interface is only
+    # partly translated. Removing it from that set is the last step, not the
+    # first. See ADD_UI_LANGUAGE.md.
+    "cy": {},
 }

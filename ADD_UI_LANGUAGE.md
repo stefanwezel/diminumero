@@ -9,7 +9,11 @@ This guide explains how to add a new **UI language** — the language used for t
 | UI language | The app shows "Start Learning" in French | `translations.py`, `config.py`, `base.html` |
 | Learning language | The user practises French numbers | `languages/config.py`, `languages/fr/` |
 
-Currently supported UI languages: English (`en`), German (`de`), Spanish (`es`), Italian (`it`), French (`fr`), Portuguese (`pt`), Arabic (`ar`), Ukrainian (`uk`).
+Currently supported UI languages: English (`en`), German (`de`), Spanish (`es`), Italian (`it`), French (`fr`), Portuguese (`pt`), Arabic (`ar`), Ukrainian (`uk`), Welsh (`cy`, **in progress**).
+
+> **You do not have to translate everything at once.** `get_text()` falls back to
+> English per key, so a locale can go live with ten strings translated and grow
+> from there. See [Translating incrementally](#translating-incrementally).
 
 ---
 
@@ -17,14 +21,23 @@ Currently supported UI languages: English (`en`), German (`de`), Spanish (`es`),
 
 ### 1. `config.py` (root)
 
-Add the new code to `SUPPORTED_UI_LANGUAGES`. If it is a right-to-left language, also add it to `RTL_UI_LANGUAGES`:
+Add the new code to `SUPPORTED_UI_LANGUAGES`. While the translation is still incomplete, also add it to `PARTIAL_UI_LANGUAGES`. If it is a right-to-left language, add it to `RTL_UI_LANGUAGES` too:
 
 ```python
-SUPPORTED_UI_LANGUAGES = {"en", "de", "es", "it", "fr", "pt", "ar", "uk", "xx"}
+SUPPORTED_UI_LANGUAGES = {"en", "de", "es", "it", "fr", "pt", "ar", "uk", "cy", "xx"}
+
+# while it is still being translated:
+PARTIAL_UI_LANGUAGES = {"cy", "xx"}
 
 # only if RTL:
 RTL_UI_LANGUAGES = {"ar", "xx"}
 ```
+
+`PARTIAL_UI_LANGUAGES` puts a short line at the top of every page saying the
+interface is only partly translated and the rest is English. That is the honest
+state, and it is better than a page that quietly looks finished. Remove the code
+from the set when the dict is complete — a test (`tests/test_translations.py`)
+checks that the set and the actual coverage agree, in both directions.
 
 The `RTL_UI_LANGUAGES` set drives the `dir` attribute on `<html>`. The CSS already contains `[dir="rtl"]` rules that mirror the globe button and dropdown.
 
@@ -93,7 +106,19 @@ Add a tuple to the `ui_langs` list inside the language switcher block:
 
 Use the language's own native name as the label (e.g. `'Français'` not `'French'`).
 
-### 5. Learn page templates (optional)
+### 5. `app.py` — `OG_LOCALE_MAP`
+
+Add the locale used in the `og:locale` meta tag. Without this the page claims
+`en_US` to every social network and crawler, whatever the interface says:
+
+```python
+OG_LOCALE_MAP = {
+    ...
+    "xx": "xx_XX",   # e.g. "cy": "cy_GB"
+}
+```
+
+### 6. Learn page templates (optional)
 
 The `learn()` route generates template names as `learn_{lang_code}_{ui_lang}.html` and falls back to `learn_{lang_code}_en.html` if the UI-language-specific file doesn't exist. You don't *have* to create translated learn templates — the English fallback works automatically. If you do want translated learn pages, create one file per learning language that has learn materials:
 
@@ -102,6 +127,22 @@ templates/learn_es_xx.html
 templates/learn_fr_xx.html
 ... (one per language in the has_learn_materials set)
 ```
+
+---
+
+## Translating incrementally
+
+A locale does **not** have to be complete to be useful. `get_text()` falls back
+to English for any key a locale is missing (`app.py`), so:
+
+1. add the code to `SUPPORTED_UI_LANGUAGES` **and** `PARTIAL_UI_LANGUAGES`;
+2. add an empty (or nearly empty) dict to `translations.py`;
+3. translate keys one at a time — each one goes live on its own.
+
+Welsh (`cy`) is set up exactly this way today: the dict is deliberately empty
+rather than pre-filled with English strings, because a copy of the English text
+under a `cy` key looks translated and nobody can tell the difference afterwards.
+Copy the key name from the `"en"` dict, translate the value, open a PR.
 
 ---
 

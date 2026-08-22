@@ -322,3 +322,43 @@ class TestNumbersDataIntegrity:
             assert "  " not in spanish
             # Only lowercase (Spanish numbers are lowercase)
             assert spanish == spanish.lower()
+
+
+class TestUsageWeights:
+    """A deck may say some of its numbers are worth asking more than others.
+
+    Traditional Welsh is the case: it holds 1-100, but dates keep 1-31 in daily
+    use while `pedwar ar bymtheg ar hugain` (39) is a museum piece.
+    """
+
+    def test_a_zero_weight_number_is_never_drawn(self):
+        numbers = {1: "uno", 2: "dos"}
+        for _ in range(30):
+            number, _ = quiz_logic.get_random_question(
+                numbers, usage_weights={1: 1.0, 2: 0.0}
+            )
+            assert number == 1
+
+    def test_omitted_numbers_keep_full_weight(self):
+        """A partial map must not silently mute everything it forgot."""
+        numbers = {1: "uno", 2: "dos"}
+        drawn = {
+            quiz_logic.get_random_question(numbers, usage_weights={1: 1.0})[0]
+            for _ in range(60)
+        }
+        assert drawn == {1, 2}
+
+    def test_all_zero_weights_still_return_a_question(self):
+        """A bad map costs the weighting, not the drill."""
+        numbers = {1: "uno", 2: "dos"}
+        number, answer = quiz_logic.get_random_question(
+            numbers, usage_weights={1: 0.0, 2: 0.0}
+        )
+        assert number in numbers
+        assert answer == numbers[number]
+
+    def test_no_weights_leaves_the_draw_untouched(self):
+        drawn = {
+            quiz_logic.get_random_question({1: "uno", 2: "dos"})[0] for _ in range(60)
+        }
+        assert drawn == {1, 2}

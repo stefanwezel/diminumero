@@ -77,6 +77,7 @@
         <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
         <div class="reveal-modal-answer">{{ number }}</div>
         <div class="reveal-modal-subanswer">{{ correct_answer }}</div>
+        {% include '_number_notes.html' %}
         <form action="{{ url_for('listen_quiz', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions" data-listen-pjax>
             <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next" autofocus>
                 {{ get_text('cards_reveal_next_btn') }}
@@ -89,4 +90,5 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% if notes %}<script src="{{ url_for('static', filename='js/number_notes.js') }}"></script>{% endif %}
 {% endblock %}

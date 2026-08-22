@@ -401,3 +401,46 @@ body.worksheet-body {
         text-decoration: none;
     }
 }
+
+/* Notes on the answer key. Printed open — paper has nothing to click — and
+   only ever on the key, which already carries every answer. */
+.ws-notes {
+    margin-top: 8mm;
+    padding-top: 4mm;
+    border-top: 1pt solid #000;
+    break-inside: avoid;
+}
+.ws-notes .number-notes-title {
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2mm;
+}
+.ws-notes .number-note + .number-note {
+    margin-top: 3mm;
+}
+.ws-notes .number-note-text {
+    margin: 0;
+    font-size: 10pt;
+    line-height: 1.4;
+}
+.ws-notes .number-note-examples {
+    margin: 1mm 0 0;
+    padding-left: 6mm;
+    font-size: 9.5pt;
+}
+.ws-notes .number-note-phrase {
+    font-weight: 700;
+}
+.ws-notes .number-note-gloss::before {
+    content: " — ";
+}
+.ws-notes .number-note-meta {
+    margin: 1mm 0 0;
+    font-size: 8pt;
+}
+.ws-notes .number-note-flag,
+.ws-notes .number-note-source {
+    margin-right: 3mm;
+}

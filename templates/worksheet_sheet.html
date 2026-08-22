@@ -113,6 +113,16 @@
         {% endfor %}
     </ol>
 
+    {# Notes ride on the key, never on the exercise side: this page already
+       carries every answer, so nothing here can give one away. Printed open —
+       a paper sheet has nothing to click. #}
+    {% if notes %}
+    <section class="ws-notes">
+        {% set notes_static = True %}
+        {% include "_number_notes.html" %}
+    </section>
+    {% endif %}
+
     {% include "_worksheet_footer.html" %}
 </article>
 

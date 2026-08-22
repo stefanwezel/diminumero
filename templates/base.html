@@ -150,6 +150,7 @@
                 ('pt', '🇧🇷', 'Português'),
                 ('ar', '🇸🇦', 'العربية'),
                 ('uk', '🇺🇦', 'Українська'),
+                ('cy', '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'Cymraeg'),
             ] %}
             {% for code, flag, label in ui_langs %}
             <a href="{{ url_for('set_language', lang=code) }}"
@@ -167,6 +168,12 @@
     </div>
 
     <div class="container">
+        {# A UI language that is still being translated says so, rather than
+           serving English under its own name and letting the reader wonder.
+           Empty for every finished locale. #}
+        {% if ui_language_partial %}
+        <p class="site-note site-note-partial" role="status">{{ get_text('ui_language_partial_note') }}</p>
+        {% endif %}
         {% include "_preset_notice.html" %}
         {% block content %}{% endblock %}
 

@@ -27,7 +27,19 @@ def _get_magnitude_band(num):
         return 4
 
 
-def get_random_question(numbers_dict, exclude_numbers=None, magnitude_level=1):
+def spans_multiple_magnitudes(numbers_dict):
+    """Whether a deck covers more than one order-of-magnitude band.
+
+    A deck confined to one band (traditional Welsh, which stops around 100)
+    gets identical weights at every magnitude level, so the dial that sets them
+    has nothing to do and should not be shown.
+    """
+    return len({_get_magnitude_band(num) for num in numbers_dict}) > 1
+
+
+def get_random_question(
+    numbers_dict, exclude_numbers=None, magnitude_level=1, usage_weights=None
+):
     """
     Get a random number from the available numbers with weighted probability.
     The magnitude_level parameter (1-5) controls how aggressively larger numbers
@@ -37,6 +49,10 @@ def get_random_question(numbers_dict, exclude_numbers=None, magnitude_level=1):
         numbers_dict: Dictionary mapping numbers to their translations
         exclude_numbers: List of numbers to exclude (already asked in this session)
         magnitude_level: Integer 1-5 controlling large-number frequency
+        usage_weights: Optional {number: multiplier} for a deck whose numbers
+            are not used equally in the language itself (traditional Welsh
+            drills dates hard and museum pieces rarely). Multiplied into the
+            magnitude weight; a number the map omits keeps weight 1.0.
 
     Returns:
         Tuple of (number, correct_answer)
@@ -55,12 +71,20 @@ def get_random_question(numbers_dict, exclude_numbers=None, magnitude_level=1):
     # Look up decay factor; invalid levels fall back to 10 (same as level 1)
     decay = MAGNITUDE_DECAY_FACTORS.get(magnitude_level, 10)
 
-    # Calculate weights: weight = (1 / decay) ^ band
+    # Calculate weights: weight = (1 / decay) ^ band, times how much this deck
+    # says the number is worth asking at all.
     weights = []
     for num in available_numbers:
         band = _get_magnitude_band(num)
         weight = (1 / decay) ** band if decay > 0 else 1.0
+        if usage_weights:
+            weight *= usage_weights.get(num, 1.0)
         weights.append(weight)
+
+    # A usage map that zeroes out everything still has to return a question:
+    # fall back to the unweighted draw rather than raising on the learner.
+    if sum(weights) <= 0:
+        weights = None
 
     # Re-seed random with fresh entropy for each call
     random.seed(secrets.randbits(128))
@@ -94,6 +118,17 @@ def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
 
     # Extract only answers
     wrong_answers = [answer for num, answer in same_magnitude_numbers]
+
+    # A sparse deck may not have three numbers of the same digit length — a
+    # deck capped at 100 has exactly one three-digit number — which would leave
+    # the question with fewer than four options. Top up from the rest of the
+    # deck so the shape of the question never depends on how full the deck is.
+    if len(wrong_answers) < 3:
+        wrong_answers += [
+            answer
+            for num, answer in numbers_dict.items()
+            if num != correct_number and len(str(num)) != digit_length
+        ]
 
     # Use secrets for cryptographically secure random selection
     selected_wrong = []

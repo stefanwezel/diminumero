@@ -14,6 +14,9 @@ An interactive web application to practice number translations in multiple langu
 ## ✨ Features
 
 - **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Number Practice](ADD_NUMBERS.md))
+- **More than one numeral system per language**: a language can declare several ways of saying its numbers — Welsh decimal vs traditional/vigesimal is the first — with a toggle that only appears once the second system's data is complete, and never appears at all for the languages that have one (see [ADD_NUMBERS.md](ADD_NUMBERS.md#languages-with-more-than-one-numeral-system))
+- **Provenance-tracked number data**: forms assembled from public review carry where they came from — confirmed by two or more speakers, said by one, or derived from a grammatical rule. Rule-derived forms are committed but **never shown to a learner** (`SERVE_RECONSTRUCTED`); the drill skips those numbers rather than teach an unverified guess, and `tools/export_unconfirmed_forms.py` turns them into a review table to get them checked
+- **Per-number notes**: a lightbulb next to a number reveals a short fact about it (`deg` → `deng` before m-, German units-before-tens, French `quatre-vingts`). Notes live in plain `notes.toml` files anyone can edit in the browser, and never appear next to a question the learner hasn't answered yet (see [ADD_NOTES.md](ADD_NOTES.md))
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
 - **Four Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), Hardcore (stricter validation), and Listening (hear a spoken number and type the digits)

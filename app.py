@@ -46,10 +46,12 @@ from config import (
     SPEED_BONUS_TIME_ADVANCED,
     SPEED_BONUS_TIME_HARDCORE,
     SUPPORTED_UI_LANGUAGES,
+    PARTIAL_UI_LANGUAGES,
     RTL_UI_LANGUAGES,
 )
 from languages import (
     AVAILABLE_LANGUAGES,
+    get_default_number_system,
     get_feedback_expression,
     get_language_numbers,
     get_language_ui_description,
@@ -58,8 +60,14 @@ from languages import (
     get_languages_with_conjugation,
     get_languages_with_conjugation_materials,
     get_languages_with_learn_materials,
+    get_number_system,
+    get_number_systems,
+    get_number_usage_weights,
+    get_ready_number_systems,
     is_language_ready,
+    resolve_number_system,
 )
+from languages.notes_loader import get_notes
 from translations import TRANSLATIONS
 from conjugation_config import (
     CONJ_QUESTIONS_DEFAULT,
@@ -265,6 +273,7 @@ OG_LOCALE_MAP = {
     "pt": "pt_BR",
     "ar": "ar_SA",
     "uk": "uk_UA",
+    "cy": "cy_GB",
 }
 
 
@@ -298,6 +307,9 @@ def inject_seo_context():
     return {
         "ui_language": ui_language,
         "ui_dir": "rtl" if ui_language in RTL_UI_LANGUAGES else "ltr",
+        # A locale that is still being translated is served with English
+        # fallbacks; the page says so instead of pretending to be finished.
+        "ui_language_partial": ui_language in PARTIAL_UI_LANGUAGES,
         "site_url": SITE_URL,
         "canonical_url": canonical_url,
         "og_locale": og_locale,
@@ -357,6 +369,221 @@ def _conj_text(key: str, lang_code: str) -> str:
     return get_text(f"{key}_{lang_code}")
 
 
+# ===== Numeral systems =====
+# A language may have more than one way of saying its numbers — Welsh decimal
+# vs traditional, and the same shape would fit Korean Sino vs native or
+# Belgian French. The declaration lives in languages/config.py; everything
+# here is about carrying one choice through a drill and never showing a
+# control to the 14 languages that have nothing to choose between.
+
+
+def _number_system_text_key(lang_code, system_key):
+    """The i18n key suffix a system's UI strings live under.
+
+    Defaults to the system key, so a language that doesn't care gets
+    `number_system_name_<key>` for free. Welsh overrides it to name its systems
+    in Welsh (Degol / Ugeiniol) without claiming the generic `decimal` key for
+    every language that might declare one later.
+    """
+    system = get_number_system(lang_code, system_key) or {}
+    return system.get("label_key", system_key)
+
+
+def _number_system_label(lang_code, system_key):
+    """Translated name of a numeral system ('Degol', 'Ugeiniol')."""
+    key = f"number_system_name_{_number_system_text_key(lang_code, system_key)}"
+    label = get_text(key, learn_language=lang_code)
+    return system_key.capitalize() if label == key else label
+
+
+def _number_system_desc(lang_code, system_key):
+    """One-line 'what it's for' blurb, or '' when the system has none."""
+    key = f"number_system_desc_{_number_system_text_key(lang_code, system_key)}"
+    desc = get_text(key, learn_language=lang_code)
+    return "" if desc == key else desc
+
+
+def _session_number_system(lang_code, requested=None):
+    """The numeral system in force, remembered for the rest of the session.
+
+    Anything unusable — another language's system, a typo, a system whose deck
+    is still incomplete — resolves back to the language's default instead of
+    raising, the same way an unusable range in a shared link does.
+    """
+    if requested is None:
+        requested = session.get("number_system")
+    resolved = resolve_number_system(lang_code, requested)
+    session["number_system"] = resolved
+    return resolved
+
+
+def _session_usage_weights(lang_code, system_key=None):
+    """How often each number of the active deck is worth asking, or None.
+
+    Declared by the deck itself (traditional Welsh is the only one so far), so
+    every other language draws exactly as it did before.
+    """
+    if system_key is None:
+        system_key = session.get("number_system")
+    return get_number_usage_weights(
+        lang_code, resolve_number_system(lang_code, system_key)
+    )
+
+
+def _system_has_audio(lang_code, system_key):
+    """Whether the Listening quiz may use this system's deck."""
+    system = get_number_system(lang_code, system_key) or {}
+    return bool(system.get("has_audio", True))
+
+
+def _audio_number_system(lang_code):
+    """The system a Listening session runs on.
+
+    Listening MP3s are per language, not per system, so a system that declares
+    no audio (traditional Welsh) falls back to the default deck rather than
+    handing the player numbers it cannot pronounce.
+    """
+    active = _session_number_system(lang_code)
+    if _system_has_audio(lang_code, active):
+        return active
+    return get_default_number_system(lang_code)
+
+
+def _number_system_context(lang_code, active=None):
+    """What a template needs to talk about this language's numeral systems.
+
+    None when the language has fewer than two declared systems — the control,
+    the label and the notice are then structurally absent rather than rendered
+    as a dead one-option widget.
+    """
+    systems = get_number_systems(lang_code)
+    if len(systems) < 2:
+        return None
+
+    ready = {system["key"] for system in get_ready_number_systems(lang_code)}
+    active_key = resolve_number_system(lang_code, active)
+
+    options = [
+        {
+            "key": system["key"],
+            "label": _number_system_label(lang_code, system["key"]),
+            "desc": _number_system_desc(lang_code, system["key"]),
+            "active": system["key"] == active_key,
+        }
+        for system in systems
+        if system["key"] in ready
+    ]
+
+    active_label = _number_system_label(lang_code, active_key)
+    notices = []
+    if len(options) < 2:
+        # Only one system is usable, so say which one this drill is — the whole
+        # point of naming it is that a learner shouldn't have to guess.
+        notices.append(
+            get_text("number_system_only_note", learn_language=lang_code).format(
+                active_label
+            )
+        )
+        for system in systems:
+            if system["key"] in ready:
+                continue
+            notices.append(
+                get_text(
+                    "number_system_unavailable_note", learn_language=lang_code
+                ).format(_number_system_label(lang_code, system["key"]))
+            )
+
+    return {
+        "active": active_key,
+        "active_label": active_label,
+        # What the active system is *for*, so a compact picker (the menu tile)
+        # can explain the choice without repeating both blurbs.
+        "active_desc": _number_system_desc(lang_code, active_key),
+        "options": options,
+        "has_choice": len(options) > 1,
+        "notices": notices,
+    }
+
+
+def _number_system_range_notice(lang_code, system_key, numbers):
+    """Notice for a system that covers less than the language's usual range.
+
+    Two different shortfalls, and conflating them would overstate what the
+    learner is getting: a system can stop early (traditional Welsh ends around
+    100 where decimal runs to ten million), and it can also be *sparse* inside
+    its range while speakers are still filling it in. A deck of 30 numbers
+    described as "covers 1-100" would be a small lie.
+    """
+    if len(get_number_systems(lang_code)) < 2 or not numbers:
+        return None
+    default_numbers = get_language_numbers(lang_code)
+    low, high = min(numbers), max(numbers)
+    if high >= max(default_numbers):
+        return None
+
+    label = _number_system_label(lang_code, system_key)
+    if len(numbers) < high - low + 1:
+        return get_text("number_system_sparse_note", learn_language=lang_code).format(
+            label, len(numbers), low, high
+        )
+    return get_text(
+        "number_system_partial_range_note", learn_language=lang_code
+    ).format(label, low, high)
+
+
+def _other_system_answer(lang_code, number, exclude_system):
+    """The same number's word in another of this language's systems.
+
+    Used to tell a learner "that's the decimal form" instead of a bare wrong,
+    which would be false — the answer is correct Welsh, just not the Welsh this
+    drill asked for.
+    """
+    for system in get_number_systems(lang_code):
+        if system["key"] == exclude_system:
+            continue
+        try:
+            deck = get_language_numbers(lang_code, system["key"])
+        except ValueError:
+            continue
+        word = deck.get(number)
+        if word:
+            yield system["key"], word
+
+
+def _wrong_system_flash(lang_code, number, user_answer):
+    """Flash text when the answer is right in the language's *other* system."""
+    if not user_answer:
+        return None
+    active = session.get("number_system") or get_default_number_system(lang_code)
+    for system_key, word in _other_system_answer(lang_code, number, active):
+        if quiz_logic.check_answer_advanced(user_answer, word):
+            return get_text(
+                "number_system_wrong_system_flash", learn_language=lang_code
+            ).format(
+                _number_system_label(lang_code, system_key),
+                _number_system_label(lang_code, active),
+            )
+    return None
+
+
+# ===== Per-number notes =====
+
+
+def _notes_for(lang_code, numbers, when):
+    """Notes to render for one surface, in the current UI language.
+
+    `when="prompt"` is the guarded case: while the answer is still hidden, only
+    notes that declare they reveal nothing *and* have been reviewed come back.
+    """
+    return get_notes(
+        lang_code,
+        system=session.get("number_system"),
+        numbers=numbers,
+        when=when,
+        ui_lang=session.get("language", DEFAULT_UI_LANGUAGE),
+    )
+
+
 @app.route("/")
 def index():
     """Language selection landing page."""
@@ -388,16 +615,21 @@ def mode_selection(lang_code):
     # Store learning language in session
     session["learn_language"] = lang_code
 
-    # Load numbers for this language
+    # Load numbers for this language, in whichever numeral system is in force.
+    # `?system=` switches it from the menu tile's own toggle — same param, same
+    # forgiving resolution, as on the number-practice config screen below.
+    number_system = _session_number_system(lang_code, request.args.get("system"))
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = get_language_numbers(lang_code, number_system)
         total_numbers = len(numbers)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
-    has_audio_mode = lang_code in get_languages_with_audio_mode()
+    has_audio_mode = lang_code in get_languages_with_audio_mode() and _system_has_audio(
+        lang_code, number_system
+    )
     has_conjugation = lang_code in get_languages_with_conjugation()
     has_conjugation_materials = lang_code in get_languages_with_conjugation_materials()
 
@@ -412,6 +644,7 @@ def mode_selection(lang_code):
         has_conjugation=has_conjugation,
         has_conjugation_materials=has_conjugation_materials,
         magnitude_level=session.get("magnitude_level", 1),
+        number_systems=_number_system_context(lang_code, number_system),
     )
 
 
@@ -506,13 +739,31 @@ def _playable_audio_numbers(lang_code, numbers):
     return {num: word for num, word in numbers.items() if num in available}
 
 
+def _parse_preset_system(lang_code):
+    """Resolve `?system=` for a shared link. Returns (system, notice_key|None).
+
+    A link asking for a system this language doesn't have (or whose deck is
+    still incomplete) falls back to the default rather than 404-ing, so a
+    pasted URL always lands the student in a working drill.
+    """
+    raw = (request.args.get("system") or "").strip().lower()
+    resolved = resolve_number_system(lang_code, raw or None)
+    if raw and raw != resolved:
+        return resolved, "preset_notice_system"
+    return resolved, None
+
+
 def _parse_preset(lang_code, numbers):
     """Resolve the query params into a drill. Never raises.
 
-    Returns (mode, magnitude_level, num_range, notices), where notices are
-    already-translated strings for the inline banner.
+    Returns (mode, magnitude_level, num_range, system, notices), where notices
+    are already-translated strings for the inline banner.
     """
     notice_keys = []
+
+    system, system_notice = _parse_preset_system(lang_code)
+    if system_notice:
+        notice_keys.append(system_notice)
 
     raw_mode = (request.args.get("mode") or "").strip().lower()
     mode = PRESET_MODE_ALIASES.get(raw_mode, PRESET_DEFAULT_MODE)
@@ -527,32 +778,41 @@ def _parse_preset(lang_code, numbers):
     if magnitude_notice:
         notice_keys.append(magnitude_notice)
 
-    # Listening needs both the language flag and MP3s that survive the range
-    # filter — otherwise the student gets a player with nothing to play.
+    # Listening needs the language flag, a system that has audio, and MP3s that
+    # survive the range filter — otherwise the student gets a player with
+    # nothing to play.
     if mode == "audio":
         ranged = _numbers_in_range(numbers, num_range)
-        if lang_code not in get_languages_with_audio_mode() or not (
-            _playable_audio_numbers(lang_code, ranged)
+        if (
+            lang_code not in get_languages_with_audio_mode()
+            or not _system_has_audio(lang_code, system)
+            or not _playable_audio_numbers(lang_code, ranged)
         ):
             mode = PRESET_NO_AUDIO_FALLBACK_MODE
             notice_keys.append("preset_notice_no_audio")
 
     notices = [get_text(key, learn_language=lang_code) for key in notice_keys]
-    return mode, magnitude_level, num_range, notices
+    return mode, magnitude_level, num_range, system, notices
 
 
-def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None):
+def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None, system=None):
     """Start a fresh quiz session, keeping only the UI language and any login.
 
-    Shared by the two form-post seeders and the preset link path.
+    Shared by the two form-post seeders and the preset link path. The numeral
+    system survives the clear the same way the login does: it describes what
+    the learner is practising, not where they are in a round.
     """
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     saved_user = session.get("user")
+    saved_system = session.get("number_system")
     session.clear()
     session["language"] = ui_language
     if saved_user is not None:
         session["user"] = saved_user
     session["learn_language"] = lang_code
+    session["number_system"] = resolve_number_system(
+        lang_code, system if system is not None else saved_system
+    )
     session["score"] = 0
     session["total_questions"] = 0
     session["asked_numbers"] = []
@@ -566,11 +826,14 @@ def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None):
 def _session_numbers(lang_code):
     """The deck for the running quiz.
 
-    The language's numbers, narrowed to the session's range when the quiz was
-    started from a link that set one. Every question of the drill goes through
-    here, so question 2 stays inside the teacher's range just like question 1.
+    The language's numbers in the session's numeral system, narrowed to the
+    session's range when the quiz was started from a link that set one. Every
+    question of the drill goes through here, so question 2 stays in the
+    teacher's system and range just like question 1.
     """
-    numbers = get_language_numbers(lang_code)
+    numbers = get_language_numbers(
+        lang_code, resolve_number_system(lang_code, session.get("number_system"))
+    )
     num_range = session.get("number_range")
     if not num_range or len(num_range) != 2:
         return numbers
@@ -591,8 +854,13 @@ def number_modes(lang_code):
 
     session["learn_language"] = lang_code
 
+    # `?system=` picks the numeral system without starting anything: it is
+    # deliberately not a preset param, so this URL still renders the config
+    # screen (and stays indexable) rather than dropping into a drill.
+    number_system = _session_number_system(lang_code, request.args.get("system"))
+
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = get_language_numbers(lang_code, number_system)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
@@ -603,15 +871,23 @@ def number_modes(lang_code):
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
 
+    range_notice = _number_system_range_notice(lang_code, number_system, numbers)
+
     return render_template(
         "numbers.html",
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
-        has_audio_mode=lang_code in get_languages_with_audio_mode(),
+        has_audio_mode=lang_code in get_languages_with_audio_mode()
+        and _system_has_audio(lang_code, number_system),
         deck_min=min(numbers),
         deck_max=max(numbers),
         magnitude_level=session.get("magnitude_level", 1),
+        number_systems=_number_system_context(lang_code, number_system),
+        number_system_range_notice=range_notice,
+        # A deck that lives entirely under 100 weights every magnitude level
+        # identically, so the dial would be a control that does nothing.
+        show_magnitude=quiz_logic.spans_multiple_magnitudes(numbers),
     )
 
 
@@ -737,10 +1013,13 @@ def _worksheet_pdf_cache_key(lang_code, sheet):
 
     The UI language belongs in the key: the sheet's chrome — the instructions,
     the Name/Class/Date labels — is rendered in it, so an English and a German
-    request for the same sheet are different documents.
+    request for the same sheet are different documents. So does the numeral
+    system: the same numbers in traditional Welsh are entirely different words,
+    and serving one from the other's cache entry would print the wrong sheet.
     """
     parts = (
         lang_code,
+        sheet.get("system") or "",
         session.get("language", DEFAULT_UI_LANGUAGE),
         sheet["direction"],
         str(sheet["count"]),
@@ -980,8 +1259,14 @@ def worksheet(lang_code):
         flash(get_text("flash_invalid_language"), "error")
         return redirect(url_for("index"))
 
+    # Worksheets are anonymous and stateless, so the numeral system comes from
+    # the URL rather than the session — a printed sheet has to be reproducible
+    # from its link alone.
+    system = resolve_number_system(lang_code, request.args.get("system"))
+    system_arg = system if system != get_default_number_system(lang_code) else None
+
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = get_language_numbers(lang_code, system)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
@@ -1000,6 +1285,7 @@ def worksheet(lang_code):
             count_min=WORKSHEET_COUNT_MIN,
             count_max=WORKSHEET_COUNT_MAX,
             default_direction=WORKSHEET_DEFAULT_DIRECTION,
+            number_systems=_number_system_context(lang_code, system),
         )
 
     # A sheet with no seed can't be reprinted, so mint one and bounce to the
@@ -1014,11 +1300,16 @@ def worksheet(lang_code):
         }
         return redirect(
             url_for(
-                "worksheet", lang_code=lang_code, seed=_mint_worksheet_seed(), **carried
+                "worksheet",
+                lang_code=lang_code,
+                seed=_mint_worksheet_seed(),
+                system=system_arg,
+                **carried,
             )
         )
 
     sheet = _build_worksheet(numbers, seed)
+    sheet["system"] = system
     notices = [text(key) for key in sheet["notice_keys"]]
 
     # The footer prints the canonical spelling of this sheet's URL, so a
@@ -1030,10 +1321,24 @@ def worksheet(lang_code):
         "range": (
             f"{sheet['range'][0]}-{sheet['range'][1]}" if sheet["range"] else None
         ),
+        # Carried so a reprint of a non-default system's sheet prints the same
+        # words; omitted for the default system, which keeps every existing
+        # worksheet URL byte-for-byte what it was.
+        "system": system_arg,
         "seed": sheet["seed"],
     }
     sheet_path = url_for("worksheet", lang_code=lang_code, **canonical_args)
     sheet_url = SITE_URL.rstrip("/") + sheet_path
+
+    # Notes ride along on the answer key, never on the exercise side: the key
+    # is the page the teacher reads, and it already carries every answer.
+    sheet_notes = get_notes(
+        lang_code,
+        system=system,
+        numbers=[item["number"] for item in sheet["exercises"]],
+        when="reference",
+        ui_lang=session.get("language", DEFAULT_UI_LANGUAGE),
+    )
 
     if sheet["format"] == WORKSHEET_FORMAT_PDF:
         cache_key = _worksheet_pdf_cache_key(lang_code, sheet)
@@ -1055,6 +1360,7 @@ def worksheet(lang_code):
                         sheet=sheet,
                         notices=[],
                         sheet_url=sheet_url,
+                        notes=sheet_notes,
                         pdf_mode=True,
                     )
                 )
@@ -1085,6 +1391,7 @@ def worksheet(lang_code):
         sheet=sheet,
         notices=notices,
         sheet_url=sheet_url,
+        notes=sheet_notes,
         pdf_url=url_for(
             "worksheet", lang_code=lang_code, format="pdf", **canonical_args
         ),
@@ -1145,17 +1452,20 @@ def start_quiz(lang_code):
     # Read magnitude level from form, validate (int 1-5, default 1)
     magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    # The share-link builder on the config screen also feeds its range into
-    # these forms, so pressing Start gives the teacher the same drill the
-    # link they just copied produces.
+    # The share-link builder on the config screen also feeds its range and
+    # numeral system into these forms, so pressing Start gives the teacher the
+    # same drill the link they just copied produces.
+    system = resolve_number_system(
+        lang_code, request.form.get("system") or session.get("number_system")
+    )
     try:
-        numbers = get_language_numbers(lang_code)
+        numbers = get_language_numbers(lang_code, system)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("mode_selection", lang_code=lang_code))
     num_range, _ = _parse_range(request.form.get("range"), numbers)
 
-    _seed_quiz_session(lang_code, mode, magnitude_level, num_range)
+    _seed_quiz_session(lang_code, mode, magnitude_level, num_range, system)
 
     # Redirect to appropriate quiz
     if mode == "easy":
@@ -1241,7 +1551,10 @@ def quiz_easy(lang_code):
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
         number, correct_answer = quiz_logic.get_random_question(
-            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+            numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
 
         # Generate multiple choice options
@@ -1270,6 +1583,7 @@ def quiz_easy(lang_code):
         max_questions=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
+        notes=_notes_for(lang_code, number, "prompt"),
     )
 
 
@@ -1338,6 +1652,15 @@ def quiz_advanced(lang_code):
                 )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
+                # If the answer is this number's word in the language's *other*
+                # numeral system it isn't wrong Welsh, it is the wrong system —
+                # say which, rather than leaving a correct word marked simply
+                # incorrect.
+                nudge = _wrong_system_flash(
+                    lang_code, session.get("current_number"), user_answer
+                )
+                if nudge:
+                    flash(nudge, "info")
 
             session["total_questions"] = session.get("total_questions", 0) + 1
 
@@ -1372,7 +1695,10 @@ def quiz_advanced(lang_code):
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
         number, correct_answer = quiz_logic.get_random_question(
-            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+            numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
 
         # Store in session
@@ -1388,16 +1714,21 @@ def quiz_advanced(lang_code):
     score = session.get("score", 0)
     total = session.get("total_questions", 0)
 
+    revealed = bool(session.get("current_revealed"))
+
     return render_template(
         "quiz_advanced.html",
         number=number,
         correct_answer=correct_answer,
-        revealed=bool(session.get("current_revealed")),
+        revealed=revealed,
         score=score,
         total=total,
         max_questions=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
+        # Once the answer is on screen there is nothing left to give away, so
+        # the reveal is where a note can finally say what it knows.
+        notes=_notes_for(lang_code, number, "revealed" if revealed else "prompt"),
     )
 
 
@@ -1486,6 +1817,11 @@ def quiz_hardcore(lang_code):
                 )
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
+                nudge = _wrong_system_flash(
+                    lang_code, session.get("current_number"), user_answer
+                )
+                if nudge:
+                    flash(nudge, "info")
 
             session["total_questions"] = session.get("total_questions", 0) + 1
 
@@ -1520,7 +1856,10 @@ def quiz_hardcore(lang_code):
         # Generate new question
         asked_numbers = session.get("asked_numbers", [])
         number, correct_answer = quiz_logic.get_random_question(
-            numbers, asked_numbers, magnitude_level=session.get("magnitude_level", 1)
+            numbers,
+            asked_numbers,
+            magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
 
         # Store in session
@@ -1536,16 +1875,19 @@ def quiz_hardcore(lang_code):
     score = session.get("score", 0)
     total = session.get("total_questions", 0)
 
+    revealed = bool(session.get("current_revealed"))
+
     return render_template(
         "quiz_hardcore.html",
         number=number,
         correct_answer=correct_answer,
-        revealed=bool(session.get("current_revealed")),
+        revealed=revealed,
         score=score,
         total=total,
         max_questions=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
+        notes=_notes_for(lang_code, number, "revealed" if revealed else "prompt"),
     )
 
 
@@ -1575,7 +1917,11 @@ def listen_start(lang_code):
 
     magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    _seed_quiz_session(lang_code, "audio", magnitude_level)
+    # Audio is per language, not per numeral system: a system without MP3s
+    # (traditional Welsh) listens on the default deck instead.
+    _seed_quiz_session(
+        lang_code, "audio", magnitude_level, system=_audio_number_system(lang_code)
+    )
 
     return redirect(url_for("listen_quiz", lang_code=lang_code))
 
@@ -1667,6 +2013,7 @@ def listen_quiz(lang_code):
             playable_numbers,
             asked_numbers,
             magnitude_level=session.get("magnitude_level", 1),
+            usage_weights=_session_usage_weights(lang_code),
         )
         session["current_number"] = number
         session["correct_answer"] = correct_answer
@@ -1675,18 +2022,20 @@ def listen_quiz(lang_code):
         session["asked_numbers"].append(number)
 
     audio_url = url_for("static", filename=f"audio/{lang_code}/{number}.mp3")
+    revealed = bool(session.get("current_revealed"))
 
     return render_template(
         "quiz_listen.html",
         number=number,
         correct_answer=correct_answer,
         audio_url=audio_url,
-        revealed=bool(session.get("current_revealed")),
+        revealed=revealed,
         score=session.get("score", 0),
         total=session.get("total_questions", 0),
         max_questions=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
+        notes=_notes_for(lang_code, number, "revealed" if revealed else "prompt"),
     )
 
 
@@ -1698,8 +2047,10 @@ def _start_preset_drill(lang_code, numbers):
     canonical/noindex tags. The quiz's own forms post to the real quiz route,
     so from question 2 the drill runs on its canonical URL.
     """
-    mode, magnitude_level, num_range, notices = _parse_preset(lang_code, numbers)
-    _seed_quiz_session(lang_code, mode, magnitude_level, num_range)
+    mode, magnitude_level, num_range, system, notices = _parse_preset(
+        lang_code, numbers
+    )
+    _seed_quiz_session(lang_code, mode, magnitude_level, num_range, system)
 
     g.preset_notices = notices
     g.no_store = True
@@ -1757,6 +2108,10 @@ def results(lang_code):
         show_splash=show_splash,
         show_perfect_splash=show_perfect_splash,
         get_text=get_text,
+        # The round is over, so every note about the numbers it asked is safe
+        # to show — and this is the one surface easy mode ever reaches, since
+        # it has no reveal step.
+        notes=_notes_for(lang_code, session.get("asked_numbers") or [], "revealed"),
     )
 
 

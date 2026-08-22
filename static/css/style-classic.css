@@ -4661,3 +4661,289 @@ html {
         flex-direction: column;
     }
 }
+
+/* ===== Numeral systems ===== */
+/* Only ever rendered for a language that declares more than one (Welsh
+   decimal vs traditional). Single-system languages get no markup at all. */
+.number-system-section {
+    max-width: 720px;
+    margin: 0 auto 22px;
+}
+.number-system-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+.number-system-label {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4a4a5e;
+}
+.number-system-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+.number-system-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 160px;
+    padding: 10px 16px;
+    border: 1px solid rgba(2, 1, 34, 0.16);
+    border-radius: 12px;
+    background: rgba(2, 1, 34, 0.03);
+    color: #020122;
+    text-decoration: none;
+    text-align: left;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.number-system-option:hover,
+.number-system-option:focus-visible {
+    border-color: rgba(252, 158, 79, 0.7);
+    background: rgba(252, 158, 79, 0.12);
+}
+.number-system-option.active {
+    border-color: #FC9E4F;
+    background: rgba(252, 158, 79, 0.2);
+}
+.number-system-option-label {
+    font-weight: 600;
+}
+.number-system-option-desc {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #4a4a5e;
+}
+.number-system-note {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    background: rgba(2, 1, 34, 0.03);
+    border: 1px solid rgba(2, 1, 34, 0.14);
+    border-radius: 12px;
+    text-align: left;
+}
+.number-system-note-text {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #4a4a5e;
+}
+.number-system-note-text + .number-system-note-text {
+    margin-top: 6px;
+}
+.number-system-note-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.88rem;
+    color: #E54F6D;
+    text-decoration: none;
+}
+.number-system-note-link:hover {
+    text-decoration: underline;
+}
+.number-system-range {
+    margin-top: 10px;
+    text-align: center;
+}
+.menu-tile-badge {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(252, 158, 79, 0.6);
+    border-radius: 999px;
+    color: #b4551f;
+}
+
+/* The picker in miniature, on the menu tile. The card is a <div> there and the
+   CTA link is stretched across it, so the pills stay clickable while the rest
+   of the card still follows the main link. */
+.menu-tile-stretch {
+    position: relative;
+}
+.menu-tile-stretch-link {
+    text-decoration: none;
+}
+.menu-tile-stretch-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+}
+.menu-tile-stretch:focus-within {
+    border-color: #FC9E4F;
+}
+.menu-tile-systems {
+    /* Lifted above the stretched CTA so the pills take their own clicks. */
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+.menu-tile-systems-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6B7280;
+}
+.menu-tile-system-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+.menu-tile-system {
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid rgba(252, 158, 79, 0.5);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    color: #4a4a5e;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.menu-tile-system:hover,
+.menu-tile-system:focus-visible {
+    border-color: #FC9E4F;
+    color: #C1440E;
+}
+.menu-tile-system.active {
+    background: rgba(252, 158, 79, 0.22);
+    border-color: #FC9E4F;
+    color: #C1440E;
+}
+.menu-tile-system-desc {
+    max-width: 30ch;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: #6B7280;
+}
+
+/* ===== Per-number notes (the lightbulb) ===== */
+/* Tap-first: the trigger is a real button, never a hover-only tooltip. */
+.number-notes {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+.number-notes-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(2, 1, 34, 0.18);
+    border-radius: 50%;
+    background: #fff;
+    color: #b4551f;
+    cursor: pointer;
+}
+.number-notes-toggle:hover,
+.number-notes-toggle:focus-visible {
+    border-color: rgba(252, 158, 79, 0.8);
+    background: rgba(252, 158, 79, 0.14);
+}
+.number-notes-toggle[aria-expanded="true"] {
+    border-color: #FC9E4F;
+    background: rgba(252, 158, 79, 0.22);
+}
+.number-notes-panel {
+    max-width: 520px;
+    margin: 10px auto 0;
+    padding: 14px 16px;
+    border: 1px solid rgba(2, 1, 34, 0.14);
+    border-radius: 12px;
+    background: #fff;
+    text-align: left;
+}
+.number-notes:not(.number-notes-static) .number-notes-panel {
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90vw, 520px);
+    z-index: 40;
+    box-shadow: 0 12px 30px rgba(2, 1, 34, 0.18);
+}
+.number-notes-title {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #b4551f;
+    margin-bottom: 8px;
+}
+.number-note + .number-note {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(2, 1, 34, 0.1);
+}
+.number-note-text {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #020122;
+}
+.number-note-examples {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 0.88rem;
+    color: #4a4a5e;
+}
+.number-note-phrase {
+    font-weight: 600;
+    color: #020122;
+}
+.number-note-gloss::before {
+    content: " — ";
+}
+.number-note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    color: #6b6b7d;
+}
+.number-note-flag {
+    padding: 1px 8px;
+    border: 1px solid rgba(2, 1, 34, 0.16);
+    border-radius: 999px;
+}
+
+/* Tables inside a learn page (the Welsh usage table is the first one). */
+.learn-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.94rem;
+}
+.learn-table th,
+.learn-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(2, 1, 34, 0.12);
+    vertical-align: top;
+}
+.learn-table th {
+    color: #b4551f;
+    font-weight: 600;
+}
+
+/* Notice shown while a UI language is still being translated. */
+.site-note-partial {
+    margin: 0 auto 16px;
+    font-size: 0.82rem;
+    color: #4a4a5e;
+}

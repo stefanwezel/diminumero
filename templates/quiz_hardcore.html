@@ -41,6 +41,7 @@
     <div class="question-container">
         <h2 class="question-label">{{ get_text('quiz_advanced_prompt') }}</h2>
         <div class="number-display">{{ number }}</div>
+        {% if not revealed %}{% include '_number_notes.html' %}{% endif %}
     </div>
 
     {% if not revealed %}
@@ -69,6 +70,7 @@
         <div class="reveal-modal-divider" aria-hidden="true">&#x2193;</div>
         <div id="reveal-modal-title" class="reveal-modal-label">{{ get_text('cards_reveal_answer_label') }}</div>
         <div class="reveal-modal-answer">{{ correct_answer }}</div>
+        {% include '_number_notes.html' %}
         <form action="{{ url_for('quiz_hardcore', lang_code=lang_code) }}" method="POST" class="reveal-modal-actions" id="revealForm">
             <input
                 type="text"
@@ -91,4 +93,5 @@
 {% else %}
 <script src="{{ url_for('static', filename='js/quiz_hardcore.js') }}"></script>
 {% endif %}
+{% if notes %}<script src="{{ url_for('static', filename='js/number_notes.js') }}"></script>{% endif %}
 {% endblock %}

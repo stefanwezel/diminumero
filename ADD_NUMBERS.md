@@ -5,6 +5,7 @@ This guide explains how to add a new learning language to diminumero's **number-
 Related guides:
 - [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) — add the spoken-number Listening quiz to a language that already has numbers.
 - [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md) — add a Learn/tutorial page for a language.
+- [ADD_NOTES.md](ADD_NOTES.md) — add a short per-number note (the lightbulb).
 - [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) — the Spanish verb-conjugation section (regenerating the pool, extending it).
 
 ## Overview
@@ -222,6 +223,215 @@ elif lang_code == 'qu':
 
 # 6. When ready, set ready: True in languages/config.py
 ```
+
+## Languages with More Than One Numeral System
+
+Some languages have two ways of saying the same number, both current, used in
+different situations:
+
+| Language | Systems |
+|---|---|
+| **Welsh (`cy`)** | decimal (`dau ddeg pump`) and traditional/vigesimal (`pump ar hugain`) — the traditional one is obligatory for the time, dates and age |
+| Korean (`ko`) | Sino-Korean (`일, 이, 삼`) and native (`하나, 둘, 셋`) — only Sino ships today |
+| Japanese (`ja`) | Sino-Japanese and native *wago* (`ひとつ, ふたつ`) — only Sino ships today |
+| French (`fr`) | standard (`soixante-dix`) and Belgian/Swiss (`septante`, `nonante`) |
+
+A language declares its systems in `languages/config.py`. **A language that
+declares nothing has exactly one system and behaves as it always has** — this is
+purely additive.
+
+```python
+"cy": {
+    ...
+    "number_systems": [
+        {"key": "decimal", "module": "numbers", "default": True},
+        {
+            "key": "traditional",
+            "module": "numbers_traditional",
+            "requires_complete": (1, 100),   # the completeness gate, below
+            "has_audio": False,              # no MP3s for this system
+        },
+    ],
+},
+```
+
+| Field | Meaning |
+|---|---|
+| `key` | Used in URLs (`/cy/numbers?system=traditional`) and in note scoping. Also the i18n key suffix: add `number_system_name_<key>` and `number_system_desc_<key>` to **all** UI languages in `translations.py`. |
+| `module` | The file under `languages/<code>/` holding this system's `NUMBERS` dict. |
+| `default` | The system a bare `/<lang>` URL drills. Exactly one system should have it. |
+| `requires_complete` | `(low, high)` — the range that must be filled before the system is offered. |
+| `has_audio` | Whether the Listening quiz may use this deck. |
+
+### The completeness gate
+
+A second system is **offered only when its deck is actually usable**, and that is
+derived from the data, not from a flag someone has to remember to flip. While any
+number in `requires_complete` is missing, the system does not appear in the UI at
+all — no toggle, no dead control, no half-empty drill. The pull request that
+fills the last gap turns the feature on with no code change.
+
+This is what lets the code and the data land in either order, which matters when
+the data depends on volunteers.
+
+### Provenance: where a form came from
+
+A deck being assembled from public review is a set of claims, and the difference
+between "a speaker told us this" and "a rule produced this" matters more than the
+spelling does — a plausible wrong form teaches with exactly the same confidence
+as a right one.
+
+Welsh traditional is the first deck to track this. Instead of `{number: "word"}`
+it carries a list of forms per number, each with a `source`:
+
+```python
+SPEAKER_FORMS = {
+    13: [
+        {"text": "tri ar ddeg",  "gender": "m", "source": "single"},
+        {"text": "tair ar ddeg", "gender": "f", "source": "attested"},
+    ],
+}
+```
+
+| `source` | Means | Served to learners? |
+|---|---|---|
+| `confirmed` | two or more speakers agreed, or one corrected another | yes |
+| `single` | one speaker, uncorroborated | yes |
+| `attested` | produced by a rule that a **published reference states**, cited by a reviewer. The rule has a source; this individual form has not been checked | yes |
+| `reconstructed` | produced by a rule with nothing published behind it — **no speaker has confirmed it and no source backs it** | **no**, unless `SERVE_RECONSTRUCTED` |
+
+The line for serving is whether anything outside this repo backs the form, not
+whether a script typed it. `attested` exists because collapsing it into
+`reconstructed` would withhold documented forms indefinitely, and collapsing it
+into `single` would claim a speaker we do not have.
+
+`config.SERVE_RECONSTRUCTED` (default `False`) is the switch. While it is off, a
+number whose only forms are reconstructed is **absent from the deck entirely** —
+the drill skips it. It does not fall back to the other system and it does not
+render a blank. Reconstructed forms are committed anyway for two reasons, and
+only two: so they can be exported for review, and so they can be switched on in
+one line when they come back confirmed.
+
+`languages/provenance.py` holds the machinery (`build_numbers`, `merge_forms`,
+`validate_forms`); the deck module derives a plain `NUMBERS` dict from its forms,
+so the loader and every caller see the same `dict[int, str]` as any other
+language.
+
+Two files, on purpose:
+
+- `numbers_traditional.py` — **hand-edited**, holds what speakers told us. No
+  script ever writes it, so an editorial comment or a newly confirmed form cannot
+  be clobbered by a rerun.
+- `numbers_traditional_generated.py` — **machine-owned**, holds rule-derived
+  forms, `attested` while the rule it applies is the documented one and
+  `reconstructed` otherwise. Never edited by hand; to correct one of these, add
+  the speaker's form to the hand-edited file, which wins.
+
+### Generating rule-governed forms
+
+`languages/cy/generate_numbers_traditional.py` is the model. Welsh 41–99 is not
+54 facts but one rule (`[unit] + connective + [score]`), and the generator
+encodes it, along with the mutation the connective triggers — the two are one
+choice, not two.
+
+Two things it must do, and both are the point rather than polish:
+
+1. **Reproduce every confirmed form, or abort.** If the rule can't produce
+   `deg a thrigain`, the rule is wrong, not the expectation. Flipping the
+   unresolved connective to its other value fails the run with a message naming
+   the confirmed forms it contradicts, instead of quietly emitting 54 wrong ones.
+2. **Report disagreements rather than resolving them.** Where the rule and a
+   speaker differ (Welsh 50, `hanner cant` vs the regular `deg a deugain`), the
+   speaker's form is what gets served, the rule's is kept beside it, and the run
+   prints the divergence as a question for the next review round.
+3. **Tie the servable tier to the documented rule, not to the script.** Welsh
+   keeps `DOCUMENTED_CONNECTIVE` separate from the `TENS_CONNECTIVE` switch:
+   flipping the switch to test a hypothesis demotes everything it touches from
+   `attested` back to `reconstructed`, so the tier can never come to mean
+   "whatever the generator last ran with".
+
+### Getting forms confirmed
+
+```bash
+uv run tools/export_unconfirmed_forms.py --source single    # the smallest ask
+uv run tools/export_unconfirmed_forms.py --include-notes    # everything
+```
+
+Dumps a markdown table of every form no speaker has confirmed *individually* —
+including the `single` and `attested` tiers, which are already being taught, so
+a correction there matters most. Withholding unconfirmed forms is only half a
+policy; the other half is making them cheap to check.
+
+### Optional: say which numbers are worth drilling
+
+A deck whose numbers are not used evenly in real life may declare
+`USAGE_WEIGHTS` — `{number: multiplier}` — beside its `NUMBERS`. It is read by
+`get_number_usage_weights()` and multiplied into the drill's existing magnitude
+weight, so a ten-question round is spent where a learner needs it.
+
+```python
+FLUENCY_NUMBERS = set(range(0, 32)) | {40, 50, 60, 80, 100}
+MUSEUM_NUMBERS = {39, 59, 79, 99}
+USAGE_TIER_WEIGHTS = {"fluency": 1.0, "recognition": 0.25, "museum": 0.05}
+```
+
+Traditional Welsh is the only deck that declares it: dates keep 1–31 in daily
+use while `pedwar ar bymtheg ar hugain` (39) is a museum piece. Two rules —
+weight from what speakers say they use, not from what looks hard; and never
+weight a number to zero, because rare must still mean reachable. A deck that
+declares nothing draws exactly as before.
+
+### Walkthrough: fill in a missing number
+
+**This one does need a file ending in `.py`** — see the note at the end.
+
+1. Open the deck on GitHub, e.g.
+   [`languages/cy/numbers_traditional.py`](languages/cy/numbers_traditional.py).
+2. Click the pencil (**Edit this file**). GitHub makes your own copy.
+3. Find the number you know, or add it if it isn't there:
+
+   ```python
+       120: [{"text": "chwe ugain", "source": "reconstructed"}],
+   ```
+
+4. Add your form, or correct the one there. `source` is the important field —
+   `single` if you are the only person we have heard it from, `confirmed` if you
+   are agreeing with a form already listed:
+
+   ```python
+       120: [{"text": "chwe ugain", "source": "single"}],
+   ```
+
+   If your form differs from one the generator produced, leave the generated one
+   alone — it lives in `numbers_traditional_generated.py`, it is never shown to
+   anyone, and the next run will report the disagreement.
+
+   Rules: lowercase; single spaces between words; include any mutation that
+   happens **inside** the number word (`un ar hugain`, not `un ar ugain`). A
+   mutation caused by the noun that comes *after* the number does not belong
+   here — that is a note ([ADD_NOTES.md](ADD_NOTES.md)). Add
+   `"gender": "m"` / `"f"` only where the form actually changes with the noun's
+   gender.
+5. **If you are unsure, leave the `None`.** A gap is correct and harmless; a
+   plausible guess teaches someone the wrong thing with full confidence.
+6. Scroll down and choose **Create a new branch and start a pull request**. Say
+   in the description how you know the form (course, dictionary, native speaker).
+
+> **Honest caveat.** Step 1 opens a Python file. It contains nothing but
+> `number: "word",` lines and comments, but the extension is real. We keep this
+> format because all fifteen existing decks, the generator scripts and the tests
+> use it, and a second format for the same data would rot. Notes files
+> (`notes.toml`) are the plain-text path and need no source file at all.
+
+### Checklist for a second system
+
+- [ ] `number_systems` declared in `languages/config.py`, one entry with `default: True`
+- [ ] `languages/<code>/<module>.py` created; anything unverified is either absent or marked `reconstructed` (or `attested`, if a published reference backs the rule)
+- [ ] `number_system_name_<key>` and `number_system_desc_<key>` added to all UI languages in `translations.py`
+- [ ] A test asserting the new deck contains no invented forms (see `tests/test_number_systems.py`)
+- [ ] Listening: `has_audio: False` unless MP3s exist for that system
+- [ ] Native-speaker review of every `single` form before the gate opens
+- [ ] `uv run tools/export_unconfirmed_forms.py` posted somewhere speakers will see it
 
 ## Number Generation Best Practices
 
