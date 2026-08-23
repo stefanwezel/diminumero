@@ -114,15 +114,7 @@
             </a>
             {% endif %}
 
-            <!-- 3. Vocabulary cards -->
-            <a href="{{ url_for('cards') if user else url_for('login') }}" class="menu-tile">
-                <span class="menu-tile-icon" aria-hidden="true"><img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="menu-tile-icon-img" loading="lazy"></span>
-                <span class="menu-tile-title">{{ get_text('home_new_feature_title') }}</span>
-                <span class="menu-tile-body">{{ get_text('home_new_feature_body') }}</span>
-                <span class="menu-tile-cta">{{ get_text('home_new_feature_cta_open') if user else get_text('home_new_feature_cta_login') }} →</span>
-            </a>
-
-            <!-- 4. Verb conjugation -->
+            <!-- 3. Verb conjugation -->
             {% if has_conjugation %}
             <a href="{{ url_for('conjugate', lang_code=lang_code) if user else url_for('login') }}" class="menu-tile">
                 <span class="menu-tile-icon" aria-hidden="true"><span class="menu-tile-mask menu-tile-mask--verbs"></span></span>
@@ -131,6 +123,14 @@
                 <span class="menu-tile-cta">{{ get_text('conjugate_start_btn') if user else get_text('home_new_feature_cta_login') }} →</span>
             </a>
             {% endif %}
+
+            <!-- 4. Vocabulary cards -->
+            <a href="{{ url_for('cards') if user else url_for('login') }}" class="menu-tile">
+                <span class="menu-tile-icon" aria-hidden="true"><img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="menu-tile-icon-img" loading="lazy"></span>
+                <span class="menu-tile-title">{{ get_text('home_new_feature_title') }}</span>
+                <span class="menu-tile-body">{{ get_text('home_new_feature_body') }}</span>
+                <span class="menu-tile-cta">{{ get_text('home_new_feature_cta_open') if user else get_text('home_new_feature_cta_login') }} →</span>
+            </a>
         </div>
 
         <div class="learn-cta">
