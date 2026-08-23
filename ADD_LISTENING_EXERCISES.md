@@ -95,16 +95,23 @@ intersects the deck with the MP3s actually present.
 
 ## How Listening Mode Works
 
-1. `mode_selection()` shows a Listening option for languages with `has_audio_mode: True`.
-2. `/<lang_code>/listen/start` (POST) initializes a Listening session; the playable
-   pool is the intersection of the number deck with `_available_audio_numbers()`.
-3. `/<lang_code>/listen` (GET/POST) plays the number's MP3 (`quiz_listen.js` handles
+1. `mode_selection()` shows a Listening tile for languages with `has_audio_mode: True`,
+   linking to the overview.
+2. `/<lang_code>/listening` (GET) is the overview: the magnitude dial, the share-link
+   builder and Start. Its range inputs are bounded by the *playable* deck (the number
+   deck intersected with `_available_audio_numbers()`), so a shareable range can never
+   ask for a number that has no MP3. With `?range=`/`?magnitude=` it renders the drill
+   itself instead of the page, the same way `/<lang_code>/numbers` does.
+3. `/<lang_code>/listen/start` (POST) initializes a Listening session from the
+   overview's magnitude and range.
+4. `/<lang_code>/listen` (GET/POST) plays the number's MP3 (`quiz_listen.js` handles
    autoplay with a small lag), accepts a typed digit answer, and supports
-   reveal/next.
-4. The answer is normalized to digits (`re.sub(r"\D", "", ...)`) and compared to the
+   reveal/next. Without a running listening session it redirects to the overview.
+5. The answer is normalized to digits (`re.sub(r"\D", "", ...)`) and compared to the
    number.
-5. After 10 questions the user lands on the results page; the speed bonus reuses the
-   advanced-mode time threshold (`SPEED_BONUS_TIME_ADVANCED`).
+6. After 10 questions the user lands on the results page, whose "Back to overview"
+   returns to `/<lang_code>/listening`; the speed bonus reuses the advanced-mode time
+   threshold (`SPEED_BONUS_TIME_ADVANCED`).
 
 ## Testing Checklist
 
@@ -112,6 +119,7 @@ intersects the deck with the MP3s actually present.
 - [ ] MP3s generated under `static/audio/<lang_code>/` and committed
 - [ ] `has_audio_mode: True` set on the language's entry in `languages/config.py`
 - [ ] "New · Listening" sticker appears on the index card and mode-selection page
+- [ ] `/<lang_code>/listening` renders with the magnitude dial and the share builder
 - [ ] Listening quiz autoplays, accepts digit answers, and reveal/next works
 - [ ] A half-generated deck (only some MP3s present) still produces a valid quiz
 - [ ] Native speaker confirms the pronunciations are correct

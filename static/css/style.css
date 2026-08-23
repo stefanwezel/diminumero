@@ -494,6 +494,20 @@ body {
     margin: 40px 0;
 }
 
+/* Listening has one difficulty, so its config screen shows one card. Without
+   this it would sit in the first of three columns, a third of the width and
+   visibly missing two siblings. */
+.mode-selection-single {
+    grid-template-columns: minmax(0, 420px);
+    justify-content: center;
+}
+
+.mode-card-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
 .mode-card {
     background: linear-gradient(135deg, #2E1A3C 0%, #22162B 100%);
     border: 2px solid rgba(229, 79, 109, 0.45);

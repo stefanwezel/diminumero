@@ -1,11 +1,13 @@
 /**
- * Shareable drill links. Builds a preset URL from the selections on the
- * number-practice config screen (mode + range + the magnitude dial) so a
- * teacher can paste one link into Moodle or Teams and a student lands
- * straight in the configured drill.
+ * Shareable drill links. Builds a preset URL from the selections on a config
+ * screen (mode + range + the magnitude dial) so a teacher can paste one link
+ * into Moodle or Teams and a student lands straight in the configured drill.
  *
- * The same range also feeds the hidden inputs of the three Start forms, so
- * pressing Start here gives the teacher exactly what their link produces.
+ * The same range also feeds the hidden inputs of the Start forms, so pressing
+ * Start here gives the teacher exactly what their link produces.
+ *
+ * The mode radios are optional: the listening overview configures one mode —
+ * its own — so there is nothing to pick and no `mode=` in its links.
  */
 (function () {
     'use strict';
@@ -34,6 +36,7 @@
     };
 
     function selectedMode() {
+        if (!modeInputs.length) return null;
         for (let i = 0; i < modeInputs.length; i++) {
             if (modeInputs[i].checked) return modeInputs[i].value;
         }
@@ -64,13 +67,17 @@
     }
 
     function render() {
-        const params = ['mode=' + encodeURIComponent(selectedMode())];
+        const params = [];
+        const mode = selectedMode();
+        if (mode) params.push('mode=' + encodeURIComponent(mode));
         const range = rangeValue();
         if (range) params.push('range=' + encodeURIComponent(range));
         if (slider) params.push('magnitude=' + encodeURIComponent(slider.value));
         if (numberSystem) params.push('system=' + encodeURIComponent(numberSystem));
 
-        if (urlField) urlField.value = baseUrl + '?' + params.join('&');
+        // With nothing to vary (a deck that spans one magnitude, no range) the
+        // bare page URL is the link — never one ending in a stray '?'.
+        if (urlField) urlField.value = params.length ? baseUrl + '?' + params.join('&') : baseUrl;
 
         // Keep the Start buttons on this page in step with the link.
         for (let i = 0; i < rangeHiddenInputs.length; i++) {

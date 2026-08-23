@@ -102,16 +102,16 @@
             {% endif %}
 
             <!-- 2. Listening -->
+            {# Opens the listening overview rather than starting a round on the
+               spot: like number practice, the drill is configured (magnitude,
+               range) and shared from its own page first. #}
             {% if has_audio_mode %}
-            <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" class="menu-tile-form" data-listen-pjax>
-                <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
-                <button type="submit" class="menu-tile menu-tile-btn">
-                    <span class="menu-tile-icon" aria-hidden="true"><span class="menu-tile-mask menu-tile-mask--ear"></span></span>
-                    <span class="menu-tile-title">{{ get_text('home_audio_mode_title') }}</span>
-                    <span class="menu-tile-body">{{ get_text('home_audio_mode_body') }}</span>
-                    <span class="menu-tile-cta">{{ get_text('home_audio_mode_cta') }} →</span>
-                </button>
-            </form>
+            <a href="{{ url_for('listen_modes', lang_code=lang_code) }}" class="menu-tile">
+                <span class="menu-tile-icon" aria-hidden="true"><span class="menu-tile-mask menu-tile-mask--ear"></span></span>
+                <span class="menu-tile-title">{{ get_text('home_audio_mode_title') }}</span>
+                <span class="menu-tile-body">{{ get_text('home_audio_mode_body') }}</span>
+                <span class="menu-tile-cta">{{ get_text('home_audio_mode_cta') }} →</span>
+            </a>
             {% endif %}
 
             <!-- 3. Vocabulary cards -->
@@ -180,8 +180,4 @@ if (window.innerWidth <= 768) {
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
 }
 </script>
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
 {% endblock %}

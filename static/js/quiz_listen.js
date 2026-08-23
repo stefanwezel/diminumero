@@ -132,13 +132,14 @@
                     // one "back" step, not one per question.
                     history.replaceState({ listen: true }, '', url);
                 } else {
-                    // Entering the listening quiz from another page (mode page,
-                    // landing, or results). Anchor the back button to the
-                    // language's mode page so "back" is consistent no matter
-                    // where listening was launched from.
-                    var modeUrl = newPath.replace(/\/listen(\/.*)?$/, '') || '/';
-                    if (modeUrl !== curPath) {
-                        history.replaceState(null, '', modeUrl);
+                    // Entering the listening quiz from another page (the
+                    // listening overview or the results page). Anchor the back
+                    // button to the overview, which is where the round was
+                    // configured, so "back" is consistent no matter where
+                    // listening was launched from.
+                    var overviewUrl = newPath.replace(/\/listen(\/.*)?$/, '/listening');
+                    if (overviewUrl !== curPath) {
+                        history.replaceState(null, '', overviewUrl);
                     }
                     history.pushState({ listen: true }, '', url);
                 }

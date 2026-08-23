@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('home_audio_mode_title') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('home_audio_mode_body') }}">{% endblock %}
+{% block og_title %}{{ get_text('home_audio_mode_title') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('home_audio_mode_body') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('home_audio_mode_title') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('home_audio_mode_body') }}">{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero">
+        <!-- Back to the language menu -->
+        <div class="back-nav">
+            <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-secondary btn-back-nav">
+                {{ get_text('learn_btn_back') }}
+            </a>
+        </div>
+
+        <h1 class="title">{{ get_text('home_audio_mode_title') }}</h1>
+
+        {# One card, because listening has one difficulty. It is still a
+           mode-card: this screen is the listening twin of /<lang>/numbers and
+           should read like it. #}
+        <div class="mode-selection mode-selection-single" id="mode-selection">
+            <div class="mode-card">
+                {# No heading inside the card: it would repeat the <h1> a
+                   line above it, which the three-card number screen never
+                   does. #}
+                <span class="mode-card-icon" aria-hidden="true"><span class="menu-tile-mask menu-tile-mask--ear"></span></span>
+                <p class="mode-description">{{ get_text('home_audio_mode_body') }}</p>
+                {# pjax, like every other entry into the listening quiz: the
+                   click that submits this form is what keeps the document
+                   "user activated", which is what lets the first clip play. #}
+                <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" data-listen-pjax>
+                    <input type="hidden" name="magnitude_level" value="{{ magnitude_level }}" class="magnitude-hidden-input">
+                    <input type="hidden" name="range" value="" class="preset-range-hidden-input">
+                    <button type="submit" class="btn btn-primary">
+                        {{ get_text('home_audio_mode_cta') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% if show_magnitude %}
+        <div class="magnitude-dial-section">
+            <label class="magnitude-label" for="magnitude-slider">{{ get_text('magnitude_label') }}</label>
+            <div class="magnitude-slider-row">
+                <span class="magnitude-end-label">{{ get_text('magnitude_small') }}</span>
+                <input type="range" id="magnitude-slider" class="magnitude-slider" min="1" max="5" value="{{ magnitude_level }}" step="1">
+                <span class="magnitude-end-label">{{ get_text('magnitude_large') }}</span>
+            </div>
+            <p class="magnitude-level-desc" id="magnitude-level-desc">{{ get_text('magnitude_level_' ~ magnitude_level) }}</p>
+        </div>
+
+        <script>
+        (function() {
+            var slider = document.getElementById('magnitude-slider');
+            if (!slider) return;
+            var desc = document.getElementById('magnitude-level-desc');
+            var hiddenInputs = document.querySelectorAll('.magnitude-hidden-input');
+            var descriptions = {
+                1: {{ get_text('magnitude_level_1')|tojson }},
+                2: {{ get_text('magnitude_level_2')|tojson }},
+                3: {{ get_text('magnitude_level_3')|tojson }},
+                4: {{ get_text('magnitude_level_4')|tojson }},
+                5: {{ get_text('magnitude_level_5')|tojson }}
+            };
+            slider.addEventListener('input', function() {
+                var val = this.value;
+                desc.textContent = descriptions[val];
+                for (var i = 0; i < hiddenInputs.length; i++) {
+                    hiddenInputs[i].value = val;
+                }
+            });
+        })();
+        </script>
+        {% endif %}
+
+        <!-- Shareable preset link. Same contract as the number config screen,
+             without the mode picker: this page shares listening drills. -->
+        <div class="preset-share" id="preset-share"
+             data-base-url="{{ url_for('listen_modes', lang_code=lang_code, _external=True) }}"
+             data-deck-min="{{ deck_min }}"
+             data-deck-max="{{ deck_max }}">
+            <h2 class="preset-share-title">{{ get_text('preset_share_title') }}</h2>
+            <p class="preset-share-desc">{{ get_text('preset_share_desc') }}</p>
+
+            <div class="preset-share-controls">
+                <div class="preset-share-field">
+                    <span class="preset-share-label">{{ get_text('preset_share_range_label') }}</span>
+                    <div class="preset-share-range">
+                        <label class="preset-share-range-label">
+                            <span>{{ get_text('preset_share_from') }}</span>
+                            <input type="number" id="preset-range-min" class="preset-share-range-input"
+                                   min="{{ deck_min }}" max="{{ deck_max }}" step="1"
+                                   placeholder="{{ deck_min }}" inputmode="numeric">
+                        </label>
+                        <label class="preset-share-range-label">
+                            <span>{{ get_text('preset_share_to') }}</span>
+                            <input type="number" id="preset-range-max" class="preset-share-range-input"
+                                   min="{{ deck_min }}" max="{{ deck_max }}" step="1"
+                                   placeholder="{{ deck_max }}" inputmode="numeric">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preset-share-row">
+                <input type="text" id="preset-share-url" class="preset-share-url" readonly
+                       aria-label="{{ get_text('preset_share_title') }}">
+                <button type="button" id="preset-share-copy" class="btn btn-primary preset-share-copy"
+                        data-i18n-copy="{{ get_text('preset_share_copy') }}"
+                        data-i18n-copied="{{ get_text('preset_share_copied') }}">
+                    {{ get_text('preset_share_copy') }}
+                </button>
+            </div>
+        </div>
+
+        {% if has_learn_materials %}
+        <div class="learn-cta">
+            <a href="{{ url_for('learn', lang_code=lang_code) }}" class="learn-card">
+                <div class="learn-icon"><img src="{{ url_for('static', filename='icons/icon-books.svg') }}" alt="" class="learn-icon-img" loading="lazy"></div>
+                <h3>{{ get_text('learn_nav_button') }}</h3>
+                <p>{{ get_text('learn_nav_desc') }}</p>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/preset_link.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% endblock %}

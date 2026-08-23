@@ -87,6 +87,7 @@
             {% if session.get('mode') == 'audio' %}
             <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" data-listen-pjax>
                 <input type="hidden" name="magnitude_level" value="{{ session.get('magnitude_level', 1) }}">
+                <input type="hidden" name="range" value="{{ retry_range }}">
                 <button type="submit" class="btn-try-again">
                     <img src="{{ url_for('static', filename='icons/icon-tryagain.svg') }}" alt="" class="btn-icon" aria-hidden="true"> {{ get_text('results_try_again') }}
                 </button>
@@ -114,11 +115,11 @@
             </div>
             {% endif %}
 
-            {# Back to the number-practice config screen, not the language menu:
-               the round that just ended started there, so that is where a
-               learner goes to change mode, range or numeral system and run
-               another one. #}
-            <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="btn btn-primary btn-large">
+            {# Back to the config screen the round started on — the listening
+               overview after a listening round, the number-practice screen
+               otherwise — not the language menu: that is where a learner goes
+               to change mode, range or numeral system and run another one. #}
+            <a href="{{ back_overview_url }}" class="btn btn-primary btn-large">
                 <img src="{{ url_for('static', filename='icons/icon-home.svg') }}" alt="" class="btn-icon" aria-hidden="true" loading="lazy"> {{ get_text('results_back_overview') }}
             </a>
         </div>

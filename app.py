@@ -643,7 +643,6 @@ def mode_selection(lang_code):
         has_audio_mode=has_audio_mode,
         has_conjugation=has_conjugation,
         has_conjugation_materials=has_conjugation_materials,
-        magnitude_level=session.get("magnitude_level", 1),
         number_systems=_number_system_context(lang_code, number_system),
     )
 
@@ -655,6 +654,10 @@ def mode_selection(lang_code):
 # with no session, no cookies and no account.
 
 PRESET_PARAM_KEYS = ("mode", "range", "magnitude")
+
+# The listening overview has no mode to pick — the drill it configures is the
+# listening one — so a bare `?mode=` there must not start anything.
+LISTEN_PRESET_PARAM_KEYS = ("range", "magnitude")
 
 # Public mode names accepted in a link -> internal session mode. The listening
 # drill is "audio" internally, but "listening" is what a teacher would write.
@@ -680,12 +683,13 @@ MIN_PRESET_DECK = 4
 _RANGE_RE = re.compile(r"^(\d+)\s*[-–—]\s*(\d+)$")
 
 
-def _has_preset_params():
+def _has_preset_params(keys=PRESET_PARAM_KEYS):
     """True when the URL carries at least one recognised preset param.
 
-    Unknown params (utm_source and friends) must not start a drill.
+    Unknown params (utm_source and friends) must not start a drill. `keys`
+    narrows the set for a page that accepts fewer of them.
     """
-    return any(key in request.args for key in PRESET_PARAM_KEYS)
+    return any(key in request.args for key in keys)
 
 
 def _numbers_in_range(numbers, num_range):
@@ -1905,6 +1909,98 @@ def _available_audio_numbers(lang_code):
     return numbers
 
 
+def _listening_deck(lang_code):
+    """(system, playable_numbers) for a Listening drill in this language.
+
+    Audio is per language, not per numeral system: a system without MP3s
+    (traditional Welsh) listens on the default deck instead, and the system is
+    returned alongside the deck so callers seed the session with the one the
+    deck actually came from. `playable_numbers` is empty when no MP3 of this
+    language's deck is on disk.
+    """
+    system = _audio_number_system(lang_code)
+    numbers = get_language_numbers(lang_code, system)
+    return system, _playable_audio_numbers(lang_code, numbers)
+
+
+@app.route("/<lang_code>/listening")
+def listen_modes(lang_code):
+    """Listening config screen: the magnitude dial and the share-link builder.
+
+    The counterpart of /<lang>/numbers. Before this, the menu tile dropped
+    straight into a drill, so a listening round could be neither configured
+    nor shared. Same preset-link contract as the number config screen, minus
+    the mode picker — the mode here is listening.
+    """
+    if not is_language_ready(lang_code):
+        flash(get_text("flash_invalid_language"), "error")
+        return redirect(url_for("index"))
+
+    if lang_code not in get_languages_with_audio_mode():
+        flash(get_text("flash_audio_missing"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    session["learn_language"] = lang_code
+
+    try:
+        _, playable = _listening_deck(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("index"))
+
+    if not playable:
+        flash(get_text("flash_audio_missing"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    # A shared link renders the drill itself instead of this page.
+    if _has_preset_params(LISTEN_PRESET_PARAM_KEYS):
+        return _start_listen_preset_drill(lang_code, playable)
+
+    return render_template(
+        "listening.html",
+        lang_code=lang_code,
+        get_text=get_text,
+        has_learn_materials=lang_code in get_languages_with_learn_materials(),
+        # The bounds of what can actually be played, not of the whole deck:
+        # a range the MP3s don't cover is a range with nothing to hear.
+        deck_min=min(playable),
+        deck_max=max(playable),
+        magnitude_level=session.get("magnitude_level", 1),
+        show_magnitude=quiz_logic.spans_multiple_magnitudes(playable),
+    )
+
+
+def _start_listen_preset_drill(lang_code, playable):
+    """Render the listening drill described by the query params, in this response.
+
+    The listening twin of `_start_preset_drill()`: not a redirect, so a student
+    lands in the drill from one cold GET and the parameterised URL carries its
+    own canonical/noindex tags.
+    """
+    notice_keys = []
+
+    num_range, range_notice = _parse_range(request.args.get("range"), playable)
+    if range_notice:
+        notice_keys.append(range_notice)
+
+    magnitude_level, magnitude_notice = _parse_magnitude(request.args.get("magnitude"))
+    if magnitude_notice:
+        notice_keys.append(magnitude_notice)
+
+    _seed_quiz_session(
+        lang_code,
+        "audio",
+        magnitude_level,
+        num_range,
+        system=_audio_number_system(lang_code),
+    )
+
+    g.preset_notices = [get_text(key, learn_language=lang_code) for key in notice_keys]
+    g.no_store = True
+
+    return listen_quiz(lang_code)
+
+
 @app.route("/<lang_code>/listen/start", methods=["POST"])
 def listen_start(lang_code):
     """Initialize a new Listening session."""
@@ -1917,11 +2013,17 @@ def listen_start(lang_code):
 
     magnitude_level, _ = _parse_magnitude(request.form.get("magnitude_level"))
 
-    # Audio is per language, not per numeral system: a system without MP3s
-    # (traditional Welsh) listens on the default deck instead.
-    _seed_quiz_session(
-        lang_code, "audio", magnitude_level, system=_audio_number_system(lang_code)
-    )
+    try:
+        system, playable = _listening_deck(lang_code)
+    except ValueError:
+        flash(get_text("flash_language_load_error"), "error")
+        return redirect(url_for("mode_selection", lang_code=lang_code))
+
+    # The overview's share builder feeds its range into this form too, so
+    # pressing Start gives the same drill as the link it just built.
+    num_range, _ = _parse_range(request.form.get("range"), playable)
+
+    _seed_quiz_session(lang_code, "audio", magnitude_level, num_range, system=system)
 
     return redirect(url_for("listen_quiz", lang_code=lang_code))
 
@@ -1935,8 +2037,10 @@ def listen_quiz(lang_code):
     ):
         return redirect(url_for("index"))
 
+    # No running listening round on this language: send the learner to the
+    # screen that starts one, not to the language menu.
     if session.get("learn_language") != lang_code or session.get("mode") != "audio":
-        return redirect(url_for("mode_selection", lang_code=lang_code))
+        return redirect(url_for("listen_modes", lang_code=lang_code))
 
     try:
         numbers = _session_numbers(lang_code)
@@ -2095,6 +2199,14 @@ def results(lang_code):
 
     has_learn_materials = lang_code in get_languages_with_learn_materials()
 
+    # "Back to overview" returns to the screen the round was configured on:
+    # the listening overview for a listening round, the number-practice config
+    # screen for every other mode.
+    if mode == "audio" and lang_code in get_languages_with_audio_mode():
+        back_overview_url = url_for("listen_modes", lang_code=lang_code)
+    else:
+        back_overview_url = url_for("number_modes", lang_code=lang_code)
+
     return render_template(
         "results.html",
         score=score,
@@ -2104,6 +2216,14 @@ def results(lang_code):
         percentage=percentage,
         lang_code=lang_code,
         has_learn_materials=has_learn_materials,
+        back_overview_url=back_overview_url,
+        # Carried into the "try again" form so a repeat of a shared drill keeps
+        # the range it was configured with.
+        retry_range=(
+            "-".join(str(n) for n in session.get("number_range"))
+            if session.get("number_range")
+            else ""
+        ),
         is_speed_bonus=is_speed_bonus,
         show_splash=show_splash,
         show_perfect_splash=show_perfect_splash,
@@ -4123,6 +4243,10 @@ def sitemap_xml():
             urls.append(f"{base}/{lang_code}")
             # The worksheet setup form (no params) is a real landing page.
             urls.append(f"{base}/{lang_code}/worksheet")
+    for lc in get_languages_with_audio_mode():
+        # The listening overview is a real landing page; the drill it starts
+        # (a parameterised URL, noindex) is not.
+        urls.append(f"{base}/{lc}/listening")
     for lc in get_languages_with_learn_materials():
         urls.append(f"{base}/{lc}/learn")
     for lc in get_languages_with_conjugation_materials():
