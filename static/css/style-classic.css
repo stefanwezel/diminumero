@@ -2752,15 +2752,33 @@ html {
     gap: 8px;
 }
 
-/* Ruled index-card aesthetic: cream paper, red top line, repeating blue rules.
- * Layered backgrounds: red line on top (1px, opaque only at y=32–33),
- * blue rules below (1px every 28px starting at y=38). */
+/* Ruled index-card aesthetic: cream paper, red margin line, blue writing rules.
+ * Three layers, each anchored to the card's top edge so the ruling comes out
+ * identical on every card whatever its height: the top rule (y=13), the red
+ * margin line (y=32), then the writing rules every 28px from y=65 — the grid
+ * `.cards-list-text` sets with its 28px line-height, so each line of text sits
+ * on a rule.
+ *
+ * The rules are offset with background-position rather than sized against the
+ * card (`100% calc(100% - 38px)`, which tiled and so left the phase at the
+ * mercy of the card's height). That is why a one-line verb card and a two-line
+ * index card ruled differently, a three-line card's last line got no rule at
+ * all, and under fractional display scaling the two heights dropped different
+ * lines when rasterized — which is what made the verb list look unruled. */
 .cards-list-item {
     position: relative;
     padding: 38px 130px 24px 24px;
     min-height: 110px;
     background-color: #fffaeb;
     background-image:
+        linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 13px,
+            #a8c5e4 13px,
+            #a8c5e4 14px,
+            transparent 14px
+        ),
         linear-gradient(
             to bottom,
             transparent 0,
@@ -2771,14 +2789,14 @@ html {
         ),
         repeating-linear-gradient(
             to bottom,
-            transparent 0,
-            transparent 27px,
-            #a8c5e4 27px,
-            #a8c5e4 28px
+            #a8c5e4 0,
+            #a8c5e4 1px,
+            transparent 1px,
+            transparent 28px
         );
-    background-position: 0 0, 0 38px;
-    background-repeat: no-repeat, repeat;
-    background-size: 100% 100%, 100% calc(100% - 38px);
+    background-position: 0 0, 0 0, 0 65px;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size: 100% 100%, 100% 100%, 100% 100%;
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 6px;
     box-shadow:
