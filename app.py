@@ -54,7 +54,6 @@ from languages import (
     get_default_number_system,
     get_feedback_expression,
     get_language_numbers,
-    get_language_ui_description,
     get_language_ui_name,
     get_languages_with_audio_mode,
     get_languages_with_conjugation,
@@ -337,13 +336,10 @@ def get_text(key, learn_language=None):
     if learn_language is None:
         learn_language = session.get("learn_language", "es")
 
-    # Language name/description keys are resolved from languages/config.py
+    # Language name keys are resolved from languages/config.py
     if key.startswith("lang_") and key.endswith("_name"):
         lang_code = key[5:-5]
         return get_language_ui_name(lang_code, ui_language)
-    if key.startswith("lang_") and key.endswith("_description"):
-        lang_code = key[5:-12]
-        return get_language_ui_description(lang_code, ui_language)
 
     lang_texts = TRANSLATIONS.get(ui_language, {})
     if key in lang_texts:
@@ -593,7 +589,6 @@ def index():
         translated_languages[lang_code] = {
             **lang_info,  # Copy all properties
             "name": get_text(f"lang_{lang_code}_name"),
-            "description": get_text(f"lang_{lang_code}_description"),
         }
 
     return render_template(

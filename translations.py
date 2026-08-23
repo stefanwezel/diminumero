@@ -31,6 +31,7 @@ TRANSLATIONS = {
         "home_hero_description": "Practice translating numbers from digits to LANGUAGE_NAME_PLACEHOLDER words. Choose your difficulty mode and start learning!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "Numbers",
         "language_card_audio_sticker": "Listening",
         "language_card_verbs_badge": "Verbs",
         "home_new_feature_title": "Your own vocabulary cards",
@@ -501,6 +502,7 @@ TRANSLATIONS = {
         "home_hero_description": "Übe die Übersetzung von Zahlen in LANGUAGE_NAME_PLACEHOLDERe Wörter. Wähle deinen Schwierigkeitsgrad und fang an zu lernen!",
         # New feature callout (home page)
         "home_new_feature_badge": "Neu",
+        "language_card_numbers_badge": "Zahlen",
         "language_card_audio_sticker": "Hören",
         "language_card_verbs_badge": "Verben",
         "home_new_feature_title": "Deine eigenen Vokabelkarten",
@@ -966,6 +968,7 @@ TRANSLATIONS = {
         "home_hero_description": "Practica la traducción de números a palabras en LANGUAGE_NAME_PLACEHOLDER. ¡Elige tu nivel de dificultad y comienza a aprender!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "Números",
         "language_card_audio_sticker": "Escucha",
         "language_card_verbs_badge": "Verbos",
         "home_new_feature_title": "Your own vocabulary cards",
@@ -1415,6 +1418,7 @@ TRANSLATIONS = {
         "home_hero_description": "Pratica la traduzione dei numeri in parole in LANGUAGE_NAME_PLACEHOLDER. Scegli il tuo livello di difficoltà e inizia ad imparare!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "Numeri",
         "language_card_audio_sticker": "Ascolto",
         "language_card_verbs_badge": "Verbi",
         "home_new_feature_title": "Your own vocabulary cards",
@@ -1863,6 +1867,7 @@ TRANSLATIONS = {
         "home_hero_description": "Pratiquez la traduction de chiffres en mots en LANGUAGE_NAME_PLACEHOLDER. Choisissez votre niveau de difficulté et commencez à apprendre !",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "Nombres",
         "language_card_audio_sticker": "Écoute",
         "language_card_verbs_badge": "Verbes",
         "home_new_feature_title": "Your own vocabulary cards",
@@ -2311,6 +2316,7 @@ TRANSLATIONS = {
         "home_hero_description": "Pratique a tradução de números para palavras em LANGUAGE_NAME_PLACEHOLDER. Escolha o seu nível de dificuldade e comece a aprender!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "Números",
         "language_card_audio_sticker": "Escuta",
         "language_card_verbs_badge": "Verbos",
         "home_new_feature_title": "Your own vocabulary cards",
@@ -2759,6 +2765,7 @@ TRANSLATIONS = {
         "home_hero_description": "تدرب على ترجمة الأرقام إلى كلمات باللغة LANGUAGE_NAME_PLACEHOLDER. اختر مستوى الصعوبة وابدأ التعلم!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "الأرقام",
         "language_card_audio_sticker": "استماع",
         "language_card_verbs_badge": "الأفعال",
         "home_new_feature_title": "Your own vocabulary cards",
@@ -3207,6 +3214,7 @@ TRANSLATIONS = {
         "home_hero_description": "Практикуйте переклад чисел у слова LANGUAGE_NAME_PLACEHOLDER. Оберіть рівень складності та починайте навчання!",
         # New feature callout (home page)
         "home_new_feature_badge": "New",
+        "language_card_numbers_badge": "Числа",
         "language_card_audio_sticker": "Аудіо",
         "language_card_verbs_badge": "Дієслова",
         "home_new_feature_title": "Your own vocabulary cards",

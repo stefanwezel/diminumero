@@ -89,6 +89,13 @@ class TestAvailability:
         assert 'href="/es/listening"' in data
         assert 'action="/es/listen/start"' not in data
 
+    def test_landing_page_ear_opens_the_overview(self, client):
+        """The ear badge on a language card used to POST straight into a round,
+        so the drill it started was whatever the last session had configured."""
+        data = client.get("/").data.decode("utf-8")
+        assert 'href="/es/listening"' in data
+        assert 'action="/es/listen/start"' not in data
+
     def test_quiz_without_a_session_lands_on_the_overview(self, client):
         response = client.get("/es/listen")
         assert response.status_code == 302

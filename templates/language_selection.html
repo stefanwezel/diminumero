@@ -83,28 +83,41 @@
         <div class="mode-selection">
             {% for lang_code, lang_info in languages.items() %}
             <div class="mode-card {% if not lang_info.ready %}mode-disabled{% endif %}">
-                {% if lang_info.has_conjugation or lang_info.has_audio_mode %}
+                {% if lang_info.ready or lang_info.has_conjugation or lang_info.has_audio_mode %}
+                {# Shortcuts past the language menu, in the order the menu
+                   itself lists them: numbers, listening, verbs. Each opens
+                   that section's own overview — none of them starts a drill. #}
                 <div class="card-corner-actions">
+                    {# Number practice is the one section every language has,
+                       but only once it is ready: `number_modes` bounces an
+                       unready language back to the landing page. #}
+                    {% if lang_info.ready %}
+                    <a href="{{ url_for('number_modes', lang_code=lang_code) }}" class="corner-action-btn" aria-label="{{ get_text('language_card_numbers_badge') }}" title="{{ get_text('language_card_numbers_badge') }}">
+                        <img src="{{ url_for('static', filename='icons/icon-numbers.svg') }}" alt="" class="corner-action-icon" aria-hidden="true" loading="lazy">
+                        <span class="corner-action-label">{{ get_text('language_card_numbers_badge') }}</span>
+                    </a>
+                    {% endif %}
+                    {% if lang_info.has_audio_mode %}
+                    {# Opens the listening overview rather than starting a round
+                       on the spot, like the menu tile does: the drill is
+                       configured (magnitude, range) and shared from its own
+                       page first. #}
+                    <a href="{{ url_for('listen_modes', lang_code=lang_code) }}" class="corner-action-btn" aria-label="{{ get_text('language_card_audio_sticker') }}" title="{{ get_text('language_card_audio_sticker') }}">
+                        <img src="{{ url_for('static', filename='icons/icon-ear.svg') }}" alt="" class="corner-action-icon" aria-hidden="true" loading="lazy">
+                        <span class="corner-action-label">{{ get_text('language_card_audio_sticker') }}</span>
+                    </a>
+                    {% endif %}
                     {% if lang_info.has_conjugation %}
                     <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="corner-action-btn" aria-label="{{ get_text('language_card_verbs_badge') }}" title="{{ get_text('language_card_verbs_badge') }}">
                         <img src="{{ url_for('static', filename='icons/icon-verbs.svg') }}" alt="" class="corner-action-icon" aria-hidden="true" loading="lazy">
                         <span class="corner-action-label">{{ get_text('language_card_verbs_badge') }}</span>
                     </a>
                     {% endif %}
-                    {% if lang_info.has_audio_mode %}
-                    <form action="{{ url_for('listen_start', lang_code=lang_code) }}" method="POST" data-listen-pjax>
-                        <button type="submit" class="corner-action-btn" aria-label="{{ get_text('language_card_audio_sticker') }}" title="{{ get_text('language_card_audio_sticker') }}">
-                            <img src="{{ url_for('static', filename='icons/icon-ear.svg') }}" alt="" class="corner-action-icon" aria-hidden="true" loading="lazy">
-                            <span class="corner-action-label">{{ get_text('language_card_audio_sticker') }}</span>
-                        </button>
-                    </form>
-                    {% endif %}
                 </div>
                 {% endif %}
                 <div class="language-flag">{{ lang_info.flag }}</div>
                 <h3 class="mode-title">{{ lang_info.name }}</h3>
                 <p class="language-native-name">{{ lang_info.native_name }}</p>
-                <p class="mode-description">{{ lang_info.description }}</p>
                 
                 {% if lang_info.ready %}
                     <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
@@ -169,11 +182,7 @@
     z-index: 3;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin: 0;
-}
-
-.card-corner-actions form {
+    gap: 7px;
     margin: 0;
 }
 
@@ -183,8 +192,8 @@
     align-items: center;
     justify-content: center;
     gap: 1px;
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     padding: 0;
     background: #C2F970;
     color: #22162B;
@@ -197,13 +206,13 @@
 }
 
 .corner-action-icon {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
 }
 
 .corner-action-label {
     font-family: inherit;
-    font-size: 0.5rem;
+    font-size: 0.45rem;
     font-weight: 800;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -226,7 +235,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
 {% if user %}
 <script src="{{ url_for('static', filename='js/conjugate_lang_modal.js') }}"></script>
 {% endif %}

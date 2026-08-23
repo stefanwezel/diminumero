@@ -70,22 +70,17 @@ Also add a `"language_xx"` key to **every existing** UI language dict so those U
 # etc. for es, it, fr, pt, ar, uk
 ```
 
-> **Note**: Learning language names and descriptions (shown on the language cards) are **not** stored in `translations.py`. They come from `ui_names` and `ui_descriptions` in `languages/config.py`. When you add a new UI language, add the new code to those dicts for every learning language — see step 3.
+> **Note**: Learning language names (shown on the language cards) are **not** stored in `translations.py`. They come from `ui_names` in `languages/config.py`. When you add a new UI language, add the new code to that dict for every learning language — see step 3. There is no matching description field: the cards print the name and the native name only, and `ui_descriptions` was deleted in August 2026 once nothing rendered it.
 
 ### 3. `languages/config.py`
 
-For **every** learning language entry in `AVAILABLE_LANGUAGES`, add the new code to both `ui_names` and `ui_descriptions`:
+For **every** learning language entry in `AVAILABLE_LANGUAGES`, add the new code to `ui_names`:
 
 ```python
 "es": {
     ...
     "ui_names": {
         "en": "Spanish", "de": "Spanisch", ..., "xx": "Espangolo",
-    },
-    "ui_descriptions": {
-        "en": "Learn Spanish numbers from 1 to 10 million",
-        ...,
-        "xx": "...",
     },
 },
 ```
@@ -177,6 +172,6 @@ No template changes are needed for RTL support.
 3. Click the 🌐 globe — verify the new language appears highlighted in the dropdown.
 4. If RTL: inspect `<html dir="rtl">` in the source and verify the globe is top-left.
 5. Check `/`, `/<lang_code>`, `/about`, `/privacy` pages render in the new language.
-6. Verify learning language cards show translated names and descriptions (from `ui_names`/`ui_descriptions` in `languages/config.py`).
+6. Verify learning language cards show translated names (from `ui_names` in `languages/config.py`; the cards no longer print descriptions).
 7. Run `uv run pytest` — all existing tests should pass.
 8. Test an invalid code: `/set_language/zz` should redirect without changing the session language.

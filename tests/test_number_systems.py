@@ -217,9 +217,18 @@ class TestHonestLabelling:
     need both" — so the site has to stop implying that decimal is all there is.
     """
 
-    def test_language_card_names_the_system(self, client):
+    def test_language_card_claims_no_system(self, client):
+        """The landing cards lost their description line, and with it the only
+        mention of a numeral system on that page.
+
+        The promise made to the review was not that sentence in particular: it
+        was that the site must stop implying decimal is all there is. A card
+        that names no system implies nothing, and the picker below answers the
+        question one click later — still before any drill starts.
+        """
         body = client.get("/").get_data(as_text=True)
-        assert "modern decimal Welsh" in body
+        assert "modern decimal Welsh" not in body
+        assert 'href="/cy"' in body
 
     def test_menu_page_offers_both_systems_on_the_tile(self, client):
         """With two systems live the tile is a picker, not a label.

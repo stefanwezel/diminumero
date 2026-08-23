@@ -4,6 +4,7 @@ import pytest
 from app import app as flask_app
 from config import QUESTIONS_PER_QUIZ
 from languages import get_language_numbers
+from languages.config import AVAILABLE_LANGUAGES
 
 # Load Spanish numbers for testing
 NUMBERS = get_language_numbers("es")
@@ -63,6 +64,31 @@ class TestIndexRoute:
             sess["language"] = "it"
         data = client.get("/de/learn/conjugations").data.decode("utf-8")
         assert "Impara la coniugazione dei verbi tedeschi" in data
+
+    def test_every_ready_language_card_shortcuts_to_number_practice(self, client):
+        """Listening and verbs had a corner shortcut; the section every
+        language has did not, so the one universal drill was the only one that
+        took two clicks."""
+        data = client.get("/").data.decode("utf-8")
+        for code, info in AVAILABLE_LANGUAGES.items():
+            if info.get("ready"):
+                assert f'href="/{code}/numbers"' in data, code
+
+    def test_card_shortcuts_run_numbers_listening_verbs(self, client):
+        """Spanish is the one card carrying all three, so it is where the
+        order is visible."""
+        data = client.get("/").data.decode("utf-8")
+        corner = data.split('class="card-corner-actions"')[1].split("</div>")[0]
+        assert corner.index("/es/numbers") < corner.index("/es/listening")
+        assert corner.index("/es/listening") < corner.index("/es/conjugate")
+
+    def test_number_shortcut_opens_the_overview_not_a_drill(self, client):
+        """It points at the config screen, so no drill is seeded by a click on
+        the landing page."""
+        response = client.get("/es/numbers")
+        assert response.status_code == 200
+        with client.session_transaction() as sess:
+            assert "current_number" not in sess
 
     def test_index_sets_default_language(self, client):
         """Test that index sets default UI language to English."""

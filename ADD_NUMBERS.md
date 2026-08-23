@@ -39,7 +39,6 @@ AVAILABLE_LANGUAGES = {
         'ready': False,  # Set to True when ready
         'has_learn_materials': False,  # True once you add learn templates (step 6)
         'has_audio_mode': False,       # True once you generate Listening MP3s (step 9)
-        'description': 'Learn LanguageName numbers!',
         'validation_strategy': 'word_based',  # or 'component_based'
         # Display name in each supported UI language
         'ui_names': {
@@ -47,24 +46,13 @@ AVAILABLE_LANGUAGES = {
             'it': 'NomeLingua', 'fr': 'NomLangue', 'pt': 'NomeLíngua',
             'ar': 'اسم اللغة', 'uk': 'НазваМови',
         },
-        # Description shown on the language selection page, in each UI language
-        'ui_descriptions': {
-            'en': 'Learn LanguageName numbers from 0 to 10 million',
-            'de': 'Lerne Sprachname Zahlen von 1 bis 10 Millionen',
-            'es': 'Aprende los números en NombreLengua del 1 al 10 millones',
-            'it': 'Impara i numeri in NomeLingua da 1 a 10 milioni',
-            'fr': 'Apprenez les nombres en NomLangue de 1 à 10 millions',
-            'pt': 'Aprenda os números em NomeLíngua de 1 a 10 milhões',
-            'ar': 'تعلم الأرقام باللغة من 1 إلى 10 ملايين',
-            'uk': 'Вивчайте числа від 1 до 10 мільйонів',
-        },
         # Word shown to the user when they answer correctly (in the target language)
         'feedback_expression': 'Correct!',
     },
 }
 ```
 
-> **Note on translations**: `ui_names` and `ui_descriptions` are how your language appears across all 8 UI languages. The app resolves `lang_xx_name` and `lang_xx_description` keys dynamically from these dicts — you do **not** need to add anything to `translations.py` for the language cards.
+> **Note on translations**: `ui_names` is how your language appears across all 8 UI languages. The app resolves `lang_xx_name` dynamically from it — you do **not** need to add anything to `translations.py` for the language cards. There is no description to write: the cards show the name and the native name only (the `description`/`ui_descriptions` fields were deleted in August 2026 once nothing rendered them).
 
 Update the import logic in `get_language_numbers()` in the same file — add an `elif` branch:
 
@@ -193,22 +181,11 @@ touch languages/qu/__init__.py
     'native_name': 'Runasimi',
     'flag': '🇵🇪',
     'ready': False,
-    'description': 'Learn Quechua numbers from 0 to millions!',
     'validation_strategy': 'word_based',
     'ui_names': {
         'en': 'Quechua', 'de': 'Quechua', 'es': 'Quechua',
         'it': 'Quechua', 'fr': 'Quechua', 'pt': 'Quechua',
         'ar': 'كيتشوا', 'uk': 'Кечуа',
-    },
-    'ui_descriptions': {
-        'en': 'Learn Quechua numbers from 0 to 10 million',
-        'de': 'Lerne Quechua Zahlen von 1 bis 10 Millionen',
-        'es': 'Aprende los números en quechua del 1 al 10 millones',
-        'it': 'Impara i numeri in quechua da 1 a 10 milioni',
-        'fr': 'Apprenez les nombres en quechua de 1 à 10 millions',
-        'pt': 'Aprenda os números em quechua de 1 a 10 milhões',
-        'ar': 'تعلم الأرقام بالكيتشوا من 1 إلى 10 ملايين',
-        'uk': 'Вивчайте числа кечуа від 1 до 10 мільйонів',
     },
     'feedback_expression': 'Allinmi!',
 }
@@ -453,7 +430,7 @@ declares nothing draws exactly as before.
 Before marking a language as `ready: True`:
 
 - [ ] Numbers dictionary is complete and accurate
-- [ ] Language registered in `languages/config.py` with `ui_names` and `ui_descriptions` for all 8 UI languages, plus `feedback_expression`
+- [ ] Language registered in `languages/config.py` with `ui_names` for all 8 UI languages, plus `feedback_expression`
 - [ ] `elif` branch added to `get_language_numbers()` in `languages/config.py`
 - [ ] Language appears on selection page with correct name in each UI language
 - [ ] Mode selection works when accessed directly

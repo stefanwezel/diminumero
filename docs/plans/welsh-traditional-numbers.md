@@ -639,7 +639,11 @@ Minimal, and built so the copy survives the toggle:
 
 1. **Language card** — reword `cy`'s `ui_descriptions` (8 strings, an existing field in
    `languages/config.py:427-436`, **no new keys**): *"Learn modern decimal Welsh numbers
-   from 0 to 10 million"*.
+   from 0 to 10 million"*. **Gone** (August 2026): the landing cards dropped their
+   description line, so no card claims a system at all, and `description`/`ui_descriptions`
+   were deleted from the registry once nothing rendered them. What carries the promise now
+   is item 2 plus the two-system picker on `/cy`, one click later and still before any
+   drill starts. Silence implies nothing, which is what the review actually asked for.
 2. **Config screen and mode-selection page** — one notice line rendered whenever a
    language declares more than one system and only one of them is available:
    *"This drill teaches the **decimal** number system. The **traditional** system isn't

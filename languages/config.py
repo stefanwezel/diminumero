@@ -13,7 +13,6 @@ AVAILABLE_LANGUAGES = {
         "has_audio_mode": True,
         "has_conjugation": True,
         "has_conjugation_materials": True,
-        "description": "Learn Spanish numbers from 0 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         # UI display names keyed by UI language code
         "ui_names": {
@@ -26,17 +25,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الإسبانية",
             "uk": "Іспанська",
         },
-        # Translated descriptions shown on the language selection page
-        "ui_descriptions": {
-            "en": "Learn Spanish numbers from 0 to 10 million",
-            "de": "Lerne Spanische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en español del 0 al 10 millones",
-            "it": "Impara i numeri in spagnolo da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en espagnol de 0 à 10 millions",
-            "pt": "Aprenda os números em espanhol de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالإسبانية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте іспанські числа від 0 до 10 мільйонів",
-        },
         # Word shown to the user when they answer correctly (in the target language)
         "feedback_expression": "¡Correcto",
     },
@@ -47,7 +35,6 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
-        "description": "Learn French numbers from 0 to 10 million",
         "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
         "ui_names": {
             "en": "French",
@@ -59,16 +46,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الفرنسية",
             "uk": "Французька",
         },
-        "ui_descriptions": {
-            "en": "Learn French numbers from 0 to 10 million",
-            "de": "Lerne Französische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en francés del 0 al 10 millones",
-            "it": "Impara i numeri in francese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en français de 0 à 10 millions",
-            "pt": "Aprenda os números em francês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالفرنسية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте французькі числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Correct",
     },
     "ja": {
@@ -78,7 +55,6 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
-        "description": "Learn Japanese numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Japanese",
@@ -89,16 +65,6 @@ AVAILABLE_LANGUAGES = {
             "pt": "Japonês",
             "ar": "اليابانية",
             "uk": "Японська",
-        },
-        "ui_descriptions": {
-            "en": "Learn Japanese numbers from 0 to 10 million",
-            "de": "Lerne Japanische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en japonés del 0 al 10 millones",
-            "it": "Impara i numeri in giapponese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en japonais de 0 à 10 millions",
-            "pt": "Aprenda os números em japonês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام باليابانية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте японські числа від 0 до 10 мільйонів",
         },
         "feedback_expression": "正解!",
     },
@@ -111,7 +77,6 @@ AVAILABLE_LANGUAGES = {
         "has_audio_mode": True,
         "has_conjugation": True,
         "has_conjugation_materials": True,
-        "description": "Learn German numbers from 0 to 10 million",
         "validation_strategy": "component_based",  # Compound words
         "ui_names": {
             "en": "German",
@@ -123,16 +88,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الألمانية",
             "uk": "Німецька",
         },
-        "ui_descriptions": {
-            "en": "Learn German numbers from 0 to 10 million",
-            "de": "Lerne Deutsche Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en alemán del 0 al 10 millones",
-            "it": "Impara i numeri in tedesco da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en allemand de 0 à 10 millions",
-            "pt": "Aprenda os números em alemão de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالألمانية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте німецькі числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Korrekt",
     },
     "ko": {
@@ -141,7 +96,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇰🇷",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Korean numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Korean",
@@ -153,16 +107,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الكورية",
             "uk": "Корейська",
         },
-        "ui_descriptions": {
-            "en": "Learn Korean numbers from 0 to 10 million",
-            "de": "Lerne Koreanische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en coreano del 0 al 10 millones",
-            "it": "Impara i numeri in coreano da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en coréen de 0 à 10 millions",
-            "pt": "Aprenda os números em coreano de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالكورية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте корейські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "정답!",
     },
     "it": {
@@ -173,7 +117,6 @@ AVAILABLE_LANGUAGES = {
         "has_learn_materials": True,
         "has_conjugation": True,
         "has_conjugation_materials": True,
-        "description": "Learn Italian numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Italian",
@@ -185,16 +128,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الإيطالية",
             "uk": "Італійська",
         },
-        "ui_descriptions": {
-            "en": "Learn Italian numbers from 0 to 10 million",
-            "de": "Lerne Italienische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en italiano del 0 al 10 millones",
-            "it": "Impara i numeri in italiano da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en italien de 0 à 10 millions",
-            "pt": "Aprenda os números em italiano de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالإيطالية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте італійські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Corretto!",
     },
     "zh": {
@@ -203,7 +136,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇨🇳",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Chinese numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Chinese",
@@ -215,16 +147,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الصينية",
             "uk": "Китайська",
         },
-        "ui_descriptions": {
-            "en": "Learn Chinese numbers from 0 to 10 million",
-            "de": "Lerne Chinesische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en chino del 0 al 10 millones",
-            "it": "Impara i numeri in cinese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en chinois de 0 à 10 millions",
-            "pt": "Aprenda os números em chinês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالصينية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте китайські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "正确!",
     },
     "pt": {
@@ -234,7 +156,6 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
-        "description": "Learn Portuguese numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Portuguese",
@@ -246,16 +167,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "البرتغالية",
             "uk": "Португальська",
         },
-        "ui_descriptions": {
-            "en": "Learn Portuguese numbers from 0 to 10 million",
-            "de": "Lerne Portugiesische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en portugués del 0 al 10 millones",
-            "it": "Impara i numeri in portoghese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en portugais de 0 à 10 millions",
-            "pt": "Aprenda os números em português de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالبرتغالية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте португальські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Correto!",
     },
     "tr": {
@@ -264,7 +175,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇹🇷",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Turkish numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Turkish",
@@ -276,16 +186,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "التركية",
             "uk": "Турецька",
         },
-        "ui_descriptions": {
-            "en": "Learn Turkish numbers from 0 to 10 million",
-            "de": "Lerne Türkische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en turco del 0 al 10 millones",
-            "it": "Impara i numeri in turco da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en turc de 0 à 10 millions",
-            "pt": "Aprenda os números em turco de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالتركية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте турецькі числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Doğru!",
     },
     "ne": {
@@ -293,7 +193,6 @@ AVAILABLE_LANGUAGES = {
         "native_name": "नेपाली",
         "flag": "🇳🇵",
         "ready": True,
-        "description": "Learn Nepalese numbers",
         "validation_strategy": "word_based",  # Numbers separated by spaces
         "ui_names": {
             "en": "Nepalese",
@@ -305,16 +204,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "النيبالية",
             "uk": "Непальська",
         },
-        "ui_descriptions": {
-            "en": "Learn Nepalese numbers from 0 to 1000",
-            "de": "Lerne Nepalesische Zahlen von 0 bis 1000",
-            "es": "Aprende los números en nepalés del 0 al 1000",
-            "it": "Impara i numeri in nepalese da 0 a 1000",
-            "fr": "Apprenez les nombres en népalais de 0 à 1000",
-            "pt": "Aprenda os números em nepalês de 0 a 1000",
-            "ar": "تعلم الأرقام بالنيبالية من 0 إلى 1000",
-            "uk": "Вивчайте непальські числа від 0 до 1000",
-        },
         "feedback_expression": "सहि!",
     },
     "sv": {
@@ -324,7 +213,6 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
-        "description": "Learn Swedish numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Swedish",
@@ -336,16 +224,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "السويدية",
             "uk": "Шведська",
         },
-        "ui_descriptions": {
-            "en": "Learn Swedish numbers from 0 to 10 million",
-            "de": "Lerne Schwedische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en sueco del 0 al 10 millones",
-            "it": "Impara i numeri in svedese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en suédois de 0 à 10 millions",
-            "pt": "Aprenda os números em sueco de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالسويدية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте шведські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Rätt!",
     },
     "da": {
@@ -354,7 +232,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇩🇰",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Danish numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Danish",
@@ -366,16 +243,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الدنماركية",
             "uk": "Данська",
         },
-        "ui_descriptions": {
-            "en": "Learn Danish numbers from 0 to 10 million",
-            "de": "Lerne Dänische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en danés del 0 al 10 millones",
-            "it": "Impara i numeri in danese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en danois de 0 à 10 millions",
-            "pt": "Aprenda os números em dinamarquês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالدنماركية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте данські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Korrekt!",
     },
     "no": {
@@ -384,7 +251,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇳🇴",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Norwegian numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Norwegian",
@@ -396,16 +262,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "النرويجية",
             "uk": "Норвезька",
         },
-        "ui_descriptions": {
-            "en": "Learn Norwegian numbers from 0 to 10 million",
-            "de": "Lerne Norwegische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en noruego del 0 al 10 millones",
-            "it": "Impara i numeri in norvegese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en norvégien de 0 à 10 millions",
-            "pt": "Aprenda os números em norueguês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالنرويجية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте норвезькі числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Riktig!",
     },
     "cy": {
@@ -414,7 +270,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn modern decimal Welsh numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         # Welsh counts two ways. The decimal system ("cyfrif degol") is what
         # school teaches and what arithmetic uses; the traditional vigesimal
@@ -458,20 +313,6 @@ AVAILABLE_LANGUAGES = {
             "ar": "الويلزية",
             "uk": "Валлійська",
         },
-        # Names the system on the language card: the deck is decimal Welsh,
-        # and saying so is the point of docs/plans/welsh-traditional-numbers.md
-        # phase 0. Reworded rather than replaced so the toggle can drop the
-        # qualifier again once the traditional deck is usable.
-        "ui_descriptions": {
-            "en": "Learn modern decimal Welsh numbers from 0 to 10 million",
-            "de": "Lerne moderne dezimale walisische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números galeses decimales modernos del 0 al 10 millones",
-            "it": "Impara i numeri gallesi decimali moderni da 0 a 10 milioni",
-            "fr": "Apprenez les nombres gallois décimaux modernes de 0 à 10 millions",
-            "pt": "Aprenda os números galeses decimais modernos de 0 a 10 milhões",
-            "ar": "تعلم الأرقام الويلزية العشرية الحديثة من 0 إلى 10 ملايين",
-            "uk": "Вивчайте сучасні десяткові валлійські числа від 0 до 10 мільйонів",
-        },
         "feedback_expression": "Da iawn!",
     },
     "ga": {
@@ -480,7 +321,6 @@ AVAILABLE_LANGUAGES = {
         "flag": "🇮🇪",
         "ready": True,
         "has_learn_materials": True,
-        "description": "Learn Irish numbers from 0 to 10 million",
         "validation_strategy": "word_based",
         "ui_names": {
             "en": "Irish",
@@ -491,16 +331,6 @@ AVAILABLE_LANGUAGES = {
             "pt": "Irlandês",
             "ar": "الأيرلندية",
             "uk": "Ірландська",
-        },
-        "ui_descriptions": {
-            "en": "Learn Irish numbers from 0 to 10 million",
-            "de": "Lerne Irische Zahlen von 0 bis 10 Millionen",
-            "es": "Aprende los números en irlandés del 0 al 10 millones",
-            "it": "Impara i numeri in irlandese da 0 a 10 milioni",
-            "fr": "Apprenez les nombres en irlandais de 0 à 10 millions",
-            "pt": "Aprenda os números em irlandês de 0 a 10 milhões",
-            "ar": "تعلم الأرقام بالأيرلندية من 0 إلى 10 ملايين",
-            "uk": "Вивчайте ірландські числа від 0 до 10 мільйонів",
         },
         "feedback_expression": "Maith thú!",
     },
@@ -870,22 +700,6 @@ def get_language_ui_name(lang_code, ui_lang):
     lang_info = AVAILABLE_LANGUAGES.get(lang_code, {})
     ui_names = lang_info.get("ui_names", {})
     return ui_names.get(ui_lang, lang_info.get("name", lang_code))
-
-
-def get_language_ui_description(lang_code, ui_lang):
-    """
-    Get the description of a learning language in the given UI language.
-
-    Args:
-        lang_code: Learning language code (e.g. 'es')
-        ui_lang: UI language code (e.g. 'en' or 'de')
-
-    Returns:
-        Translated description string (falls back to the default description)
-    """
-    lang_info = AVAILABLE_LANGUAGES.get(lang_code, {})
-    ui_descriptions = lang_info.get("ui_descriptions", {})
-    return ui_descriptions.get(ui_lang, lang_info.get("description", ""))
 
 
 def get_component_decomposer(lang_code):
