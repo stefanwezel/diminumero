@@ -37,10 +37,10 @@ from languages.notes_loader import (  # noqa: E402
 )
 from translations import TRANSLATIONS  # noqa: E402
 
-# Worksheet UI strings live under this prefix; the sheet also prints a couple
-# of shared keys.
+# Worksheet UI strings live under this prefix; the setup page around the sheet
+# borrows one shared key.
 WORKSHEET_KEY_PREFIX = "worksheet_"
-EXTRA_KEYS = ("info_numbers", "learn_btn_back")
+EXTRA_KEYS = ("learn_btn_back",)
 
 
 def deck_characters():

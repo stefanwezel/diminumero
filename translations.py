@@ -123,7 +123,6 @@ TRANSLATIONS = {
         "worksheet_notice_pdf_failed": "The PDF couldn't be generated just now, so here is the printable page — your browser's print dialog produces the same sheet.",
         # Info section
         "info_questions": "Questions",
-        "info_numbers": "Numbers",
         # Learn section
         "learn_nav_text": "Learn LANGUAGE_NAME_PLACEHOLDER Numbers",
         "learn_nav_button": "Learn numbers",
@@ -536,7 +535,6 @@ TRANSLATIONS = {
         "magnitude_level_5": "Alle Größen gleich wahrscheinlich",
         # Info section
         "info_questions": "Fragen",
-        "info_numbers": "Zahlen",
         # Learn section
         "learn_nav_text": "LANGUAGE_NAME_PLACEHOLDER Zahlen lernen",
         "learn_nav_button": "Zahlen lernen",
@@ -994,7 +992,6 @@ TRANSLATIONS = {
         "magnitude_level_4": "Muchos números grandes",
         "magnitude_level_5": "Todos los tamaños igual de probables",
         "info_questions": "Preguntas",
-        "info_numbers": "Números",
         "learn_nav_text": "Aprende los números en LANGUAGE_NAME_PLACEHOLDER",
         "learn_nav_button": "Aprender números",
         "learn_nav_desc": "¡Entiende los patrones antes de practicar!",
@@ -1444,7 +1441,6 @@ TRANSLATIONS = {
         "magnitude_level_4": "Molti numeri grandi",
         "magnitude_level_5": "Tutte le dimensioni ugualmente probabili",
         "info_questions": "Domande",
-        "info_numbers": "Numeri",
         "learn_nav_text": "Impara i numeri in LANGUAGE_NAME_PLACEHOLDER",
         "learn_nav_button": "Impara i numeri",
         "learn_nav_desc": "Comprendi i modelli prima di esercitarti!",
@@ -1893,7 +1889,6 @@ TRANSLATIONS = {
         "magnitude_level_4": "Beaucoup de grands nombres",
         "magnitude_level_5": "Toutes les tailles également probables",
         "info_questions": "Questions",
-        "info_numbers": "Chiffres",
         "learn_nav_text": "Apprendre les chiffres en LANGUAGE_NAME_PLACEHOLDER",
         "learn_nav_button": "Apprendre les nombres",
         "learn_nav_desc": "Comprenez les modèles avant de pratiquer !",
@@ -2342,7 +2337,6 @@ TRANSLATIONS = {
         "magnitude_level_4": "Muitos números grandes",
         "magnitude_level_5": "Todos os tamanhos igualmente prováveis",
         "info_questions": "Perguntas",
-        "info_numbers": "Números",
         "learn_nav_text": "Aprender os números em LANGUAGE_NAME_PLACEHOLDER",
         "learn_nav_button": "Aprender números",
         "learn_nav_desc": "Entenda os padrões antes de praticar!",
@@ -2791,7 +2785,6 @@ TRANSLATIONS = {
         "magnitude_level_4": "أرقام كبيرة كثيرة",
         "magnitude_level_5": "جميع الأحجام متساوية الاحتمال",
         "info_questions": "أسئلة",
-        "info_numbers": "أرقام",
         "learn_nav_text": "تعلم الأرقام باللغة LANGUAGE_NAME_PLACEHOLDER",
         "learn_nav_button": "تعلّم الأرقام",
         "learn_nav_desc": "افهم الأنماط قبل التدريب!",
@@ -3240,7 +3233,6 @@ TRANSLATIONS = {
         "magnitude_level_4": "Багато великих чисел",
         "magnitude_level_5": "Усі розміри однаково ймовірні",
         "info_questions": "Питання",
-        "info_numbers": "Числа",
         "learn_nav_text": "Вивчайте числа LANGUAGE_NAME_PLACEHOLDER",
         "learn_nav_button": "Вивчати числа",
         "learn_nav_desc": "Зрозумійте закономірності перед практикою!",
