@@ -13,6 +13,17 @@
             ← {{ get_text('cards_practice_numbers_btn') }}
         </a>
     </div>
+    {% if cards %}
+    {# Top-of-page shortcut into the practice form further down: same form,
+       same settings — `form=` submits it from up here with no JS. #}
+    <section class="cards-quickstart">
+        <button type="submit" form="cards-practice-form"
+                class="btn btn-primary cards-quickstart-btn">
+            {{ get_text('cards_start_practice_btn') }}
+        </button>
+        <p class="cards-quickstart-hint">{{ get_text('cards_practice_cta_hint') }}</p>
+    </section>
+    {% endif %}
     <section class="cards-create-section">
         <h2 class="cards-section-heading">
             {% if edit_card %}
@@ -178,7 +189,7 @@
         {% endif %}
         {% if cards %}
             <form method="POST" action="{{ url_for('cards_practice_start') }}"
-                  class="cards-practice-form">
+                  class="cards-practice-form" id="cards-practice-form">
                 <fieldset class="cards-direction-fieldset">
                     <legend>{{ get_text('cards_direction_label') }}</legend>
                     <label class="cards-radio">

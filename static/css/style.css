@@ -2730,6 +2730,33 @@ html {
     border-top: 2px solid rgba(229, 79, 109, 0.5);
 }
 
+/* Top-of-page shortcut into the practice form below: the settings stay
+   where they were, only the submit is repeated up here. */
+.cards-quickstart {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 20px;
+    padding: 18px 22px;
+    background: rgba(229, 79, 109, 0.1);
+    border: 2px solid rgba(229, 79, 109, 0.45);
+    border-radius: 16px;
+}
+
+.cards-quickstart-btn {
+    padding: 16px 44px;
+    font-size: 1.1rem;
+}
+
+.cards-quickstart-hint {
+    flex: 1 1 240px;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #A89BB8;
+}
+
 .cards-practice-form {
     display: flex;
     flex-wrap: wrap;
@@ -3342,6 +3369,13 @@ html {
 @media (max-width: 600px) {
     .cards-page {
         padding: 30px 20px;
+    }
+    .cards-quickstart {
+        padding: 16px;
+    }
+    .cards-quickstart-btn {
+        width: 100%;
+        padding: 16px 20px;
     }
     .cards-input-row {
         grid-template-columns: 1fr;
