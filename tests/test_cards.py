@@ -1,10 +1,11 @@
 """Tests for the index-card CRUD and practice flow."""
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app import _build_cards_dashboard_stats, app as flask_app
+from app import _build_cards_dashboard_stats, _days_since, app as flask_app
 from models import Card, DeckShare, db
 
 
@@ -869,7 +870,7 @@ class TestCardScoring:
             mastered.recent_results = "1" * 10
             db.session.commit()
 
-        # Weights: unpracticed card ≈ 2.1, mastered card ≈ 0.19 (~11:1).
+        # Weights: unpracticed card ≈ 2.05, mastered card ≈ 0.06 (~35:1).
         picks = []
         for _ in range(200):
             with flask_app.test_request_context():
@@ -883,7 +884,7 @@ class TestCardScoring:
                 card = _load_next_card(state)
                 picks.append(card.id)
         low_count = picks.count(low_id)
-        # 70% lower bound: well below the ~92% expectation but high enough
+        # 70% lower bound: well below the ~97% expectation but high enough
         # to fail a uniform-sampling regression (50%).
         assert low_count >= 140, f"low-score card was picked only {low_count}/200 times"
 
@@ -909,7 +910,7 @@ class TestCardScoring:
             rookie.recent_results = "1"
             db.session.commit()
 
-        # Both have score 1.0. Weights: rookie ≈ 0.6, veteran ≈ 0.12 (~5:1).
+        # Both have score 1.0. Weights: rookie ≈ 0.30, veteran ≈ 0.05 (~6:1).
         picks = []
         for _ in range(200):
             with flask_app.test_request_context():
@@ -923,11 +924,190 @@ class TestCardScoring:
                 card = _load_next_card(state)
                 picks.append(card.id)
         rookie_count = picks.count(rookie_id)
-        # ~83% expected; 65% bound is robust to variance but fails a
+        # ~86% expected; 65% bound is robust to variance but fails a
         # regression to score-only weighting (50%).
         assert rookie_count >= 130, (
             f"rarely-practiced card was picked only {rookie_count}/200 times"
         )
+
+
+class TestPrioritizedSamplingAtDeckScale:
+    """Deck-composition regressions.
+
+    The two-card tests above pass under any sane weighting — the failure they
+    cannot see is aggregate: when 90% of a deck is mastered, a weighting with
+    too high a floor spends most of a round on cards the user already knows,
+    because the mastered *majority* wins on headcount. These drive a whole
+    round through the real session state, at realistic deck sizes.
+    """
+
+    @staticmethod
+    def _seed(user_sub, specs):
+        """specs: list of (label, count, score, times_practiced, days_since).
+
+        Returns {card_id: label}. `days_since=None` leaves last_practiced_at
+        NULL, which is what a row migrated from before the column looks like.
+        """
+        labels = {}
+        with flask_app.app_context():
+            for label, count, score, practiced, days in specs:
+                for i in range(count):
+                    card = Card(
+                        user_sub=user_sub,
+                        front=f"{label}-{i}-front",
+                        back=f"{label}-{i}-back",
+                    )
+                    card.times_practiced = practiced
+                    card.times_correct = int(round(score * practiced))
+                    # recent_results is what `score` actually reads.
+                    ones = int(round(score * 10))
+                    card.recent_results = "1" * ones + "0" * (10 - ones)
+                    if days is not None:
+                        card.last_practiced_at = datetime.now(timezone.utc) - timedelta(
+                            days=days
+                        )
+                    db.session.add(card)
+                    db.session.flush()
+                    labels[card.id] = label
+            db.session.commit()
+        return labels
+
+    @staticmethod
+    def _run_rounds(labels, rounds=60, count=10):
+        """Draw `rounds` full sessions, returning each label's share of the
+        questions asked. Sampling is without replacement within a round, which
+        is exactly what _load_next_card's asked_ids enforces."""
+        from flask import session as flask_session
+
+        from app import _load_next_card
+
+        tally = {}
+        for _ in range(rounds):
+            state = {
+                "direction": "front_to_back",
+                "sampling_mode": "prioritized",
+                "asked_ids": [],
+                "current_card_id": None,
+            }
+            for _ in range(count):
+                with flask_app.test_request_context():
+                    flask_session["user"] = SAMPLE_USER
+                    card = _load_next_card(state)
+                assert card is not None
+                tally[labels[card.id]] = tally.get(labels[card.id], 0) + 1
+                state["asked_ids"].append(card.id)
+                state["current_card_id"] = None
+        total = sum(tally.values())
+        return {k: v / total for k, v in tally.items()}
+
+    def test_mastered_majority_does_not_dominate_a_round(self, client):
+        """50 mastered + 15 weak cards, all seen equally recently.
+
+        The weak pool is larger than the round, so nothing forces mastered
+        cards into the round and the measured share is all weighting. The old
+        linear form gave the mastered 77% of the deck ~36% of the questions;
+        squaring the score term takes that to ~24%.
+
+        (A deck with fewer weak cards than the round length cannot show this:
+        with 5 weak cards in a 10-question round, mastered cards take 50% no
+        matter how the weighting is tuned.)
+        """
+        labels = self._seed(
+            SAMPLE_USER["sub"],
+            [
+                ("mastered", 50, 1.0, 30, 1.0),
+                ("weak", 15, 0.2, 10, 1.0),
+            ],
+        )
+        share = self._run_rounds(labels)
+        assert share["mastered"] < 0.30, (
+            f"mastered cards took {share['mastered']:.1%} of the round "
+            "(expected ~24%); the mastered majority is dominating again"
+        )
+
+    def test_weak_cards_beat_mastered_ones_per_card(self, client):
+        """Equal thirds: the per-card ordering must be strict, not just the
+        aggregate. Guards against a change that fixes the headcount problem by
+        flattening the score signal."""
+        labels = self._seed(
+            SAMPLE_USER["sub"],
+            [
+                ("mastered", 10, 1.0, 10, 1.0),
+                ("mid", 10, 0.7, 10, 1.0),
+                ("weak", 10, 0.2, 10, 1.0),
+            ],
+        )
+        share = self._run_rounds(labels)
+        assert share["weak"] > share["mid"] > share["mastered"], (
+            f"expected weak > mid > mastered, got {share}"
+        )
+
+    def test_stale_mastered_card_outranks_a_freshly_seen_one(self, client):
+        """Same score, same practice count, different last-seen date.
+
+        This is the spacing term: with an all-mastered deck the score and
+        scarcity terms are identical for every card, so recency is the only
+        thing left to order them by. Without it the two classes would split
+        in proportion to their headcount (40:15, i.e. 73%/27%).
+        """
+        labels = self._seed(
+            SAMPLE_USER["sub"],
+            [
+                ("fresh", 40, 1.0, 30, 0.0),
+                ("stale", 15, 1.0, 30, 20.0),
+            ],
+        )
+        share = self._run_rounds(labels)
+        # 15 stale of 55 cards: headcount alone gives them 27%, which is also
+        # what the old weighting gave them. Expect ~56%.
+        assert share["stale"] > 0.45, (
+            f"stale cards took only {share['stale']:.1%} of the round; "
+            "the spacing multiplier is not being applied"
+        )
+
+    def test_never_practiced_card_is_not_treated_as_stale(self, client):
+        """A NULL last_practiced_at is 'no signal', not 'infinitely stale'.
+
+        Rows migrated from before the column exist in this state, and so does
+        every brand-new card. They must not silently receive the maximum
+        spacing boost on top of an already-maximal base weight.
+        """
+        from app import _spacing_multiplier
+
+        with flask_app.app_context():
+            card = Card(user_sub=SAMPLE_USER["sub"], front="f", back="b")
+            db.session.add(card)
+            db.session.commit()
+            assert card.last_practiced_at is None
+            assert _spacing_multiplier(card) == 1.0
+
+    def test_record_attempt_stamps_last_practiced_at(self, client):
+        """The spacing term is only as good as the timestamp behind it."""
+        card_id = make_card(SAMPLE_USER["sub"], "hola", "hello")
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+            assert card.last_practiced_at is None
+            card.record_attempt(True)
+            db.session.commit()
+            card = db.session.get(Card, card_id)
+            assert card.last_practiced_at is not None
+            assert _days_since(card.last_practiced_at) < 0.01
+
+    def test_editing_a_card_does_not_count_as_practising_it(self, client):
+        """Why this needed its own column: updated_at's onupdate fires on any
+        row change, so an edit would have looked like a practice attempt and
+        pushed the card to the back of the spacing queue."""
+        card_id = make_card(SAMPLE_USER["sub"], "hola", "hello")
+        login(client)
+        response = client.patch(
+            f"/api/cards/{card_id}",
+            json={"front": "adios", "back": "goodbye"},
+        )
+        assert response.status_code == 200
+        with flask_app.app_context():
+            card = db.session.get(Card, card_id)
+            assert card.front == "adios"
+            assert card.last_practiced_at is None
 
 
 class TestSiblingAnswers:

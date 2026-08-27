@@ -2744,7 +2744,12 @@ def api_poll_submit():
 # Floor weight for the prioritized sampling strategy: a card with a perfect
 # score still gets sampled with non-zero probability so review sessions don't
 # completely exclude mastered vocabulary.
-PRIORITIZED_EPSILON = 0.1
+PRIORITIZED_EPSILON = 0.05
+# Days since the last attempt at which a card reaches its full spacing boost.
+# Below this the multiplier ramps linearly from 1.0; above it, it is capped at
+# PRIORITIZED_SPACING_MAX so an ancient card cannot crowd out a weak one.
+PRIORITIZED_SPACING_DAYS = 2.0
+PRIORITIZED_SPACING_MAX = 4.0
 
 
 def _pick_prompt_side(direction: str) -> str:
@@ -2796,19 +2801,62 @@ def _pick_best_validation(results: list[dict]) -> dict:
     return max(results, key=key)
 
 
-def _pick_weighted_card(candidates: list[Card]) -> Card:
-    """Pick a card weighted toward low scores and few practice attempts.
+def _days_since(ts: datetime | None) -> float | None:
+    """Whole and fractional days since `ts`, or None if there is no timestamp.
 
-    Weight = (1 - score) + 1/(1 + times_practiced) + epsilon. The scarcity
-    term keeps lightly-practiced cards in rotation: without it, a card
-    answered correctly once (score 1.0) would drop to the epsilon floor and
-    effectively never resurface, since its score can only change when it is
-    sampled again. Unpracticed cards get the maximum weight (2 + epsilon).
+    Columns are declared without `timezone=True`, so a value read back from
+    SQLite (and from Postgres) is naive even though `_utcnow()` wrote an aware
+    one. Assume UTC for a naive value rather than letting the subtraction raise.
+    """
+    if ts is None:
+        return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return max(0.0, (datetime.now(timezone.utc) - ts).total_seconds() / 86400.0)
+
+
+def _spacing_multiplier(card: Card | VerbCard) -> float:
+    """How much to float a card back up for not having been seen lately.
+
+    Ramps 1.0 -> PRIORITIZED_SPACING_MAX over PRIORITIZED_SPACING_DAYS. A card
+    with no recorded attempt (never practiced, or practiced before the column
+    existed) gets a neutral 1.0: unknown is not the same as stale, and an
+    unpracticed card is already at the top of the weighting on its own terms.
+    """
+    days = _days_since(card.last_practiced_at)
+    if days is None:
+        return 1.0
+    return min(1.0 + days / PRIORITIZED_SPACING_DAYS, PRIORITIZED_SPACING_MAX)
+
+
+def _pick_weighted_card(candidates: list[Card | VerbCard]) -> Card | VerbCard:
+    """Pick a card weighted toward weak, unfamiliar and long-unseen cards.
+
+    Weight = ((1 - score)^2 + 1/(1 + times_practiced)^2 + epsilon) * spacing.
+
+    Squaring both terms is what separates a mastered card from a shaky one.
+    The previous linear form floored a mastered card at ~0.19 against a weak
+    card's ~0.99 — only 5:1 — and in a mature deck the mastered *majority*
+    then took two thirds of every round on headcount alone. Squaring widens
+    that to ~30:1, and dropping epsilon lowers the floor it cannot fall below.
+
+    The scarcity term still keeps lightly-practiced cards in rotation (a card
+    answered correctly once cannot update its score until it is sampled again)
+    but now decays fast enough that three correct answers no longer buy a card
+    a third of a struggling card's weight.
+
+    Sharper weights alone cannot fix a deck that is 90% mastered, though: 55
+    small numbers still outweigh 5 large ones. The spacing multiplier is what
+    decides *which* mastered card comes back — the one not seen in a fortnight
+    rather than the one answered an hour ago.
     """
     weights = [
-        (1.0 - (card.score if card.score is not None else 0.0))
-        + 1.0 / (1.0 + card.times_practiced)
-        + PRIORITIZED_EPSILON
+        (
+            (1.0 - (card.score if card.score is not None else 0.0)) ** 2
+            + 1.0 / (1.0 + card.times_practiced) ** 2
+            + PRIORITIZED_EPSILON
+        )
+        * _spacing_multiplier(card)
         for card in candidates
     ]
     chosen = secrets.SystemRandom().choices(candidates, weights=weights, k=1)[0]

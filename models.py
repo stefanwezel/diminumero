@@ -41,6 +41,11 @@ class Card(db.Model):
     updated_at = db.Column(
         db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
     )
+    # Set only by record_attempt, so it means "last drilled" — unlike
+    # updated_at, which any edit to the row also bumps. NULL means never
+    # practiced, or practiced before this column existed; the sampler
+    # treats both as "no spacing signal", not as infinitely stale.
+    last_practiced_at = db.Column(db.DateTime, nullable=True)
 
     @property
     def score(self) -> float | None:
@@ -52,6 +57,7 @@ class Card(db.Model):
     def record_attempt(self, correct: bool) -> None:
         history = (self.recent_results or "") + ("1" if correct else "0")
         self.recent_results = history[-SCORE_WINDOW_SIZE:]
+        self.last_practiced_at = _utcnow()
 
     def to_dict(self) -> dict:
         return {
@@ -94,6 +100,11 @@ class VerbCard(db.Model):
     updated_at = db.Column(
         db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
     )
+    # Set only by record_attempt, so it means "last drilled" — unlike
+    # updated_at, which any edit to the row also bumps. NULL means never
+    # practiced, or practiced before this column existed; the sampler
+    # treats both as "no spacing signal", not as infinitely stale.
+    last_practiced_at = db.Column(db.DateTime, nullable=True)
 
     @property
     def score(self) -> float | None:
@@ -105,6 +116,7 @@ class VerbCard(db.Model):
     def record_attempt(self, correct: bool) -> None:
         history = (self.recent_results or "") + ("1" if correct else "0")
         self.recent_results = history[-SCORE_WINDOW_SIZE:]
+        self.last_practiced_at = _utcnow()
 
     def to_dict(self) -> dict:
         return {
