@@ -610,13 +610,13 @@ def mode_selection(lang_code):
     # Store learning language in session
     session["learn_language"] = lang_code
 
-    # Load numbers for this language, in whichever numeral system is in force.
-    # `?system=` switches it from the menu tile's own toggle — same param, same
-    # forgiving resolution, as on the number-practice config screen below.
+    # `?system=` switches the numeral system from the menu tile's own toggle —
+    # same param, same forgiving resolution, as on the number-practice config
+    # screen below. The deck isn't rendered on this page; it's loaded only to
+    # check it can be, since every tile behind it leads into that deck.
     number_system = _session_number_system(lang_code, request.args.get("system"))
     try:
-        numbers = get_language_numbers(lang_code, number_system)
-        total_numbers = len(numbers)
+        get_language_numbers(lang_code, number_system)
     except ValueError:
         flash(get_text("flash_language_load_error"), "error")
         return redirect(url_for("index"))
@@ -630,8 +630,6 @@ def mode_selection(lang_code):
 
     return render_template(
         "index.html",
-        total_numbers=total_numbers,
-        questions_per_quiz=QUESTIONS_PER_QUIZ,
         lang_code=lang_code,
         get_text=get_text,
         has_learn_materials=has_learn_materials,
@@ -1279,7 +1277,6 @@ def worksheet(lang_code):
             get_text=text,
             deck_min=min(numbers),
             deck_max=max(numbers),
-            total_numbers=len(numbers),
             count_default=WORKSHEET_COUNT_DEFAULT,
             count_min=WORKSHEET_COUNT_MIN,
             count_max=WORKSHEET_COUNT_MAX,
