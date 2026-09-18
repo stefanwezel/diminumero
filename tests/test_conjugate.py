@@ -57,6 +57,24 @@ class TestVerbManage:
         assert resp.status_code == 200
         assert "Conjugate" in resp.data.decode("utf-8")
 
+    def test_quickstart_button_submits_the_practice_form(self, client):
+        # The top-of-page Start button is a `form=` submit into the settings
+        # form further down, so it carries the same tenses/difficulty/count.
+        login(client)
+        add_verb(SAMPLE_USER["sub"], "comer")
+        html = client.get("/es/conjugate").data.decode("utf-8")
+        assert 'form="conjugate-practice-form"' in html
+        assert 'id="conjugate-practice-form"' in html
+        assert html.index('form="conjugate-practice-form"') < html.index(
+            'id="conjugate-practice-form"'
+        )
+
+    def test_quickstart_button_hidden_without_verbs(self, client):
+        # Nothing to practise yet — the shortcut would submit an empty pool.
+        login(client)
+        html = client.get("/es/conjugate").data.decode("utf-8")
+        assert 'form="conjugate-practice-form"' not in html
+
 
 class TestAddVerb:
     def test_add_verb_in_pool(self, client):

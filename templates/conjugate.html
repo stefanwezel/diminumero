@@ -13,6 +13,17 @@
             ← {{ practice_numbers_label }}
         </a>
     </div>
+    {% if verbs %}
+    {# Top-of-page shortcut into the practice form further down: same form,
+       same settings — `form=` submits it from up here with no JS. #}
+    <section class="cards-quickstart">
+        <button type="submit" form="conjugate-practice-form"
+                class="btn btn-primary cards-quickstart-btn">
+            {{ get_text('conjugate_start_btn') }}
+        </button>
+        <p class="cards-quickstart-hint">{{ get_text('conjugate_practice_cta_hint') }}</p>
+    </section>
+    {% endif %}
 
     <section class="cards-create-section">
         <h2 class="cards-section-heading">{{ conj_text('conjugate_title') }}</h2>
@@ -84,7 +95,7 @@
 
         {% if verbs %}
         <form method="POST" action="{{ url_for('conjugate_practice_start', lang_code=lang_code) }}"
-              class="cards-practice-form conjugate-practice-form">
+              class="cards-practice-form conjugate-practice-form" id="conjugate-practice-form">
             <fieldset class="cards-direction-fieldset conjugate-tenses-fieldset">
                 <legend>{{ get_text('conjugate_tenses_label') }}</legend>
                 <p class="cards-input-hint">{{ get_text('conjugate_tenses_hint') }}</p>
