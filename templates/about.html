@@ -46,6 +46,18 @@
             </p>
         </div>
 
+        <div class="imprint-section">
+            <h2>{{ get_text('about_support_heading') }}</h2>
+            <p>{{ get_text('about_support_text') }}</p>
+            <p class="about-donate">
+                <a href="https://www.paypal.me/fischoderfinte" class="btn btn-donate"
+                   target="_blank" rel="noopener noreferrer">
+                    <img src="{{ url_for('static', filename='icons/icon-paypal.png') }}" alt=""
+                         class="btn-icon" aria-hidden="true" loading="lazy">{{ get_text('about_donate_btn') }}
+                </a>
+            </p>
+        </div>
+
         <div class="imprint-actions">
             <a href="{{ url_for('index') }}" class="btn btn-primary">{{ get_text('about_back_home') }}</a>
         </div>

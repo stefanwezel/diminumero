@@ -602,6 +602,39 @@ body {
     background: linear-gradient(135deg, #654F6F 0%, #FC9E4F 100%);
 }
 
+/* Donate (PayPal) button — the brand yellow is deliberately the same in both
+   themes: it reads as a payment action, not as site chrome. The doubled
+   selectors beat `.imprint-section a`, which would otherwise repaint the link. */
+.btn-donate,
+.imprint-section a.btn-donate {
+    background: #FCB900;
+    color: #020122;
+    border: none;
+    box-shadow: 0 4px 15px rgba(252, 185, 0, 0.3);
+    text-decoration: none;
+}
+
+@media (hover: hover) {
+    .btn-donate:hover,
+    .imprint-section a.btn-donate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(252, 185, 0, 0.5), 0 0 20px rgba(252, 185, 0, 0.3);
+        background: #E0A500;
+        color: #020122;
+        text-decoration: none;
+    }
+}
+
+.btn-donate:active,
+.imprint-section a.btn-donate:active {
+    background: #E0A500;
+}
+
+.about-donate {
+    margin-top: 25px;
+    text-align: center;
+}
+
 .btn-large {
     padding: 18px 50px;
     font-size: 1.3rem;
