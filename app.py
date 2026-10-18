@@ -2,7 +2,7 @@
 
 import json
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from urllib.parse import quote_plus, urlencode
 
@@ -41,6 +41,7 @@ from models import Card, ConjugationStat, DeckShare, PollResponse, VerbCard, db
 from config import (
     QUESTIONS_PER_QUIZ,
     DEFAULT_UI_LANGUAGE,
+    LOGIN_SESSION_DAYS,
     SITE_URL,
     SPEED_BONUS_TIME_EASY,
     SPEED_BONUS_TIME_ADVANCED,
@@ -121,6 +122,25 @@ app.secret_key = os.environ.get(
     "FLASK_SECRET_KEY", "dev-secret-key-change-in-production"
 )
 
+# Session cookie. A logged-in session is made permanent (see
+# persist_login_session) so the login survives the browser being closed; the
+# lifetime below is that cookie's Expires and also the age past which Flask
+# rejects any session cookie's signature.
+app.config.update(
+    PERMANENT_SESSION_LIFETIME=timedelta(days=LOGIN_SESSION_DAYS),
+    # Re-issue the cookie only when the session changes, as before. Refreshing
+    # it on every request would put Set-Cookie on each static asset, and the
+    # login is capped from its start anyway (expire_old_login).
+    SESSION_REFRESH_EACH_REQUEST=False,
+    SESSION_COOKIE_HTTPONLY=True,
+    # Lax still sends the cookie on the top-level redirect back from Auth0, so
+    # /callback can read its OAuth state; Strict would break logging in.
+    SESSION_COOKIE_SAMESITE="Lax",
+    # HTTPS-only in production. The dev server (`flask run --debug`) is plain
+    # http, where a Secure cookie would be dropped by some browsers.
+    SESSION_COOKIE_SECURE=not app.debug,
+)
+
 # SQLite lives under Flask's instance folder (gitignored, mount as a Docker
 # volume in prod). The DATABASE_URL env var lets prod swap to Postgres later.
 os.makedirs(app.instance_path, exist_ok=True)
@@ -197,6 +217,42 @@ def initialize_ui_language():
         session["language"] = DEFAULT_UI_LANGUAGE
 
 
+@app.before_request
+def expire_old_login():
+    """End a login LOGIN_SESSION_DAYS after it happened, however active it is.
+
+    The cookie is re-signed whenever the session changes, so without this cap
+    a session in use — or a copy of its cookie — would never expire. The clock
+    is the ID token's `iat`, which the user can't move because the session is
+    signed. Authlib rejects an ID token without one, so every real login has
+    it; only a test fixture's hand-made user lacks it.
+    """
+    issued_at = (session.get("user") or {}).get("iat")
+    if not isinstance(issued_at, (int, float)):
+        return
+    if time.time() - issued_at > app.permanent_session_lifetime.total_seconds():
+        session.pop("user", None)
+
+
+@app.after_request
+def persist_login_session(response):
+    """Make the session cookie outlive the browser exactly while logged in.
+
+    Flask's default session cookie has no Expires, so the browser deletes it
+    when its session ends. On a laptop that is rare; on a phone it happens
+    whenever the OS reclaims the backgrounded browser, and every time a
+    home-screen app is closed — which users saw as being signed out at random.
+
+    Settled here, after the view, rather than once at login: `permanent` is
+    just a key in the session, so every `session.clear()` that carries the
+    login over (starting a quiz, /restart) would otherwise drop it again.
+    """
+    logged_in = "user" in session
+    if session.permanent != logged_in:
+        session.permanent = logged_in
+    return response
+
+
 @app.url_defaults
 def add_static_cache_bust(endpoint, values):
     """Append ?v=<file-mtime> to every static URL so an edited asset is fetched
@@ -232,8 +288,7 @@ def set_cache_headers(response):
         # Keyed off the mimetype, not the path, so an HTML fallback served
         # after a failed render is never marked immutable.
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        return response
-    if path in ("/about", "/privacy", "/imprint", "/"):
+    elif path in ("/about", "/privacy", "/imprint", "/"):
         response.headers["Cache-Control"] = "public, max-age=3600"
     elif path in ("/sitemap.xml", "/robots.txt"):
         response.headers["Cache-Control"] = "public, max-age=86400"
@@ -260,6 +315,18 @@ def set_cache_headers(response):
         response.headers["Cache-Control"] = "public, max-age=3600"
     else:
         response.headers["Cache-Control"] = "public, max-age=600"
+    # A shared cache (a school's TLS-inspecting proxy, a CDN) must never store
+    # a response that carries the session cookie or was rendered for a
+    # logged-in user (the nav shows their name): it would hand that login to
+    # whoever asks next. The browser's own cache may still keep it. Checking
+    # "user" too, not only Set-Cookie, keeps this right whichever order the
+    # after_request hooks run in: persist_login_session may add a Set-Cookie
+    # after this, but only to a session that holds a user or has already
+    # changed during this request.
+    if "user" in session or app.session_interface.should_set_cookie(app, session):
+        response.headers["Cache-Control"] = response.headers["Cache-Control"].replace(
+            "public", "private"
+        )
     return response
 
 
@@ -2242,7 +2309,9 @@ def restart():
 @app.route("/privacy")
 def privacy():
     """Display privacy policy page."""
-    return render_template("privacy.html", get_text=get_text)
+    return render_template(
+        "privacy.html", get_text=get_text, login_session_days=LOGIN_SESSION_DAYS
+    )
 
 
 @app.route("/imprint")
