@@ -8,6 +8,13 @@ SITE_URL = os.environ.get("SITE_URL", "https://diminumero.com")
 # Number of questions per quiz session
 QUESTIONS_PER_QUIZ = 10
 
+# How long a login lasts, counted from the login itself — not from the last
+# visit, so using the site does not extend it. A logged-in user's session
+# cookie persists for this long, surviving the browser being closed (on a phone
+# the OS does that behind the user's back); an anonymous visitor's cookie still
+# dies with the browser. The privacy policy quotes this number.
+LOGIN_SESSION_DAYS = 30
+
 # Whether number forms marked `reconstructed` may be served to learners.
 #
 # A reconstructed form was derived from a grammatical rule (by an LLM, or by a

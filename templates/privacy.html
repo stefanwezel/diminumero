@@ -21,7 +21,7 @@
             <h2>{{ get_text('privacy_cookies_heading') }}</h2>
             <p>{{ get_text('privacy_cookies_text') }}</p>
             <ul>
-                <li><strong>{{ get_text('privacy_session_cookies') }}:</strong> {{ get_text('privacy_session_cookies_desc') }}</li>
+                <li><strong>{{ get_text('privacy_session_cookies') }}:</strong> {{ get_text('privacy_session_cookies_desc').format(login_session_days) }}</li>
                 <li><strong>{{ get_text('privacy_auth_cookies') }}:</strong> {{ get_text('privacy_auth_cookies_desc') }}</li>
             </ul>
         </div>
