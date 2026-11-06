@@ -117,12 +117,19 @@ class TestReachable:
     @pytest.mark.parametrize("ui_lang", sorted(SUPPORTED_UI_LANGUAGES))
     def test_pages_render_in_every_ui_language(self, client, ui_lang):
         client.get(f"/set_language/{ui_lang}")
-        for path in ("/en", "/en/numbers", "/en/learn"):
+        for path in ("/en", "/en/numbers", "/en/learn", "/en/listening"):
             assert client.get(path).status_code == 200, path
 
         with client.session_transaction() as sess:
             assert sess["language"] == ui_lang
             assert sess["learn_language"] == "en"
+
+    def test_listening_drill_plays_an_english_clip(self, client):
+        client.post("/en/listen/start", data={"magnitude_level": "1"})
+        html = client.get("/en/listen").get_data(as_text=True)
+
+        with client.session_transaction() as sess:
+            assert f"/static/audio/en/{sess['current_number']}.mp3" in html
 
     @pytest.mark.parametrize(
         "ui_lang, heading",

@@ -97,7 +97,7 @@ diminumero/
 │   ├── stress_test.py
 │   └── analyze_stress_test.py
 └── static/
-    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv)
+    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv, en)
     ├── css/
     │   ├── style.css            # Default dark-purple palette
     │   └── style-classic.css    # Classic light theme

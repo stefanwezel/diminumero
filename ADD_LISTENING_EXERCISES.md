@@ -25,7 +25,7 @@ Audio is synthesized with ElevenLabs' `eleven_turbo_v2_5` cloud model by the
 PEP-723 script `tools/generate_audio.py`. Synthesis happens in the cloud — no local
 model is downloaded, so an API key is required and each call uses ElevenLabs
 credits. Languages currently shipping audio (1000 MP3s each): **es, de, fr, ja,
-pt, sv**.
+pt, sv, en**.
 
 ## Prerequisites
 
@@ -63,9 +63,10 @@ Run the script with your language code:
 uv run tools/generate_audio.py --lang xx
 ```
 
-Each number in `languages/xx/numbers.py` is synthesized with the
+Each number in `languages/xx/numbers.py` except 0 is synthesized with the
 `eleven_turbo_v2_5` model at `mp3_44100_64` (~64 kbps mono) and written to
-`static/audio/xx/<n>.mp3`. Useful flags:
+`static/audio/xx/<n>.mp3`. Zero is skipped because having no `0.mp3` is what keeps
+it out of Listening mode. Useful flags:
 
 | Flag | Description |
 |------|-------------|
