@@ -28,25 +28,25 @@ AVAILABLE_LANGUAGES = {
         # Word shown to the user when they answer correctly (in the target language)
         "feedback_expression": "¡Correcto",
     },
-    "fr": {
-        "name": "French",
-        "native_name": "Français",
-        "flag": "🇫🇷",
+    "en": {
+        "name": "English",
+        "native_name": "English",
+        "flag": "🇬🇧",
         "ready": True,
         "has_learn_materials": True,
-        "has_audio_mode": True,
-        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
+        # British forms, as the flag says: "two hundred and thirty-four".
+        "validation_strategy": "word_based",
         "ui_names": {
-            "en": "French",
-            "de": "Französisch",
-            "es": "Francés",
-            "it": "Francese",
-            "fr": "Français",
-            "pt": "Francês",
-            "ar": "الفرنسية",
-            "uk": "Французька",
+            "en": "English",
+            "de": "Englisch",
+            "es": "Inglés",
+            "it": "Inglese",
+            "fr": "Anglais",
+            "pt": "Inglês",
+            "ar": "الإنجليزية",
+            "uk": "Англійська",
         },
-        "feedback_expression": "Correct",
+        "feedback_expression": "Correct!",
     },
     "ja": {
         "name": "Japanese",
@@ -89,6 +89,26 @@ AVAILABLE_LANGUAGES = {
             "uk": "Німецька",
         },
         "feedback_expression": "Korrekt",
+    },
+    "fr": {
+        "name": "French",
+        "native_name": "Français",
+        "flag": "🇫🇷",
+        "ready": True,
+        "has_learn_materials": True,
+        "has_audio_mode": True,
+        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
+        "ui_names": {
+            "en": "French",
+            "de": "Französisch",
+            "es": "Francés",
+            "it": "Francese",
+            "fr": "Français",
+            "pt": "Francês",
+            "ar": "الفرنسية",
+            "uk": "Французька",
+        },
+        "feedback_expression": "Correct",
     },
     "ko": {
         "name": "Korean",
@@ -333,26 +353,6 @@ AVAILABLE_LANGUAGES = {
             "uk": "Ірландська",
         },
         "feedback_expression": "Maith thú!",
-    },
-    "en": {
-        "name": "English",
-        "native_name": "English",
-        "flag": "🇬🇧",
-        "ready": True,
-        "has_learn_materials": True,
-        # British forms, as the flag says: "two hundred and thirty-four".
-        "validation_strategy": "word_based",
-        "ui_names": {
-            "en": "English",
-            "de": "Englisch",
-            "es": "Inglés",
-            "it": "Inglese",
-            "fr": "Anglais",
-            "pt": "Inglês",
-            "ar": "الإنجليزية",
-            "uk": "Англійська",
-        },
-        "feedback_expression": "Correct!",
     },
 }
 
