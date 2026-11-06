@@ -14,6 +14,7 @@ diminumero supports multiple languages for number learning. Currently supported 
 - **Spanish (es)**, **French (fr)**, **Japanese (ja)**, **German (de)**, **Korean (ko)**
 - **Italian (it)**, **Chinese (zh)**, **Portuguese (pt)**, **Turkish (tr)**, **Nepalese (ne)**
 - **Swedish (sv)**, **Danish (da)**, **Norwegian (no)**, **Welsh (cy)**, **Irish (ga)**
+- **English (en)**
 
 
 ## Steps to Add a New Language
@@ -150,7 +151,7 @@ These are the only keys in `translations.py` that need updating for a new learni
 
 **`templates/language_selection.html`** — Add your language code to the JSON-LD `inLanguage` array:
 ```json
-"inLanguage": ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "ne", "sv", "da", "no", "cy", "ga", "xx"]
+"inLanguage": ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "ne", "sv", "da", "no", "cy", "ga", "en", "xx"]
 ```
 
 ### 8. Enable the Language
@@ -396,7 +397,7 @@ declares nothing draws exactly as before.
 
 > **Honest caveat.** Step 1 opens a Python file. It contains nothing but
 > `number: "word",` lines and comments, but the extension is real. We keep this
-> format because all fifteen existing decks, the generator scripts and the tests
+> format because all sixteen existing decks, the generator scripts and the tests
 > use it, and a second format for the same data would rot. Notes files
 > (`notes.toml`) are the plain-text path and need no source file at all.
 

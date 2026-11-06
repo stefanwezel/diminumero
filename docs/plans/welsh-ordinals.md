@@ -24,7 +24,7 @@ mean both `tri ar ddeg` and `y trydydd ar ddeg`.
 So the smallest honest version needs one new capability: a deck may say how its prompt is
 written. Something like an optional `PROMPTS` map beside `NUMBERS` in a deck module —
 `{13: "13eg", 21: "21ain", 1: "1af"}` — with `str(number)` as the default, which is what
-all fifteen languages get today with no change. Everything else already exists:
+all sixteen languages get today with no change. Everything else already exists:
 
 * the numeral-system machinery would carry it (a third entry under `cy`, `module:
   numbers_ordinal`, gated on `requires_complete: (1, 31)`);

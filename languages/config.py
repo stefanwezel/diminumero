@@ -334,6 +334,26 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Maith thú!",
     },
+    "en": {
+        "name": "English",
+        "native_name": "English",
+        "flag": "🇬🇧",
+        "ready": True,
+        "has_learn_materials": True,
+        # British forms, as the flag says: "two hundred and thirty-four".
+        "validation_strategy": "word_based",
+        "ui_names": {
+            "en": "English",
+            "de": "Englisch",
+            "es": "Inglés",
+            "it": "Inglese",
+            "fr": "Anglais",
+            "pt": "Inglês",
+            "ar": "الإنجليزية",
+            "uk": "Англійська",
+        },
+        "feedback_expression": "Correct!",
+    },
 }
 
 
@@ -608,6 +628,8 @@ def get_language_numbers(lang_code, system=None):
             from .cy import NUMBERS
         elif lang_code == "ga":
             from .ga import NUMBERS
+        elif lang_code == "en":
+            from .en import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 

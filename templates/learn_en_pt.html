@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn') }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprenda os números em inglês</h1>
+      <p>
+        Esta página cobre os números em <strong>inglês britânico</strong>, que é o que o quiz pede.
+        Os padrões são regulares, e o principal é prestar atenção à pequena palavra
+        <strong>and</strong>: <em>two hundred <strong>and</strong> thirty-four</em>.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#basics">0&ndash;12: palavras para memorizar</a></li>
+        <li><a href="#teens">13&ndash;19: a terminação <em>-teen</em></a></li>
+        <li><a href="#tens">20&ndash;99: dezenas e o hífen</a></li>
+        <li><a href="#hundreds">Centenas: onde vai o <em>and</em></a></li>
+        <li><a href="#thousands">Milhares e milhões</a></li>
+        <li><a href="#british">Inglês britânico e americano</a></li>
+        <li><a href="#mistakes">Erros comuns</a></li>
+      </ul>
+    </nav>
+
+    <section id="basics" class="learn-section">
+      <h2>0&ndash;12: palavras para memorizar</h2>
+      <p>Estas palavras não seguem nenhum padrão, por isso precisam ser aprendidas uma a uma:</p>
+      <ul>
+        <li><strong>0</strong> = zero</li>
+        <li><strong>1</strong> = one</li>
+        <li><strong>2</strong> = two</li>
+        <li><strong>3</strong> = three</li>
+        <li><strong>4</strong> = four</li>
+        <li><strong>5</strong> = five</li>
+        <li><strong>6</strong> = six</li>
+        <li><strong>7</strong> = seven</li>
+        <li><strong>8</strong> = eight</li>
+        <li><strong>9</strong> = nine</li>
+        <li><strong>10</strong> = ten</li>
+        <li><strong>11</strong> = eleven</li>
+        <li><strong>12</strong> = twelve</li>
+      </ul>
+    </section>
+
+    <section id="teens" class="learn-section">
+      <h2>13&ndash;19: a terminação <em>-teen</em></h2>
+      <p>De 13 a 19, os números terminam em <strong>-teen</strong>. Preste atenção à ortografia de 13, 15 e 18:</p>
+      <ul>
+        <li><strong>13</strong> = thirteen <em>(não &ldquo;threeteen&rdquo;)</em></li>
+        <li><strong>14</strong> = fourteen</li>
+        <li><strong>15</strong> = fifteen <em>(não &ldquo;fiveteen&rdquo;)</em></li>
+        <li><strong>16</strong> = sixteen</li>
+        <li><strong>17</strong> = seventeen</li>
+        <li><strong>18</strong> = eighteen <em>(só um t)</em></li>
+        <li><strong>19</strong> = nineteen</li>
+      </ul>
+    </section>
+
+    <section id="tens" class="learn-section">
+      <h2>20&ndash;99: dezenas e o hífen</h2>
+      <p>As dezenas terminam em <strong>-ty</strong>:</p>
+      <ul>
+        <li><strong>20</strong> = twenty</li>
+        <li><strong>30</strong> = thirty</li>
+        <li><strong>40</strong> = forty <em>(sem u, ao contrário de four)</em></li>
+        <li><strong>50</strong> = fifty</li>
+        <li><strong>60</strong> = sixty</li>
+        <li><strong>70</strong> = seventy</li>
+        <li><strong>80</strong> = eighty <em>(só um t)</em></li>
+        <li><strong>90</strong> = ninety <em>(mantém o e)</em></li>
+      </ul>
+      <p>Para acrescentar uma unidade, junte-a à dezena com um <strong>hífen</strong>:</p>
+      <ul>
+        <li><strong>21</strong> = twenty-one</li>
+        <li><strong>47</strong> = forty-seven</li>
+        <li><strong>99</strong> = ninety-nine</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 22, 58, 86?</summary>
+        <p><strong>22</strong> twenty-two &middot; <strong>58</strong> fifty-eight &middot; <strong>86</strong> eighty-six</p>
+      </details>
+    </section>
+
+    <section id="hundreds" class="learn-section">
+      <h2>Centenas: onde vai o <em>and</em></h2>
+      <p>
+        Diga o algarismo e depois <strong>hundred</strong>. O inglês britânico coloca <strong>and</strong>
+        entre as centenas e o que vem depois delas:
+      </p>
+      <ul>
+        <li><strong>100</strong> = one hundred</li>
+        <li><strong>101</strong> = one hundred and one</li>
+        <li><strong>110</strong> = one hundred and ten</li>
+        <li><strong>234</strong> = two hundred and thirty-four</li>
+        <li><strong>500</strong> = five hundred</li>
+        <li><strong>999</strong> = nine hundred and ninety-nine</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 105, 340, 872?</summary>
+        <p><strong>105</strong> one hundred and five &middot; <strong>340</strong> three hundred and forty &middot; <strong>872</strong> eight hundred and seventy-two</p>
+      </details>
+    </section>
+
+    <section id="thousands" class="learn-section">
+      <h2>Milhares e milhões</h2>
+      <p>
+        <strong>Thousand</strong> e <strong>million</strong> funcionam como <em>hundred</em>: primeiro vem a
+        quantidade, que pode ser qualquer número até 999. Não há <em>and</em> depois deles quando
+        seguem centenas:
+      </p>
+      <ul>
+        <li><strong>1.000</strong> = one thousand</li>
+        <li><strong>1.200</strong> = one thousand two hundred</li>
+        <li><strong>1.234</strong> = one thousand two hundred and thirty-four</li>
+        <li><strong>45.000</strong> = forty-five thousand</li>
+        <li><strong>123.456</strong> = one hundred and twenty-three thousand four hundred and fifty-six</li>
+        <li><strong>1.000.000</strong> = one million</li>
+        <li><strong>2.500.000</strong> = two million five hundred thousand</li>
+      </ul>
+      <p>
+        Quando no final só restam dezenas e unidades, sem centenas antes,
+        o <strong>and</strong> vem antes delas:
+      </p>
+      <ul>
+        <li><strong>1.005</strong> = one thousand and five</li>
+        <li><strong>1.050</strong> = one thousand and fifty</li>
+        <li><strong>20.015</strong> = twenty thousand and fifteen</li>
+        <li><strong>1.000.001</strong> = one million and one</li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: 1.007, 3.400, 40.012?</summary>
+        <p><strong>1.007</strong> one thousand and seven &middot; <strong>3.400</strong> three thousand four hundred &middot; <strong>40.012</strong> forty thousand and twelve</p>
+      </details>
+    </section>
+
+    <section id="british" class="learn-section">
+      <h2>Inglês britânico e americano</h2>
+      <p>
+        O inglês americano geralmente omite o <em>and</em>: <em>two hundred thirty-four</em>. Isso é
+        correto nos Estados Unidos, mas este quiz pede a forma britânica, por isso aqui é marcado
+        como errado.
+      </p>
+      <p>Fora do quiz você também vai encontrar estas formas; o quiz usa sempre as desta página:</p>
+      <ul>
+        <li><strong>a hundred</strong>, <strong>a thousand</strong>, <strong>a million</strong> são comuns na fala. O quiz usa <em>one</em>.</li>
+        <li><strong>nought</strong> e <strong>oh</strong> podem ambos significar zero no inglês britânico: <em>nought point five</em>, ou <em>oh</em> ao ler um número de telefone. O quiz usa <em>zero</em>.</li>
+        <li><strong>Vírgulas</strong> às vezes separam números longos na escrita: <em>one thousand, two hundred</em>. No quiz, não as use.</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Erros comuns</h2>
+      <ol>
+        <li><strong>Sem plural depois de um número</strong>: <em>two hundred</em>, <em>three thousand</em>,
+          <em>five million</em>, não &ldquo;two hundreds&rdquo; nem &ldquo;three thousands&rdquo;.</li>
+        <li><strong>Excesso de <em>and</em></strong>: <em>one thousand two hundred</em>, não
+          &ldquo;one thousand and two hundred&rdquo;. Ele só vem antes de dezenas e unidades.</li>
+        <li><strong>O hífen esquecido</strong>: <em>twenty-three</em>, não &ldquo;twenty three&rdquo;.
+          O quiz verifica isso.</li>
+        <li><strong>Ortografia</strong>: <em>forty</em> (não &ldquo;fourty&rdquo;), <em>ninety</em> (não
+          &ldquo;ninty&rdquo;), <em>twelve</em> (não &ldquo;twelf&rdquo;).</li>
+        <li><strong><em>-teen</em> ou <em>-ty</em></strong>: <em>thirteen</em> é 13, <em>thirty</em>
+          é 30. Soam parecidos, por isso preste atenção à sílaba tônica: thir<strong>teen</strong>, mas
+          <strong>thir</strong>ty.</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('learn_btn_start_quiz') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

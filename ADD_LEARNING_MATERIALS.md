@@ -14,7 +14,7 @@ This guide explains how to contribute learning/tutorial pages for a language tha
 
 Each language can optionally have a **Learn page** — a reference page that teaches users the number patterns for that language before (or alongside) quizzing.
 
-Languages that currently have learn pages: `es`, `fr`, `ja`, `de`, `ko`, `it`, `zh`, `pt`, `tr`, `sv`, `da`, `no`, `cy`, `ga`.
+Languages that currently have learn pages: `es`, `fr`, `ja`, `de`, `ko`, `it`, `zh`, `pt`, `tr`, `sv`, `da`, `no`, `cy`, `ga`, `en`.
 
 For each language the app looks for a UI-language-specific template first, then falls back to the English version:
 

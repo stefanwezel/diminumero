@@ -9,11 +9,11 @@
 
 An interactive web application to practice number translations in multiple languages. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers per language from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
 
-**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian, Welsh, Irish
+**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian, Welsh, Irish, English
 
 ## ✨ Features
 
-- **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Number Practice](ADD_NUMBERS.md))
+- **Multi-Language Support**: Practice numbers in 16 languages (see [Adding Number Practice](ADD_NUMBERS.md))
 - **More than one numeral system per language**: a language can declare several ways of saying its numbers — Welsh decimal vs traditional/vigesimal is the first — with a toggle that only appears once the second system's data is complete, and never appears at all for the languages that have one (see [ADD_NUMBERS.md](ADD_NUMBERS.md#languages-with-more-than-one-numeral-system))
 - **Provenance-tracked number data**: forms assembled from public review carry where they came from — confirmed by two or more speakers, said by one, or derived from a grammatical rule. Rule-derived forms are committed but **never shown to a learner** (`SERVE_RECONSTRUCTED`); the drill skips those numbers rather than teach an unverified guess, and `tools/export_unconfirmed_forms.py` turns them into a review table to get them checked
 - **Per-number notes**: a lightbulb next to a number reveals a short fact about it (`deg` → `deng` before m-, German units-before-tens, French `quatre-vingts`). Notes live in plain `notes.toml` files anyone can edit in the browser, and never appear next to a question the learner hasn't answered yet (see [ADD_NOTES.md](ADD_NOTES.md))
