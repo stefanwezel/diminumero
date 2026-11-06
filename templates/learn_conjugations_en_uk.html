@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Вивчаємо дієвідмінювання англійських дієслів</h1>
+      <p>
+        Англійські дієслова змінюються набагато менше за українські: уся робота зосереджена на допоміжних дієсловах і неправильних формах минулого часу. Ця сторінка присвячена <strong>британській англійській</strong>, яку приймає вправа.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">П'ять осіб</a></li>
+        <li><a href="#present">Present simple: закінчення -s</a></li>
+        <li><a href="#past">Правильний минулий час: -ed</a></li>
+        <li><a href="#ing">Форма -ing</a></li>
+        <li><a href="#tenses">Часи, які ви практикуєте</a></li>
+        <li><a href="#irregular">Неправильні дієслова</a></li>
+        <li><a href="#british">Британські форми</a></li>
+        <li><a href="#mistakes">Поширені помилки</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>П'ять осіб</h2>
+      <p>
+        В англійській п'ять осіб замість шести, бо <strong>you</strong> має ту саму форму для однієї особи й для кількох.
+      </p>
+      <ul>
+        <li><strong>I</strong> — я</li>
+        <li><strong>you</strong> — ти, ви</li>
+        <li><strong>he / she / it</strong> — він, вона, а it для речей і тварин</li>
+        <li><strong>we</strong> — ми</li>
+        <li><strong>they</strong> — вони</li>
+      </ul>
+      <p>
+        Саме дієслово рідко показує, хто діє, тому в англійській займенник вживається завжди. У вправі займенник уже вказано, і ви вводите лише форму дієслова: <em>am working</em>, а не "I am working".
+      </p>
+    </section>
+
+    <section id="present" class="learn-section">
+      <h2>Present simple: закінчення -s</h2>
+      <p>
+        Present simple — це основна форма дієслова, але <strong>he/she/it</strong> додає <strong>-s</strong>:
+      </p>
+      <ul>
+        <li>Більшість дієслів додають -s: <em>work → works</em></li>
+        <li>Після s, x, ch, sh та o додається -es: <em>watch → watches</em>, <em>fix → fixes</em>, <em>go → goes</em></li>
+        <li>Приголосний + y стає -ies: <em>study → studies</em></li>
+        <li>Голосний + y додає лише -s: <em>play → plays</em></li>
+      </ul>
+      <p>
+        <em>be</em> і <em>have</em> мають власні форми, а модальні дієслова, як-от <em>can</em>, ніколи не змінюються:
+      </p>
+      <ul>
+        <li><strong>be</strong>: <em>am, are, is, are, are</em></li>
+        <li><strong>have</strong>: <em>have, have, has, have, have</em></li>
+        <li><strong>can</strong>: <em>can, can, can, can, can</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: he/she/it від <em>fix</em>, <em>try</em> і <em>say</em>?</summary>
+        <p><strong><em>fixes</em></strong> · <strong><em>tries</em></strong> · <strong><em>says</em></strong></p>
+      </details>
+    </section>
+
+    <section id="past" class="learn-section">
+      <h2>Правильний минулий час: -ed</h2>
+      <p>
+        Правильні дієслова додають <strong>-ed</strong> в усіх особах, і дієприкметник має таку саму форму:
+      </p>
+      <ul>
+        <li>Закінчення на e: додається -d: <em>like → liked</em></li>
+        <li>Приголосний + y стає -ied: <em>study → studied</em></li>
+        <li>Один короткий наголошений голосний + один приголосний: приголосний подвоюється: <em>stop → stopped</em>, <em>plan → planned</em>, <em>prefer → preferred</em></li>
+        <li>Ненаголошений останній склад не подвоюється: <em>visit → visited</em>, <em>open → opened</em></li>
+        <li>Британська англійська завжди подвоює кінцеве l після одного голосного: <em>travel → travelled</em>, <em>cancel → cancelled</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple від <em>carry</em>, <em>drop</em> і <em>visit</em>?</summary>
+        <p><strong><em>carried</em></strong> · <strong><em>dropped</em></strong> · <strong><em>visited</em></strong></p>
+      </details>
+    </section>
+
+    <section id="ing" class="learn-section">
+      <h2>Форма -ing</h2>
+      <p>
+        Тривалі часи використовують форму <strong>-ing</strong>, написання якої підпорядковується схожим правилам:
+      </p>
+      <ul>
+        <li>Кінцеве e зникає: <em>make → making</em></li>
+        <li>ee зберігається: <em>see → seeing</em></li>
+        <li>ie стає y: <em>die → dying</em>, <em>lie → lying</em></li>
+        <li>Приголосний подвоюється, як у минулому часі: <em>stop → stopping</em>, <em>travel → travelling</em></li>
+      </ul>
+      <p>
+        Дієслова стану, як-от <em>know</em>, <em>want</em>, <em>like</em>, <em>need</em>, <em>believe</em> і <em>understand</em>, зазвичай не вживаються в тривалій формі, тому вправа ніколи не запитує ці форми.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: форма -ing від <em>take</em>, <em>run</em> і <em>tie</em>?</summary>
+        <p><strong><em>taking</em></strong> · <strong><em>running</em></strong> · <strong><em>tying</em></strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>Часи, які ви практикуєте</h2>
+      <p>
+        У налаштуваннях вправи можна поєднувати ці часи (приклади з <em>work</em> і <em>go</em>):
+      </p>
+      <ul>
+        <li><strong>Present simple</strong> — звички та факти: <em>work, works</em></li>
+        <li><strong>Past simple</strong> — завершені події: <em>worked, went</em></li>
+        <li><strong>Present continuous</strong> — відбувається саме зараз: <em>am working, is working</em></li>
+        <li><strong>Present perfect</strong> — минуле, пов'язане з теперішнім: <em>have worked, has gone</em></li>
+        <li><strong>Future (will)</strong> — рішення та прогнози: <em>will work</em></li>
+        <li><strong>Past continuous</strong> — тривало в певний момент у минулому: <em>was working, were working</em></li>
+        <li><strong>Future (going to)</strong> — плани: <em>am going to work, is going to go</em></li>
+        <li><strong>Conditional (would)</strong> — те, що сталося б: <em>would work</em></li>
+        <li><strong>Past perfect</strong> — минуле перед минулим: <em>had worked, had gone</em></li>
+        <li><strong>Present perfect continuous</strong> — почалося в минулому й досі триває: <em>have been working, has been working</em></li>
+      </ul>
+      <p>
+        Вправа запитує повну стверджувальну форму: <em>will go</em>, <em>have gone</em>, без скорочень і заперечення.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: який це час: <em>were working</em>? А <em>has gone</em>?</summary>
+        <p><strong>Past continuous</strong> · <strong>Present perfect</strong></p>
+      </details>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Неправильні дієслова</h2>
+      <p>
+        Неправильне дієслово вивчають у трьох формах: основна форма, past simple і дієприкметник. Ось найчастіші:
+      </p>
+      <ul>
+        <li><strong>go</strong> → <em>went</em>, <em>gone</em></li>
+        <li><strong>get</strong> → <em>got</em>, <em>got</em></li>
+        <li><strong>make</strong> → <em>made</em>, <em>made</em></li>
+        <li><strong>take</strong> → <em>took</em>, <em>taken</em></li>
+        <li><strong>see</strong> → <em>saw</em>, <em>seen</em></li>
+        <li><strong>come</strong> → <em>came</em>, <em>come</em></li>
+        <li><strong>know</strong> → <em>knew</em>, <em>known</em></li>
+        <li><strong>give</strong> → <em>gave</em>, <em>given</em></li>
+        <li><strong>think</strong> → <em>thought</em>, <em>thought</em></li>
+        <li><strong>write</strong> → <em>wrote</em>, <em>written</em></li>
+        <li><strong>buy</strong> → <em>bought</em>, <em>bought</em></li>
+        <li><strong>put</strong> → <em>put</em>, <em>put</em></li>
+      </ul>
+      <p>
+        У past simple лише <em>be</em> змінюється за особами: <em>was</em> для I та he/she/it, <em>were</em> для you, we і they. Його дієприкметник — <em>been</em>.
+      </p>
+      <p>
+        Повторюються три схеми: усі три форми однакові (<em>put</em>), минулий час і дієприкметник однакові (<em>buy</em>) або всі три різні (<em>write</em>).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple від <em>speak</em> і дієприкметник від <em>eat</em>?</summary>
+        <p><strong><em>spoke</em></strong> · <strong><em>eaten</em></strong></p>
+      </details>
+    </section>
+
+    <section id="british" class="learn-section">
+      <h2>Британські форми</h2>
+      <p>
+        Коли сама британська англійська має дві форми, вправа приймає обидві. Американські форми вважаються помилковими.
+      </p>
+      <ul>
+        <li>Приймаються обидві: <em>learnt</em> / <em>learned</em>, <em>burnt</em> / <em>burned</em>, <em>dreamt</em> / <em>dreamed</em>, <em>realise</em> / <em>realize</em></li>
+        <li>Дієприкметник від get: <em>have got</em> — "have gotten" — американська форма</li>
+        <li>Подвійне l: <em>travelled</em> — "traveled" — американська форма</li>
+        <li>Дієслово пишеться із s: <em>practise</em> — "practice" — американська форма</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Поширені помилки</h2>
+      <ol>
+        <li><strong>Забуте -s</strong>: <em>he works</em>, а не "he work".</li>
+        <li><strong>Past simple замість дієприкметника</strong>: <em>have gone</em>, а не "have went".</li>
+        <li><strong>-s у модального дієслова</strong>: <em>she can</em>, а не "she cans".</li>
+        <li><strong>Дієслово стану в тривалій формі</strong>: <em>I know</em>, а не "I am knowing".</li>
+        <li><strong>Пропущене допоміжне дієслово</strong>: <em>am working</em>, а не "I working".</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

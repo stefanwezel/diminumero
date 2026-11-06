@@ -126,7 +126,7 @@ def main():
     rows = []
     failures = []
 
-    # Burning CPU on 120 sheets back to back is what this tool is for, so the
+    # Burning CPU on 128 sheets back to back is what this tool is for, so the
     # per-worker render budget that protects the live site must not apply. The
     # PDF cache stays on: a re-run then costs almost nothing.
     app.config["WORKSHEET_PDF_BUDGET"] = 0

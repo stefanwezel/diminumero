@@ -9,11 +9,11 @@
 
 An interactive web application to practice number translations in multiple languages. "diminumero" is Spanish for "say my number". Built with Flask, featuring 1,000 numbers per language from basic digits to millions with weighted random selection that prioritizes smaller numbers for effective learning.
 
-**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian, Welsh, Irish
+**Currently supported languages:** Spanish, French, Japanese, German, Korean, Italian, Chinese, Portuguese, Turkish, Nepalese, Swedish, Danish, Norwegian, Welsh, Irish, English
 
 ## ✨ Features
 
-- **Multi-Language Support**: Practice numbers in 15 languages (see [Adding Number Practice](ADD_NUMBERS.md))
+- **Multi-Language Support**: Practice numbers in 16 languages (see [Adding Number Practice](ADD_NUMBERS.md))
 - **More than one numeral system per language**: a language can declare several ways of saying its numbers — Welsh decimal vs traditional/vigesimal is the first — with a toggle that only appears once the second system's data is complete, and never appears at all for the languages that have one (see [ADD_NUMBERS.md](ADD_NUMBERS.md#languages-with-more-than-one-numeral-system))
 - **Provenance-tracked number data**: forms assembled from public review carry where they came from — confirmed by two or more speakers, said by one, or derived from a grammatical rule. Rule-derived forms are committed but **never shown to a learner** (`SERVE_RECONSTRUCTED`); the drill skips those numbers rather than teach an unverified guess, and `tools/export_unconfirmed_forms.py` turns them into a review table to get them checked
 - **Per-number notes**: a lightbulb next to a number reveals a short fact about it (`deg` → `deng` before m-, German units-before-tens, French `quatre-vingts`). Notes live in plain `notes.toml` files anyone can edit in the browser, and never appear next to a question the learner hasn't answered yet (see [ADD_NOTES.md](ADD_NOTES.md))
@@ -97,7 +97,7 @@ diminumero/
 │   ├── stress_test.py
 │   └── analyze_stress_test.py
 └── static/
-    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv)
+    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv, en)
     ├── css/
     │   ├── style.css            # Default dark-purple palette
     │   └── style-classic.css    # Classic light theme
@@ -183,10 +183,13 @@ Each number is voiced by a speaker drawn at random from the language's `VOICE_PO
 
 ## 🔤 Verb-Conjugation Practice
 
-Signed-in users can build a personal pool of Spanish verbs and drill conjugations across a curated set of tenses and pronouns. Conjugations come from a committed global pool (`languages/es/conjugations.json`), generated offline with the `verbecc` library — the running app never imports `verbecc`. To regenerate the pool:
+Signed-in users can build a personal pool of Spanish, Italian, German or English verbs and drill conjugations across a curated set of tenses and pronouns. Conjugations come from a committed global pool per language (`languages/<code>/conjugations.json`), generated offline — the running app never computes a form. To regenerate a pool:
 
 ```bash
-uv run tools/generate_conjugations.py
+uv run tools/generate_conjugations.py     # Spanish (verbecc)
+uv run tools/generate_conjugations_it.py  # Italian (verbecc)
+uv run tools/generate_conjugations_de.py  # German (rule engine)
+uv run tools/generate_conjugations_en.py  # English (rule engine)
 ```
 
 See [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) for how the section works, how to adjust the tense checklist, and what extending it to another language would involve.
@@ -273,7 +276,7 @@ Each kind of practice has its own contributor guide:
 - **Number practice for a new language** — [ADD_NUMBERS.md](ADD_NUMBERS.md) (the starting point for any new language)
 - **Listening exercises** — [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) (spoken-number quiz via ElevenLabs TTS)
 - **Learn/tutorial pages** — [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md)
-- **Verb-conjugation practice** — [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) (the Spanish conjugation section)
+- **Verb-conjugation practice** — [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) (the conjugation section)
 - **UI translations** — [ADD_UI_LANGUAGE.md](ADD_UI_LANGUAGE.md)
 
 ## 📄 License

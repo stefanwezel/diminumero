@@ -102,6 +102,20 @@ VOICE_POOLS = {
         "HqmZnnvy6tCQd8EGWKRT",
         "DSL3PSQNPbkOavwmnYl1",
     ],
+    "en": [
+        "BcIZ7kngidiArTkRyUAp",
+        "2ajXGJNYBR0iNHpS4VZb",
+        "sIak7pFapfSLCfctxdOu",
+        "jRAAK67SEFE9m7ci5DhD",
+        "GaCzJ7BKVn8XQp1mZYIn",
+        "P4DhdyNCB4Nl6MA0sL45",
+        "bD9maNcCuQQS75DGuteM",
+        "xGlGKBuNUZYW7Vx2RHol",
+        "rPMkKgdwgIwqv4fXgR6N",
+        "8DzKSPdgEQPaK5vKG0Rs",
+        "qSeXEcewz7tA0Q0qk9fH",
+        "hU1ratPhBTZNviWitzAh",
+    ],
 }
 
 
@@ -163,7 +177,9 @@ def main() -> None:
             sys.exit(1)
         items = [(args.only, NUMBERS[args.only])]
     else:
-        items = sorted(NUMBERS.items())
+        # Every deck starts at 0, but Listening mode excludes zero by having no
+        # 0.mp3 (see ADD_NUMBERS.md), so a full run must not create one.
+        items = sorted((n, text) for n, text in NUMBERS.items() if n != 0)
 
     total = len(items)
     generated = 0

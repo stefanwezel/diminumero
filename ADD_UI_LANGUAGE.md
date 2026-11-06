@@ -85,7 +85,7 @@ For **every** learning language entry in `AVAILABLE_LANGUAGES`, add the new code
 },
 ```
 
-There are currently 15 learning languages: `es`, `fr`, `ja`, `de`, `ko`, `it`, `zh`, `pt`, `tr`, `ne`, `sv`, `da`, `no`, `cy`, `ga`.
+There are currently 16 learning languages: `es`, `fr`, `ja`, `de`, `ko`, `it`, `zh`, `pt`, `tr`, `ne`, `sv`, `da`, `no`, `cy`, `ga`, `en`.
 
 ### 4. `templates/base.html`
 

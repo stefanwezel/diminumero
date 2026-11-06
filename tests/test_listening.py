@@ -10,7 +10,7 @@ mode picker, because the mode here is listening.
 import pytest
 from app import app as flask_app
 from app import _available_audio_numbers
-from languages import get_language_numbers
+from languages import get_language_numbers, get_languages_with_audio_mode
 
 # What a Spanish listening drill may actually ask: the deck narrowed to the
 # numbers we have an MP3 for.
@@ -100,6 +100,16 @@ class TestAvailability:
         response = client.get("/es/listen")
         assert response.status_code == 302
         assert response.headers["Location"].endswith("/es/listening")
+
+
+class TestShippedAudio:
+    @pytest.mark.parametrize("lang_code", sorted(get_languages_with_audio_mode()))
+    def test_every_deck_number_but_zero_has_a_clip(self, lang_code):
+        """Zero stays out of a listening drill only because it has no MP3, and
+        tools/generate_audio.py walks a deck that starts at 0. This also catches
+        a regenerated deck whose new numbers were never voiced."""
+        deck = set(get_language_numbers(lang_code))
+        assert _available_audio_numbers(lang_code) == deck - {0}
 
 
 class TestStartForm:

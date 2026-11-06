@@ -551,32 +551,36 @@
         if (importBtn) {
             importBtn.addEventListener('click', async function () {
                 importBtn.disabled = true;
+                let data = null;
                 try {
-                    const res = await fetch('/api/verbs/import-from-cards', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ lang: conjLang })
-                    });
-                    const data = await res.json();
-                    if (!res.ok || !data.ok) {
-                        importBtn.disabled = false;
-                        return;
-                    }
-                    const list = ensureList();
-                    (data.verbs || []).forEach(function (verb) {
-                        list.insertBefore(buildVerbLi(verb), list.firstChild);
-                    });
-                    updateCount();
-                    importBtn.classList.add('conjugate-sync-hidden');
-                    const added = data.added || 0;
-                    showToast(
-                        added > 0
-                            ? syncI18n.importDone.replace('{n}', String(added))
-                            : syncI18n.importNone
-                    );
+                    data = await window.pickCardVerbsToImport(conjLang);
                 } catch (err) {
-                    importBtn.disabled = false;
+                    // Non-fatal: the button stays for another try.
                 }
+                importBtn.disabled = false;
+                if (!data) {
+                    importBtn.focus();
+                    return;
+                }
+                const list = ensureList();
+                (data.verbs || []).forEach(function (verb) {
+                    list.insertBefore(buildVerbLi(verb), list.firstChild);
+                });
+                updateCount();
+                // Whatever was left unticked is still on offer.
+                const remaining = data.remaining || 0;
+                importBtn.setAttribute('data-count', String(remaining));
+                if (remaining > 0) {
+                    importBtn.textContent = syncI18n.importTpl.replace('{n}', String(remaining));
+                } else {
+                    importBtn.classList.add('conjugate-sync-hidden');
+                }
+                const added = data.added || 0;
+                showToast(
+                    added > 0
+                        ? syncI18n.importDone.replace('{n}', String(added))
+                        : syncI18n.importNone
+                );
             });
         }
 

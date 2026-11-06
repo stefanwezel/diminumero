@@ -1,12 +1,16 @@
 (function () {
     'use strict';
 
-    var KEY = 'diminumero:conjugate_practice_prefs';
     var SAMPLING_MODES = ['prioritized', 'random'];
     var DIFFICULTIES = ['advanced', 'hardcore'];
 
     var form = document.querySelector('.conjugate-practice-form');
     if (!form) return;
+
+    // Per language: tense keys differ between languages, so one language's
+    // saved list would untick every box on another's page, then get saved back.
+    var LEGACY_KEY = 'diminumero:conjugate_practice_prefs';
+    var KEY = LEGACY_KEY + ':' + form.getAttribute('data-lang');
 
     // Set while we re-render after a reset, so the change event we dispatch for
     // the insights matrix doesn't re-persist the defaults we just cleared.
@@ -39,6 +43,30 @@
         if (isNaN(n) || n < 1 || n > 100) return;
         var input = form.querySelector('input[type="number"][name="count"]');
         if (input) input.value = String(n);
+    }
+
+    // Settings used to live under one key shared by every language. Hand them to
+    // the first page opened since, keeping the tense list only if it's that
+    // page's own, and drop the old key.
+    function migrateLegacyPrefs() {
+        try {
+            var raw = localStorage.getItem(LEGACY_KEY);
+            if (raw === null) return;
+            localStorage.removeItem(LEGACY_KEY);
+            if (localStorage.getItem(KEY) !== null) return;
+            var saved = JSON.parse(raw);
+            if (!saved || typeof saved !== 'object') return;
+            if (Array.isArray(saved.tenses)) {
+                var own = tenseInputs().map(function (input) { return input.value; });
+                saved.tenses = saved.tenses.filter(function (tense) {
+                    return own.indexOf(tense) !== -1;
+                });
+                if (!saved.tenses.length) delete saved.tenses;
+            }
+            localStorage.setItem(KEY, JSON.stringify(saved));
+        } catch (e) {
+            // Storage unavailable or the old entry unreadable: defaults apply.
+        }
     }
 
     function applyPrefs() {
@@ -112,6 +140,7 @@
     var resetBtn = form.querySelector('.conjugate-practice-reset');
     if (resetBtn) resetBtn.addEventListener('click', resetDefaults);
 
+    migrateLegacyPrefs();
     applyPrefs();
     // pageshow fires on initial load AND when restored from Firefox bfcache.
     window.addEventListener('pageshow', applyPrefs);

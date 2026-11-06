@@ -6,11 +6,14 @@ is German- or multi-language-specific: the committed German pool, the ``lang``
 scoping of verbs/stats/API endpoints, and the isolation between the two pools.
 """
 
+import json
+
 import pytest
 
 from app import app as flask_app
 from languages.de import conjugations as de_conjugations
 from models import ConjugationStat, VerbCard, db
+from tools import generate_conjugations_de
 
 
 @pytest.fixture
@@ -78,6 +81,15 @@ def test_pool_forms_spot_checks():
 
 def test_search_is_umlaut_insensitive():
     assert "können" in de_conjugations.search_verbs("konn")
+
+
+def test_generator_limit_writes_nothing(monkeypatch, tmp_path, capsys):
+    """A truncated pool on disk would reject most verbs as unsupported."""
+    monkeypatch.setattr(generate_conjugations_de, "OUTPUT_PATH", tmp_path / "p.json")
+    monkeypatch.setattr("sys.argv", ["generate_conjugations_de.py", "--limit", "3"])
+    generate_conjugations_de.main()
+    assert list(tmp_path.iterdir()) == []
+    assert len(json.loads(capsys.readouterr().out)) == 3
 
 
 # ----- Lang-scoped verb management ------------------------------------------

@@ -65,7 +65,7 @@
                 autocapitalize="off"
                 autofocus
                 data-difficulty="{{ difficulty }}"
-                {% if correct_answer is not none %}data-correct-answer="{{ correct_answer }}"{% endif %}
+                {% if accepted_answers %}data-accepted-answers='{{ accepted_answers|tojson }}'{% endif %}
             >
             <div id="validationFeedback" class="validation-feedback"></div>
         </div>
@@ -74,6 +74,7 @@
     <div id="hintPanel" class="conjugate-hint" hidden>
         <div class="conjugate-hint-title">{{ get_text('conjugate_hint_panel_title') }}</div>
         {% if hint.blurb %}<p class="conjugate-hint-blurb">{{ hint.blurb }}</p>{% endif %}
+        {% if hint.models %}
         <table class="conjugate-hint-table">
             <thead>
                 <tr>
@@ -92,6 +93,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
     {% endif %}
     {% endif %}
@@ -115,7 +117,7 @@
                 autocomplete="off"
                 autocapitalize="off"
                 autofocus
-                data-correct-answer="{{ correct_answer }}"
+                data-accepted-answers='{{ accepted_answers|tojson }}'
             >
             <button type="submit" name="next" value="1" class="btn btn-primary reveal-modal-next">
                 {{ get_text('cards_reveal_next_btn') }}

@@ -1,0 +1,1008 @@
+{
+ "show": {
+  "present-perfect": {
+   "have shown": [
+    "have showed"
+   ],
+   "has shown": [
+    "has showed"
+   ]
+  },
+  "past-perfect": {
+   "had shown": [
+    "had showed"
+   ]
+  }
+ },
+ "learn": {
+  "past-simple": {
+   "learnt": [
+    "learned"
+   ]
+  },
+  "present-perfect": {
+   "have learnt": [
+    "have learned"
+   ],
+   "has learnt": [
+    "has learned"
+   ]
+  },
+  "past-perfect": {
+   "had learnt": [
+    "had learned"
+   ]
+  }
+ },
+ "realise": {
+  "present-simple": {
+   "realise": [
+    "realize"
+   ],
+   "realises": [
+    "realizes"
+   ]
+  },
+  "past-simple": {
+   "realised": [
+    "realized"
+   ]
+  },
+  "present-perfect": {
+   "have realised": [
+    "have realized"
+   ],
+   "has realised": [
+    "has realized"
+   ]
+  },
+  "future-will": {
+   "will realise": [
+    "will realize"
+   ]
+  },
+  "future-going-to": {
+   "am going to realise": [
+    "am going to realize"
+   ],
+   "are going to realise": [
+    "are going to realize"
+   ],
+   "is going to realise": [
+    "is going to realize"
+   ]
+  },
+  "conditional": {
+   "would realise": [
+    "would realize"
+   ]
+  },
+  "past-perfect": {
+   "had realised": [
+    "had realized"
+   ]
+  }
+ },
+ "lie": {
+  "past-simple": {
+   "lay": [
+    "lied"
+   ]
+  },
+  "present-perfect": {
+   "have lain": [
+    "have lied"
+   ],
+   "has lain": [
+    "has lied"
+   ]
+  },
+  "past-perfect": {
+   "had lain": [
+    "had lied"
+   ]
+  }
+ },
+ "bet": {
+  "past-simple": {
+   "bet": [
+    "betted"
+   ]
+  },
+  "present-perfect": {
+   "have bet": [
+    "have betted"
+   ],
+   "has bet": [
+    "has betted"
+   ]
+  },
+  "past-perfect": {
+   "had bet": [
+    "had betted"
+   ]
+  }
+ },
+ "burn": {
+  "past-simple": {
+   "burnt": [
+    "burned"
+   ]
+  },
+  "present-perfect": {
+   "have burnt": [
+    "have burned"
+   ],
+   "has burnt": [
+    "has burned"
+   ]
+  },
+  "past-perfect": {
+   "had burnt": [
+    "had burned"
+   ]
+  }
+ },
+ "dream": {
+  "past-simple": {
+   "dreamt": [
+    "dreamed"
+   ]
+  },
+  "present-perfect": {
+   "have dreamt": [
+    "have dreamed"
+   ],
+   "has dreamt": [
+    "has dreamed"
+   ]
+  },
+  "past-perfect": {
+   "had dreamt": [
+    "had dreamed"
+   ]
+  }
+ },
+ "focus": {
+  "past-simple": {
+   "focused": [
+    "focussed"
+   ]
+  },
+  "present-continuous": {
+   "am focusing": [
+    "am focussing"
+   ],
+   "are focusing": [
+    "are focussing"
+   ],
+   "is focusing": [
+    "is focussing"
+   ]
+  },
+  "present-perfect": {
+   "have focused": [
+    "have focussed"
+   ],
+   "has focused": [
+    "has focussed"
+   ]
+  },
+  "past-continuous": {
+   "was focusing": [
+    "was focussing"
+   ],
+   "were focusing": [
+    "were focussing"
+   ]
+  },
+  "past-perfect": {
+   "had focused": [
+    "had focussed"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been focusing": [
+    "have been focussing"
+   ],
+   "has been focusing": [
+    "has been focussing"
+   ]
+  }
+ },
+ "hang": {
+  "past-simple": {
+   "hung": [
+    "hanged"
+   ]
+  },
+  "present-perfect": {
+   "have hung": [
+    "have hanged"
+   ],
+   "has hung": [
+    "has hanged"
+   ]
+  },
+  "past-perfect": {
+   "had hung": [
+    "had hanged"
+   ]
+  }
+ },
+ "kneel": {
+  "past-simple": {
+   "knelt": [
+    "kneeled"
+   ]
+  },
+  "present-perfect": {
+   "have knelt": [
+    "have kneeled"
+   ],
+   "has knelt": [
+    "has kneeled"
+   ]
+  },
+  "past-perfect": {
+   "had knelt": [
+    "had kneeled"
+   ]
+  }
+ },
+ "lean": {
+  "past-simple": {
+   "leant": [
+    "leaned"
+   ]
+  },
+  "present-perfect": {
+   "have leant": [
+    "have leaned"
+   ],
+   "has leant": [
+    "has leaned"
+   ]
+  },
+  "past-perfect": {
+   "had leant": [
+    "had leaned"
+   ]
+  }
+ },
+ "leap": {
+  "past-simple": {
+   "leapt": [
+    "leaped"
+   ]
+  },
+  "present-perfect": {
+   "have leapt": [
+    "have leaped"
+   ],
+   "has leapt": [
+    "has leaped"
+   ]
+  },
+  "past-perfect": {
+   "had leapt": [
+    "had leaped"
+   ]
+  }
+ },
+ "light": {
+  "past-simple": {
+   "lit": [
+    "lighted"
+   ]
+  },
+  "present-perfect": {
+   "have lit": [
+    "have lighted"
+   ],
+   "has lit": [
+    "has lighted"
+   ]
+  },
+  "past-perfect": {
+   "had lit": [
+    "had lighted"
+   ]
+  }
+ },
+ "organise": {
+  "present-simple": {
+   "organise": [
+    "organize"
+   ],
+   "organises": [
+    "organizes"
+   ]
+  },
+  "past-simple": {
+   "organised": [
+    "organized"
+   ]
+  },
+  "present-continuous": {
+   "am organising": [
+    "am organizing"
+   ],
+   "are organising": [
+    "are organizing"
+   ],
+   "is organising": [
+    "is organizing"
+   ]
+  },
+  "present-perfect": {
+   "have organised": [
+    "have organized"
+   ],
+   "has organised": [
+    "has organized"
+   ]
+  },
+  "future-will": {
+   "will organise": [
+    "will organize"
+   ]
+  },
+  "past-continuous": {
+   "was organising": [
+    "was organizing"
+   ],
+   "were organising": [
+    "were organizing"
+   ]
+  },
+  "future-going-to": {
+   "am going to organise": [
+    "am going to organize"
+   ],
+   "are going to organise": [
+    "are going to organize"
+   ],
+   "is going to organise": [
+    "is going to organize"
+   ]
+  },
+  "conditional": {
+   "would organise": [
+    "would organize"
+   ]
+  },
+  "past-perfect": {
+   "had organised": [
+    "had organized"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been organising": [
+    "have been organizing"
+   ],
+   "has been organising": [
+    "has been organizing"
+   ]
+  }
+ },
+ "prove": {
+  "present-perfect": {
+   "have proved": [
+    "have proven"
+   ],
+   "has proved": [
+    "has proven"
+   ]
+  },
+  "past-perfect": {
+   "had proved": [
+    "had proven"
+   ]
+  }
+ },
+ "quit": {
+  "past-simple": {
+   "quit": [
+    "quitted"
+   ]
+  },
+  "present-perfect": {
+   "have quit": [
+    "have quitted"
+   ],
+   "has quit": [
+    "has quitted"
+   ]
+  },
+  "past-perfect": {
+   "had quit": [
+    "had quitted"
+   ]
+  }
+ },
+ "recognise": {
+  "present-simple": {
+   "recognise": [
+    "recognize"
+   ],
+   "recognises": [
+    "recognizes"
+   ]
+  },
+  "past-simple": {
+   "recognised": [
+    "recognized"
+   ]
+  },
+  "present-perfect": {
+   "have recognised": [
+    "have recognized"
+   ],
+   "has recognised": [
+    "has recognized"
+   ]
+  },
+  "future-will": {
+   "will recognise": [
+    "will recognize"
+   ]
+  },
+  "future-going-to": {
+   "am going to recognise": [
+    "am going to recognize"
+   ],
+   "are going to recognise": [
+    "are going to recognize"
+   ],
+   "is going to recognise": [
+    "is going to recognize"
+   ]
+  },
+  "conditional": {
+   "would recognise": [
+    "would recognize"
+   ]
+  },
+  "past-perfect": {
+   "had recognised": [
+    "had recognized"
+   ]
+  }
+ },
+ "shine": {
+  "past-simple": {
+   "shone": [
+    "shined"
+   ]
+  },
+  "present-perfect": {
+   "have shone": [
+    "have shined"
+   ],
+   "has shone": [
+    "has shined"
+   ]
+  },
+  "past-perfect": {
+   "had shone": [
+    "had shined"
+   ]
+  }
+ },
+ "smell": {
+  "past-simple": {
+   "smelt": [
+    "smelled"
+   ]
+  },
+  "present-perfect": {
+   "have smelt": [
+    "have smelled"
+   ],
+   "has smelt": [
+    "has smelled"
+   ]
+  },
+  "past-perfect": {
+   "had smelt": [
+    "had smelled"
+   ]
+  }
+ },
+ "spell": {
+  "past-simple": {
+   "spelt": [
+    "spelled"
+   ]
+  },
+  "present-perfect": {
+   "have spelt": [
+    "have spelled"
+   ],
+   "has spelt": [
+    "has spelled"
+   ]
+  },
+  "past-perfect": {
+   "had spelt": [
+    "had spelled"
+   ]
+  }
+ },
+ "spill": {
+  "past-simple": {
+   "spilt": [
+    "spilled"
+   ]
+  },
+  "present-perfect": {
+   "have spilt": [
+    "have spilled"
+   ],
+   "has spilt": [
+    "has spilled"
+   ]
+  },
+  "past-perfect": {
+   "had spilt": [
+    "had spilled"
+   ]
+  }
+ },
+ "spoil": {
+  "past-simple": {
+   "spoilt": [
+    "spoiled"
+   ]
+  },
+  "present-perfect": {
+   "have spoilt": [
+    "have spoiled"
+   ],
+   "has spoilt": [
+    "has spoiled"
+   ]
+  },
+  "past-perfect": {
+   "had spoilt": [
+    "had spoiled"
+   ]
+  }
+ },
+ "apologise": {
+  "present-simple": {
+   "apologise": [
+    "apologize"
+   ],
+   "apologises": [
+    "apologizes"
+   ]
+  },
+  "past-simple": {
+   "apologised": [
+    "apologized"
+   ]
+  },
+  "present-continuous": {
+   "am apologising": [
+    "am apologizing"
+   ],
+   "are apologising": [
+    "are apologizing"
+   ],
+   "is apologising": [
+    "is apologizing"
+   ]
+  },
+  "present-perfect": {
+   "have apologised": [
+    "have apologized"
+   ],
+   "has apologised": [
+    "has apologized"
+   ]
+  },
+  "future-will": {
+   "will apologise": [
+    "will apologize"
+   ]
+  },
+  "past-continuous": {
+   "was apologising": [
+    "was apologizing"
+   ],
+   "were apologising": [
+    "were apologizing"
+   ]
+  },
+  "future-going-to": {
+   "am going to apologise": [
+    "am going to apologize"
+   ],
+   "are going to apologise": [
+    "are going to apologize"
+   ],
+   "is going to apologise": [
+    "is going to apologize"
+   ]
+  },
+  "conditional": {
+   "would apologise": [
+    "would apologize"
+   ]
+  },
+  "past-perfect": {
+   "had apologised": [
+    "had apologized"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been apologising": [
+    "have been apologizing"
+   ],
+   "has been apologising": [
+    "has been apologizing"
+   ]
+  }
+ },
+ "broadcast": {
+  "past-simple": {
+   "broadcast": [
+    "broadcasted"
+   ]
+  },
+  "present-perfect": {
+   "have broadcast": [
+    "have broadcasted"
+   ],
+   "has broadcast": [
+    "has broadcasted"
+   ]
+  },
+  "past-perfect": {
+   "had broadcast": [
+    "had broadcasted"
+   ]
+  }
+ },
+ "criticise": {
+  "present-simple": {
+   "criticise": [
+    "criticize"
+   ],
+   "criticises": [
+    "criticizes"
+   ]
+  },
+  "past-simple": {
+   "criticised": [
+    "criticized"
+   ]
+  },
+  "present-continuous": {
+   "am criticising": [
+    "am criticizing"
+   ],
+   "are criticising": [
+    "are criticizing"
+   ],
+   "is criticising": [
+    "is criticizing"
+   ]
+  },
+  "present-perfect": {
+   "have criticised": [
+    "have criticized"
+   ],
+   "has criticised": [
+    "has criticized"
+   ]
+  },
+  "future-will": {
+   "will criticise": [
+    "will criticize"
+   ]
+  },
+  "past-continuous": {
+   "was criticising": [
+    "was criticizing"
+   ],
+   "were criticising": [
+    "were criticizing"
+   ]
+  },
+  "future-going-to": {
+   "am going to criticise": [
+    "am going to criticize"
+   ],
+   "are going to criticise": [
+    "are going to criticize"
+   ],
+   "is going to criticise": [
+    "is going to criticize"
+   ]
+  },
+  "conditional": {
+   "would criticise": [
+    "would criticize"
+   ]
+  },
+  "past-perfect": {
+   "had criticised": [
+    "had criticized"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been criticising": [
+    "have been criticizing"
+   ],
+   "has been criticising": [
+    "has been criticizing"
+   ]
+  }
+ },
+ "emphasise": {
+  "present-simple": {
+   "emphasise": [
+    "emphasize"
+   ],
+   "emphasises": [
+    "emphasizes"
+   ]
+  },
+  "past-simple": {
+   "emphasised": [
+    "emphasized"
+   ]
+  },
+  "present-continuous": {
+   "am emphasising": [
+    "am emphasizing"
+   ],
+   "are emphasising": [
+    "are emphasizing"
+   ],
+   "is emphasising": [
+    "is emphasizing"
+   ]
+  },
+  "present-perfect": {
+   "have emphasised": [
+    "have emphasized"
+   ],
+   "has emphasised": [
+    "has emphasized"
+   ]
+  },
+  "future-will": {
+   "will emphasise": [
+    "will emphasize"
+   ]
+  },
+  "past-continuous": {
+   "was emphasising": [
+    "was emphasizing"
+   ],
+   "were emphasising": [
+    "were emphasizing"
+   ]
+  },
+  "future-going-to": {
+   "am going to emphasise": [
+    "am going to emphasize"
+   ],
+   "are going to emphasise": [
+    "are going to emphasize"
+   ],
+   "is going to emphasise": [
+    "is going to emphasize"
+   ]
+  },
+  "conditional": {
+   "would emphasise": [
+    "would emphasize"
+   ]
+  },
+  "past-perfect": {
+   "had emphasised": [
+    "had emphasized"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been emphasising": [
+    "have been emphasizing"
+   ],
+   "has been emphasising": [
+    "has been emphasizing"
+   ]
+  }
+ },
+ "forecast": {
+  "past-simple": {
+   "forecast": [
+    "forecasted"
+   ]
+  },
+  "present-perfect": {
+   "have forecast": [
+    "have forecasted"
+   ],
+   "has forecast": [
+    "has forecasted"
+   ]
+  },
+  "past-perfect": {
+   "had forecast": [
+    "had forecasted"
+   ]
+  }
+ },
+ "memorise": {
+  "present-simple": {
+   "memorise": [
+    "memorize"
+   ],
+   "memorises": [
+    "memorizes"
+   ]
+  },
+  "past-simple": {
+   "memorised": [
+    "memorized"
+   ]
+  },
+  "present-continuous": {
+   "am memorising": [
+    "am memorizing"
+   ],
+   "are memorising": [
+    "are memorizing"
+   ],
+   "is memorising": [
+    "is memorizing"
+   ]
+  },
+  "present-perfect": {
+   "have memorised": [
+    "have memorized"
+   ],
+   "has memorised": [
+    "has memorized"
+   ]
+  },
+  "future-will": {
+   "will memorise": [
+    "will memorize"
+   ]
+  },
+  "past-continuous": {
+   "was memorising": [
+    "was memorizing"
+   ],
+   "were memorising": [
+    "were memorizing"
+   ]
+  },
+  "future-going-to": {
+   "am going to memorise": [
+    "am going to memorize"
+   ],
+   "are going to memorise": [
+    "are going to memorize"
+   ],
+   "is going to memorise": [
+    "is going to memorize"
+   ]
+  },
+  "conditional": {
+   "would memorise": [
+    "would memorize"
+   ]
+  },
+  "past-perfect": {
+   "had memorised": [
+    "had memorized"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been memorising": [
+    "have been memorizing"
+   ],
+   "has been memorising": [
+    "has been memorizing"
+   ]
+  }
+ },
+ "sew": {
+  "present-perfect": {
+   "have sewn": [
+    "have sewed"
+   ],
+   "has sewn": [
+    "has sewed"
+   ]
+  },
+  "past-perfect": {
+   "had sewn": [
+    "had sewed"
+   ]
+  }
+ },
+ "summarise": {
+  "present-simple": {
+   "summarise": [
+    "summarize"
+   ],
+   "summarises": [
+    "summarizes"
+   ]
+  },
+  "past-simple": {
+   "summarised": [
+    "summarized"
+   ]
+  },
+  "present-continuous": {
+   "am summarising": [
+    "am summarizing"
+   ],
+   "are summarising": [
+    "are summarizing"
+   ],
+   "is summarising": [
+    "is summarizing"
+   ]
+  },
+  "present-perfect": {
+   "have summarised": [
+    "have summarized"
+   ],
+   "has summarised": [
+    "has summarized"
+   ]
+  },
+  "future-will": {
+   "will summarise": [
+    "will summarize"
+   ]
+  },
+  "past-continuous": {
+   "was summarising": [
+    "was summarizing"
+   ],
+   "were summarising": [
+    "were summarizing"
+   ]
+  },
+  "future-going-to": {
+   "am going to summarise": [
+    "am going to summarize"
+   ],
+   "are going to summarise": [
+    "are going to summarize"
+   ],
+   "is going to summarise": [
+    "is going to summarize"
+   ]
+  },
+  "conditional": {
+   "would summarise": [
+    "would summarize"
+   ]
+  },
+  "past-perfect": {
+   "had summarised": [
+    "had summarized"
+   ]
+  },
+  "present-perfect-continuous": {
+   "have been summarising": [
+    "have been summarizing"
+   ],
+   "has been summarising": [
+    "has been summarizing"
+   ]
+  }
+ }
+}

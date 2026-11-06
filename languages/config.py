@@ -28,23 +28,26 @@ AVAILABLE_LANGUAGES = {
         # Word shown to the user when they answer correctly (in the target language)
         "feedback_expression": "¡Correcto",
     },
-    "fr": {
-        "name": "French",
-        "native_name": "Français",
-        "flag": "🇫🇷",
+    "en": {
+        "name": "English",
+        "native_name": "English",
+        "flag": "🇬🇧",
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
-        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
+        "has_conjugation": True,
+        "has_conjugation_materials": True,
+        # British forms, as the flag says: "two hundred and thirty-four".
+        "validation_strategy": "word_based",
         "ui_names": {
-            "en": "French",
-            "de": "Französisch",
-            "es": "Francés",
-            "it": "Francese",
-            "fr": "Français",
-            "pt": "Francês",
-            "ar": "الفرنسية",
-            "uk": "Французька",
+            "en": "English",
+            "de": "Englisch",
+            "es": "Inglés",
+            "it": "Inglese",
+            "fr": "Anglais",
+            "pt": "Inglês",
+            "ar": "الإنجليزية",
+            "uk": "Англійська",
         },
         "feedback_expression": "Correct",
     },
@@ -66,7 +69,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "اليابانية",
             "uk": "Японська",
         },
-        "feedback_expression": "正解!",
+        "feedback_expression": "正解",
     },
     "de": {
         "name": "German",
@@ -90,6 +93,26 @@ AVAILABLE_LANGUAGES = {
         },
         "feedback_expression": "Korrekt",
     },
+    "fr": {
+        "name": "French",
+        "native_name": "Français",
+        "flag": "🇫🇷",
+        "ready": True,
+        "has_learn_materials": True,
+        "has_audio_mode": True,
+        "validation_strategy": "word_based",  # Numbers separated by spaces/hyphens
+        "ui_names": {
+            "en": "French",
+            "de": "Französisch",
+            "es": "Francés",
+            "it": "Francese",
+            "fr": "Français",
+            "pt": "Francês",
+            "ar": "الفرنسية",
+            "uk": "Французька",
+        },
+        "feedback_expression": "Correct",
+    },
     "ko": {
         "name": "Korean",
         "native_name": "한국어",
@@ -107,7 +130,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الكورية",
             "uk": "Корейська",
         },
-        "feedback_expression": "정답!",
+        "feedback_expression": "정답",
     },
     "it": {
         "name": "Italian",
@@ -128,7 +151,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الإيطالية",
             "uk": "Італійська",
         },
-        "feedback_expression": "Corretto!",
+        "feedback_expression": "Corretto",
     },
     "zh": {
         "name": "Chinese",
@@ -147,7 +170,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الصينية",
             "uk": "Китайська",
         },
-        "feedback_expression": "正确!",
+        "feedback_expression": "正确",
     },
     "pt": {
         "name": "Portuguese",
@@ -167,7 +190,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "البرتغالية",
             "uk": "Португальська",
         },
-        "feedback_expression": "Correto!",
+        "feedback_expression": "Correto",
     },
     "tr": {
         "name": "Turkish",
@@ -186,7 +209,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "التركية",
             "uk": "Турецька",
         },
-        "feedback_expression": "Doğru!",
+        "feedback_expression": "Doğru",
     },
     "ne": {
         "name": "Nepalese",
@@ -204,7 +227,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "النيبالية",
             "uk": "Непальська",
         },
-        "feedback_expression": "सहि!",
+        "feedback_expression": "सहि",
     },
     "sv": {
         "name": "Swedish",
@@ -224,7 +247,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "السويدية",
             "uk": "Шведська",
         },
-        "feedback_expression": "Rätt!",
+        "feedback_expression": "Rätt",
     },
     "da": {
         "name": "Danish",
@@ -243,7 +266,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الدنماركية",
             "uk": "Данська",
         },
-        "feedback_expression": "Korrekt!",
+        "feedback_expression": "Korrekt",
     },
     "no": {
         "name": "Norwegian",
@@ -262,7 +285,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "النرويجية",
             "uk": "Норвезька",
         },
-        "feedback_expression": "Riktig!",
+        "feedback_expression": "Riktig",
     },
     "cy": {
         "name": "Welsh",
@@ -313,7 +336,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الويلزية",
             "uk": "Валлійська",
         },
-        "feedback_expression": "Da iawn!",
+        "feedback_expression": "Da iawn",
     },
     "ga": {
         "name": "Irish",
@@ -332,7 +355,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الأيرلندية",
             "uk": "Ірландська",
         },
-        "feedback_expression": "Maith thú!",
+        "feedback_expression": "Maith thú",
     },
 }
 
@@ -608,6 +631,8 @@ def get_language_numbers(lang_code, system=None):
             from .cy import NUMBERS
         elif lang_code == "ga":
             from .ga import NUMBERS
+        elif lang_code == "en":
+            from .en import NUMBERS
         else:
             raise ValueError(f"Language '{lang_code}' is not implemented")
 

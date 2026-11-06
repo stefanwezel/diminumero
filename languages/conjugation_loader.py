@@ -11,9 +11,15 @@ JSON shape::
 
     { "comer": { "indicativo/presente": ["como", "comes", ...], ... }, ... }
 
-Each tense maps to a 6-element list aligned to the language's person slots
-(see ``conjugation_config.CONJ_LANGS``); a slot may be null when the tense has
-no form for that person (e.g. imperatives lack a first-person singular).
+Each tense maps to a list with one element per person slot of the language (see
+``conjugation_config.CONJ_LANGS``; six, or five for English); a slot may be null
+when the tense has no form for that person (e.g. imperatives lack a first-person
+singular).
+
+A language may also ship a variants file, the other forms accepted for a stored
+one (see ``languages/en/conjugation_variants.json``)::
+
+    { "learn": { "past-simple": { "learnt": ["learned"] }, ... }, ... }
 """
 
 import json
@@ -32,13 +38,40 @@ def _fold(text: str) -> str:
 class ConjugationPool:
     """Lazy, cached view over one language's conjugations.json."""
 
-    def __init__(self, data_path: Path):
+    def __init__(
+        self,
+        data_path: Path,
+        variants_path: Path | None = None,
+        base_form_tense: str | None = None,
+    ):
+        """``base_form_tense`` names the tense with a cell spelled like the
+        infinitive, so another spelling of that cell is another spelling of the
+        verb ("realise" also "realize"). Only meaningful with a variants file.
+        """
         self._data_path = data_path
+        self._variants_path = variants_path
+        self._base_form_tense = base_form_tense
 
     @cached_property
     def _data(self) -> dict[str, dict[str, list]]:
         with self._data_path.open(encoding="utf-8") as fh:
             return json.load(fh)
+
+    @cached_property
+    def _variants(self) -> dict[str, dict[str, dict[str, list[str]]]]:
+        if self._variants_path is None:
+            return {}
+        with self._variants_path.open(encoding="utf-8") as fh:
+            return json.load(fh)
+
+    @cached_property
+    def _infinitive_spellings(self) -> dict[str, str]:
+        """Other spelling of an infinitive -> the one the pool stores it under."""
+        return {
+            other: verb
+            for verb, tenses in self._variants.items()
+            for other in tenses.get(self._base_form_tense, {}).get(verb, [])
+        }
 
     @cached_property
     def global_verbs(self) -> list[str]:
@@ -51,8 +84,26 @@ class ConjugationPool:
 
         The JSON preserves the generator's frequency ranking, so prefix-search
         results come back most-common-first (e.g. "co" surfaces "comer" early).
+        A verb's other spellings sit right after it, so they rank the same.
         """
-        return [(_fold(v), v) for v in self._data.keys()]
+        others: dict[str, list[str]] = {}
+        for other, verb in self._infinitive_spellings.items():
+            others.setdefault(verb, []).append(other)
+        return [
+            (_fold(spelling), verb)
+            for verb in self._data
+            for spelling in (verb, *others.get(verb, []))
+        ]
+
+    def canonical_infinitive(self, infinitive: str) -> str:
+        """The stored spelling of an infinitive; anything else comes back as is."""
+        return self._infinitive_spellings.get(infinitive, infinitive)
+
+    def get_form_variants(
+        self, infinitive: str, tense_key: str, form: str
+    ) -> list[str]:
+        """Other accepted forms for one stored form of a verb (often none)."""
+        return self._variants.get(infinitive, {}).get(tense_key, {}).get(form, [])
 
     def verb_exists(self, infinitive: str) -> bool:
         """True if the infinitive is in the pool (exact, case-insensitive)."""
@@ -84,4 +135,5 @@ class ConjugationPool:
             for folded, verb in self._folded_index
             if folded.startswith(folded_prefix) and verb not in exclude
         ]
-        return matches[:limit]
+        # Two spellings of one verb can both match ("reali" hits realise and realize).
+        return list(dict.fromkeys(matches))[:limit]

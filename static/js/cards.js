@@ -563,30 +563,36 @@
     if (importAllBtn) {
         importAllBtn.addEventListener('click', async function () {
             importAllBtn.disabled = true;
+            let data = null;
             try {
-                const res = await fetch('/api/verbs/import-from-cards', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await res.json();
-                if (!res.ok || !data.ok) {
-                    importAllBtn.disabled = false;
-                    return;
-                }
-                const list = findList();
-                if (list) {
-                    list.querySelectorAll('.cards-list-item').forEach(clearVerbAffordances);
-                }
-                const added = data.added || 0;
-                importAllBtn.classList.add('cards-verbs-import-all-hidden');
-                showToast(
-                    added > 0
-                        ? i18n.importDone.replace('{n}', String(added))
-                        : i18n.importNone
-                );
+                data = await window.pickCardVerbsToImport();
             } catch (err) {
-                importAllBtn.disabled = false;
+                // Non-fatal: the button stays for another try.
             }
+            importAllBtn.disabled = false;
+            if (!data) {
+                importAllBtn.focus();
+                return;
+            }
+            const imported = data.verbs || [];
+            const list = findList();
+            if (list) {
+                // Whatever was left unticked is still on offer.
+                list.querySelectorAll('.cards-list-item').forEach(function (li) {
+                    const wasImported = imported.some(function (verb) {
+                        return verb.infinitive === li.getAttribute('data-verb-infinitive')
+                            && verb.lang === li.getAttribute('data-verb-lang');
+                    });
+                    if (wasImported || !data.remaining) clearVerbAffordances(li);
+                });
+            }
+            refreshImportAllCount();
+            const added = data.added || 0;
+            showToast(
+                added > 0
+                    ? i18n.importDone.replace('{n}', String(added))
+                    : i18n.importNone
+            );
         });
     }
 })();

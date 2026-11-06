@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Aprende la conjugación de verbos en inglés</h1>
+      <p>
+        Los verbos ingleses cambian mucho menos que los españoles: el trabajo está en los auxiliares y en las formas irregulares del pasado. Esta página trata el <strong>inglés británico</strong>, que es el que acepta la práctica.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">Las cinco personas</a></li>
+        <li><a href="#present">Present simple: la -s</a></li>
+        <li><a href="#past">Pasado regular: -ed</a></li>
+        <li><a href="#ing">La forma -ing</a></li>
+        <li><a href="#tenses">Los tiempos que practicas</a></li>
+        <li><a href="#irregular">Verbos irregulares</a></li>
+        <li><a href="#british">Formas británicas</a></li>
+        <li><a href="#mistakes">Errores frecuentes</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>Las cinco personas</h2>
+      <p>
+        El inglés tiene cinco personas en lugar de seis, porque <strong>you</strong> tiene la misma forma para una persona y para varias.
+      </p>
+      <ul>
+        <li><strong>I</strong> — yo</li>
+        <li><strong>you</strong> — tú, vosotros, usted, ustedes</li>
+        <li><strong>he / she / it</strong> — él, ella, y it para cosas y animales</li>
+        <li><strong>we</strong> — nosotros</li>
+        <li><strong>they</strong> — ellos, ellas</li>
+      </ul>
+      <p>
+        El verbo por sí solo rara vez indica quién actúa, así que el inglés siempre dice el pronombre. En la práctica el pronombre ya aparece y solo escribes la forma verbal: <em>am working</em>, no "I am working".
+      </p>
+    </section>
+
+    <section id="present" class="learn-section">
+      <h2>Present simple: la -s</h2>
+      <p>
+        El present simple es la forma base del verbo, pero <strong>he/she/it</strong> añade <strong>-s</strong>:
+      </p>
+      <ul>
+        <li>La mayoría de los verbos añaden -s: <em>work → works</em></li>
+        <li>Tras s, x, ch, sh y o, se añade -es: <em>watch → watches</em>, <em>fix → fixes</em>, <em>go → goes</em></li>
+        <li>Consonante + y se convierte en -ies: <em>study → studies</em></li>
+        <li>Vocal + y solo añade -s: <em>play → plays</em></li>
+      </ul>
+      <p>
+        <em>be</em> y <em>have</em> tienen formas propias, y los verbos modales como <em>can</em> nunca cambian:
+      </p>
+      <ul>
+        <li><strong>be</strong>: <em>am, are, is, are, are</em></li>
+        <li><strong>have</strong>: <em>have, have, has, have, have</em></li>
+        <li><strong>can</strong>: <em>can, can, can, can, can</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: he/she/it de <em>fix</em>, <em>try</em> y <em>say</em>?</summary>
+        <p><strong><em>fixes</em></strong> · <strong><em>tries</em></strong> · <strong><em>says</em></strong></p>
+      </details>
+    </section>
+
+    <section id="past" class="learn-section">
+      <h2>Pasado regular: -ed</h2>
+      <p>
+        Los verbos regulares añaden <strong>-ed</strong> en todas las personas, y el participio es igual:
+      </p>
+      <ul>
+        <li>Terminados en e: se añade -d: <em>like → liked</em></li>
+        <li>Consonante + y se convierte en -ied: <em>study → studied</em></li>
+        <li>Una vocal breve y tónica + una consonante: se duplica la consonante: <em>stop → stopped</em>, <em>plan → planned</em>, <em>prefer → preferred</em></li>
+        <li>Una última sílaba átona no duplica: <em>visit → visited</em>, <em>open → opened</em></li>
+        <li>El inglés británico siempre duplica la l final tras una sola vocal: <em>travel → travelled</em>, <em>cancel → cancelled</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple de <em>carry</em>, <em>drop</em> y <em>visit</em>?</summary>
+        <p><strong><em>carried</em></strong> · <strong><em>dropped</em></strong> · <strong><em>visited</em></strong></p>
+      </details>
+    </section>
+
+    <section id="ing" class="learn-section">
+      <h2>La forma -ing</h2>
+      <p>
+        Los tiempos continuos usan la forma <strong>-ing</strong>, cuya ortografía sigue reglas parecidas:
+      </p>
+      <ul>
+        <li>La e final desaparece: <em>make → making</em></li>
+        <li>La ee se mantiene: <em>see → seeing</em></li>
+        <li>ie se convierte en y: <em>die → dying</em>, <em>lie → lying</em></li>
+        <li>La consonante se duplica, como en el pasado: <em>stop → stopping</em>, <em>travel → travelling</em></li>
+      </ul>
+      <p>
+        Los verbos de estado, como <em>know</em>, <em>want</em>, <em>like</em>, <em>need</em>, <em>believe</em> y <em>understand</em>, no suelen usarse en forma continua, así que la práctica nunca pide esas formas.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: forma -ing de <em>take</em>, <em>run</em> y <em>tie</em>?</summary>
+        <p><strong><em>taking</em></strong> · <strong><em>running</em></strong> · <strong><em>tying</em></strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>Los tiempos que practicas</h2>
+      <p>
+        En los ajustes de la práctica puedes combinar estos tiempos (ejemplos con <em>work</em> y <em>go</em>):
+      </p>
+      <ul>
+        <li><strong>Present simple</strong> — hábitos y hechos: <em>work, works</em></li>
+        <li><strong>Past simple</strong> — sucesos terminados: <em>worked, went</em></li>
+        <li><strong>Present continuous</strong> — ocurre ahora mismo: <em>am working, is working</em></li>
+        <li><strong>Present perfect</strong> — pasado relacionado con el presente: <em>have worked, has gone</em></li>
+        <li><strong>Future (will)</strong> — decisiones y predicciones: <em>will work</em></li>
+        <li><strong>Past continuous</strong> — en curso en un momento del pasado: <em>was working, were working</em></li>
+        <li><strong>Future (going to)</strong> — planes: <em>am going to work, is going to go</em></li>
+        <li><strong>Conditional (would)</strong> — lo que ocurriría: <em>would work</em></li>
+        <li><strong>Past perfect</strong> — el pasado anterior al pasado: <em>had worked, had gone</em></li>
+        <li><strong>Present perfect continuous</strong> — empezó en el pasado y sigue ocurriendo: <em>have been working, has been working</em></li>
+      </ul>
+      <p>
+        La práctica pide la forma afirmativa completa: <em>will go</em>, <em>have gone</em>, sin contracciones ni negación.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: ¿qué tiempo es <em>were working</em>? ¿Y <em>has gone</em>?</summary>
+        <p><strong>Past continuous</strong> · <strong>Present perfect</strong></p>
+      </details>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Verbos irregulares</h2>
+      <p>
+        Un verbo irregular se aprende como tres formas: la forma base, el past simple y el participio. Estos son los más frecuentes:
+      </p>
+      <ul>
+        <li><strong>go</strong> → <em>went</em>, <em>gone</em></li>
+        <li><strong>get</strong> → <em>got</em>, <em>got</em></li>
+        <li><strong>make</strong> → <em>made</em>, <em>made</em></li>
+        <li><strong>take</strong> → <em>took</em>, <em>taken</em></li>
+        <li><strong>see</strong> → <em>saw</em>, <em>seen</em></li>
+        <li><strong>come</strong> → <em>came</em>, <em>come</em></li>
+        <li><strong>know</strong> → <em>knew</em>, <em>known</em></li>
+        <li><strong>give</strong> → <em>gave</em>, <em>given</em></li>
+        <li><strong>think</strong> → <em>thought</em>, <em>thought</em></li>
+        <li><strong>write</strong> → <em>wrote</em>, <em>written</em></li>
+        <li><strong>buy</strong> → <em>bought</em>, <em>bought</em></li>
+        <li><strong>put</strong> → <em>put</em>, <em>put</em></li>
+      </ul>
+      <p>
+        En el past simple solo <em>be</em> cambia según la persona: <em>was</em> para I y he/she/it, <em>were</em> para you, we y they. Su participio es <em>been</em>.
+      </p>
+      <p>
+        Se repiten tres patrones: las tres formas iguales (<em>put</em>), pasado y participio iguales (<em>buy</em>) o las tres distintas (<em>write</em>).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple de <em>speak</em> y participio de <em>eat</em>?</summary>
+        <p><strong><em>spoke</em></strong> · <strong><em>eaten</em></strong></p>
+      </details>
+    </section>
+
+    <section id="british" class="learn-section">
+      <h2>Formas británicas</h2>
+      <p>
+        Cuando el propio inglés británico tiene dos formas, la práctica acepta ambas. Las formas americanas se marcan como incorrectas.
+      </p>
+      <ul>
+        <li>Se aceptan ambas: <em>learnt</em> / <em>learned</em>, <em>burnt</em> / <em>burned</em>, <em>dreamt</em> / <em>dreamed</em>, <em>realise</em> / <em>realize</em></li>
+        <li>Participio de get: <em>have got</em> — "have gotten" es americano</li>
+        <li>Doble l: <em>travelled</em> — "traveled" es americano</li>
+        <li>El verbo se escribe con s: <em>practise</em> — "practice" es americano</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Errores frecuentes</h2>
+      <ol>
+        <li><strong>Olvidar la -s</strong>: <em>he works</em>, no "he work".</li>
+        <li><strong>Past simple en lugar del participio</strong>: <em>have gone</em>, no "have went".</li>
+        <li><strong>Una -s en un verbo modal</strong>: <em>she can</em>, no "she cans".</li>
+        <li><strong>Un verbo de estado en forma continua</strong>: <em>I know</em>, no "I am knowing".</li>
+        <li><strong>Omitir el auxiliar</strong>: <em>am working</em>, no "I working".</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

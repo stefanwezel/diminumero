@@ -95,7 +95,7 @@
 
         {% if verbs %}
         <form method="POST" action="{{ url_for('conjugate_practice_start', lang_code=lang_code) }}"
-              class="cards-practice-form conjugate-practice-form" id="conjugate-practice-form">
+              class="cards-practice-form conjugate-practice-form" id="conjugate-practice-form" data-lang="{{ lang_code }}">
             <fieldset class="cards-direction-fieldset conjugate-tenses-fieldset">
                 <legend>{{ get_text('conjugate_tenses_label') }}</legend>
                 <p class="cards-input-hint">{{ get_text('conjugate_tenses_hint') }}</p>
@@ -103,8 +103,8 @@
                 <label class="cards-radio conjugate-tense-check">
                     <input type="checkbox" name="tenses" value="{{ tense.key }}"
                            {% if tense.default_on %}checked{% endif %}>
-                    <span>{{ tense.label_native }}
-                        <span class="conjugate-tense-en">· {{ tense.label_en }}</span>
+                    <span>{{ tense.label_native or tense.label_en }}
+                        {% if tense.label_native %}<span class="conjugate-tense-en">· {{ tense.label_en }}</span>{% endif %}
                     </span>
                 </label>
                 {% endfor %}
@@ -287,6 +287,8 @@
         </form>
     </div>
 </div>
+
+{% include "_verb_import_modal.html" %}
 
 <script src="{{ url_for('static', filename='js/conjugate.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/conjugate_practice_prefs.js') }}" defer></script>
