@@ -183,10 +183,13 @@ Each number is voiced by a speaker drawn at random from the language's `VOICE_PO
 
 ## 🔤 Verb-Conjugation Practice
 
-Signed-in users can build a personal pool of Spanish verbs and drill conjugations across a curated set of tenses and pronouns. Conjugations come from a committed global pool (`languages/es/conjugations.json`), generated offline with the `verbecc` library — the running app never imports `verbecc`. To regenerate the pool:
+Signed-in users can build a personal pool of Spanish, Italian, German or English verbs and drill conjugations across a curated set of tenses and pronouns. Conjugations come from a committed global pool per language (`languages/<code>/conjugations.json`), generated offline — the running app never computes a form. To regenerate a pool:
 
 ```bash
-uv run tools/generate_conjugations.py
+uv run tools/generate_conjugations.py     # Spanish (verbecc)
+uv run tools/generate_conjugations_it.py  # Italian (verbecc)
+uv run tools/generate_conjugations_de.py  # German (rule engine)
+uv run tools/generate_conjugations_en.py  # English (rule engine)
 ```
 
 See [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) for how the section works, how to adjust the tense checklist, and what extending it to another language would involve.
@@ -273,7 +276,7 @@ Each kind of practice has its own contributor guide:
 - **Number practice for a new language** — [ADD_NUMBERS.md](ADD_NUMBERS.md) (the starting point for any new language)
 - **Listening exercises** — [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md) (spoken-number quiz via ElevenLabs TTS)
 - **Learn/tutorial pages** — [ADD_LEARNING_MATERIALS.md](ADD_LEARNING_MATERIALS.md)
-- **Verb-conjugation practice** — [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) (the Spanish conjugation section)
+- **Verb-conjugation practice** — [ADD_CONJUGATING_PRACTICE.md](ADD_CONJUGATING_PRACTICE.md) (the conjugation section)
 - **UI translations** — [ADD_UI_LANGUAGE.md](ADD_UI_LANGUAGE.md)
 
 ## 📄 License

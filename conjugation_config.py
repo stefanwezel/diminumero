@@ -1,12 +1,12 @@
 """Configuration for the verb-conjugation practice section, per language.
 
 ``CONJ_LANGS`` holds one entry per supported conjugation language (Spanish,
-Italian and German today). Each entry defines the fixed, usefulness-ranked
-tense list (a checklist the user ticks), the six person/pronoun slots, which
-slot (if any) is optional/user-toggleable (Spanish vosotros; Italian and German
-have none), and the model verbs used by the practice "Hint" excerpt. The
-``key`` of each tense matches the keys in that language's
-``languages/<code>/conjugations.json``.
+Italian, German and English today). Each entry defines the fixed,
+usefulness-ranked tense list (a checklist the user ticks), the person/pronoun
+slots (six, or five for English, whose "you" has a single form), which slot (if
+any) is optional/user-toggleable (Spanish vosotros; the others have none), and
+the model verbs used by the practice "Hint" excerpt. The ``key`` of each tense
+matches the keys in that language's ``languages/<code>/conjugations.json``.
 
 Tense fields: ``label_native`` (label in the conjugated language) /
 ``label_en``, and ``hint_native`` / ``hint_en`` (the one-line pattern blurb;
@@ -291,6 +291,104 @@ CONJ_LANGS = {
         "optional_person_index": None,
         # One weak verb, one weak verb with linking -e-, one strong verb.
         "hint_model_verbs": ["machen", "arbeiten", "fahren"],
+    },
+    "en": {
+        "tenses": [
+            {
+                "key": "present-simple",
+                "label_native": "Present simple",
+                "label_en": "Present simple",
+                "default_on": True,
+                "hint_en": "The base form, but he/she/it adds -s: -es after s, x, ch, sh or o (goes), and consonant + y becomes -ies (studies).",
+                "hint_native": "The base form, but he/she/it adds -s: -es after s, x, ch, sh or o (goes), and consonant + y becomes -ies (studies).",
+            },
+            {
+                "key": "past-simple",
+                "label_native": "Past simple",
+                "label_en": "Past simple",
+                # Default on as well: the present is mostly the bare infinitive,
+                # and the past is where English has something to learn.
+                "default_on": True,
+                "hint_en": "Regular verbs add -ed for every person (worked, stopped, studied). Irregular verbs have their own form (went); only be changes with the person.",
+                "hint_native": "Regular verbs add -ed for every person (worked, stopped, studied). Irregular verbs have their own form (went); only be changes with the person.",
+            },
+            {
+                "key": "present-continuous",
+                "label_native": "Present continuous",
+                "label_en": "Present continuous",
+                "default_on": False,
+                "hint_en": "am/are/is + -ing. Drop a final -e (making) and double a final consonant after a short stressed vowel (stopping).",
+                "hint_native": "am/are/is + -ing. Drop a final -e (making) and double a final consonant after a short stressed vowel (stopping).",
+            },
+            {
+                "key": "present-perfect",
+                "label_native": "Present perfect",
+                "label_en": "Present perfect",
+                "default_on": False,
+                "hint_en": "have/has + past participle: -ed for regular verbs, its own form for irregular ones (gone, written).",
+                "hint_native": "have/has + past participle: -ed for regular verbs, its own form for irregular ones (gone, written).",
+            },
+            {
+                "key": "future-will",
+                "label_native": "Future (will)",
+                "label_en": "Future (will)",
+                "default_on": False,
+                "hint_en": "will + base form, the same for every person.",
+                "hint_native": "will + base form, the same for every person.",
+            },
+            {
+                "key": "past-continuous",
+                "label_native": "Past continuous",
+                "label_en": "Past continuous",
+                "default_on": False,
+                "hint_en": "was/were + -ing: was for I and he/she/it, were for you, we and they.",
+                "hint_native": "was/were + -ing: was for I and he/she/it, were for you, we and they.",
+            },
+            {
+                "key": "future-going-to",
+                "label_native": "Future (going to)",
+                "label_en": "Future (going to)",
+                "default_on": False,
+                "hint_en": "am/are/is + going to + base form, for plans and for what the present already shows.",
+                "hint_native": "am/are/is + going to + base form, for plans and for what the present already shows.",
+            },
+            {
+                "key": "conditional",
+                "label_native": "Conditional (would)",
+                "label_en": "Conditional (would)",
+                "default_on": False,
+                "hint_en": "would + base form, the same for every person.",
+                "hint_native": "would + base form, the same for every person.",
+            },
+            {
+                "key": "past-perfect",
+                "label_native": "Past perfect",
+                "label_en": "Past perfect",
+                "default_on": False,
+                "hint_en": "had + past participle, the same for every person: the past before the past.",
+                "hint_native": "had + past participle, the same for every person: the past before the past.",
+            },
+            {
+                "key": "present-perfect-continuous",
+                "label_native": "Present perfect continuous",
+                "label_en": "Present perfect continuous",
+                "default_on": False,
+                "hint_en": "have/has + been + -ing, for something that started in the past and is still going on.",
+                "hint_native": "have/has + been + -ing, for something that started in the past and is still going on.",
+            },
+        ],
+        # Five slots: "you" has one form for one person and for several, so a
+        # plural slot would only ask the same question twice.
+        "persons": [
+            {"index": 0, "key": "i", "label": "I", "optional": False},
+            {"index": 1, "key": "you", "label": "you", "optional": False},
+            {"index": 2, "key": "he", "label": "he/she/it", "optional": False},
+            {"index": 3, "key": "we", "label": "we", "optional": False},
+            {"index": 4, "key": "they", "label": "they", "optional": False},
+        ],
+        "optional_person_index": None,
+        # One regular verb, one that doubles its consonant, one irregular verb.
+        "hint_model_verbs": ["work", "stop", "go"],
     },
 }
 

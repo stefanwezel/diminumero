@@ -1,12 +1,15 @@
 (function () {
     'use strict';
 
-    var KEY = 'diminumero:conjugate_practice_prefs';
     var SAMPLING_MODES = ['prioritized', 'random'];
     var DIFFICULTIES = ['advanced', 'hardcore'];
 
     var form = document.querySelector('.conjugate-practice-form');
     if (!form) return;
+
+    // Per language: tense keys differ between languages, so one language's
+    // saved list would untick every box on another's page, then get saved back.
+    var KEY = 'diminumero:conjugate_practice_prefs:' + form.getAttribute('data-lang');
 
     // Set while we re-render after a reset, so the change event we dispatch for
     // the insights matrix doesn't re-persist the defaults we just cleared.

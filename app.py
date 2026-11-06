@@ -81,12 +81,18 @@ from conjugation_config import (
     tense_label,
 )
 from languages.de import conjugations as de_conjugations
+from languages.en import conjugations as en_conjugations
 from languages.es import conjugations as es_conjugations
 from languages.it import conjugations as it_conjugations
 
 # Committed global verb pools, one per conjugation language. Every language
 # with `has_conjugation: True` in languages/config.py must have an entry here.
-CONJ_POOLS = {"es": es_conjugations, "it": it_conjugations, "de": de_conjugations}
+CONJ_POOLS = {
+    "es": es_conjugations,
+    "en": en_conjugations,
+    "it": it_conjugations,
+    "de": de_conjugations,
+}
 
 # Fallback language for globally-rendered conjugation links (nav, home page)
 # when the session's learn language has no conjugation section.
@@ -2350,7 +2356,7 @@ def learn(lang_code):
 
 @app.route("/<lang_code>/learn/conjugations")
 def learn_conjugations(lang_code):
-    """Display the verb-conjugation learn page for a language (Spanish only today)."""
+    """Display the verb-conjugation learn page for a language."""
     if not is_language_ready(lang_code):
         return redirect(url_for("index"))
 
@@ -3291,8 +3297,12 @@ def _user_verbs(lang_code: str) -> list[VerbCard]:
     )
 
 
-def _normalize_infinitive(value: str) -> str:
-    return (value or "").strip().lower()
+def _normalize_infinitive(value: str, lang_code: str | None = None) -> str:
+    key = (value or "").strip().lower()
+    # English cites a verb with "to" ("to go"); the pool holds the bare form.
+    if lang_code == "en" and key.startswith("to "):
+        return key[3:].strip()
+    return key
 
 
 def _find_user_verb(user_sub: str, lang_code: str, infinitive: str) -> VerbCard | None:
@@ -3315,20 +3325,30 @@ def _find_user_verb(user_sub: str, lang_code: str, infinitive: str) -> VerbCard 
 # card. The sync is additive only — neither side is deleted when the other is.
 
 
-def _card_verb_match(card: Card) -> tuple[str, str] | None:
+def _card_verb_match(
+    card: Card, lang_code: str | None = None
+) -> tuple[str, str] | None:
     """Return (lang, normalized infinitive) for the pool matching this card.
 
     Either side may carry the verb (cards are free-form), so the front is
     checked first, then the back; per side, the conjugation languages are tried
     in registry order. Matching is exact against each global pool.
+
+    ``lang_code`` searches that one pool. Without it English is left out: it is
+    the side most cards carry as the *translation*, and its verbs are spelled
+    like its nouns, so "book / Buch" would be offered as a verb and "live /
+    vivir" would stop meaning the Spanish one. /en/conjugate asks for it by name.
     """
+    pools = (
+        [lang_code]
+        if lang_code
+        else [code for code in get_languages_with_conjugation() if code != "en"]
+    )
     for side in (card.front, card.back):
-        infinitive = _normalize_infinitive(side)
-        if not infinitive:
-            continue
-        for lang_code in get_languages_with_conjugation():
-            if _conj_pool(lang_code).verb_exists(infinitive):
-                return lang_code, infinitive
+        for code in pools:
+            infinitive = _normalize_infinitive(side, code)
+            if infinitive and _conj_pool(code).verb_exists(infinitive):
+                return code, infinitive
     return None
 
 
@@ -3354,10 +3374,8 @@ def _importable_card_verbs(
     seen: set[tuple[str, str]] = set()
     out: list[tuple[Card, str, str]] = []
     for card in cards:
-        match = _card_verb_match(card)
+        match = _card_verb_match(card, lang_code)
         if match is None:
-            continue
-        if lang_code is not None and match[0] != lang_code:
             continue
         if match not in owned and match not in seen:
             seen.add(match)
@@ -3371,8 +3389,9 @@ def _verbs_missing_from_cards(
     """Owned verbs whose infinitive isn't a side of any of the user's cards."""
     card_sides = set()
     for card in cards:
-        card_sides.add(_normalize_infinitive(card.front))
-        card_sides.add(_normalize_infinitive(card.back))
+        for side in (card.front, card.back):
+            card_sides.add(_normalize_infinitive(side))
+            card_sides.add(_normalize_infinitive(side, "en"))
     return [v for v in verbs if _normalize_infinitive(v.infinitive) not in card_sides]
 
 
@@ -3677,7 +3696,7 @@ def _requested_conjugation_lang(value: str | None) -> str:
 def api_verbs_search():
     """Autocomplete: pool infinitives starting with ?q=, excluding owned verbs."""
     lang_code = _requested_conjugation_lang(request.args.get("lang"))
-    query = (request.args.get("q") or "").strip()
+    query = _normalize_infinitive(request.args.get("q"), lang_code)
     if not query:
         return jsonify({"ok": True, "results": []})
     owned = {_normalize_infinitive(v.infinitive) for v in _user_verbs(lang_code)}
@@ -3691,7 +3710,7 @@ def api_verbs_create():
     """Add a verb. Rejects verbs not in the global pool with an 'unsupported' flag."""
     payload = request.get_json(silent=True) or {}
     lang_code = _requested_conjugation_lang(payload.get("lang"))
-    infinitive = _normalize_infinitive(payload.get("infinitive"))
+    infinitive = _normalize_infinitive(payload.get("infinitive"), lang_code)
     if not infinitive:
         return jsonify(
             {"ok": False, "error": get_text("conjugate_flash_verb_required")}
@@ -3725,7 +3744,7 @@ def conjugate_verb_add(lang_code):
     redirects back to /<lang>/conjugate. The JS add flow uses the JSON `/api/verbs`.
     """
     _require_conjugation_lang(lang_code)
-    infinitive = _normalize_infinitive(request.form.get("infinitive"))
+    infinitive = _normalize_infinitive(request.form.get("infinitive"), lang_code)
     if not infinitive:
         flash(get_text("conjugate_flash_verb_required"), "error")
         return redirect(url_for("conjugate", lang_code=lang_code))
@@ -3999,7 +4018,8 @@ def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
     The German Sie-imperative is stored with its obligatory inverted pronoun
     ("gehen Sie", "stehen Sie auf") since that's the grammatically complete
     form, but every other cell expects just the verb form — so accept the
-    pronoun-less variant too.
+    pronoun-less variant too. English stores one form per cell where British
+    usage has two ("learnt", "learned"); the others are listed beside the pool.
     """
     correct = current["correct_answer"]
     answers = [correct]
@@ -4011,6 +4031,12 @@ def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
         bare = " ".join(w for w in correct.split() if w != "Sie")
         if bare:
             answers.append(bare)
+    if lang_code == "en":
+        answers.extend(
+            en_conjugations.get_form_variants(
+                current["infinitive"], current["tense_key"], correct
+            )
+        )
     return answers
 
 
@@ -4092,6 +4118,9 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
         pronoun=person_label(lang_code, current["person_index"]),
         tense_label=tense_label(lang_code, current["tense_key"], ui_lang),
         correct_answer=correct if (revealed or difficulty == "hardcore") else None,
+        accepted_answers=_conj_acceptable_answers(lang_code, current)
+        if difficulty == "hardcore"
+        else [],
         difficulty=difficulty,
         revealed=revealed,
         hint=hint,

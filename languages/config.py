@@ -35,6 +35,8 @@ AVAILABLE_LANGUAGES = {
         "ready": True,
         "has_learn_materials": True,
         "has_audio_mode": True,
+        "has_conjugation": True,
+        "has_conjugation_materials": True,
         # British forms, as the flag says: "two hundred and thirty-four".
         "validation_strategy": "word_based",
         "ui_names": {

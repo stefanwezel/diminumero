@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>Learn English Verb Conjugations</h1>
+      <p>
+        English verbs change far less than most: the work lies in the auxiliaries and in the irregular past forms. This page covers <strong>British English</strong>, which is what the practice accepts.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">The five persons</a></li>
+        <li><a href="#present">Present simple: the -s</a></li>
+        <li><a href="#past">Regular past: -ed</a></li>
+        <li><a href="#ing">The -ing form</a></li>
+        <li><a href="#tenses">The tenses you practise</a></li>
+        <li><a href="#irregular">Irregular verbs</a></li>
+        <li><a href="#british">British forms</a></li>
+        <li><a href="#mistakes">Common mistakes</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>The five persons</h2>
+      <p>
+        English has five person slots rather than six, because <strong>you</strong> has the same form for one person and for several.
+      </p>
+      <ul>
+        <li><strong>I</strong> — the speaker</li>
+        <li><strong>you</strong> — one person or several, formal or informal</li>
+        <li><strong>he / she / it</strong> — one other person or thing</li>
+        <li><strong>we</strong> — the speaker and others</li>
+        <li><strong>they</strong> — several other people or things</li>
+      </ul>
+      <p>
+        The verb alone rarely shows who is acting, so English always says the pronoun. In the practice the pronoun is given and you type only the verb form: <em>am working</em>, not "I am working".
+      </p>
+    </section>
+
+    <section id="present" class="learn-section">
+      <h2>Present simple: the -s</h2>
+      <p>
+        The present simple is the base form of the verb, but <strong>he/she/it</strong> adds <strong>-s</strong>:
+      </p>
+      <ul>
+        <li>Most verbs add -s: <em>work → works</em></li>
+        <li>After s, x, ch, sh and o, add -es: <em>watch → watches</em>, <em>fix → fixes</em>, <em>go → goes</em></li>
+        <li>Consonant + y becomes -ies: <em>study → studies</em></li>
+        <li>Vowel + y just adds -s: <em>play → plays</em></li>
+      </ul>
+      <p>
+        <em>be</em> and <em>have</em> have forms of their own, and modal verbs such as <em>can</em> never change:
+      </p>
+      <ul>
+        <li><strong>be</strong>: <em>am, are, is, are, are</em></li>
+        <li><strong>have</strong>: <em>have, have, has, have, have</em></li>
+        <li><strong>can</strong>: <em>can, can, can, can, can</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: he/she/it of <em>fix</em>, <em>try</em> and <em>say</em>?</summary>
+        <p><strong><em>fixes</em></strong> · <strong><em>tries</em></strong> · <strong><em>says</em></strong></p>
+      </details>
+    </section>
+
+    <section id="past" class="learn-section">
+      <h2>Regular past: -ed</h2>
+      <p>
+        Regular verbs add <strong>-ed</strong> for every person, and the past participle looks the same:
+      </p>
+      <ul>
+        <li>Ending in e: add -d: <em>like → liked</em></li>
+        <li>Consonant + y becomes -ied: <em>study → studied</em></li>
+        <li>One short, stressed vowel + one consonant: double the consonant: <em>stop → stopped</em>, <em>plan → planned</em>, <em>prefer → preferred</em></li>
+        <li>An unstressed last syllable does not double: <em>visit → visited</em>, <em>open → opened</em></li>
+        <li>British English always doubles a final l after a single vowel: <em>travel → travelled</em>, <em>cancel → cancelled</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple of <em>carry</em>, <em>drop</em> and <em>visit</em>?</summary>
+        <p><strong><em>carried</em></strong> · <strong><em>dropped</em></strong> · <strong><em>visited</em></strong></p>
+      </details>
+    </section>
+
+    <section id="ing" class="learn-section">
+      <h2>The -ing form</h2>
+      <p>
+        The continuous tenses use the <strong>-ing</strong> form, and its spelling follows similar rules:
+      </p>
+      <ul>
+        <li>Drop a final e: <em>make → making</em></li>
+        <li>Keep ee: <em>see → seeing</em></li>
+        <li>ie becomes y: <em>die → dying</em>, <em>lie → lying</em></li>
+        <li>Double the consonant, as in the past: <em>stop → stopping</em>, <em>travel → travelling</em></li>
+      </ul>
+      <p>
+        Verbs of state, such as <em>know</em>, <em>want</em>, <em>like</em>, <em>need</em>, <em>believe</em> and <em>understand</em>, are not normally used in the continuous, so the practice never asks for those forms.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: -ing form of <em>take</em>, <em>run</em> and <em>tie</em>?</summary>
+        <p><strong><em>taking</em></strong> · <strong><em>running</em></strong> · <strong><em>tying</em></strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>The tenses you practise</h2>
+      <p>
+        The practice settings let you mix and match these tenses (examples with <em>work</em> and <em>go</em>):
+      </p>
+      <ul>
+        <li><strong>Present simple</strong> — habits and facts: <em>work, works</em></li>
+        <li><strong>Past simple</strong> — finished events: <em>worked, went</em></li>
+        <li><strong>Present continuous</strong> — happening right now: <em>am working, is working</em></li>
+        <li><strong>Present perfect</strong> — the past with a link to now: <em>have worked, has gone</em></li>
+        <li><strong>Future (will)</strong> — decisions and predictions: <em>will work</em></li>
+        <li><strong>Past continuous</strong> — in progress at a moment in the past: <em>was working, were working</em></li>
+        <li><strong>Future (going to)</strong> — plans: <em>am going to work, is going to go</em></li>
+        <li><strong>Conditional (would)</strong> — what would happen: <em>would work</em></li>
+        <li><strong>Past perfect</strong> — the past before the past: <em>had worked, had gone</em></li>
+        <li><strong>Present perfect continuous</strong> — started in the past and still going on: <em>have been working, has been working</em></li>
+      </ul>
+      <p>
+        The practice asks for the full affirmative form: <em>will go</em>, <em>have gone</em>, with no contractions or negation.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: which tense is <em>were working</em>? And <em>has gone</em>?</summary>
+        <p><strong>Past continuous</strong> · <strong>Present perfect</strong></p>
+      </details>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>Irregular verbs</h2>
+      <p>
+        An irregular verb has to be learned as three forms: the base form, the past simple and the past participle. These come up most:
+      </p>
+      <ul>
+        <li><strong>go</strong> → <em>went</em>, <em>gone</em></li>
+        <li><strong>get</strong> → <em>got</em>, <em>got</em></li>
+        <li><strong>make</strong> → <em>made</em>, <em>made</em></li>
+        <li><strong>take</strong> → <em>took</em>, <em>taken</em></li>
+        <li><strong>see</strong> → <em>saw</em>, <em>seen</em></li>
+        <li><strong>come</strong> → <em>came</em>, <em>come</em></li>
+        <li><strong>know</strong> → <em>knew</em>, <em>known</em></li>
+        <li><strong>give</strong> → <em>gave</em>, <em>given</em></li>
+        <li><strong>think</strong> → <em>thought</em>, <em>thought</em></li>
+        <li><strong>write</strong> → <em>wrote</em>, <em>written</em></li>
+        <li><strong>buy</strong> → <em>bought</em>, <em>bought</em></li>
+        <li><strong>put</strong> → <em>put</em>, <em>put</em></li>
+      </ul>
+      <p>
+        In the past simple, only <em>be</em> changes with the person: <em>was</em> for I and he/she/it, <em>were</em> for you, we and they. Its participle is <em>been</em>.
+      </p>
+      <p>
+        Three patterns recur: all three forms the same (<em>put</em>), past and participle the same (<em>buy</em>), or all three different (<em>write</em>).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple of <em>speak</em> and past participle of <em>eat</em>?</summary>
+        <p><strong><em>spoke</em></strong> · <strong><em>eaten</em></strong></p>
+      </details>
+    </section>
+
+    <section id="british" class="learn-section">
+      <h2>British forms</h2>
+      <p>
+        Where British usage itself has two forms, the practice accepts both. American forms are marked wrong.
+      </p>
+      <ul>
+        <li>Both accepted: <em>learnt</em> / <em>learned</em>, <em>burnt</em> / <em>burned</em>, <em>dreamt</em> / <em>dreamed</em>, <em>realise</em> / <em>realize</em></li>
+        <li>Participle of get: <em>have got</em> — "have gotten" is American</li>
+        <li>Double l: <em>travelled</em> — "traveled" is American</li>
+        <li>The verb is spelled with s: <em>practise</em> — "practice" is American</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>Common mistakes</h2>
+      <ol>
+        <li><strong>Forgetting the -s</strong>: <em>he works</em>, not "he work".</li>
+        <li><strong>Past simple instead of the participle</strong>: <em>have gone</em>, not "have went".</li>
+        <li><strong>An -s on a modal</strong>: <em>she can</em>, not "she cans".</li>
+        <li><strong>A verb of state in the continuous</strong>: <em>I know</em>, not "I am knowing".</li>
+        <li><strong>Dropping the auxiliary</strong>: <em>am working</em>, not "I working".</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

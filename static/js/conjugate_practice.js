@@ -5,7 +5,7 @@
  *     auto-advance on a complete correct answer.
  *
  *   hardcore: no live feedback. On Enter, normalize the input client-side and
- *     compare to the correct answer (leaked into a data attribute only when
+ *     compare to the accepted answers (leaked into a data attribute only when
  *     difficulty=hardcore). The input flashes green or red before submitting.
  *
  * Mirrors cards_practice.js; the only difference is the validation endpoint.
@@ -126,8 +126,9 @@ function setupAdvanced(answerInput, validationFeedback, answerForm) {
 }
 
 function setupHardcore(answerInput, answerForm) {
-    const correctAnswer = answerInput.getAttribute('data-correct-answer') || '';
-    const normalizedCorrect = normalizeText(correctAnswer);
+    const acceptedAnswers = JSON.parse(
+        answerInput.getAttribute('data-accepted-answers') || '[]'
+    ).map(normalizeText);
     let isSubmitting = false;
 
     answerInput.focus();
@@ -144,7 +145,7 @@ function setupHardcore(answerInput, answerForm) {
         const userAnswer = (answerInput.value || '').trim();
         if (!userAnswer) return;
 
-        const isCorrect = normalizeText(userAnswer) === normalizedCorrect;
+        const isCorrect = acceptedAnswers.includes(normalizeText(userAnswer));
         answerInput.classList.remove('input-correct', 'input-incorrect');
         answerInput.classList.add(isCorrect ? 'input-correct' : 'input-incorrect');
         isSubmitting = true;

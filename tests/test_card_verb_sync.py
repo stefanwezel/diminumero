@@ -288,3 +288,75 @@ class TestAdditiveOnly:
                 db.session.query(Card).filter_by(user_sub=SAMPLE_USER["sub"]).count()
                 == 1
             )
+
+
+class TestEnglishIsOptIn:
+    """English is the side most cards carry as the translation, and its verbs
+    are spelled like its nouns, so it must not join the automatic scan."""
+
+    @pytest.mark.parametrize(
+        "front, back, expected",
+        [
+            # The other side's verb is still the one found, whichever way round.
+            ("live", "vivir", ("es", "vivir")),
+            ("vivir", "live", ("es", "vivir")),
+            ("go", "gehen", ("de", "gehen")),
+            ("speak", "parlare", ("it", "parlare")),
+            # A noun card is not a verb card because the noun doubles as a verb.
+            ("book", "Buch", None),
+            ("water", "agua", None),
+            ("go", "go", None),
+        ],
+    )
+    def test_automatic_scan_ignores_english(self, app, front, back, expected):
+        with app.app_context():
+            card = Card(user_sub="x", front=front, back=back)
+            assert _card_verb_match(card) == expected
+
+    @pytest.mark.parametrize(
+        "front, back",
+        [("go", "gehen"), ("gehen", "go"), ("to go", "gehen"), ("gehen", "To Go")],
+    )
+    def test_english_found_when_asked_for_by_name(self, app, front, back):
+        with app.app_context():
+            card = Card(user_sub="x", front=front, back=back)
+            assert _card_verb_match(card, "en") == ("en", "go")
+
+    def test_cards_page_offers_only_the_other_language(self, client):
+        make_card(SAMPLE_USER["sub"], "go", "gehen")
+        make_card(SAMPLE_USER["sub"], "book", "Buch")
+        login(client)
+        html = client.get("/cards").get_data(as_text=True)
+        assert 'data-infinitive="gehen"' in html
+        assert 'data-infinitive="go"' not in html
+        assert 'data-infinitive="book"' not in html
+
+    def test_cards_page_import_leaves_english_out(self, client):
+        make_card(SAMPLE_USER["sub"], "go", "gehen")
+        login(client)
+        assert client.post("/api/verbs/import-from-cards").get_json()["added"] == 1
+        with flask_app.app_context():
+            verb = db.session.query(VerbCard).one()
+            assert (verb.lang, verb.infinitive) == ("de", "gehen")
+
+    def test_english_page_imports_english(self, client):
+        make_card(SAMPLE_USER["sub"], "to go", "gehen")
+        login(client)
+        resp = client.post("/api/verbs/import-from-cards", json={"lang": "en"})
+        assert resp.get_json()["added"] == 1
+        with flask_app.app_context():
+            verb = db.session.query(VerbCard).one()
+            assert (verb.lang, verb.infinitive) == ("en", "go")
+
+    def test_a_filtered_pool_is_not_hidden_by_an_earlier_side(self, app):
+        """A front in another pool used to hide the back from this page's import."""
+        with app.app_context():
+            card = Card(user_sub="x", front="machen", back="comer")
+            assert _card_verb_match(card) == ("de", "machen")
+            assert _card_verb_match(card, "es") == ("es", "comer")
+
+    def test_verb_cited_with_to_counts_as_already_on_a_card(self, app):
+        with app.app_context():
+            verbs = [VerbCard(user_sub="x", lang="en", infinitive="go")]
+            cards = [Card(user_sub="x", front="to go", back="gehen")]
+            assert _verbs_missing_from_cards(verbs, cards) == []

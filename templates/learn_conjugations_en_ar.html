@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_learn_conj_' + lang_code) }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('meta_desc_learn_conj_' + lang_code) }}">{% endblock %}
+
+{% block json_ld %}
+{% include '_learn_conjugations_jsonld.html' %}
+{% endblock %}
+
+{% block content %}
+<main class="container learn">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>تعلّم تصريف الأفعال الإنجليزية</h1>
+      <p>
+        تتغير الأفعال الإنجليزية أقل بكثير من الأفعال العربية: ينصبّ الجهد على الأفعال المساعدة وعلى صيغ الماضي الشاذة. تتناول هذه الصفحة <strong>الإنجليزية البريطانية</strong>، وهي الصيغة التي يقبلها التمرين.
+      </p>
+    </header>
+
+    <nav class="learn-toc">
+      <strong>{{ get_text('learn_toc_heading') }}</strong>
+      <ul>
+        <li><a href="#persons">الضمائر الخمسة</a></li>
+        <li><a href="#present">Present simple: حرف <bdi>-s</bdi></a></li>
+        <li><a href="#past">الماضي المنتظم: <bdi>-ed</bdi></a></li>
+        <li><a href="#ing">صيغة <bdi>-ing</bdi></a></li>
+        <li><a href="#tenses">الأزمنة التي تتدرب عليها</a></li>
+        <li><a href="#irregular">الأفعال الشاذة</a></li>
+        <li><a href="#british">الصيغ البريطانية</a></li>
+        <li><a href="#mistakes">أخطاء شائعة</a></li>
+      </ul>
+    </nav>
+
+    <section id="persons" class="learn-section">
+      <h2>الضمائر الخمسة</h2>
+      <p>
+        في الإنجليزية خمسة ضمائر بدلاً من ستة، لأن <strong>you</strong> له الصيغة نفسها للمفرد والجمع.
+      </p>
+      <ul>
+        <li><strong>I</strong> — أنا</li>
+        <li><strong>you</strong> — أنتَ، أنتِ، أنتم، أنتن</li>
+        <li><strong>he / she / it</strong> — هو، هي، و it لغير العاقل</li>
+        <li><strong>we</strong> — نحن</li>
+        <li><strong>they</strong> — هم، هن</li>
+      </ul>
+      <p>
+        نادرًا ما يدل الفعل وحده على الفاعل، لذا تذكر الإنجليزية الضمير دائمًا. في التمرين يكون الضمير معطى وتكتب صيغة الفعل فقط: <em>am working</em>، وليس "I am working".
+      </p>
+    </section>
+
+    <section id="present" class="learn-section">
+      <h2>Present simple: حرف <bdi>-s</bdi></h2>
+      <p>
+        زمن present simple هو الصيغة الأساسية للفعل، لكن <strong>he/she/it</strong> يضيف <strong><bdi>-s</bdi></strong>:
+      </p>
+      <ul>
+        <li>تضيف معظم الأفعال <bdi>-s</bdi>: <em>work → works</em></li>
+        <li>بعد s وx وch وsh وo تضاف <bdi>-es</bdi>: <em>watch → watches</em>, <em>fix → fixes</em>, <em>go → goes</em></li>
+        <li>الحرف الساكن + y يصبح <bdi>-ies</bdi>: <em>study → studies</em></li>
+        <li>حرف العلة + y يضيف <bdi>-s</bdi> فقط: <em>play → plays</em></li>
+      </ul>
+      <p>
+        للفعلين <em>be</em> و<em>have</em> صيغ خاصة، أما الأفعال الناقصة مثل <em>can</em> فلا تتغير أبدًا:
+      </p>
+      <ul>
+        <li><strong>be</strong>: <em>am, are, is, are, are</em></li>
+        <li><strong>have</strong>: <em>have, have, has, have, have</em></li>
+        <li><strong>can</strong>: <em>can, can, can, can, can</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: he/she/it من <em>fix</em> و<em>try</em> و<em>say</em>؟</summary>
+        <p><strong><em>fixes</em></strong> · <strong><em>tries</em></strong> · <strong><em>says</em></strong></p>
+      </details>
+    </section>
+
+    <section id="past" class="learn-section">
+      <h2>الماضي المنتظم: <bdi>-ed</bdi></h2>
+      <p>
+        تضيف الأفعال المنتظمة <strong><bdi>-ed</bdi></strong> مع كل الضمائر، واسم المفعول مطابق لها:
+      </p>
+      <ul>
+        <li>المنتهي بحرف e: تضاف <bdi>-d</bdi>: <em>like → liked</em></li>
+        <li>الحرف الساكن + y يصبح <bdi>-ied</bdi>: <em>study → studied</em></li>
+        <li>حرف علة قصير ومنبور + حرف ساكن واحد: يتضاعف الساكن: <em>stop → stopped</em>, <em>plan → planned</em>, <em>prefer → preferred</em></li>
+        <li>المقطع الأخير غير المنبور لا يتضاعف: <em>visit → visited</em>, <em>open → opened</em></li>
+        <li>تضاعف الإنجليزية البريطانية دائمًا حرف l الأخير بعد حرف علة واحد: <em>travel → travelled</em>, <em>cancel → cancelled</em></li>
+      </ul>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple من <em>carry</em> و<em>drop</em> و<em>visit</em>؟</summary>
+        <p><strong><em>carried</em></strong> · <strong><em>dropped</em></strong> · <strong><em>visited</em></strong></p>
+      </details>
+    </section>
+
+    <section id="ing" class="learn-section">
+      <h2>صيغة <bdi>-ing</bdi></h2>
+      <p>
+        تستخدم الأزمنة المستمرة صيغة <strong><bdi>-ing</bdi></strong>، ويتبع إملاؤها قواعد مشابهة:
+      </p>
+      <ul>
+        <li>يُحذف حرف e الأخير: <em>make → making</em></li>
+        <li>يبقى ee: <em>see → seeing</em></li>
+        <li>يصبح ie حرف y: <em>die → dying</em>, <em>lie → lying</em></li>
+        <li>يتضاعف الحرف الساكن، كما في الماضي: <em>stop → stopping</em>, <em>travel → travelling</em></li>
+      </ul>
+      <p>
+        أفعال الحالة، مثل <em>know</em> و<em>want</em> و<em>like</em> و<em>need</em> و<em>believe</em> و<em>understand</em>، لا تُستخدم عادة في الصيغة المستمرة، لذا لا يطلب التمرين هذه الصيغ أبدًا.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: صيغة <bdi>-ing</bdi> من <em>take</em> و<em>run</em> و<em>tie</em>؟</summary>
+        <p><strong><em>taking</em></strong> · <strong><em>running</em></strong> · <strong><em>tying</em></strong></p>
+      </details>
+    </section>
+
+    <section id="tenses" class="learn-section">
+      <h2>الأزمنة التي تتدرب عليها</h2>
+      <p>
+        تتيح لك إعدادات التمرين الجمع بين هذه الأزمنة (أمثلة بالفعلين <em>work</em> و<em>go</em>):
+      </p>
+      <ul>
+        <li><strong>Present simple</strong> — العادات والحقائق: <em>work, works</em></li>
+        <li><strong>Past simple</strong> — أحداث انتهت: <em>worked, went</em></li>
+        <li><strong>Present continuous</strong> — يحدث الآن: <em>am working, is working</em></li>
+        <li><strong>Present perfect</strong> — ماضٍ له صلة بالحاضر: <em>have worked, has gone</em></li>
+        <li><strong>Future (will)</strong> — قرارات وتوقعات: <em>will work</em></li>
+        <li><strong>Past continuous</strong> — كان جاريًا في لحظة من الماضي: <em>was working, were working</em></li>
+        <li><strong>Future (going to)</strong> — خطط: <em>am going to work, is going to go</em></li>
+        <li><strong>Conditional (would)</strong> — ما كان سيحدث: <em>would work</em></li>
+        <li><strong>Past perfect</strong> — الماضي قبل الماضي: <em>had worked, had gone</em></li>
+        <li><strong>Present perfect continuous</strong> — بدأ في الماضي وما زال مستمرًا: <em>have been working, has been working</em></li>
+      </ul>
+      <p>
+        يطلب التمرين صيغة الإثبات الكاملة: <em>will go</em> و<em>have gone</em>، دون اختصار أو نفي.
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: ما زمن <em>were working</em>؟ وما زمن <em>has gone</em>؟</summary>
+        <p><strong>Past continuous</strong> · <strong>Present perfect</strong></p>
+      </details>
+    </section>
+
+    <section id="irregular" class="learn-section">
+      <h2>الأفعال الشاذة</h2>
+      <p>
+        يُحفظ الفعل الشاذ بثلاث صيغ: الصيغة الأساسية وpast simple واسم المفعول. هذه هي الأكثر شيوعًا:
+      </p>
+      <ul>
+        <li><strong>go</strong> → <em>went</em>, <em>gone</em></li>
+        <li><strong>get</strong> → <em>got</em>, <em>got</em></li>
+        <li><strong>make</strong> → <em>made</em>, <em>made</em></li>
+        <li><strong>take</strong> → <em>took</em>, <em>taken</em></li>
+        <li><strong>see</strong> → <em>saw</em>, <em>seen</em></li>
+        <li><strong>come</strong> → <em>came</em>, <em>come</em></li>
+        <li><strong>know</strong> → <em>knew</em>, <em>known</em></li>
+        <li><strong>give</strong> → <em>gave</em>, <em>given</em></li>
+        <li><strong>think</strong> → <em>thought</em>, <em>thought</em></li>
+        <li><strong>write</strong> → <em>wrote</em>, <em>written</em></li>
+        <li><strong>buy</strong> → <em>bought</em>, <em>bought</em></li>
+        <li><strong>put</strong> → <em>put</em>, <em>put</em></li>
+      </ul>
+      <p>
+        في past simple لا يتغير مع الضمير سوى <em>be</em>: <em>was</em> مع I وhe/she/it، و<em>were</em> مع you وwe وthey. واسم مفعوله <em>been</em>.
+      </p>
+      <p>
+        تتكرر ثلاثة أنماط: الصيغ الثلاث متطابقة (<em>put</em>)، أو الماضي واسم المفعول متطابقان (<em>buy</em>)، أو الثلاث مختلفة (<em>write</em>).
+      </p>
+
+      <details class="learn-check">
+        <summary><strong>{{ get_text('learn_quick_check') }}</strong>: past simple من <em>speak</em> واسم المفعول من <em>eat</em>؟</summary>
+        <p><strong><em>spoke</em></strong> · <strong><em>eaten</em></strong></p>
+      </details>
+    </section>
+
+    <section id="british" class="learn-section">
+      <h2>الصيغ البريطانية</h2>
+      <p>
+        حين يكون للإنجليزية البريطانية نفسها صيغتان، يقبل التمرين كلتيهما. أما الصيغ الأمريكية فتُعدّ خاطئة.
+      </p>
+      <ul>
+        <li>كلتاهما مقبولة: <em>learnt</em> / <em>learned</em>, <em>burnt</em> / <em>burned</em>, <em>dreamt</em> / <em>dreamed</em>, <em>realise</em> / <em>realize</em></li>
+        <li>اسم المفعول من <bdi>get</bdi>: <em>have got</em> — <bdi>"have gotten"</bdi> صيغة أمريكية</li>
+        <li>مضاعفة <bdi>l</bdi>: <em>travelled</em> — <bdi>"traveled"</bdi> صيغة أمريكية</li>
+        <li>يُكتب الفعل بحرف <bdi>s</bdi>: <em>practise</em> — <bdi>"practice"</bdi> صيغة أمريكية</li>
+      </ul>
+    </section>
+
+    <section id="mistakes" class="learn-section">
+      <h2>أخطاء شائعة</h2>
+      <ol>
+        <li><strong>نسيان <bdi>-s</bdi></strong>: <em>he works</em>، وليس "he work".</li>
+        <li><strong>استخدام past simple بدل اسم المفعول</strong>: <em>have gone</em>، وليس "have went".</li>
+        <li><strong>إضافة <bdi>-s</bdi> إلى فعل ناقص</strong>: <em>she can</em>، وليس "she cans".</li>
+        <li><strong>فعل حالة في الصيغة المستمرة</strong>: <em>I know</em>، وليس "I am knowing".</li>
+        <li><strong>حذف الفعل المساعد</strong>: <em>am working</em>، وليس "I working".</li>
+      </ol>
+    </section>
+
+    <div class="learn-footer">
+      <a href="{{ url_for('conjugate', lang_code=lang_code) }}" class="btn btn-primary">
+        {{ get_text('conjugate_start_btn') }}
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}

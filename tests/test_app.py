@@ -46,7 +46,7 @@ class TestIndexRoute:
             sess["user"] = {"sub": "auth0|user-1", "name": "Ada"}
         data = client.get("/").data.decode("utf-8")
         assert "conjugate-lang-modal" in data
-        for code in ("es", "it", "de"):
+        for code in ("es", "en", "it", "de"):
             assert f"/{code}/conjugate" in data
 
     def test_index_no_language_picker_when_logged_out(self, client):
@@ -55,7 +55,7 @@ class TestIndexRoute:
 
     def test_index_seo_mentions_all_conjugation_languages(self, client):
         data = client.get("/").data.decode("utf-8")
-        assert "Spanish, Italian and German verb conjugation" in data
+        assert "Spanish, English, Italian and German verb conjugation" in data
 
     def test_learn_conjugations_seo_localized_per_ui_language(self, client):
         """The learn-conjugation SEO keys exist per learn language in every

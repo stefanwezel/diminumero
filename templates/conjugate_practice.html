@@ -65,7 +65,7 @@
                 autocapitalize="off"
                 autofocus
                 data-difficulty="{{ difficulty }}"
-                {% if correct_answer is not none %}data-correct-answer="{{ correct_answer }}"{% endif %}
+                {% if correct_answer is not none %}data-correct-answer="{{ correct_answer }}" data-accepted-answers='{{ accepted_answers|tojson }}'{% endif %}
             >
             <div id="validationFeedback" class="validation-feedback"></div>
         </div>

@@ -11,9 +11,10 @@ JSON shape::
 
     { "comer": { "indicativo/presente": ["como", "comes", ...], ... }, ... }
 
-Each tense maps to a 6-element list aligned to the language's person slots
-(see ``conjugation_config.CONJ_LANGS``); a slot may be null when the tense has
-no form for that person (e.g. imperatives lack a first-person singular).
+Each tense maps to a list with one element per person slot of the language (see
+``conjugation_config.CONJ_LANGS``; six, or five for English); a slot may be null
+when the tense has no form for that person (e.g. imperatives lack a first-person
+singular).
 """
 
 import json
