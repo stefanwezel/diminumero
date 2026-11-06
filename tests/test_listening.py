@@ -111,6 +111,14 @@ class TestShippedAudio:
         deck = set(get_language_numbers(lang_code))
         assert _available_audio_numbers(lang_code) == deck - {0}
 
+    @pytest.mark.parametrize("lang_code", sorted(get_languages_with_audio_mode()))
+    def test_drill_plays_a_clip_in_its_own_language(self, client, lang_code):
+        client.post(f"/{lang_code}/listen/start", data={"magnitude_level": "1"})
+        html = client.get(f"/{lang_code}/listen").get_data(as_text=True)
+
+        with client.session_transaction() as sess:
+            assert f"/static/audio/{lang_code}/{sess['current_number']}.mp3" in html
+
 
 class TestStartForm:
     def test_start_seeds_a_listening_session(self, client):
