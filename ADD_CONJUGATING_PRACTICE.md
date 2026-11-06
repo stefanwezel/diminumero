@@ -31,9 +31,9 @@ pool per language generated offline; the app only reads the committed JSON.
 | `languages/it/conjugations.json` | The committed Italian pool (~250 popular verbs). Slots: `[io, tu, lui/lei, noi, voi, loro]`. Composite tenses store the masculine citation form ("sono andato", "siamo andati"); essere-auxiliary verbs are curated in the generator's `ESSERE_VERBS`. |
 | `languages/de/conjugations.json` | The committed German pool (~215 popular verbs). Slots: `[ich, du, er/sie/es, wir, ihr, sie/Sie]`. Composite tenses are stored as full multi-word strings ("habe gemacht", "werde aufstehen"); separable verbs split in finite forms ("stehe auf"). |
 | `languages/en/conjugations.json` | The committed English pool (~485 popular verbs). **Five** slots, not six: `[I, you, he/she/it, we, they]`, since "you" has one form for one person and for several. British forms. Cells are null where a form isn't used: stative verbs have no continuous tenses, and modals (`can`, `may`, `must`) only exist in the tenses listed for them. |
-| `languages/en/conjugation_variants.json` | The other forms British usage accepts for a stored one, as `{verb: {tense: {stored form: [others]}}}` ("learnt" also "learned", "realise" also "realize"). Generated with the pool; read through `get_form_variants()` by `_conj_acceptable_answers()`. |
-| `languages/conjugation_loader.py` | Shared `ConjugationPool` class (lazy JSON load, `verb_exists`, `get_verb_forms`, `search_verbs` with accent-folding). |
-| `languages/<code>/conjugations.py` | Thin per-language module instantiating `ConjugationPool` and re-exporting its methods. `app.py` maps lang → module in `CONJ_POOLS`. |
+| `languages/en/conjugation_variants.json` | The other forms British usage accepts for a stored one, as `{verb: {tense: {stored form: [others]}}}` ("learnt" also "learned", "realise" also "realize"). Generated with the pool; read through `ConjugationPool.get_form_variants()` by `_conj_acceptable_answers()`. A second spelling of the base form is a second spelling of the verb, so "realize" also works in the add box, autocomplete and card matching. |
+| `languages/conjugation_loader.py` | Shared `ConjugationPool` class (lazy JSON load, `verb_exists`, `get_verb_forms`, `search_verbs` with accent-folding, plus `get_form_variants` and `canonical_infinitive` for a language with a variants file). |
+| `languages/<code>/conjugations.py` | Thin per-language module instantiating `ConjugationPool` and re-exporting its methods. `app.py` maps lang → that `pool` in `CONJ_POOLS`. |
 | `tools/generate_conjugations.py` | PEP-723 generator for the Spanish JSON (drives the `verbecc` library). |
 | `tools/generate_conjugations_it.py` | PEP-723 generator for the Italian JSON (also verbecc). Italian quirks handled in extraction: the congiuntivo's "che " lead-in, the imperative's "-" placeholder, slash-joined alternatives, gender variants, and a curated `ESSERE_VERBS` set that force-rebuilds composite tenses (verbecc wrongly gives avere to piacere/riuscire). ~29 self-checks. |
 | `tools/generate_conjugations_de.py` | PEP-723 generator for the German JSON. verbecc has no German support, so this is a **self-contained rule engine**: weak verbs by rule, strong/mixed/modal verbs from an explicit `IRREGULAR`/`FULL_OVERRIDES` table, separable verbs from `SEPARABLE`, sein-auxiliary verbs from `SEIN_VERBS`. Ends with ~65 hard-coded self-checks that abort generation on any wrong form. |
@@ -124,6 +124,9 @@ uv run tools/generate_conjugations_de.py   # German (self-contained rule engine)
 uv run tools/generate_conjugations_en.py   # English (self-contained rule engine)
 ```
 
+`--limit N` on any of them prints the first N verbs and writes nothing, because a
+truncated pool on disk would reject most verbs as unsupported.
+
 Spanish notes:
 - **`verbecc` is a generation-only dependency.** It is declared inline in the
   script's PEP-723 header, **never** in `pyproject.toml` — the running app reads the
@@ -173,10 +176,18 @@ Edit the language's `tenses` list in `CONJ_LANGS` (`conjugation_config.py`). Eac
 - `key` — must match a tense key present in that language's `conjugations.json`
   (e.g. `"indicativo/presente"`, `"indikativ/praesens"`). If you add a tense whose
   key isn't generated into the JSON, the generator must be updated to emit it first.
-- `label_native` / `label_en` — display labels (native is shown when the UI language
-  equals the conjugated language).
-- `hint_native` / `hint_en` — the one-line pattern blurb for the practice Hint.
+- `label_en` / `label_native` — display labels (native is shown when the UI language
+  equals the conjugated language; English has no separate native wording, so it
+  leaves this out).
+- `hint_en` / `hint_native` — the one-line pattern blurb for the practice Hint, same
+  rule.
 - `default_on` — whether the checkbox starts ticked on the settings page.
+
+A verb that doesn't do what its tense's label and blurb describe gets an entry in the
+language's optional `verb_overrides` (`{verb: {tense key: {"label": ..., "hint": ...}}}`).
+English uses it for the modals, which take no -s and can't follow "would". A hint
+override replaces the pattern table as well as the blurb, because the table would
+teach exactly what the verb doesn't do.
 
 The pronoun slots live in the language's `persons` list; `optional_person_index`
 names the one user-toggleable slot (Spanish vosotros, index 4) or is `None`
@@ -189,8 +200,8 @@ means:
 1. A generator + committed `languages/<code>/conjugations.json` (verbecc covers
    ca/es/fr/it/pt/ro — start from the Italian generator; otherwise write a rule
    engine like the German one).
-2. A thin `languages/<code>/conjugations.py` (copy the German one) and an entry in
-   `CONJ_POOLS` in `app.py`.
+2. A thin `languages/<code>/conjugations.py` (copy the German one) and an entry for
+   its `pool` in `CONJ_POOLS` in `app.py`.
 3. A `CONJ_LANGS["<code>"]` entry in `conjugation_config.py` (tenses, persons,
    optional person, hint model verbs).
 4. `has_conjugation: True` (and optionally `has_conjugation_materials: True` +
@@ -212,29 +223,41 @@ infinitive in *any* conjugation language (`_card_verb_match` in `app.py` returns
 `(lang, infinitive)`, trying the front first, then the back, languages in registry
 order); the matching side becomes the stored infinitive.
 
-**English is opt-in.** The automatic scan leaves it out: English is the side most
-cards carry as the *translation*, and its verbs are spelled like its nouns, so
-"book / Buch" would be offered as a verb and "live / vivir" would stop meaning the
-Spanish one. Passing a language to `_card_verb_match()` searches that one pool,
-which is what `/en/conjugate` and its import button do. "to go" on a card, in the
-add-verb box or in autocomplete all mean "go" (`_normalize_infinitive(value, "en")`).
+**English is opt-in** (`card_scan_opt_in` in `CONJ_LANGS`). The automatic scan leaves
+it out: for most people English is the side their cards carry as the *translation*,
+and its verbs are spelled like its nouns, so "book / Buch" would be offered as a verb
+and "live / vivir" would stop meaning the Spanish one. The exception is someone
+learning English (`session["learn_language"]`): the scan then tries the English pool
+first, on both sides, so "go / gehen" offers "go" and never "gehen". Passing a language
+to `_card_verb_match()` searches that one pool, which is what `/en/conjugate` and its
+import button do. "to go" on a card, in the add-verb box or in autocomplete all mean
+"go" (`infinitive_particle` in `CONJ_LANGS`), and "realize" means the stored "realise"
+(`ConjugationPool.canonical_infinitive()`, derived from the variants file).
+
+**A batch import always shows a checklist first** (`static/js/verb_import_picker.js`,
+`templates/_verb_import_modal.html`). A card side can be spelled like a verb without
+being one ("Land / country" lowercases to the verb "land"), and only the person who
+wrote the card can tell. Every row starts ticked and shows the card it came from; an
+unticked verb is not remembered, so it stays on offer.
 
 - **Cards → conjugation:** importable cards (verb side in a pool, not yet owned in
   that pool) are surfaced on `/cards` (per-card badge + "add to conjugation" button,
-  plus a batch "add all" button covering every language) and during cards practice
+  plus a batch "add all" button running the automatic scan) and during cards practice
   (`cards_practice.html`'s inline button, wired by
-  `static/js/cards_practice_verb_add.js`). All paths POST to the existing
+  `static/js/cards_practice_verb_add.js`). The per-card paths POST to the existing
   `POST /api/verbs` with the detected `lang` (carried in `data-verb-lang`
-  attributes); the batch button uses `POST /api/verbs/import-from-cards`, which the
-  `/<lang>/conjugate` page calls with a `lang` filter so it only imports its own
-  language's verbs.
+  attributes); the batch button reads the checklist from
+  `GET /api/verbs/import-from-cards` and sends the ticked rows to
+  `POST /api/verbs/import-from-cards`, which the `/<lang>/conjugate` page calls with
+  a `lang` filter so it only imports its own language's verbs.
 - **Conjugation → cards:** verbs missing from the deck (`_verbs_missing_from_cards`)
   are offered on `/<lang>/conjugate` via a walk-through modal that prompts for a
   translation per verb and creates each card with the existing `POST /api/cards`.
 
-Detection helpers live in `app.py` (`_card_verb_match`, `_importable_card_verbs`,
-`_verbs_missing_from_cards`, `_importable_verb_for_card`); the JS lives in
-`static/js/cards.js` and `static/js/conjugate.js`.
+Detection helpers live in `app.py` (`_card_scan_order`, `_card_verb_match`,
+`_importable_card_verbs`, `_verbs_missing_from_cards`, `_importable_verb_for_card`);
+the JS lives in `static/js/cards.js`, `static/js/conjugate.js` and
+`static/js/verb_import_picker.js`.
 
 ## Tests
 
@@ -250,11 +273,13 @@ auxiliaries with plural agreement, the io-less imperative) and it-pool scoping.
 `tests/test_conjugate_en.py` covers the English pool (the committed files matching
 the generator, spelling rules, stative and modal gaps), accepted forms from both
 ends (British variants right, American forms wrong), the five-slot hint table, "to
-go" as input, and the Learn pages (every form shown is in the pool, and no
+go" and -ize spellings as input, a selection with no questions refused at start, modal
+prompts and hints, and the Learn pages (every form shown is in the pool, and no
 translation changes one).
 `tests/test_card_verb_sync.py` covers the index-card ↔ conjugation sync
-(detection incl. language, English staying out of the automatic scan,
-import-from-cards, page/practice exposure, additive-only deletes). Run:
+(detection incl. language, English staying out of the automatic scan unless the
+session is learning it, import-from-cards and its checklist, page/practice exposure,
+additive-only deletes). Run:
 
 ```bash
 uv run pytest tests/test_conjugate.py tests/test_conjugate_it.py tests/test_conjugate_de.py tests/test_conjugate_en.py tests/test_card_verb_sync.py

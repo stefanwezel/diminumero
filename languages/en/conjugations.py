@@ -10,27 +10,20 @@ implementation.
 stored one ("learnt" also "learned"), which the practice check consults.
 """
 
-import json
-from functools import cache
 from pathlib import Path
 
 from languages.conjugation_loader import ConjugationPool
 
 _DIR = Path(__file__).resolve().parent
 
-pool = ConjugationPool(_DIR / "conjugations.json")
+pool = ConjugationPool(
+    _DIR / "conjugations.json",
+    variants_path=_DIR / "conjugation_variants.json",
+    base_form_tense="present-simple",
+)
 
 verb_exists = pool.verb_exists
 get_verb_forms = pool.get_verb_forms
 search_verbs = pool.search_verbs
-
-
-@cache
-def _variants() -> dict[str, dict[str, dict[str, list[str]]]]:
-    with (_DIR / "conjugation_variants.json").open(encoding="utf-8") as fh:
-        return json.load(fh)
-
-
-def get_form_variants(infinitive: str, tense_key: str, form: str) -> list[str]:
-    """Other accepted forms for one stored form of a verb (often none)."""
-    return _variants().get(infinitive, {}).get(tense_key, {}).get(form, [])
+get_form_variants = pool.get_form_variants
+canonical_infinitive = pool.canonical_infinitive

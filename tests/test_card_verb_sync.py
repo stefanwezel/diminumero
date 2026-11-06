@@ -109,9 +109,9 @@ class TestDetection:
                 VerbCard(user_sub=sub, infinitive="vivir"),
             ]
             cards = [Card(user_sub=sub, front="comer", back="to eat")]
-            assert [v.infinitive for v in _verbs_missing_from_cards(verbs, cards)] == [
-                "vivir"
-            ]
+            assert [
+                v.infinitive for v in _verbs_missing_from_cards(verbs, cards, "es")
+            ] == ["vivir"]
 
 
 class TestImportFromCards:
@@ -359,4 +359,168 @@ class TestEnglishIsOptIn:
         with app.app_context():
             verbs = [VerbCard(user_sub="x", lang="en", infinitive="go")]
             cards = [Card(user_sub="x", front="to go", back="gehen")]
-            assert _verbs_missing_from_cards(verbs, cards) == []
+            assert _verbs_missing_from_cards(verbs, cards, "en") == []
+
+    def test_to_only_means_a_citation_in_english(self, app):
+        with app.app_context():
+            verbs = [VerbCard(user_sub="x", lang="es", infinitive="comer")]
+            cards = [Card(user_sub="x", front="to comer", back="essen")]
+            assert _verbs_missing_from_cards(verbs, cards, "es") == verbs
+
+    def test_ize_spelling_on_a_card_finds_the_stored_verb(self, app):
+        with app.app_context():
+            card = Card(user_sub="x", front="realize", back="erkennen")
+            assert _card_verb_match(card, "en") == ("en", "realise")
+
+    def test_ize_spelling_counts_as_already_on_a_card(self, app):
+        """Otherwise the walk-through would offer a second card for the same verb."""
+        with app.app_context():
+            verbs = [VerbCard(user_sub="x", lang="en", infinitive="realise")]
+            cards = [Card(user_sub="x", front="to realize", back="erkennen")]
+            assert _verbs_missing_from_cards(verbs, cards, "en") == []
+
+
+def learn(client, lang):
+    with client.session_transaction() as sess:
+        sess["learn_language"] = lang
+
+
+class TestLearningEnglish:
+    """For someone learning English, English is the verb, not the translation."""
+
+    @pytest.mark.parametrize(
+        "front, back", [("go", "gehen"), ("gehen", "go"), ("to go", "gehen")]
+    )
+    def test_cards_page_offers_the_english_side(self, client, front, back):
+        make_card(SAMPLE_USER["sub"], front, back)
+        login(client)
+        learn(client, "en")
+        html = client.get("/cards").get_data(as_text=True)
+        assert 'data-infinitive="go"' in html
+        assert 'data-infinitive="gehen"' not in html
+
+    def test_a_card_with_no_english_verb_still_finds_the_other_one(self, client):
+        make_card(SAMPLE_USER["sub"], "gehen", "laufen zu Fuß")
+        login(client)
+        learn(client, "en")
+        html = client.get("/cards").get_data(as_text=True)
+        assert 'data-infinitive="gehen"' in html
+
+    def test_owning_the_english_verb_does_not_offer_the_other_side(self, client):
+        make_card(SAMPLE_USER["sub"], "go", "gehen")
+        with flask_app.app_context():
+            db.session.add(
+                VerbCard(user_sub=SAMPLE_USER["sub"], lang="en", infinitive="go")
+            )
+            db.session.commit()
+        login(client)
+        learn(client, "en")
+        assert "cards-verb-add-btn" not in client.get("/cards").get_data(as_text=True)
+
+    def test_card_api_reports_the_english_verb(self, client):
+        login(client)
+        learn(client, "en")
+        data = client.post("/api/cards", json={"front": "go", "back": "gehen"})
+        assert data.get_json()["verb_infinitive"] == "go"
+        assert data.get_json()["verb_lang"] == "en"
+
+    def test_practice_offers_the_english_verb(self, client):
+        make_card(SAMPLE_USER["sub"], "go", "gehen")
+        login(client)
+        learn(client, "en")
+        client.post("/cards/practice/start", data={"direction": "front_to_back"})
+        html = client.get("/cards/practice").get_data(as_text=True)
+        assert 'data-infinitive="go"' in html
+        assert 'data-verb-lang="en"' in html
+
+    @pytest.mark.parametrize("lang", ["de", "es", "fr"])
+    def test_learning_anything_else_keeps_english_out(self, client, lang):
+        make_card(SAMPLE_USER["sub"], "go", "gehen")
+        login(client)
+        learn(client, lang)
+        html = client.get("/cards").get_data(as_text=True)
+        assert 'data-infinitive="gehen"' in html
+        assert 'data-infinitive="go"' not in html
+
+
+class TestImportChecklist:
+    """Nothing is imported until the person who wrote the cards has seen the list."""
+
+    def test_candidates_come_with_their_card(self, client):
+        make_card(SAMPLE_USER["sub"], "Land", "country")
+        login(client)
+        data = client.get("/api/verbs/import-from-cards?lang=en").get_json()
+        assert data["verbs"] == [
+            {"lang": "en", "infinitive": "land", "front": "Land", "back": "country"}
+        ]
+
+    def test_listing_candidates_adds_nothing(self, client):
+        make_card(SAMPLE_USER["sub"], "comer", "to eat")
+        login(client)
+        client.get("/api/verbs/import-from-cards")
+        with flask_app.app_context():
+            assert db.session.query(VerbCard).count() == 0
+
+    def test_candidates_require_login(self, client):
+        assert client.get("/api/verbs/import-from-cards").status_code == 302
+
+    def test_candidates_leave_out_other_users_cards(self, client):
+        make_card(OTHER_USER["sub"], "comer", "to eat")
+        login(client)
+        assert client.get("/api/verbs/import-from-cards").get_json()["verbs"] == []
+
+    def test_only_ticked_verbs_are_imported(self, client):
+        make_card(SAMPLE_USER["sub"], "to go", "gehen")
+        make_card(SAMPLE_USER["sub"], "Land", "country")
+        login(client)
+        data = client.post(
+            "/api/verbs/import-from-cards",
+            json={"lang": "en", "verbs": [{"lang": "en", "infinitive": "go"}]},
+        ).get_json()
+        assert (data["added"], data["remaining"]) == (1, 1)
+        assert [v["infinitive"] for v in data["verbs"]] == ["go"]
+        with flask_app.app_context():
+            assert db.session.query(VerbCard).one().infinitive == "go"
+
+    def test_an_unticked_verb_is_still_offered_afterwards(self, client):
+        make_card(SAMPLE_USER["sub"], "to go", "gehen")
+        make_card(SAMPLE_USER["sub"], "Land", "country")
+        login(client)
+        client.post(
+            "/api/verbs/import-from-cards",
+            json={"lang": "en", "verbs": [{"lang": "en", "infinitive": "go"}]},
+        )
+        left = client.get("/api/verbs/import-from-cards?lang=en").get_json()["verbs"]
+        assert [v["infinitive"] for v in left] == ["land"]
+
+    def test_an_empty_list_imports_nothing(self, client):
+        """Not the same as leaving the list out."""
+        make_card(SAMPLE_USER["sub"], "comer", "to eat")
+        login(client)
+        data = client.post("/api/verbs/import-from-cards", json={"verbs": []})
+        assert data.get_json()["added"] == 0
+
+    @pytest.mark.parametrize(
+        "junk",
+        [
+            [{"lang": "en", "infinitive": "fly"}],
+            [{"lang": "xx", "infinitive": "comer"}],
+            ["comer", 3, None],
+            [{"lang": [], "infinitive": {}}],
+        ],
+    )
+    def test_a_verb_that_is_not_a_candidate_is_ignored(self, client, junk):
+        make_card(SAMPLE_USER["sub"], "comer", "to eat")
+        login(client)
+        data = client.post("/api/verbs/import-from-cards", json={"verbs": junk})
+        assert data.get_json()["added"] == 0
+        with flask_app.app_context():
+            assert db.session.query(VerbCard).count() == 0
+
+    @pytest.mark.parametrize("page", ["/cards", "/en/conjugate", "/es/conjugate"])
+    def test_pages_with_an_import_button_carry_the_checklist(self, client, page):
+        make_card(SAMPLE_USER["sub"], "comer", "to eat")
+        login(client)
+        html = client.get(page).get_data(as_text=True)
+        assert 'id="verb-import-modal"' in html
+        assert "js/verb_import_picker.js" in html

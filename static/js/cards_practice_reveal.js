@@ -13,13 +13,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('revealForm');
     if (!input || !form) return;
 
-    const correct = normalizeReveal(input.getAttribute('data-correct-answer') || '');
+    // Verb practice lists every form the server accepts; a card has just the one.
+    const listed = input.getAttribute('data-accepted-answers');
+    const accepted = (
+        listed ? JSON.parse(listed) : [input.getAttribute('data-correct-answer') || '']
+    ).map(normalizeReveal);
     let submitting = false;
 
     input.focus();
 
     function isMatch() {
-        return normalizeReveal(input.value || '') === correct;
+        return accepted.includes(normalizeReveal(input.value || ''));
     }
 
     function check() {

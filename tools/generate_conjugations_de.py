@@ -35,7 +35,7 @@ verb uses "würde + Infinitiv".
 
 Usage:
     uv run tools/generate_conjugations_de.py            # generate everything
-    uv run tools/generate_conjugations_de.py --limit 20 # quick test on first 20 verbs
+    uv run tools/generate_conjugations_de.py --limit 20 # print the first 20, write nothing
 """
 
 import argparse
@@ -871,7 +871,11 @@ def run_self_checks(pool: dict[str, dict[str, list]]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limit", type=int, help="only generate the first N verbs")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="print the first N verbs instead of writing the committed file",
+    )
     args = parser.parse_args()
 
     verbs = POPULAR_VERBS[: args.limit] if args.limit else POPULAR_VERBS
@@ -882,8 +886,12 @@ def main() -> None:
         sys.exit(1)
 
     pool = {verb: conjugate(verb) for verb in verbs}
-    if not args.limit:
-        run_self_checks(pool)
+    if args.limit:
+        # A quick look only: the app reads this file, so a truncated pool on
+        # disk would reject most verbs as unsupported.
+        print(json.dumps(pool, ensure_ascii=False, indent=1))
+        return
+    run_self_checks(pool)
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT_PATH.open("w", encoding="utf-8") as fh:

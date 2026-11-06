@@ -17,10 +17,24 @@ import pytest
 from app import _build_conjugation_hint
 from app import app as flask_app
 from config import SUPPORTED_UI_LANGUAGES
-from conjugation_config import conj_hint_model_verbs, conj_persons, conj_tense_keys
+from conjugation_config import (
+    CONJ_LANGS,
+    conj_hint_model_verbs,
+    conj_persons,
+    conj_tense_keys,
+    tense_hint,
+    tense_label,
+)
 from languages.en import conjugations as en_conjugations
+from languages.es import conjugations as es_conjugations
 from models import ConjugationStat, VerbCard, db
-from tools.generate_conjugations_en import POPULAR_VERBS, build_pool, build_variants
+from tools import generate_conjugations_en
+from tools.generate_conjugations_en import (
+    IZE_VERBS,
+    POPULAR_VERBS,
+    build_pool,
+    build_variants,
+)
 
 LEARN_UI_LANGUAGES = ["en", "de", "es", "it", "fr", "pt", "ar", "uk"]
 POOL_PATH = Path(en_conjugations.__file__).parent / "conjugations.json"
@@ -99,6 +113,32 @@ class TestPool:
         variants = json.loads(VARIANTS_PATH.read_text(encoding="utf-8"))
         assert pool == build_pool(POPULAR_VERBS)
         assert variants == build_variants(POPULAR_VERBS)
+
+    def test_limit_writes_nothing(self, monkeypatch, tmp_path, capsys):
+        """A truncated pool on disk would reject most verbs as unsupported."""
+        monkeypatch.setattr(
+            generate_conjugations_en, "OUTPUT_PATH", tmp_path / "p.json"
+        )
+        monkeypatch.setattr(
+            generate_conjugations_en, "VARIANTS_PATH", tmp_path / "v.json"
+        )
+        monkeypatch.setattr("sys.argv", ["generate_conjugations_en.py", "--limit", "3"])
+        generate_conjugations_en.main()
+        assert list(tmp_path.iterdir()) == []
+        assert len(json.loads(capsys.readouterr().out)) == 3
+
+    def test_only_ize_verbs_have_a_second_infinitive(self):
+        """Not "quit": its past "quit" also has a variant, "quitted"."""
+        assert {
+            en_conjugations.canonical_infinitive(verb[:-3] + "ize")
+            for verb in IZE_VERBS
+        } == IZE_VERBS
+        for spelling in ("quitted", "betted", "learned", "analyze", "advize"):
+            assert en_conjugations.canonical_infinitive(spelling) == spelling
+
+    def test_a_language_without_variants_has_none(self):
+        assert es_conjugations.pool.get_form_variants("comer", "x", "como") == []
+        assert es_conjugations.pool.canonical_infinitive("comer") == "comer"
 
     def test_every_cell_has_one_slot_per_person_and_every_tense(self):
         pool = json.loads(POOL_PATH.read_text(encoding="utf-8"))
@@ -209,6 +249,61 @@ class TestAddEnglishVerb:
         login(client)
         results = client.get("/api/verbs/search?q=to+wr&lang=en").get_json()["results"]
         assert results[0] == "write"
+
+    @pytest.mark.parametrize(
+        "typed, stored",
+        [
+            ("realize", "realise"),
+            ("Organize", "organise"),
+            ("to recognize", "recognise"),
+            ("to apologize", "apologise"),
+        ],
+    )
+    def test_ize_spelling_is_the_same_verb(self, client, typed, stored):
+        """The Learn page calls -ize accepted, so the add box must agree."""
+        login(client)
+        resp = client.post("/api/verbs", json={"infinitive": typed, "lang": "en"})
+        assert resp.status_code == 200
+        assert resp.get_json()["verb"]["infinitive"] == stored
+
+    def test_ize_spelling_through_the_form_fallback(self, client):
+        login(client)
+        client.post("/en/conjugate/add", data={"infinitive": "realize"})
+        with flask_app.app_context():
+            assert db.session.query(VerbCard).one().infinitive == "realise"
+
+    def test_ize_spelling_of_an_owned_verb_is_a_duplicate(self, client):
+        add_verb(SAMPLE_USER["sub"], "realise")
+        login(client)
+        resp = client.post("/api/verbs", json={"infinitive": "realize", "lang": "en"})
+        assert resp.get_json()["duplicate"] is True
+
+    @pytest.mark.parametrize("typed", ["analyze", "advize", "surprize"])
+    def test_spellings_british_usage_rejects_stay_rejected(self, client, typed):
+        login(client)
+        resp = client.post("/api/verbs", json={"infinitive": typed, "lang": "en"})
+        assert resp.status_code == 400
+
+    @pytest.mark.parametrize("query", ["organiz", "to organiz", "organis"])
+    def test_search_finds_a_verb_by_either_spelling(self, client, query):
+        login(client)
+        results = client.get(
+            "/api/verbs/search", query_string={"q": query, "lang": "en"}
+        ).get_json()["results"]
+        assert results == ["organise"]
+
+    def test_search_lists_a_verb_once_when_both_spellings_match(self, client):
+        login(client)
+        results = client.get("/api/verbs/search?q=reali&lang=en").get_json()["results"]
+        assert results.count("realise") == 1
+
+    def test_search_hides_an_owned_verb_by_either_spelling(self, client):
+        add_verb(SAMPLE_USER["sub"], "organise")
+        login(client)
+        results = client.get("/api/verbs/search?q=organiz&lang=en").get_json()[
+            "results"
+        ]
+        assert results == []
 
     def test_english_verb_rejected_in_other_pools(self, client):
         login(client)
@@ -332,13 +427,43 @@ class TestEnglishPractice:
             assert current["tense_key"] == "present-simple"
             client.post("/en/conjugate/practice", data={"answer": "x"})
 
-    def test_a_selection_with_no_forms_ends_instead_of_asking_a_blank(self, client):
+    def test_a_selection_with_no_forms_says_so_instead_of_starting(self, client):
         add_verb(SAMPLE_USER["sub"], "must")
         login(client)
-        start(client, tenses="past-perfect")
-        resp = client.get("/en/conjugate/practice", follow_redirects=True)
-        assert resp.status_code == 200
-        assert "conjugate-prompt-verb" not in resp.get_data(as_text=True)
+        resp = start(client, tenses="past-perfect")
+        assert resp.headers["Location"].endswith("/en/conjugate")
+        with client.session_transaction() as sess:
+            assert "conjugate_practice" not in sess
+        html = client.get("/en/conjugate").get_data(as_text=True)
+        assert "These verbs don&#39;t have those tenses" in html
+
+    def test_a_form_for_any_one_verb_is_enough_to_start(self, client):
+        add_verb(SAMPLE_USER["sub"], "know")
+        add_verb(SAMPLE_USER["sub"], "write")
+        login(client)
+        start(client, tenses="present-continuous")
+        with client.session_transaction() as sess:
+            assert "conjugate_practice" in sess
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        assert 'conjugate-prompt-verb">write<' in html
+
+    def test_a_recap_is_judged_on_its_own_verbs(self, client):
+        """A recap restricts the verbs, so another verb's forms don't count."""
+        know = add_verb(SAMPLE_USER["sub"], "know")
+        add_verb(SAMPLE_USER["sub"], "write")
+        login(client)
+        resp = start(client, tenses="present-continuous", verb_ids=str(know))
+        assert resp.headers["Location"].endswith("/en/conjugate")
+
+    def test_a_recap_is_judged_on_its_own_persons(self, client):
+        """The German imperative has a form for du but not for ich."""
+        add_verb(SAMPLE_USER["sub"], "machen", lang="de")
+        login(client)
+        resp = client.post(
+            "/de/conjugate/practice/start",
+            data={"tenses": "imperativ", "persons": "0", "count": "1"},
+        )
+        assert resp.headers["Location"].endswith("/de/conjugate")
 
     def test_hint_rows_line_up_with_the_forms(self, client):
         """The template indexes forms by row, so a skipped slot would shift them."""
@@ -368,6 +493,78 @@ class TestEnglishPractice:
         html = client.get("/en/conjugate/practice").get_data(as_text=True)
         assert "<th>stop</th>" in html
         assert "<td>goes</td>" in html
+
+
+class TestModals:
+    """A modal takes no -s and can't follow "would", so its prompt can't say so."""
+
+    def test_conditional_prompt_does_not_ask_for_would(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "can")
+        login(client)
+        force_question(client, verb_id, "can", "conditional", 2, difficulty="advanced")
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        assert "Conditional (would)" not in html
+        assert "A modal can&#39;t follow &#34;would&#34;" in html
+
+    @pytest.mark.parametrize(
+        "verb, tense",
+        [
+            ("can", "present-simple"),
+            ("can", "conditional"),
+            ("may", "present-simple"),
+            ("may", "conditional"),
+            ("must", "present-simple"),
+        ],
+    )
+    def test_hint_shows_no_pattern_the_verb_does_not_follow(self, client, verb, tense):
+        verb_id = add_verb(SAMPLE_USER["sub"], verb)
+        login(client)
+        force_question(client, verb_id, verb, tense, 2, difficulty="advanced")
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        assert "conjugate-hint-blurb" in html
+        assert "conjugate-hint-table" not in html
+        assert "<td>goes</td>" not in html
+
+    def test_a_modals_past_keeps_the_usual_hint(self, client):
+        """ "could" is an irregular past like any other."""
+        verb_id = add_verb(SAMPLE_USER["sub"], "can")
+        login(client)
+        force_question(client, verb_id, "can", "past-simple", 0, difficulty="advanced")
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        assert "conjugate-hint-table" in html
+
+    def test_other_verbs_keep_the_label_and_the_table(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "write")
+        login(client)
+        force_question(
+            client, verb_id, "write", "conditional", 2, difficulty="advanced"
+        )
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        assert "Conditional (would)" in html
+        assert "conjugate-hint-table" in html
+
+    def test_settings_page_keeps_the_general_label(self, client):
+        add_verb(SAMPLE_USER["sub"], "can")
+        login(client)
+        assert "Conditional (would)" in client.get("/en/conjugate").get_data(
+            as_text=True
+        )
+
+    def test_every_override_is_for_a_cell_with_a_form(self):
+        for verb, tenses in CONJ_LANGS["en"]["verb_overrides"].items():
+            forms = en_conjugations.get_verb_forms(verb)
+            for tense in tenses:
+                assert any(forms[tense]), (verb, tense)
+
+    def test_a_label_and_hint_need_no_second_copy_in_english(self):
+        """English has no separate "native" wording to fall back from."""
+        assert tense_label("en", "past-simple", "en") == "Past simple"
+        assert tense_label("en", "past-simple", "de") == "Past simple"
+        assert tense_hint("en", "future-will", "en") == tense_hint(
+            "en", "future-will", "de"
+        )
+        assert tense_label("de", "indikativ/praesens", "de") == "Präsens"
+        assert tense_label("de", "indikativ/praesens", "en") == "Present"
 
 
 class TestAcceptedForms:
@@ -445,6 +642,35 @@ class TestAcceptedForms:
         html = client.get("/en/conjugate/practice").get_data(as_text=True)
         assert "data-accepted-answers" not in html
         assert "data-correct-answer" not in html
+
+    def test_hardcore_page_holds_just_the_list(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "learn")
+        login(client)
+        force_question(client, verb_id, "learn", "past-simple", 0)
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        assert "data-correct-answer" not in html
+
+    @pytest.mark.parametrize("difficulty", ["advanced", "hardcore"])
+    def test_reveal_retype_box_is_told_every_accepted_form(self, client, difficulty):
+        """Otherwise the client blocks a form the server would have taken."""
+        verb_id = add_verb(SAMPLE_USER["sub"], "learn")
+        login(client)
+        force_question(
+            client, verb_id, "learn", "past-simple", 0, difficulty=difficulty
+        )
+        client.post("/en/conjugate/practice", data={"reveal": "1"})
+        html = client.get("/en/conjugate/practice").get_data(as_text=True)
+        box = re.search(r'<input[^>]*id="revealInput"[^>]*>', html, re.S).group(0)
+        assert """data-accepted-answers='["learnt", "learned"]'""" in box
+
+    def test_retyping_a_variant_moves_on(self, client):
+        verb_id = add_verb(SAMPLE_USER["sub"], "learn")
+        login(client)
+        force_question(client, verb_id, "learn", "past-simple", 0)
+        client.post("/en/conjugate/practice", data={"reveal": "1"})
+        client.post("/en/conjugate/practice", data={"next": "1", "answer": "learned"})
+        with client.session_transaction() as sess:
+            assert sess["conjugate_practice"]["current"] is None
 
     def test_live_validation_accepts_a_variant(self, client):
         verb_id = add_verb(SAMPLE_USER["sub"], "learn")

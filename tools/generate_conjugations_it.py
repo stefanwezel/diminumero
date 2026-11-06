@@ -39,7 +39,7 @@ Italian extraction quirks vs the Spanish generator:
 
 Usage:
     uv run tools/generate_conjugations_it.py            # generate everything
-    uv run tools/generate_conjugations_it.py --limit 20 # quick test on first 20 verbs
+    uv run tools/generate_conjugations_it.py --limit 20 # print the first 20, write nothing
 """
 
 import argparse
@@ -536,7 +536,10 @@ def run_self_checks(pool: dict[str, dict[str, list]]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--limit", type=int, default=None, help="only process the first N verbs"
+        "--limit",
+        type=int,
+        default=None,
+        help="print the first N verbs instead of writing the committed file",
     )
     args = parser.parse_args()
 
@@ -580,17 +583,21 @@ def main() -> int:
     if args.limit is None:
         run_self_checks(result)
 
-    # Preserve POPULAR_VERBS (frequency) order so the app can rank autocomplete
-    # suggestions by commonness (e.g. "pa" -> "parlare" before rarer pa* verbs).
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(
-        json.dumps(result, ensure_ascii=False, indent=0, sort_keys=False) + "\n",
-        encoding="utf-8",
-    )
+        # Preserve POPULAR_VERBS (frequency) order so the app can rank autocomplete
+        # suggestions by commonness (e.g. "pa" -> "parlare" before rarer pa* verbs).
+        OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        OUTPUT_PATH.write_text(
+            json.dumps(result, ensure_ascii=False, indent=0, sort_keys=False) + "\n",
+            encoding="utf-8",
+        )
 
-    print(f"Wrote {len(result)} verbs to {OUTPUT_PATH.relative_to(REPO_ROOT)}")
-    size_kb = OUTPUT_PATH.stat().st_size / 1024
-    print(f"File size: {size_kb:.0f} KiB")
+        print(f"Wrote {len(result)} verbs to {OUTPUT_PATH.relative_to(REPO_ROOT)}")
+        size_kb = OUTPUT_PATH.stat().st_size / 1024
+        print(f"File size: {size_kb:.0f} KiB")
+    else:
+        # A quick look only: the app reads this file, so a truncated pool on
+        # disk would reject most verbs as unsupported.
+        print(json.dumps(result, ensure_ascii=False, indent=1))
     if missing:
         print(f"\nSkipped {len(missing)} verb(s) not found in verbecc:")
         for m in missing:

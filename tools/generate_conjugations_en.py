@@ -29,7 +29,7 @@ which the practice check consults alongside the stored form.
 
 Usage:
     uv run tools/generate_conjugations_en.py            # generate everything
-    uv run tools/generate_conjugations_en.py --limit 20 # quick test on first 20 verbs
+    uv run tools/generate_conjugations_en.py --limit 20 # print the first 20, write nothing
 """
 
 import argparse
@@ -1121,7 +1121,11 @@ def build_variants(verbs: list[str]) -> dict[str, dict[str, dict[str, list[str]]
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limit", type=int, help="only generate the first N verbs")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="print the first N verbs instead of writing the committed files",
+    )
     args = parser.parse_args()
 
     verbs = POPULAR_VERBS[: args.limit] if args.limit else POPULAR_VERBS
@@ -1131,8 +1135,12 @@ def main() -> None:
         sys.exit(1)
 
     pool = build_pool(verbs)
-    if not args.limit:
-        run_self_checks(pool)
+    if args.limit:
+        # A quick look only: the app reads these files, so a truncated pool on
+        # disk would reject most verbs as unsupported.
+        print(json.dumps(pool, ensure_ascii=False, indent=1))
+        return
+    run_self_checks(pool)
 
     for path, data in (
         (OUTPUT_PATH, pool),

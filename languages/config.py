@@ -49,7 +49,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الإنجليزية",
             "uk": "Англійська",
         },
-        "feedback_expression": "Correct!",
+        "feedback_expression": "Correct",
     },
     "ja": {
         "name": "Japanese",
@@ -69,7 +69,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "اليابانية",
             "uk": "Японська",
         },
-        "feedback_expression": "正解!",
+        "feedback_expression": "正解",
     },
     "de": {
         "name": "German",
@@ -130,7 +130,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الكورية",
             "uk": "Корейська",
         },
-        "feedback_expression": "정답!",
+        "feedback_expression": "정답",
     },
     "it": {
         "name": "Italian",
@@ -151,7 +151,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الإيطالية",
             "uk": "Італійська",
         },
-        "feedback_expression": "Corretto!",
+        "feedback_expression": "Corretto",
     },
     "zh": {
         "name": "Chinese",
@@ -170,7 +170,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الصينية",
             "uk": "Китайська",
         },
-        "feedback_expression": "正确!",
+        "feedback_expression": "正确",
     },
     "pt": {
         "name": "Portuguese",
@@ -190,7 +190,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "البرتغالية",
             "uk": "Португальська",
         },
-        "feedback_expression": "Correto!",
+        "feedback_expression": "Correto",
     },
     "tr": {
         "name": "Turkish",
@@ -209,7 +209,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "التركية",
             "uk": "Турецька",
         },
-        "feedback_expression": "Doğru!",
+        "feedback_expression": "Doğru",
     },
     "ne": {
         "name": "Nepalese",
@@ -227,7 +227,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "النيبالية",
             "uk": "Непальська",
         },
-        "feedback_expression": "सहि!",
+        "feedback_expression": "सहि",
     },
     "sv": {
         "name": "Swedish",
@@ -247,7 +247,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "السويدية",
             "uk": "Шведська",
         },
-        "feedback_expression": "Rätt!",
+        "feedback_expression": "Rätt",
     },
     "da": {
         "name": "Danish",
@@ -266,7 +266,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الدنماركية",
             "uk": "Данська",
         },
-        "feedback_expression": "Korrekt!",
+        "feedback_expression": "Korrekt",
     },
     "no": {
         "name": "Norwegian",
@@ -285,7 +285,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "النرويجية",
             "uk": "Норвезька",
         },
-        "feedback_expression": "Riktig!",
+        "feedback_expression": "Riktig",
     },
     "cy": {
         "name": "Welsh",
@@ -336,7 +336,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الويلزية",
             "uk": "Валлійська",
         },
-        "feedback_expression": "Da iawn!",
+        "feedback_expression": "Da iawn",
     },
     "ga": {
         "name": "Irish",
@@ -355,7 +355,7 @@ AVAILABLE_LANGUAGES = {
             "ar": "الأيرلندية",
             "uk": "Ірландська",
         },
-        "feedback_expression": "Maith thú!",
+        "feedback_expression": "Maith thú",
     },
 }
 

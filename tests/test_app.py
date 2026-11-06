@@ -1,5 +1,8 @@
 """Tests for Flask application."""
 
+import ast
+from pathlib import Path
+
 import pytest
 from app import app as flask_app
 from config import QUESTIONS_PER_QUIZ
@@ -310,6 +313,23 @@ class TestQuizEasy:
         )
         assert response.status_code == 200
 
+    @pytest.mark.parametrize("lang_code", sorted(AVAILABLE_LANGUAGES))
+    def test_feedback_expression_leaves_the_exclamation_mark_to_the_flash(
+        self, lang_code
+    ):
+        """flash_correct is "{}! 🎉", so a "!" here would show as "Correct!! 🎉"."""
+        assert not AVAILABLE_LANGUAGES[lang_code]["feedback_expression"].endswith("!")
+
+    def test_quiz_easy_correct_flash_has_one_exclamation_mark(self, client):
+        client.post("/en/start", data={"mode": "easy"})
+        client.get("/en/quiz/easy")
+        with client.session_transaction() as sess:
+            correct_answer = sess.get("correct_answer")
+        response = client.post(
+            "/en/quiz/easy", data={"answer": correct_answer}, follow_redirects=True
+        )
+        assert "Correct! 🎉" in response.get_data(as_text=True)
+
     def test_quiz_easy_refresh_same_question(self, client):
         """Test that refreshing the page keeps the same question and options."""
         # Start quiz
@@ -491,6 +511,65 @@ class TestLearnPage:
         """The Spanish mode page surfaces the 'Learn conjugations' card."""
         response = client.get("/es")
         assert b"/es/learn/conjugations" in response.data
+
+
+class TestFilesAtTheSiteRoot:
+    """Browsers ask for these unprompted, so they must not act like a bad language.
+
+    `/<lang_code>` answers an unknown code with a message and a redirect, and the
+    rewritten session cookie can undo a request running alongside it.
+    """
+
+    def test_favicon_is_the_real_icon(self, client):
+        response = client.get("/favicon.ico")
+        assert response.status_code == 200
+        assert response.mimetype in ("image/x-icon", "image/vnd.microsoft.icon")
+        assert response.data == Path("static/favicon.ico").read_bytes()
+
+    @pytest.mark.parametrize(
+        "path, status",
+        [
+            ("/favicon.ico", 200),
+            ("/apple-touch-icon.png", 404),
+            ("/apple-touch-icon-precomposed.png", 404),
+            ("/browserconfig.xml", 404),
+        ],
+    )
+    def test_leaves_an_existing_session_alone(self, client, path, status):
+        client.get("/")
+        response = client.get(path)
+        assert response.status_code == status
+        assert "Set-Cookie" not in response.headers
+        with client.session_transaction() as sess:
+            assert "_flashes" not in sess
+
+    def test_a_mistyped_language_still_says_so(self, client):
+        response = client.get("/klingon")
+        assert response.status_code == 302
+        with client.session_transaction() as sess:
+            assert sess["_flashes"][0][0] == "error"
+
+
+class TestFlashStyles:
+    """A category with no rule renders as bare text over the page."""
+
+    @staticmethod
+    def _categories():
+        tree = ast.parse(Path("app.py").read_text(encoding="utf-8"))
+        return {
+            node.args[1].value if len(node.args) > 1 else "message"
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "flash"
+        }
+
+    def test_the_scan_finds_the_categories(self):
+        assert {"success", "error", "info"} <= self._categories()
+
+    @pytest.mark.parametrize("stylesheet", ["style.css", "style-classic.css"])
+    def test_every_category_has_a_toast_style(self, stylesheet):
+        css = Path("static/css", stylesheet).read_text(encoding="utf-8")
+        for category in self._categories():
+            assert f".toast-{category} {{" in css, category
 
 
 class TestImprintPage:

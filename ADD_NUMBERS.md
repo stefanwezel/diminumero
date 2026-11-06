@@ -47,8 +47,9 @@ AVAILABLE_LANGUAGES = {
             'it': 'NomeLingua', 'fr': 'NomLangue', 'pt': 'NomeLíngua',
             'ar': 'اسم اللغة', 'uk': 'НазваМови',
         },
-        # Word shown to the user when they answer correctly (in the target language)
-        'feedback_expression': 'Correct!',
+        # Word shown to the user when they answer correctly (in the target language).
+        # No trailing "!": the flash message adds its own.
+        'feedback_expression': 'Correct',
     },
 }
 ```
@@ -188,7 +189,7 @@ touch languages/qu/__init__.py
         'it': 'Quechua', 'fr': 'Quechua', 'pt': 'Quechua',
         'ar': 'كيتشوا', 'uk': 'Кечуа',
     },
-    'feedback_expression': 'Allinmi!',
+    'feedback_expression': 'Allinmi',
 }
 
 # 3. Edit languages/config.py - add import in get_language_numbers():

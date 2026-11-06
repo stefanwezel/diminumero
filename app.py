@@ -10,6 +10,7 @@ from flask import (
     Flask,
     Response,
     g,
+    has_request_context,
     render_template,
     request,
     redirect,
@@ -71,13 +72,16 @@ from languages.notes_loader import get_notes
 from translations import TRANSLATIONS
 from conjugation_config import (
     CONJ_QUESTIONS_DEFAULT,
+    conj_card_scan_opt_in,
     conj_hint_model_verbs,
+    conj_infinitive_particle,
     conj_optional_person_index,
     conj_persons,
     conj_tense_keys,
     conj_tenses,
     person_label,
     tense_hint,
+    tense_hint_override,
     tense_label,
 )
 from languages.de import conjugations as de_conjugations
@@ -88,10 +92,10 @@ from languages.it import conjugations as it_conjugations
 # Committed global verb pools, one per conjugation language. Every language
 # with `has_conjugation: True` in languages/config.py must have an entry here.
 CONJ_POOLS = {
-    "es": es_conjugations,
-    "en": en_conjugations,
-    "it": it_conjugations,
-    "de": de_conjugations,
+    "es": es_conjugations.pool,
+    "en": en_conjugations.pool,
+    "it": it_conjugations.pool,
+    "de": de_conjugations.pool,
 }
 
 # Fallback language for globally-rendered conjugation links (nav, home page)
@@ -100,7 +104,7 @@ DEFAULT_CONJUGATION_LANG = "es"
 
 
 def _conj_pool(lang_code: str):
-    """The committed verb pool module for a conjugation language."""
+    """The committed verb pool for a conjugation language."""
     return CONJ_POOLS[lang_code]
 
 
@@ -296,7 +300,7 @@ def set_cache_headers(response):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     elif path in ("/about", "/privacy", "/imprint", "/"):
         response.headers["Cache-Control"] = "public, max-age=3600"
-    elif path in ("/sitemap.xml", "/robots.txt"):
+    elif path in ("/sitemap.xml", "/robots.txt", "/favicon.ico"):
         response.headers["Cache-Control"] = "public, max-age=86400"
     elif (
         "/quiz/" in path
@@ -432,8 +436,8 @@ def _conj_text(key: str, lang_code: str) -> str:
     """Translated text for a per-conjugation-language key.
 
     A few conjugation strings name the language being conjugated (page title,
-    add-verb placeholder, "not in our … list" error); those exist as
-    ``<key>_es`` / ``<key>_de`` variants and are looked up here.
+    add-verb placeholder, "not in our … list" error); those exist as one
+    ``<key>_<lang>`` variant per conjugation language and are looked up here.
     """
     return get_text(f"{key}_{lang_code}")
 
@@ -677,6 +681,13 @@ def mode_selection(lang_code):
     """Mode selection page for a specific learning language."""
     # Validate language code
     if not is_language_ready(lang_code):
+        # A file a browser or crawler asks for on its own (apple-touch-icon.png),
+        # not a mistyped language: no message and no rewritten session cookie,
+        # which could undo a request running alongside this one.
+        if "." in lang_code:
+            from flask import abort
+
+            abort(404)
         flash(get_text("flash_invalid_language"), "error")
         return redirect(url_for("index"))
 
@@ -3297,12 +3308,18 @@ def _user_verbs(lang_code: str) -> list[VerbCard]:
     )
 
 
+def _pool_infinitive(key: str, lang_code: str) -> str:
+    """What an already-lowercased ``key`` is called in one language's pool."""
+    # English cites a verb with "to" ("to go"); the pool holds the bare form.
+    particle = conj_infinitive_particle(lang_code)
+    if particle and key.startswith(f"{particle} "):
+        key = key[len(particle) + 1 :].strip()
+    return _conj_pool(lang_code).canonical_infinitive(key)
+
+
 def _normalize_infinitive(value: str, lang_code: str | None = None) -> str:
     key = (value or "").strip().lower()
-    # English cites a verb with "to" ("to go"); the pool holds the bare form.
-    if lang_code == "en" and key.startswith("to "):
-        return key[3:].strip()
-    return key
+    return _pool_infinitive(key, lang_code) if lang_code else key
 
 
 def _find_user_verb(user_sub: str, lang_code: str, infinitive: str) -> VerbCard | None:
@@ -3325,31 +3342,50 @@ def _find_user_verb(user_sub: str, lang_code: str, infinitive: str) -> VerbCard 
 # card. The sync is additive only — neither side is deleted when the other is.
 
 
+def _card_scan_order(lang_code: str | None = None) -> list[list[str]]:
+    """The pools a card is searched in: groups of languages, tried in turn.
+
+    ``lang_code`` searches that one pool. Without it a language flagged
+    ``card_scan_opt_in`` is left out: English is the side most cards carry as
+    the *translation*, and its verbs are spelled like its nouns, so "book /
+    Buch" would be offered as a verb and "live / vivir" would stop meaning the
+    Spanish one. Someone learning that language is the exception, because for
+    them it is the verb they came for, so it goes first and "go / gehen" means
+    "go" whichever side it is on.
+    """
+    if lang_code:
+        return [[lang_code]]
+    codes = get_languages_with_conjugation()
+    order = [[code for code in codes if not conj_card_scan_opt_in(code)]]
+    learning = session.get("learn_language") if has_request_context() else None
+    if learning in codes and conj_card_scan_opt_in(learning):
+        order.insert(0, [learning])
+    return order
+
+
+def _match_card_in(card: Card, scan_order: list[list[str]]) -> tuple[str, str] | None:
+    """Search a card in ``scan_order``: per group the front first, then the back;
+    per side, the group's languages in registry order. Exact against each pool.
+    """
+    sides = [(side or "").strip().lower() for side in (card.front, card.back)]
+    for codes in scan_order:
+        for side in sides:
+            for code in codes:
+                infinitive = _pool_infinitive(side, code)
+                if infinitive and _conj_pool(code).verb_exists(infinitive):
+                    return code, infinitive
+    return None
+
+
 def _card_verb_match(
     card: Card, lang_code: str | None = None
 ) -> tuple[str, str] | None:
     """Return (lang, normalized infinitive) for the pool matching this card.
 
-    Either side may carry the verb (cards are free-form), so the front is
-    checked first, then the back; per side, the conjugation languages are tried
-    in registry order. Matching is exact against each global pool.
-
-    ``lang_code`` searches that one pool. Without it English is left out: it is
-    the side most cards carry as the *translation*, and its verbs are spelled
-    like its nouns, so "book / Buch" would be offered as a verb and "live /
-    vivir" would stop meaning the Spanish one. /en/conjugate asks for it by name.
+    Either side may carry the verb (cards are free-form). See
+    ``_card_scan_order`` for which pools are searched.
     """
-    pools = (
-        [lang_code]
-        if lang_code
-        else [code for code in get_languages_with_conjugation() if code != "en"]
-    )
-    for side in (card.front, card.back):
-        for code in pools:
-            infinitive = _normalize_infinitive(side, code)
-            if infinitive and _conj_pool(code).verb_exists(infinitive):
-                return code, infinitive
-    return None
+    return _match_card_in(card, _card_scan_order(lang_code))
 
 
 def _owned_infinitives(user_sub: str) -> set[tuple[str, str]]:
@@ -3368,13 +3404,15 @@ def _importable_card_verbs(
     Returns (card, lang, infinitive) tuples, de-duped by (lang, infinitive)
     (the first card carrying it wins) so the same verb appearing on two cards
     is only offered once. ``lang_code`` restricts matches to one pool (used on
-    /<lang>/conjugate); None offers verbs from every pool (used on /cards).
+    /<lang>/conjugate); None runs the automatic scan (used on /cards), which
+    leaves out an opt-in language unless the session is learning it.
     """
     owned = _owned_infinitives(user_sub)
     seen: set[tuple[str, str]] = set()
     out: list[tuple[Card, str, str]] = []
+    scan_order = _card_scan_order(lang_code)
     for card in cards:
-        match = _card_verb_match(card, lang_code)
+        match = _match_card_in(card, scan_order)
         if match is None:
             continue
         if match not in owned and match not in seen:
@@ -3384,14 +3422,14 @@ def _importable_card_verbs(
 
 
 def _verbs_missing_from_cards(
-    verbs: list[VerbCard], cards: list[Card]
+    verbs: list[VerbCard], cards: list[Card], lang_code: str
 ) -> list[VerbCard]:
-    """Owned verbs whose infinitive isn't a side of any of the user's cards."""
-    card_sides = set()
-    for card in cards:
-        for side in (card.front, card.back):
-            card_sides.add(_normalize_infinitive(side))
-            card_sides.add(_normalize_infinitive(side, "en"))
+    """One language's owned verbs whose infinitive isn't a side of any card."""
+    card_sides = {
+        _normalize_infinitive(side, lang_code)
+        for card in cards
+        for side in (card.front, card.back)
+    }
     return [v for v in verbs if _normalize_infinitive(v.infinitive) not in card_sides]
 
 
@@ -3654,7 +3692,7 @@ def conjugate(lang_code):
     user_sub = _current_user_sub()
     user_cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
     card_import_count = len(_importable_card_verbs(user_sub, user_cards, lang_code))
-    missing = _verbs_missing_from_cards(verbs, user_cards)
+    missing = _verbs_missing_from_cards(verbs, user_cards, lang_code)
     missing_infinitives = {v.infinitive for v in missing}
     missing_in_cards_json = json.dumps(
         [{"infinitive": v.infinitive} for v in missing]
@@ -3765,31 +3803,80 @@ def conjugate_verb_add(lang_code):
     return redirect(url_for("conjugate", lang_code=lang_code))
 
 
-@app.route("/api/verbs/import-from-cards", methods=["POST"])
-@login_required
-def api_verbs_import_from_cards():
-    """Add every index-card verb (front/back in a pool) not already owned.
-
-    An optional `lang` in the JSON payload restricts the import to one pool
-    (the /<lang>/conjugate page passes its own language); without it, every
-    conjugation language's matches are imported (the /cards page's button).
-    """
-    payload = request.get_json(silent=True) or {}
-    lang_filter = payload.get("lang")
+def _card_import_candidates(lang_filter: str | None) -> list[tuple[Card, str, str]]:
+    """The current user's importable card verbs, for the import endpoints."""
     if lang_filter is not None and lang_filter not in get_languages_with_conjugation():
         lang_filter = DEFAULT_CONJUGATION_LANG
     user_sub = _current_user_sub()
     cards = db.session.query(Card).filter_by(user_sub=user_sub).all()
-    importable = _importable_card_verbs(user_sub, cards, lang_filter)
+    return _importable_card_verbs(user_sub, cards, lang_filter)
+
+
+@app.route("/api/verbs/import-from-cards")
+@login_required
+def api_verbs_import_candidates():
+    """The checklist shown before an import: each verb with the card it came from.
+
+    A word on a card can be spelled like a verb without being one ("Land /
+    country"), and only the person who wrote the card can tell.
+    """
+    candidates = _card_import_candidates(request.args.get("lang"))
+    return jsonify(
+        {
+            "ok": True,
+            "verbs": [
+                {
+                    "lang": verb_lang,
+                    "infinitive": infinitive,
+                    "front": card.front,
+                    "back": card.back,
+                }
+                for card, verb_lang, infinitive in candidates
+            ],
+        }
+    )
+
+
+@app.route("/api/verbs/import-from-cards", methods=["POST"])
+@login_required
+def api_verbs_import_from_cards():
+    """Add index-card verbs (front/back in a pool) not already owned.
+
+    An optional `lang` in the JSON payload restricts the import to one pool
+    (the /<lang>/conjugate page passes its own language); without it, the
+    automatic scan decides (the /cards page's button, see `_card_scan_order`).
+    An optional `verbs` list of {lang, infinitive} keeps only those candidates,
+    which is how the checklist's unticked rows stay out; anything in it that
+    isn't a candidate is ignored.
+    """
+    payload = request.get_json(silent=True) or {}
+    candidates = _card_import_candidates(payload.get("lang"))
+    chosen = payload.get("verbs")
+    if isinstance(chosen, list):
+        picked = {
+            (str(item.get("lang")), str(item.get("infinitive")))
+            for item in chosen
+            if isinstance(item, dict)
+        }
+    else:
+        picked = None
+    user_sub = _current_user_sub()
     added = []
-    for _card, verb_lang, infinitive in importable:
+    for _card, verb_lang, infinitive in candidates:
+        if picked is not None and (verb_lang, infinitive) not in picked:
+            continue
         verb = VerbCard(user_sub=user_sub, lang=verb_lang, infinitive=infinitive)
         db.session.add(verb)
         added.append(verb)
     if added:
         db.session.commit()
     return jsonify(
-        {"ok": True, "added": len(added), "verbs": [v.to_dict() for v in added]}
+        {
+            "ok": True,
+            "added": len(added),
+            "remaining": len(candidates) - len(added),
+            "verbs": [v.to_dict() for v in added],
+        }
     )
 
 
@@ -3828,7 +3915,11 @@ def _form_available(
 
 
 def _build_conjugation_hint(
-    lang_code: str, tense_key: str, person_index: int, ui_lang: str = "en"
+    lang_code: str,
+    tense_key: str,
+    person_index: int,
+    ui_lang: str = "en",
+    infinitive: str | None = None,
 ) -> dict:
     """Build the practice "Hint" excerpt for a (tense, pronoun) prompt.
 
@@ -3836,15 +3927,20 @@ def _build_conjugation_hint(
     conjugation group) with the prompted pronoun's row flagged, plus a one-line
     blurb. Forms come straight from the committed global pool, so no answer is
     leaked (unless the verb under test is itself a model verb, which just shows
-    the pattern).
+    the pattern). A verb that doesn't follow the tense's pattern (``infinitive``
+    has an override, e.g. a modal) gets its own blurb and no table, since the
+    table would teach the very thing the verb doesn't do.
     """
+    override = tense_hint_override(lang_code, tense_key, infinitive)
+    if override:
+        return {"blurb": override, "persons": [], "models": []}
     pool = _conj_pool(lang_code)
     models = []
-    for infinitive in conj_hint_model_verbs(lang_code):
-        forms = pool.get_verb_forms(infinitive) or {}
+    for model_verb in conj_hint_model_verbs(lang_code):
+        forms = pool.get_verb_forms(model_verb) or {}
         models.append(
             {
-                "infinitive": infinitive,
+                "infinitive": model_verb,
                 "forms": list(forms.get(tense_key) or []),
             }
         )
@@ -3889,6 +3985,18 @@ def _record_conjugation_stat(
     stat.times_practiced += 1
     if correct:
         stat.times_correct += 1
+
+
+def _conj_selection_has_question(
+    lang_code: str, verbs: list[VerbCard], tenses: list[str], persons: list[int]
+) -> bool:
+    """True if any (verb, tense, person) in the selection has a form to ask for."""
+    return any(
+        _form_available(lang_code, verb.infinitive, tense_key, person_index) is not None
+        for verb in verbs
+        for tense_key in tenses
+        for person_index in persons
+    )
 
 
 @app.route("/<lang_code>/conjugate/practice/start", methods=["POST"])
@@ -3961,6 +4069,17 @@ def conjugate_practice_start(lang_code):
         if not verb_ids:
             flash(get_text("conjugate_flash_need_verbs"), "info")
             return redirect(url_for("conjugate", lang_code=lang_code))
+    # Not every verb has every tense ("know" has no continuous), so a selection
+    # can be well-formed and still ask nothing. Say so here; the drill would
+    # otherwise go straight to a 0 / 0 results page.
+    session_verbs = (
+        [v for v in user_verbs if v.id in verb_ids] if verb_ids else user_verbs
+    )
+    if not _conj_selection_has_question(
+        lang_code, session_verbs, selected_tenses, persons
+    ):
+        flash(get_text("conjugate_flash_no_questions"), "info")
+        return redirect(url_for("conjugate", lang_code=lang_code))
 
     session["conjugate_practice"] = {
         "lang": lang_code,
@@ -4018,8 +4137,8 @@ def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
     The German Sie-imperative is stored with its obligatory inverted pronoun
     ("gehen Sie", "stehen Sie auf") since that's the grammatically complete
     form, but every other cell expects just the verb form — so accept the
-    pronoun-less variant too. English stores one form per cell where British
-    usage has two ("learnt", "learned"); the others are listed beside the pool.
+    pronoun-less variant too. A pool may store one form per cell where usage has
+    two (British "learnt", "learned"); it lists the others beside it.
     """
     correct = current["correct_answer"]
     answers = [correct]
@@ -4031,12 +4150,11 @@ def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
         bare = " ".join(w for w in correct.split() if w != "Sie")
         if bare:
             answers.append(bare)
-    if lang_code == "en":
-        answers.extend(
-            en_conjugations.get_form_variants(
-                current["infinitive"], current["tense_key"], correct
-            )
+    answers.extend(
+        _conj_pool(lang_code).get_form_variants(
+            current["infinitive"], current["tense_key"], correct
         )
+    )
     return answers
 
 
@@ -4105,7 +4223,11 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     # The pattern hint is an advanced-mode aid only; hardcore stays no-help.
     hint = (
         _build_conjugation_hint(
-            lang_code, current["tense_key"], current["person_index"], ui_lang
+            lang_code,
+            current["tense_key"],
+            current["person_index"],
+            ui_lang,
+            infinitive=current["infinitive"],
         )
         if (difficulty != "hardcore" and not revealed)
         else None
@@ -4116,10 +4238,14 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
         lang_code=lang_code,
         infinitive=current["infinitive"],
         pronoun=person_label(lang_code, current["person_index"]),
-        tense_label=tense_label(lang_code, current["tense_key"], ui_lang),
-        correct_answer=correct if (revealed or difficulty == "hardcore") else None,
+        tense_label=tense_label(
+            lang_code, current["tense_key"], ui_lang, infinitive=current["infinitive"]
+        ),
+        correct_answer=correct if revealed else None,
+        # The hardcore client checks an answer itself, and the reveal-retype gate
+        # does too; neither may turn away a form the server would accept.
         accepted_answers=_conj_acceptable_answers(lang_code, current)
-        if difficulty == "hardcore"
+        if (revealed or difficulty == "hardcore")
         else [],
         difficulty=difficulty,
         revealed=revealed,
@@ -4342,6 +4468,12 @@ def conjugate_validate_api():
         quiz_logic.validate_partial_answer(user_input, a, "es") for a in acceptable
     ]
     return jsonify(_pick_best_validation(results))
+
+
+@app.route("/favicon.ico")
+def favicon():
+    """The icon at the address browsers try unprompted, as for a PDF's tab."""
+    return app.send_static_file("favicon.ico")
 
 
 @app.route("/robots.txt")

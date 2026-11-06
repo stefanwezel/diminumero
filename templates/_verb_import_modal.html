@@ -1,0 +1,21 @@
+{# The checklist shown before index-card verbs are imported; its rows are built
+   by static/js/verb_import_picker.js from what the server says is importable. #}
+<div class="conjugate-popup-overlay" id="verb-import-modal" hidden role="dialog" aria-modal="true"
+     aria-labelledby="verb-import-modal-title">
+    <div class="conjugate-popup verb-import-popup">
+        <h3 class="conjugate-popup-title" id="verb-import-modal-title">{{ get_text('conjugate_import_pick_title') }}</h3>
+        <p class="conjugate-popup-body">{{ get_text('conjugate_import_pick_hint') }}</p>
+        <form id="verb-import-form" autocomplete="off">
+            <ul class="verb-import-list" id="verb-import-list"></ul>
+            <div class="conjugate-sync-buttons">
+                <button type="button" class="btn btn-secondary" id="verb-import-cancel">
+                    {{ get_text('cards_import_cancel_btn') }}
+                </button>
+                <button type="submit" class="btn btn-primary" id="verb-import-confirm">
+                    {{ get_text('conjugate_import_pick_confirm_btn') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/verb_import_picker.js') }}" defer></script>
