@@ -3,8 +3,8 @@
 import json
 from collections import deque
 from datetime import datetime, timedelta, timezone
-from functools import wraps
-from urllib.parse import quote_plus, urlencode
+from functools import lru_cache, wraps
+from urllib.parse import parse_qsl, quote_plus, urlencode, urlsplit, urlunsplit
 
 from flask import (
     Flask,
@@ -227,11 +227,137 @@ def login_required(view):
     return wrapped
 
 
+# ===== UI language in the URL =====
+# The UI language lives in the session, and a crawler has no session, so a search
+# engine could only ever see a page's English rendering. `?hl=de` gives each
+# translation an address of its own. The English version keeps the plain URL,
+# which every link already out there points at. Being in the URL, the language
+# can't be cookie-dependent for a crawler, and being copied to the session, it
+# stays with a person who lands from a search result and clicks on.
+
+UI_LANGUAGE_PARAM = "hl"
+
+# UI languages with their own URLs, default first. A partial locale is mostly
+# English under another name, so it can be chosen but search engines aren't told
+# about it. Dropping a code from PARTIAL_UI_LANGUAGES publishes it here too.
+URL_UI_LANGUAGES = (
+    DEFAULT_UI_LANGUAGE,
+    *sorted(SUPPORTED_UI_LANGUAGES - PARTIAL_UI_LANGUAGES - {DEFAULT_UI_LANGUAGE}),
+)
+
+# The pages a search engine is pointed at. Quizzes, results and cards are bound
+# to a session or a login and have no language versions to offer.
+LOCALIZED_ENDPOINTS = frozenset(
+    {
+        "about",
+        "conjugation_cheat_sheet",
+        "imprint",
+        "index",
+        "learn",
+        "learn_conjugations",
+        "listen_modes",
+        "mode_selection",
+        "number_modes",
+        "number_reference",
+        "privacy",
+        "worksheet",
+    }
+)
+
+# A link passing any other value is a preset, a numeral-system choice or a printed
+# sheet's address, none of which is simply "this page in that language".
+_PAGE_URL_VALUES = frozenset({"lang_code", "range_slug"})
+
+
+@lru_cache(maxsize=1)
+def _template_names():
+    return frozenset(app.jinja_env.list_templates())
+
+
+def _page_versions(endpoint, lang_code=None):
+    """The UI languages a page is really translated into, default first.
+
+    Derived from what exists, so adding a template publishes its URL, and a page
+    is never advertised in a language where only the buttons would change. Empty
+    for a page search engines aren't pointed at.
+    """
+    if endpoint not in LOCALIZED_ENDPOINTS:
+        return ()
+    if endpoint in ("learn", "learn_conjugations"):
+        # learn_es_de.html, learn_conjugations_es_de.html
+        names = _template_names()
+        return tuple(
+            ui_lang
+            for ui_lang in URL_UI_LANGUAGES
+            if f"{endpoint}_{lang_code}_{ui_lang}.html" in names
+        )
+    if endpoint == "conjugation_cheat_sheet":
+        # Tense names and explanations exist in English and in the language
+        # itself. In any other UI language its tables would be headed in English.
+        return tuple(
+            ui_lang
+            for ui_lang in URL_UI_LANGUAGES
+            if ui_lang in (DEFAULT_UI_LANGUAGE, lang_code)
+        )
+    return URL_UI_LANGUAGES
+
+
+def _localized_url(path, ui_lang):
+    """The absolute address of a page's version in one UI language."""
+    url = SITE_URL.rstrip("/") + path
+    if ui_lang and ui_lang != DEFAULT_UI_LANGUAGE:
+        url += f"?{UI_LANGUAGE_PARAM}={ui_lang}"
+    return url
+
+
+def _canonical_url():
+    """This page's own address: its version in the URL's language, if it has one.
+
+    Each language version has to name itself as canonical. One pointing at the
+    English version tells a search engine to drop the translation.
+    """
+    url_language = g.get("url_ui_language")
+    versions = _page_versions(
+        request.endpoint, (request.view_args or {}).get("lang_code")
+    )
+    return _localized_url(
+        request.path, url_language if url_language in versions else None
+    )
+
+
 @app.before_request
 def initialize_ui_language():
-    """Set default UI language on first visit if not already in session."""
-    if "language" not in session:
+    """Take the UI language from `?hl=` if the URL names one, else the session."""
+    requested = request.args.get(UI_LANGUAGE_PARAM)
+    g.url_ui_language = (
+        requested
+        if requested in URL_UI_LANGUAGES and requested != DEFAULT_UI_LANGUAGE
+        else None
+    )
+    if requested in SUPPORTED_UI_LANGUAGES:
+        # Only when it differs: an unchanged session sets no cookie, which is what
+        # lets a returning visitor's response stay in a shared cache.
+        if session.get("language") != requested:
+            session["language"] = requested
+    elif "language" not in session:
         session["language"] = DEFAULT_UI_LANGUAGE
+
+
+@app.url_defaults
+def keep_ui_language_in_links(endpoint, values):
+    """Point a page at ?hl=de to the German versions of the pages it links to.
+
+    A crawler keeps no session. Without this, every link on a German page would
+    lead it to English, and the German pages would be reachable only through the
+    sitemap. People don't depend on it: their language is in the session.
+    """
+    url_language = g.get("url_ui_language")
+    if not url_language or UI_LANGUAGE_PARAM in values:
+        return
+    if not _PAGE_URL_VALUES.issuperset(values):
+        return
+    if url_language in _page_versions(endpoint, values.get("lang_code")):
+        values[UI_LANGUAGE_PARAM] = url_language
 
 
 @app.before_request
@@ -364,32 +490,90 @@ OG_LOCALE_MAP = {
 }
 
 
+# What a page is called in a breadcrumb, in the UI language.
+BREADCRUMB_TEXT_KEYS = {
+    "about": "footer_about",
+    "imprint": "footer_imprint",
+    "privacy": "footer_privacy",
+    "learn": "learn_nav_button",
+    "learn_conjugations": "learn_nav_conjugations_button",
+    "listen_modes": "home_audio_mode_title",
+    "number_modes": "menu_numbers_title",
+    "worksheet": "worksheet_title",
+}
+
+
 @app.context_processor
 def inject_seo_context():
     """Inject SEO-related variables into all templates."""
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    base = SITE_URL.rstrip("/")
-    canonical_url = base + request.path
+    canonical_url = _canonical_url()
+    url_language = g.get("url_ui_language")
+    has_quiz_params = _has_preset_params()
+    page_lang_code = (request.view_args or {}).get("lang_code")
+    versions = _page_versions(request.endpoint, page_lang_code)
+
+    # A drill started from a preset link is noindex, so it has no versions to
+    # offer, and switching language there must not go through a URL that restarts it.
+    offered = () if has_quiz_params else versions
+    hreflang_links = []
+    if len(offered) > 1:
+        hreflang_links = [
+            {"code": code, "url": _localized_url(request.path, code)}
+            for code in offered
+        ]
+        hreflang_links.append(
+            {"code": "x-default", "url": _localized_url(request.path, None)}
+        )
+    # Plain links rather than /set_language/, which robots.txt blocks and which
+    # relies on the Referer header to find its way back.
+    page_args = {
+        key: value for key, value in request.args.items() if key != UI_LANGUAGE_PARAM
+    }
+    ui_language_urls = {
+        code: url_for(
+            request.endpoint,
+            **(request.view_args or {}),
+            **page_args,
+            **{UI_LANGUAGE_PARAM: code},
+        )
+        for code in offered
+    }
 
     # og:locale
     og_locale = OG_LOCALE_MAP.get(ui_language, "en_US")
-    og_locale_alternates = [v for k, v in OG_LOCALE_MAP.items() if k != ui_language]
+    og_locale_alternates = [
+        OG_LOCALE_MAP[code]
+        for code in offered
+        if code != ui_language and code in OG_LOCALE_MAP
+    ]
 
     # Breadcrumbs
-    breadcrumbs = [{"name": "Home", "url": f"{base}/"}]
+    breadcrumbs = [{"name": "diminumero", "url": _localized_url("/", url_language)}]
     path = request.path.strip("/")
     if path:
         parts = path.split("/")
         if parts[0] in AVAILABLE_LANGUAGES:
-            lang_name = AVAILABLE_LANGUAGES[parts[0]].get("name", parts[0])
-            breadcrumbs.append({"name": lang_name, "url": f"{base}/{parts[0]}"})
+            lang_name = get_language_ui_name(parts[0], ui_language)
+            breadcrumbs.append(
+                {"name": lang_name, "url": _localized_url(f"/{parts[0]}", url_language)}
+            )
             if len(parts) >= 2:
                 sub = "/".join(parts[1:])
                 # A page may name itself; the URL only makes a passable fallback.
-                leaf = g.get("breadcrumb_leaf") or sub.replace("/", " - ").title()
-                breadcrumbs.append({"name": leaf, "url": f"{base}/{path}"})
-        elif parts[0] in ("about", "privacy", "imprint"):
-            breadcrumbs.append({"name": parts[0].title(), "url": f"{base}/{parts[0]}"})
+                leaf = g.get("breadcrumb_leaf")
+                if not leaf and request.endpoint in BREADCRUMB_TEXT_KEYS:
+                    leaf = get_text(BREADCRUMB_TEXT_KEYS[request.endpoint])
+                breadcrumbs.append(
+                    {
+                        "name": leaf or sub.replace("/", " - ").title(),
+                        "url": canonical_url,
+                    }
+                )
+        elif parts[0] in BREADCRUMB_TEXT_KEYS:
+            breadcrumbs.append(
+                {"name": get_text(BREADCRUMB_TEXT_KEYS[parts[0]]), "url": canonical_url}
+            )
 
     return {
         "ui_language": ui_language,
@@ -399,6 +583,8 @@ def inject_seo_context():
         "ui_language_partial": ui_language in PARTIAL_UI_LANGUAGES,
         "site_url": SITE_URL,
         "canonical_url": canonical_url,
+        "hreflang_links": hreflang_links,
+        "ui_language_urls": ui_language_urls,
         "og_locale": og_locale,
         "og_locale_alternates": og_locale_alternates,
         "breadcrumbs": breadcrumbs,
@@ -409,7 +595,7 @@ def inject_seo_context():
         # Any URL carrying quiz params is a duplicate of the clean route as
         # far as a crawler is concerned: canonical_url above already drops the
         # query string, and base.html adds noindex when this is set.
-        "has_quiz_params": _has_preset_params(),
+        "has_quiz_params": has_quiz_params,
     }
 
 
@@ -1496,8 +1682,21 @@ def set_language(lang):
     """Set the UI language preference (not learning language)."""
     if lang in SUPPORTED_UI_LANGUAGES:
         session["language"] = lang
-    # Redirect back to the referring page or index
-    return redirect(request.referrer or url_for("index"))
+    # Redirect back to the referring page or index. Not with its ?hl= still on:
+    # that would switch straight back to the language just left.
+    if request.referrer:
+        return redirect(_without_ui_language_param(request.referrer))
+    return redirect(url_for("index"))
+
+
+def _without_ui_language_param(url):
+    parts = urlsplit(url)
+    query = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key != UI_LANGUAGE_PARAM
+    ]
+    return urlunsplit(parts._replace(query=urlencode(query)))
 
 
 def _results_redirect(lang_code):
@@ -2447,7 +2646,7 @@ def _reference_links(lang_code, exclude=None):
                 "label": text("ref_link_cheat_sheet"),
             }
         )
-    return [link for link in links if link["url"] != exclude]
+    return [link for link in links if link["url"].split("?")[0] != exclude]
 
 
 def _reference_page_links(lang_code):
@@ -2478,7 +2677,7 @@ def _reference_jsonld(name, description, teaches):
         "@type": "LearningResource",
         "name": name,
         "description": description,
-        "url": SITE_URL.rstrip("/") + request.path,
+        "url": _canonical_url(),
         "learningResourceType": "reference",
         "educationalLevel": "Beginner",
         "isAccessibleForFree": True,
@@ -4844,40 +5043,67 @@ def robots_txt():
     return Response("\n".join(lines), mimetype="text/plain")
 
 
-@app.route("/sitemap.xml")
-def sitemap_xml():
-    """Serve sitemap.xml for search engine crawlers."""
-    base = SITE_URL.rstrip("/")
-    lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    urls = [f"{base}/"]
+def _sitemap_pages():
+    """(path, endpoint, lang_code) for every page search engines are pointed at."""
+    pages = [("/", "index", None)]
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
-            urls.append(f"{base}/{lang_code}")
+            pages.append((f"/{lang_code}", "mode_selection", lang_code))
             # The worksheet setup form (no params) is a real landing page.
-            urls.append(f"{base}/{lang_code}/worksheet")
+            pages.append((f"/{lang_code}/worksheet", "worksheet", lang_code))
             for slug in get_reference_slugs(lang_code):
-                urls.append(f"{base}/{lang_code}/numbers/{slug}")
+                pages.append(
+                    (f"/{lang_code}/numbers/{slug}", "number_reference", lang_code)
+                )
     for lc in get_languages_with_conjugation():
-        urls.append(f"{base}/{lc}/conjugation-cheat-sheet")
+        pages.append((f"/{lc}/conjugation-cheat-sheet", "conjugation_cheat_sheet", lc))
     for lc in get_languages_with_audio_mode():
         # The listening overview is a real landing page; the drill it starts
         # (a parameterised URL, noindex) is not.
-        urls.append(f"{base}/{lc}/listening")
+        pages.append((f"/{lc}/listening", "listen_modes", lc))
     for lc in get_languages_with_learn_materials():
-        urls.append(f"{base}/{lc}/learn")
+        pages.append((f"/{lc}/learn", "learn", lc))
     for lc in get_languages_with_conjugation_materials():
-        urls.append(f"{base}/{lc}/learn/conjugations")
-    urls.append(f"{base}/about")
-    urls.append(f"{base}/privacy")
-    urls.append(f"{base}/imprint")
+        pages.append((f"/{lc}/learn/conjugations", "learn_conjugations", lc))
+    pages.append(("/about", "about", None))
+    pages.append(("/privacy", "privacy", None))
+    pages.append(("/imprint", "imprint", None))
+    return pages
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    """Serve sitemap.xml: every language version, each listing all the others.
+
+    The same language annotations as each page's <head>. They are what lets a
+    search engine find the ?hl= addresses and treat them as one page's versions.
+    """
+    lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_lines.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for loc in urls:
-        xml_lines.append("  <url>")
-        xml_lines.append(f"    <loc>{loc}</loc>")
-        xml_lines.append(f"    <lastmod>{lastmod}</lastmod>")
-        xml_lines.append("  </url>")
+    xml_lines.append(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+    )
+    for path, endpoint, lang_code in _sitemap_pages():
+        versions = _page_versions(endpoint, lang_code)
+        alternates = []
+        if len(versions) > 1:
+            alternates = [
+                f'    <xhtml:link rel="alternate" hreflang="{code}" '
+                f'href="{_localized_url(path, code)}"/>'
+                for code in versions
+            ]
+            alternates.append(
+                '    <xhtml:link rel="alternate" hreflang="x-default" '
+                f'href="{_localized_url(path, None)}"/>'
+            )
+        for ui_lang in versions:
+            xml_lines.append("  <url>")
+            xml_lines.append(f"    <loc>{_localized_url(path, ui_lang)}</loc>")
+            xml_lines.append(f"    <lastmod>{lastmod}</lastmod>")
+            xml_lines.extend(alternates)
+            xml_lines.append("  </url>")
     xml_lines.append("</urlset>")
     return Response("\n".join(xml_lines), mimetype="application/xml")
 

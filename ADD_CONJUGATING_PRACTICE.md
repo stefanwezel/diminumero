@@ -214,7 +214,8 @@ means:
 The language then also gets `/<code>/conjugation-cheat-sheet` with no further work:
 it reads the first five `tenses`, `hint_model_verbs` and the pool's frequency order, and
 joins the sitemap and the cross-links by itself. Keep the JSON in frequency order, because
-the "20 most common verbs" on that page are simply the first 20.
+the "20 most common verbs" on that page are simply the first 20. It is published in English and in the
+language itself (`?hl=<code>`), since those are the two languages with `label_native`/`hint_native` tense text.
 
 No model or route changes are needed — `VerbCard`/`ConjugationStat` already carry
 `lang` and the routes are namespaced.

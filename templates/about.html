@@ -14,7 +14,7 @@
     "@type": "Organization",
     "name": "diminumero",
     "url": "{{ site_url }}",
-    "description": "{{ get_text('meta_desc_about') }}",
+    "description": {{ get_text('meta_desc_about')|tojson }},
     "logo": "{{ url_for('static', filename='logo-512.png', _external=True) }}"
 }
 </script>

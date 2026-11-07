@@ -150,7 +150,10 @@ All SEO-relevant strings are driven by `translations.py` keys, so once Step 2 is
 - `og:title` / `og:description` — same keys via template blocks
 - `<html lang="…">` — set automatically from `ui_language` context variable
 - `<html dir="…">` — set automatically from `ui_dir` context variable (RTL handled)
-- `<link rel="canonical">` — always the page's canonical URL, language-agnostic
+- `<link rel="canonical">` — each language version names itself (`?hl=<code>`)
+- `<link rel="alternate" hreflang>` and the sitemap — generated from `URL_UI_LANGUAGES` in `app.py`
+
+A complete locale gets its own URLs automatically. A locale in `PARTIAL_UI_LANGUAGES` can be chosen but isn't published to search engines, because it's mostly English under another name, so removing it from that set is what publishes it. `tests/test_ui_language_urls.py` then checks every page in the new language, including that its titles are really translated.
 
 ---
 

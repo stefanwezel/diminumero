@@ -78,10 +78,12 @@ def meta_robots(html):
 
 
 def sitemap_paths():
+    """The default-language pages. test_ui_language_urls.py sweeps the rest."""
     xml = cold_get("/sitemap.xml").get_data(as_text=True)
-    return [
+    paths = [
         re.sub(r"^https?://[^/]+", "", u) for u in re.findall(r"<loc>(.*?)</loc>", xml)
     ]
+    return [path for path in paths if "?hl=" not in path]
 
 
 class TestGeneratedForms:

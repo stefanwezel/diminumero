@@ -71,6 +71,8 @@ There are **no `app.py` edits**. Set one flag on the language's entry in `langua
 
 So flipping the flag wires up all four call sites at once.
 
+Each translated template also publishes its own address. `learn_<code>_de.html` existing is what makes `/<code>/learn?hl=de` appear in the sitemap and in the page's `hreflang` links, with nothing else to change. A language with only the English template is simply not offered in other languages.
+
 ## Template Structure
 
 Each learn template extends `base.html` and follows this structure:

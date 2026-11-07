@@ -80,7 +80,7 @@
         <!-- Shareable preset link. Same contract as the number config screen,
              without the mode picker: this page shares listening drills. -->
         <div class="preset-share" id="preset-share"
-             data-base-url="{{ url_for('listen_modes', lang_code=lang_code, _external=True) }}"
+             data-base-url="{{ url_for('listen_modes', lang_code=lang_code, hl=None, _external=True) }}"
              data-deck-min="{{ deck_min }}"
              data-deck-max="{{ deck_max }}">
             <h2 class="preset-share-title">{{ get_text('preset_share_title') }}</h2>
