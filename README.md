@@ -20,7 +20,7 @@ An interactive web application to practice number translations in multiple langu
 - **1,000 Numbers Per Language**: From 1 to millions with correct grammar for each language
 - **Smart Weighting**: Configurable order-of-magnitude dial (5 levels) controls how often large numbers appear — from mostly small numbers to uniform across all sizes
 - **Four Quiz Modes**: Easy (multiple choice), Advanced (text input with live validation), Hardcore (stricter validation), and Listening (hear a spoken number and type the digits)
-- **Listening Practice**: For audio-enabled languages (Spanish, German, French, Japanese, Portuguese, Swedish), each number is voiced by a pool of ElevenLabs voices; the quiz autoplays the clip and you type what you hear
+- **Listening Practice**: For audio-enabled languages (Spanish, German, French, Japanese, Portuguese, Swedish, English, Danish), each number is voiced by a pool of ElevenLabs voices; the quiz autoplays the clip and you type what you hear
 - **Speed Bonus & Splash Rewards**: Finishing fast (under a per-mode time threshold) or perfectly triggers a celebratory overlay on the results page
 - **Index Cards**: Sign in with Auth0 to create your own free-form vocabulary cards, practice them with the same word-by-word validator the number quiz uses, sort and edit them in place, and share whole decks via a link (recipients see a dedup preview before importing)
 - **Per-Card Scoring & Dashboard**: A rolling 10-attempt score per card powers a foldable performance dashboard (totals, accuracy, distribution chart, weakest cards) plus a one-click "Practice weak cards" CTA that pre-fills a hardcore back→front session over cards scoring below 50%
@@ -97,7 +97,7 @@ diminumero/
 │   ├── stress_test.py
 │   └── analyze_stress_test.py
 └── static/
-    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv, en)
+    ├── audio/                   # Pre-generated number MP3s per language (es, de, fr, ja, pt, sv, en, da)
     ├── css/
     │   ├── style.css            # Default dark-purple palette
     │   └── style-classic.css    # Classic light theme
@@ -135,7 +135,7 @@ diminumero/
 Same as Advanced mode but with stricter validation requirements for an extra challenge.
 
 ### Listening Mode (Audio-enabled languages)
-1. **Start Listening**: Pick an audio-enabled language (Spanish, German, French, Japanese, Portuguese, Swedish) and choose Listening
+1. **Start Listening**: Pick an audio-enabled language (Spanish, German, French, Japanese, Portuguese, Swedish, English, Danish) and choose Listening
 2. **Hear the Number**: A pre-generated clip autoplays, voiced by a rotating pool of ElevenLabs voices; replay it as often as you like
 3. **Type the Digits**: Enter what you heard as a number — your input is reduced to digits before checking
 4. **Reveal**: Stuck? Reveal the spelled-out answer, then advance to the next clip

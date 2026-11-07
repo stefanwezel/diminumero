@@ -116,6 +116,16 @@ VOICE_POOLS = {
         "qSeXEcewz7tA0Q0qk9fH",
         "hU1ratPhBTZNviWitzAh",
     ],
+    "da": [
+        "KBeBDGz4Iy9bbBGnfjZq",
+        "vwuB7LB3p3SJ4QCWFIY7",
+        "dwnjYQ4toNcqZ7MYsbQA",
+        "RBQdnLdc4yI3og0Z9TQL",
+        "sL4FgENCDCmms8byozKz",
+        "C43bq5qXRueL1cBQEOt3",
+        "KLwMtB9otYg9CFf7AUWc",
+        "uRJPrP7KGe5HRKmQQdYf",
+    ],
 }
 
 
@@ -205,6 +215,10 @@ def main() -> None:
                 text=f"{text}.",
                 model_id=MODEL_ID,
                 output_format=OUTPUT_FORMAT,
+                # A number word alone gives the model almost nothing to detect
+                # the language from, and many are words elsewhere: Danish
+                # "fire" (4) and "to" (2) would otherwise risk English readings.
+                language_code=args.lang,
             )
             with open(out_path, "wb") as f:
                 for chunk in audio:
