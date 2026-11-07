@@ -9,6 +9,7 @@ from urllib.parse import quote_plus, urlencode
 from flask import (
     Flask,
     Response,
+    abort,
     g,
     has_request_context,
     render_template,
@@ -69,6 +70,12 @@ from languages import (
     resolve_number_system,
 )
 from languages.notes_loader import get_notes
+from languages.number_reference import (
+    REFERENCE_RANGES,
+    get_reference_numbers,
+    get_reference_slugs,
+    render_pattern,
+)
 from translations import TRANSLATIONS
 from conjugation_config import (
     CONJ_QUESTIONS_DEFAULT,
@@ -321,7 +328,11 @@ def set_cache_headers(response):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=600"
-    elif "/learn" in path:
+    elif (
+        "/learn" in path
+        or "/numbers/" in path
+        or path.endswith("/conjugation-cheat-sheet")
+    ):
         response.headers["Cache-Control"] = "public, max-age=3600"
     else:
         response.headers["Cache-Control"] = "public, max-age=600"
@@ -374,9 +385,9 @@ def inject_seo_context():
             breadcrumbs.append({"name": lang_name, "url": f"{base}/{parts[0]}"})
             if len(parts) >= 2:
                 sub = "/".join(parts[1:])
-                breadcrumbs.append(
-                    {"name": sub.replace("/", " - ").title(), "url": f"{base}/{path}"}
-                )
+                # A page may name itself; the URL only makes a passable fallback.
+                leaf = g.get("breadcrumb_leaf") or sub.replace("/", " - ").title()
+                breadcrumbs.append({"name": leaf, "url": f"{base}/{path}"})
         elif parts[0] in ("about", "privacy", "imprint"):
             breadcrumbs.append({"name": parts[0].title(), "url": f"{base}/{parts[0]}"})
 
@@ -721,6 +732,7 @@ def mode_selection(lang_code):
         has_conjugation=has_conjugation,
         has_conjugation_materials=has_conjugation_materials,
         number_systems=_number_system_context(lang_code, number_system),
+        reference_links=_reference_links(lang_code),
     )
 
 
@@ -969,6 +981,7 @@ def number_modes(lang_code):
         # A deck that lives entirely under 100 weights every magnitude level
         # identically, so the dial would be a control that does nothing.
         show_magnitude=quiz_logic.spans_multiple_magnitudes(numbers),
+        reference_links=_reference_links(lang_code),
     )
 
 
@@ -2043,6 +2056,7 @@ def listen_modes(lang_code):
         deck_max=max(playable),
         magnitude_level=session.get("magnitude_level", 1),
         show_magnitude=quiz_logic.spans_multiple_magnitudes(playable),
+        reference_links=_reference_links(lang_code),
     )
 
 
@@ -2356,13 +2370,19 @@ def learn(lang_code):
 
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     template = f"learn_{lang_code}_{ui_lang}.html"
+    # The language comes from the URL, not the session: a crawler has no session,
+    # and get_text would otherwise title every one of these pages "Spanish".
+    context = {
+        "lang_code": lang_code,
+        "get_text": _text_for_language(lang_code),
+        "reference_links": _reference_links(lang_code),
+    }
 
     # Fallback to English if template doesn't exist
     try:
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(template, **context)
     except jinja2.TemplateNotFound:
-        template = f"learn_{lang_code}_en.html"
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(f"learn_{lang_code}_en.html", **context)
 
 
 @app.route("/<lang_code>/learn/conjugations")
@@ -2377,13 +2397,335 @@ def learn_conjugations(lang_code):
 
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     template = f"learn_conjugations_{lang_code}_{ui_lang}.html"
+    context = {
+        "lang_code": lang_code,
+        "get_text": _text_for_language(lang_code),
+        "reference_links": _reference_links(lang_code),
+    }
 
     # Fallback to English if the UI-language variant doesn't exist.
     try:
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(template, **context)
     except jinja2.TemplateNotFound:
-        template = f"learn_conjugations_{lang_code}_en.html"
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(f"learn_conjugations_{lang_code}_en.html", **context)
+
+
+# ===== Reference pages =====
+# Landing pages for what learners search for: "French numbers 1-100", "how to
+# count to 1,000 in Spanish", "German verb conjugation cheat sheet". Anonymous
+# GETs whose language comes from the URL. They read no session state and write
+# none, so visiting one can't disturb a drill that's in progress. The self-test on
+# each page runs in the browser from the page's own tables, and its links into
+# the real drills are shareable presets, so no route to practice needs an account.
+
+REFERENCE_LINK_KEYS = {"1-100": "ref_link_100", "1-1000": "ref_link_1000"}
+
+# Filling a number table with a compound nobody would pick is no way to show how
+# compounds work, so "putting them together" is a fixed, varied handful.
+REFERENCE_EXAMPLE_NUMBERS = (101, 110, 125, 347, 562, 999)
+
+# Tenses come from each language's usefulness ranking and verbs from its pool's
+# frequency order, so "cheat sheet" means the same thing in every language.
+CONJ_SHEET_TENSES = 5
+CONJ_SHEET_VERBS = 20
+
+
+def _reference_links(lang_code, exclude=None):
+    """Links from a page into this language's reference pages."""
+    text = _text_for_language(lang_code)
+    links = [
+        {
+            "url": url_for("number_reference", lang_code=lang_code, range_slug=slug),
+            "label": text(REFERENCE_LINK_KEYS[slug]),
+        }
+        for slug in get_reference_slugs(lang_code)
+    ]
+    if lang_code in get_languages_with_conjugation():
+        links.append(
+            {
+                "url": url_for("conjugation_cheat_sheet", lang_code=lang_code),
+                "label": text("ref_link_cheat_sheet"),
+            }
+        )
+    return [link for link in links if link["url"] != exclude]
+
+
+def _reference_page_links(lang_code):
+    """Everything a reference page points on to, itself excluded."""
+    text = _text_for_language(lang_code)
+    links = []
+    if lang_code in get_languages_with_learn_materials():
+        links.append(
+            {
+                "url": url_for("learn", lang_code=lang_code),
+                "label": text("ref_link_learn"),
+            }
+        )
+    links.extend(_reference_links(lang_code, exclude=request.path))
+    links.append(
+        {
+            "url": url_for("worksheet", lang_code=lang_code),
+            "label": text("worksheet_title"),
+        }
+    )
+    return links
+
+
+def _reference_jsonld(name, description, teaches):
+    """schema.org data for a reference page, serialized by the template's tojson."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": name,
+        "description": description,
+        "url": SITE_URL.rstrip("/") + request.path,
+        "learningResourceType": "reference",
+        "educationalLevel": "Beginner",
+        "isAccessibleForFree": True,
+        "inLanguage": session.get("language", DEFAULT_UI_LANGUAGE),
+        "teaches": teaches,
+        "provider": {
+            "@type": "Organization",
+            "name": "diminumero",
+            "url": SITE_URL,
+        },
+    }
+
+
+def _reference_second_system(lang_code, low, high):
+    """A second ready numeral system that covers the range, for its own column."""
+    default = get_default_number_system(lang_code)
+    for system in get_ready_number_systems(lang_code):
+        if system["key"] == default:
+            continue
+        deck = get_language_numbers(lang_code, system["key"])
+        if all(number in deck for number in range(low, high + 1)):
+            return system["key"], deck
+    return None, {}
+
+
+@app.route("/<lang_code>/numbers/<range_slug>")
+def number_reference(lang_code, range_slug):
+    """A complete number list for a language: /es/numbers/1-100 and 1-1000."""
+    if not is_language_ready(lang_code):
+        abort(404)
+    words = get_reference_numbers(lang_code, range_slug)
+    if words is None:
+        abort(404)
+
+    text = _text_for_language(lang_code)
+    low, high = REFERENCE_RANGES[range_slug]
+    is_long_list = high > 100
+
+    audio_numbers = (
+        _available_audio_numbers(lang_code)
+        if lang_code in get_languages_with_audio_mode()
+        else set()
+    )
+    playable_in_range = any(number in audio_numbers for number in words)
+
+    second_system, second_words = _reference_second_system(lang_code, low, high)
+    columns = [text("ref_col_word")]
+    if second_system:
+        default_system = get_default_number_system(lang_code)
+        columns = [
+            _number_system_label(lang_code, default_system),
+            _number_system_label(lang_code, second_system),
+        ]
+
+    def rows(numbers):
+        return [
+            {
+                "number": number,
+                "word": words[number],
+                "second_word": second_words.get(number),
+                "audio": number in audio_numbers,
+            }
+            for number in numbers
+        ]
+
+    def hundred_blocks(step):
+        return [
+            {
+                "caption": f"{start}–{start + step - 1}",
+                "rows": rows(range(start, start + step)),
+            }
+            for start in range(low, high + 1, step)
+        ]
+
+    if is_long_list:
+        title = text("ref_1000_title")
+        description = text("ref_1000_desc")
+        heading = text("ref_1000_h1")
+        building_blocks = [
+            {"caption": "1–20", "rows": rows(range(1, 21))},
+            {"caption": text("ref_tens_caption"), "rows": rows(range(20, 100, 10))},
+            {
+                "caption": text("ref_hundreds_caption"),
+                "rows": rows(range(100, 1001, 100)),
+            },
+            {
+                "caption": text("ref_examples_caption"),
+                "rows": rows(REFERENCE_EXAMPLE_NUMBERS),
+            },
+        ]
+        full_list = hundred_blocks(100)
+    else:
+        suffix = "_audio" if playable_in_range else ""
+        title = text(f"ref_100_title{suffix}")
+        description = text(f"ref_100_desc{suffix}")
+        heading = text("ref_100_h1")
+        building_blocks = []
+        full_list = hundred_blocks(10)
+
+    g.breadcrumb_leaf = heading
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+
+    other_languages = [
+        {
+            "url": url_for("number_reference", lang_code=code, range_slug=range_slug),
+            "label": text(f"lang_{code}_name"),
+        }
+        for code, info in AVAILABLE_LANGUAGES.items()
+        if code != lang_code
+        and info.get("ready")
+        and range_slug in get_reference_slugs(code)
+    ]
+
+    return render_template(
+        "number_reference.html",
+        lang_code=lang_code,
+        get_text=text,
+        page_title=title,
+        page_description=description,
+        page_heading=heading,
+        jsonld=_reference_jsonld(
+            heading,
+            description,
+            f"{AVAILABLE_LANGUAGES[lang_code]['name']} numbers {range_slug}",
+        ),
+        pattern=render_pattern(lang_code, range_slug, words),
+        pattern_translated=ui_lang == "en",
+        columns=columns,
+        building_blocks=building_blocks,
+        full_list=full_list,
+        full_list_heading=text(
+            "ref_all_heading" if is_long_list else "ref_list_heading"
+        ),
+        is_long_list=is_long_list,
+        audio_base=(
+            f"{app.static_url_path}/audio/{lang_code}/" if playable_in_range else None
+        ),
+        has_audio_column=playable_in_range,
+        notes=get_notes(
+            lang_code, numbers=range(low, high + 1), when="reference", ui_lang=ui_lang
+        ),
+        drill_url=url_for(
+            "number_modes", lang_code=lang_code, mode="advanced", range=range_slug
+        ),
+        listening_url=(
+            url_for("listen_modes", lang_code=lang_code, range=range_slug)
+            if playable_in_range
+            else None
+        ),
+        page_links=_reference_page_links(lang_code),
+        other_languages=other_languages,
+        other_languages_heading=text(
+            "ref_other_languages_1000" if is_long_list else "ref_other_languages_100"
+        ),
+    )
+
+
+def _conj_sheet_verb(lang_code, infinitive, ui_lang):
+    """One verb's table: a row per person, a column per tense it actually has."""
+    pool = _conj_pool(lang_code)
+    forms = pool.get_verb_forms(infinitive)
+    # A modal has no continuous or future; a column of dashes teaches nothing.
+    tenses = [
+        tense["key"]
+        for tense in conj_tenses(lang_code)[:CONJ_SHEET_TENSES]
+        if any(forms.get(tense["key"]) or [])
+    ]
+    labels = [tense_label(lang_code, key, ui_lang, infinitive) for key in tenses]
+
+    rows = []
+    for person in conj_persons(lang_code):
+        cells = []
+        for key, label in zip(tenses, labels):
+            form = forms[key][person["index"]]
+            cells.append(
+                {
+                    "form": form,
+                    "question": f"{infinitive} · {person['label']} · {label}",
+                    "alternatives": "|".join(
+                        pool.get_form_variants(infinitive, key, form)
+                    )
+                    if form
+                    else "",
+                }
+            )
+        rows.append({"person": person["label"], "cells": cells})
+
+    particle = conj_infinitive_particle(lang_code)
+    return {
+        "infinitive": infinitive,
+        "heading": f"{particle} {infinitive}" if particle else infinitive,
+        "tenses": labels,
+        "rows": rows,
+    }
+
+
+@app.route("/<lang_code>/conjugation-cheat-sheet")
+def conjugation_cheat_sheet(lang_code):
+    """The most useful tenses of the most common verbs, on one printable page."""
+    if lang_code not in get_languages_with_conjugation():
+        abort(404)
+
+    text = _text_for_language(lang_code)
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    pool = _conj_pool(lang_code)
+    model_verbs = [v for v in conj_hint_model_verbs(lang_code) if pool.verb_exists(v)]
+    common_verbs = pool.top_verbs(CONJ_SHEET_VERBS, exclude=set(model_verbs))
+
+    title = text("conj_sheet_title")
+    description = text("conj_sheet_desc")
+    heading = text("conj_sheet_h1")
+    g.breadcrumb_leaf = heading
+
+    other_languages = [
+        {
+            "url": url_for("conjugation_cheat_sheet", lang_code=code),
+            "label": text(f"lang_{code}_name"),
+        }
+        for code in get_languages_with_conjugation()
+        if code != lang_code
+    ]
+
+    return render_template(
+        "conjugation_cheat_sheet.html",
+        lang_code=lang_code,
+        get_text=text,
+        page_title=title,
+        page_description=description,
+        page_heading=heading,
+        jsonld=_reference_jsonld(
+            heading,
+            description,
+            f"{AVAILABLE_LANGUAGES[lang_code]['name']} verb conjugation",
+        ),
+        tense_summary=[
+            {
+                "label": tense_label(lang_code, tense["key"], ui_lang),
+                "hint": tense_hint(lang_code, tense["key"], ui_lang),
+            }
+            for tense in conj_tenses(lang_code)[:CONJ_SHEET_TENSES]
+        ],
+        model_verbs=[_conj_sheet_verb(lang_code, v, ui_lang) for v in model_verbs],
+        common_verbs=[_conj_sheet_verb(lang_code, v, ui_lang) for v in common_verbs],
+        practice_url=url_for("conjugate", lang_code=lang_code),
+        page_links=_reference_page_links(lang_code),
+        other_languages=other_languages,
+    )
 
 
 @app.route("/login")
@@ -4513,6 +4855,10 @@ def sitemap_xml():
             urls.append(f"{base}/{lang_code}")
             # The worksheet setup form (no params) is a real landing page.
             urls.append(f"{base}/{lang_code}/worksheet")
+            for slug in get_reference_slugs(lang_code):
+                urls.append(f"{base}/{lang_code}/numbers/{slug}")
+    for lc in get_languages_with_conjugation():
+        urls.append(f"{base}/{lc}/conjugation-cheat-sheet")
     for lc in get_languages_with_audio_mode():
         # The listening overview is a real landing page; the drill it starts
         # (a parameterised URL, noindex) is not.

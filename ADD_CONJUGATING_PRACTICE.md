@@ -211,6 +211,11 @@ means:
    `seo_title_learn_conj_<code>` / `meta_desc_learn_conj_<code>` for the Learn page).
 6. Tests mirroring `tests/test_conjugate_it.py` (pool spot-checks, lang scoping).
 
+The language then also gets `/<code>/conjugation-cheat-sheet` with no further work:
+it reads the first five `tenses`, `hint_model_verbs` and the pool's frequency order, and
+joins the sitemap and the cross-links by itself. Keep the JSON in frequency order, because
+the "20 most common verbs" on that page are simply the first 20.
+
 No model or route changes are needed — `VerbCard`/`ConjugationStat` already carry
 `lang` and the routes are namespaced.
 

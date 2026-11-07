@@ -93,6 +93,7 @@
     </script>
     {% endif %}
     {% block json_ld %}{% endblock %}
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Top-right controls: auth + language switcher -->
@@ -176,6 +177,13 @@
         {% endif %}
         {% include "_preset_notice.html" %}
         {% block content %}{% endblock %}
+
+        {# Crawlable paths from a language's practice and Learn pages into its
+           reference pages. Here rather than in each page so the 100+ translated
+           Learn templates don't all have to carry it. #}
+        {% if reference_links %}
+        {% with links = reference_links %}{% include "_reference_links.html" %}{% endwith %}
+        {% endif %}
 
         {# Replaces the old consent banner. The site sets only the Flask session
            cookie (plus Auth0's, for users who choose to log in) — both strictly
