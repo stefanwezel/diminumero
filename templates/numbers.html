@@ -2,6 +2,10 @@
 
 {% block title %}{{ get_text('seo_title_numbers') }}{% endblock %}
 {% block meta_description %}<meta name="description" content="{{ get_text('menu_numbers_body') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_numbers') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('menu_numbers_body') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_numbers') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('menu_numbers_body') }}">{% endblock %}
 
 {% block content %}
 <div class="landing-page">

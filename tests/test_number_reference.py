@@ -14,7 +14,12 @@ import json
 import re
 
 import pytest
-from app import _conj_sheet_verb, _available_audio_numbers, app as flask_app
+from app import (
+    _available_audio_numbers,
+    _conj_accepted_forms,
+    _conj_sheet_verb,
+    app as flask_app,
+)
 from config import SUPPORTED_UI_LANGUAGES
 from conjugation_config import conj_persons, conj_tenses
 from languages import (
@@ -24,8 +29,10 @@ from languages import (
     get_languages_with_conjugation,
     get_languages_with_learn_materials,
 )
+from languages import number_reference as number_reference_module
 from languages.en import conjugations as en_conjugations
 from languages.es import conjugations as es_conjugations
+from languages.notes_loader import get_notes
 from languages.number_reference import (
     NUMBER_PATTERNS,
     get_reference_numbers,
@@ -99,13 +106,54 @@ class TestGeneratedForms:
         )
 
     @pytest.mark.parametrize("code", LANGUAGES_WITH_1000)
-    def test_file_holds_only_what_the_deck_lacks(self, code):
-        """The file fills gaps. It can never overrule or duplicate a deck word."""
+    def test_file_covers_101_to_1000_and_agrees_with_the_deck(self, code):
+        """All of 101-1000, so it doesn't depend on which 200 the deck drew."""
         path = generate_number_reference.LANGUAGES / code / "numbers_reference.json"
-        numbers = {int(n) for n in json.loads(path.read_text(encoding="utf-8"))}
+        forms = {
+            int(n): word
+            for n, word in json.loads(path.read_text(encoding="utf-8")).items()
+        }
+        assert set(forms) == set(range(101, 1001))
         deck = get_language_numbers(code)
-        assert not numbers & set(deck)
-        assert numbers | {n for n in deck if 1 <= n <= 1000} == set(range(1, 1001))
+        assert {n: forms[n] for n in deck if n in forms} == {
+            n: word for n, word in deck.items() if n in forms
+        }
+
+    def test_a_redrawn_deck_leaves_no_hole(self, monkeypatch):
+        """Regenerating a deck draws a different 200 of 101-1000."""
+        deck = get_language_numbers("es")
+        redrawn = {n: word for n, word in deck.items() if n <= 100 or n > 1000}
+        monkeypatch.setattr(
+            number_reference_module, "get_language_numbers", lambda code: redrawn
+        )
+        number_reference_module._reference_words.cache_clear()
+        try:
+            words = get_reference_numbers("es", "1-1000")
+            assert words is not None
+            assert words[347] == "trescientos cuarenta y siete"
+        finally:
+            number_reference_module._reference_words.cache_clear()
+
+    def test_italian_accent_goes_on_the_end_of_the_word(self):
+        """103 is centotré, as 23 is ventitré, but 23,000 is ventitremila."""
+        generator = generate_number_reference.load_generator("it")
+        assert generator(3) == "tre"
+        assert generator(23) == "ventitré"
+        assert generator(103) == "centotré"
+        assert generator(1003) == "milletré"
+        assert generator(5003) == "cinquemilatré"
+        assert generator(23000) == "ventitremila"
+        assert generator(503000) == "cinquecentotremila"
+        assert generator(3000000) == "tre milioni"
+        assert generator(23000000) == "ventitré milioni"
+
+    def test_no_italian_word_is_accented_anywhere_else(self):
+        """Checked on what is served: the deck and the reference forms."""
+        words = list(get_language_numbers("it").values())
+        words += list(get_reference_numbers("it", "1-1000").values())
+        for word in " ".join(words).split():
+            assert "tré" not in word[:-3], word
+            assert not (word.endswith("tre") and word != "tre"), word
 
     def test_a_generator_that_drifted_from_its_deck_aborts(self, monkeypatch):
         deck = dict(generate_number_reference.load_deck("es"))
@@ -290,6 +338,20 @@ class TestNumeralSystems:
         html = client.get("/cy/numbers/1-1000").get_data(as_text=True)
         assert ">Ugeiniol</th>" not in html
 
+    def test_notes_follow_the_columns(self, client):
+        """A note about traditional Welsh describes nothing on a decimal-only page."""
+        traditional_only = [
+            note
+            for note in get_notes("cy", numbers=range(1, 1001), ui_lang="en")
+            if note["systems"] == ["traditional"]
+        ]
+        assert traditional_only
+        long_list = client.get("/cy/numbers/1-1000").get_data(as_text=True)
+        short_list = client.get("/cy/numbers/1-100").get_data(as_text=True)
+        for note in traditional_only:
+            assert html_text(note["text"]) not in long_list
+        assert any(html_text(note["text"]) in short_list for note in traditional_only)
+
     def test_single_system_languages_have_one_word_column(self, client):
         html = client.get("/es/numbers/1-100").get_data(as_text=True)
         table = html[html.index('class="ref-table"') :]
@@ -379,6 +441,27 @@ class TestCheatSheet:
     def test_english_verbs_are_cited_with_to(self, client):
         html = client.get("/en/conjugation-cheat-sheet").get_data(as_text=True)
         assert '<h3 lang="en">to go</h3>' in html
+
+    def test_but_not_a_modal(self, client):
+        """A modal has no infinitive: there is no "to can"."""
+        html = client.get("/en/conjugation-cheat-sheet").get_data(as_text=True)
+        assert '<h3 lang="en">can</h3>' in html
+        assert "to can" not in html and "to may" not in html
+
+    def test_self_test_accepts_what_a_drill_accepts(self, monkeypatch):
+        """A drill takes the German Sie-imperative without its "Sie", so this must.
+
+        No sheet shows the imperative today, so put it in the first column.
+        """
+        import app as app_module
+
+        imperative = next(t for t in conj_tenses("de") if t["key"] == "imperativ")
+        monkeypatch.setattr(app_module, "conj_tenses", lambda lang: [imperative])
+        sie = _conj_sheet_verb("de", "gehen", "de")["rows"][5]["cells"][0]
+        assert sie["form"] == "gehen Sie"
+        accepted = _conj_accepted_forms("de", "gehen", "imperativ", 5, "gehen Sie")
+        assert sie["alternatives"].split("|") == accepted[1:]
+        assert "gehen" in accepted
 
     def test_british_variants_are_accepted_by_the_self_test(self):
         verb = _conj_sheet_verb("en", "learn", "en")
@@ -486,6 +569,7 @@ class TestWhatACrawlerSees:
     def test_new_pages_are_in_the_sitemap(self):
         paths = sitemap_paths()
         for code in READY_LANGUAGES:
+            assert f"/{code}/numbers" in paths
             assert f"/{code}/numbers/1-100" in paths
         for code in LANGUAGES_WITH_1000:
             assert f"/{code}/numbers/1-1000" in paths
@@ -582,6 +666,16 @@ class TestLearnPageTitles:
         for path, name in (("/fr/listening", "French"), ("/it/numbers", "Italian")):
             assert name in page_title(cold_get(path).get_data(as_text=True))
 
+    @pytest.mark.parametrize("path", ["/es/numbers?hl=de", "/es/listening?hl=de"])
+    def test_practice_screens_have_their_own_share_preview(self, path):
+        """Pasted into a chat, the link shows its title, not "diminumero"."""
+        html = cold_get(path).get_data(as_text=True)
+        og_title = re.search(r'<meta property="og:title" content="([^"]*)"', html)
+        assert og_title.group(1) == page_title(html)
+        assert "Spanisch" in og_title.group(1)
+        for tag in ('property="og:description"', 'name="twitter:description"'):
+            assert tag in html, tag
+
 
 class TestCaching:
     def test_returning_visitor_gets_a_shared_cache_header(self, client):
@@ -596,3 +690,19 @@ class TestCaching:
             sess["user"] = {"sub": "u1", "name": "A Learner"}
         response = client.get("/es/numbers/1-100")
         assert response.headers["Cache-Control"].startswith("private")
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "/es/numbers/9-9",
+            "/ne/numbers/1-1000",
+            "/fr/conjugation-cheat-sheet",
+            "/zz/numbers/1-100",
+        ],
+    )
+    def test_a_missing_page_is_not_cached(self, client, path):
+        """A 404 here lasts until the data is complete; a cached one would outlive it."""
+        client.get("/es/numbers/1-100")  # a returning visitor, so no Set-Cookie
+        response = client.get(path)
+        assert response.status_code == 404
+        assert response.headers["Cache-Control"] == "no-store"

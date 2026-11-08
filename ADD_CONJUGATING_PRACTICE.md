@@ -237,7 +237,8 @@ learning English (`session["learn_language"]`): the scan then tries the English 
 first, on both sides, so "go / gehen" offers "go" and never "gehen". Passing a language
 to `_card_verb_match()` searches that one pool, which is what `/en/conjugate` and its
 import button do. "to go" on a card, in the add-verb box or in autocomplete all mean
-"go" (`infinitive_particle` in `CONJ_LANGS`), and "realize" means the stored "realise"
+"go" (`infinitive_particle` in `CONJ_LANGS`; the modals in `no_infinitive` are
+cited without it, so the cheat sheet heads them "can"), and "realize" means the stored "realise"
 (`ConjugationPool.canonical_infinitive()`, derived from the variants file).
 
 **A batch import always shows a checklist first** (`static/js/verb_import_picker.js`,

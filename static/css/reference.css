@@ -346,6 +346,8 @@
         border-color: #bbb !important;
     }
 
+    /* reference_page.js opens every <details> before printing; a closed one
+       would print as its summary alone. */
     .ref-details {
         border: 0;
     }

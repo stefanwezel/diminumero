@@ -4,8 +4,8 @@
  * After the answer is revealed, the user must retype it before the round
  * advances. We give live green/red feedback and auto-submit once the typed
  * answer matches; the Next button is otherwise blocked client-side (the server
- * enforces the same rule). Mirrors the normalization used by the backend's
- * normalize_text() so ASCII input for accented/umlaut answers is accepted.
+ * enforces the same rule). Compares with normalizeText() (normalize_text.js,
+ * loaded first) so ASCII input for accented/umlaut answers is accepted.
  */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -17,13 +17,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const listed = input.getAttribute('data-accepted-answers');
     const accepted = (
         listed ? JSON.parse(listed) : [input.getAttribute('data-correct-answer') || '']
-    ).map(normalizeReveal);
+    ).map(normalizeText);
     let submitting = false;
 
     input.focus();
 
     function isMatch() {
-        return accepted.includes(normalizeReveal(input.value || ''));
+        return accepted.includes(normalizeText(input.value || ''));
     }
 
     function check() {
@@ -74,14 +74,3 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
-
-function normalizeReveal(text) {
-    text = text.toLowerCase().trim();
-    text = text.replace(/ü/g, 'ue');
-    text = text.replace(/ö/g, 'oe');
-    text = text.replace(/ä/g, 'ae');
-    text = text.replace(/ß/g, 'ss');
-    text = text.replace(/\s+/g, ' ');
-    text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return text;
-}

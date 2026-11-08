@@ -4,7 +4,14 @@ import json
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache, wraps
-from urllib.parse import parse_qsl, quote_plus, urlencode, urlsplit, urlunsplit
+from urllib.parse import (
+    parse_qsl,
+    quote,
+    quote_plus,
+    urlencode,
+    urlsplit,
+    urlunsplit,
+)
 
 from flask import (
     Flask,
@@ -80,6 +87,7 @@ from translations import TRANSLATIONS
 from conjugation_config import (
     CONJ_QUESTIONS_DEFAULT,
     conj_card_scan_opt_in,
+    conj_citation_form,
     conj_hint_model_verbs,
     conj_infinitive_particle,
     conj_optional_person_index,
@@ -425,6 +433,12 @@ def set_cache_headers(response):
             "no-store, no-cache, must-revalidate, max-age=0"
         )
         return response
+    if response.status_code >= 400:
+        # The rules below describe a page, not its absence. A reference page is
+        # a real 404 until its data is complete, and a proxy holding that 404
+        # for an hour would hide the page for an hour after it ships.
+        response.headers["Cache-Control"] = "no-store"
+        return response
     if response.mimetype == "application/pdf":
         # A worksheet PDF is seed-addressed and deterministic, so this URL is
         # always this exact document — worth a CDN or browser holding on to.
@@ -514,7 +528,9 @@ def inject_seo_context():
     versions = _page_versions(request.endpoint, page_lang_code)
 
     # A drill started from a preset link is noindex, so it has no versions to
-    # offer, and switching language there must not go through a URL that restarts it.
+    # offer. Its switcher falls back to /set_language/, because a link to this
+    # URL in another language would start the drill again; /set_language/
+    # returns to the drill's own route instead (_language_switch_target).
     offered = () if has_quiz_params else versions
     hreflang_links = []
     if len(offered) > 1:
@@ -526,17 +542,19 @@ def inject_seo_context():
             {"code": "x-default", "url": _localized_url(request.path, None)}
         )
     # Plain links rather than /set_language/, which robots.txt blocks and which
-    # relies on the Referer header to find its way back.
-    page_args = {
-        key: value for key, value in request.args.items() if key != UI_LANGUAGE_PARAM
-    }
+    # relies on the Referer header to find its way back. Built from the path as
+    # requested, not with url_for(): the query is whatever a visitor typed, and
+    # passed to url_for() as keywords, "?lang_code=" or "?_method=" would be read
+    # as a route argument or a build option and fail, and "?_external=1" would
+    # make every link absolute.
+    page_query = [
+        (key, value)
+        for key, value in request.args.items(multi=True)
+        if key != UI_LANGUAGE_PARAM
+    ]
+    page_path = quote(request.script_root + request.path)
     ui_language_urls = {
-        code: url_for(
-            request.endpoint,
-            **(request.view_args or {}),
-            **page_args,
-            **{UI_LANGUAGE_PARAM: code},
-        )
+        code: f"{page_path}?{urlencode([*page_query, (UI_LANGUAGE_PARAM, code)])}"
         for code in offered
     }
 
@@ -570,9 +588,12 @@ def inject_seo_context():
                         "url": canonical_url,
                     }
                 )
-        elif parts[0] in BREADCRUMB_TEXT_KEYS:
+        elif request.endpoint in BREADCRUMB_TEXT_KEYS:
             breadcrumbs.append(
-                {"name": get_text(BREADCRUMB_TEXT_KEYS[parts[0]]), "url": canonical_url}
+                {
+                    "name": get_text(BREADCRUMB_TEXT_KEYS[request.endpoint]),
+                    "url": canonical_url,
+                }
             )
 
     return {
@@ -1296,6 +1317,9 @@ def _worksheet_pdf_cache_key(lang_code, sheet):
     request for the same sheet are different documents. So does the numeral
     system: the same numbers in traditional Welsh are entirely different words,
     and serving one from the other's cache entry would print the wrong sheet.
+    And so do the words themselves: the URL names the same sheet after a deck
+    word is corrected, and the cache lives across deploys, so without them a
+    fixed spelling would go on printing the old way.
     """
     parts = (
         lang_code,
@@ -1305,6 +1329,7 @@ def _worksheet_pdf_cache_key(lang_code, sheet):
         str(sheet["count"]),
         f"{sheet['range_low']}-{sheet['range_high']}",
         sheet["seed"],
+        *(item["word"] for item in sheet.get("exercises", ())),
     )
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
@@ -1682,21 +1707,61 @@ def set_language(lang):
     """Set the UI language preference (not learning language)."""
     if lang in SUPPORTED_UI_LANGUAGES:
         session["language"] = lang
-    # Redirect back to the referring page or index. Not with its ?hl= still on:
-    # that would switch straight back to the language just left.
-    if request.referrer:
-        return redirect(_without_ui_language_param(request.referrer))
-    return redirect(url_for("index"))
+    return redirect(_language_switch_target(request.referrer) or url_for("index"))
 
 
-def _without_ui_language_param(url):
-    parts = urlsplit(url)
-    query = [
-        (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key != UI_LANGUAGE_PARAM
-    ]
+# The route each session mode's drill runs on.
+QUIZ_ENDPOINTS = {
+    "easy": "quiz_easy",
+    "advanced": "quiz_advanced",
+    "hardcore": "quiz_hardcore",
+    "audio": "listen_quiz",
+}
+
+# The pages a preset link starts a drill on, and the params that make it one.
+_PRESET_PAGES = {
+    "number_modes": PRESET_PARAM_KEYS,
+    "listen_modes": LISTEN_PRESET_PARAM_KEYS,
+}
+
+
+def _language_switch_target(referrer):
+    """Where /set_language/ sends a person back to, or None for the home page.
+
+    The page they came from, but not with its ?hl= still on, which would switch
+    straight back to the language just left. And not to the preset link that
+    started the drill they are in: that URL starts it again, so they go to the
+    drill's own route instead, where their question is still waiting.
+    """
+    if not referrer:
+        return None
+    try:
+        parts = urlsplit(referrer)
+    except ValueError:
+        # The Referer is whatever the client sent ("http://[bad/").
+        return None
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    drill = _running_drill_url(parts.path, {key for key, _ in query})
+    if drill:
+        return drill
+    query = [(key, value) for key, value in query if key != UI_LANGUAGE_PARAM]
     return urlunsplit(parts._replace(query=urlencode(query)))
+
+
+def _running_drill_url(path, query_keys):
+    """The route of the session's drill if `path` is the preset link for it."""
+    try:
+        endpoint, view_args = app.create_url_adapter(request).match(path, method="GET")
+    except HTTPException:
+        return None
+    preset_keys = _PRESET_PAGES.get(endpoint)
+    if not preset_keys or query_keys.isdisjoint(preset_keys):
+        return None
+    lang_code = view_args.get("lang_code")
+    mode = session.get("mode")
+    if session.get("learn_language") != lang_code or mode not in QUIZ_ENDPOINTS:
+        return None
+    return url_for(QUIZ_ENDPOINTS[mode], lang_code=lang_code)
 
 
 def _results_redirect(lang_code):
@@ -2183,18 +2248,25 @@ def quiz_hardcore(lang_code):
     )
 
 
+# Bounded, though every caller has already checked the language is real.
+@lru_cache(maxsize=32)
 def _available_audio_numbers(lang_code):
-    """Return the set of numbers (ints) we have a pre-generated MP3 for."""
+    """The numbers (ints) we have a pre-generated MP3 for.
+
+    Cached: the clips are committed and ship with the image, and listing a
+    thousand files on every question and every reference page is disk work for
+    nothing. A clip generated while the server runs is picked up on restart.
+    """
     audio_dir = Path(app.static_folder) / "audio" / lang_code
     if not audio_dir.is_dir():
-        return set()
+        return frozenset()
     numbers = set()
     for path in audio_dir.glob("*.mp3"):
         try:
             numbers.add(int(path.stem))
         except ValueError:
             continue
-    return numbers
+    return frozenset(numbers)
 
 
 def _listening_deck(lang_code):
@@ -2816,8 +2888,14 @@ def number_reference(lang_code, range_slug):
             f"{app.static_url_path}/audio/{lang_code}/" if playable_in_range else None
         ),
         has_audio_column=playable_in_range,
+        # Only the systems the page has a column for: Welsh 1-1000 is decimal
+        # alone, so a note about traditional Welsh would describe nothing on it.
         notes=get_notes(
-            lang_code, numbers=range(low, high + 1), when="reference", ui_lang=ui_lang
+            lang_code,
+            system=None if second_system else get_default_number_system(lang_code),
+            numbers=range(low, high + 1),
+            when="reference",
+            ui_lang=ui_lang,
         ),
         drill_url=url_for(
             "number_modes", lang_code=lang_code, mode="advanced", range=range_slug
@@ -2852,23 +2930,25 @@ def _conj_sheet_verb(lang_code, infinitive, ui_lang):
         cells = []
         for key, label in zip(tenses, labels):
             form = forms[key][person["index"]]
+            # The same answers a drill accepts, the stored form itself aside.
+            others = []
+            if form:
+                accepted = _conj_accepted_forms(
+                    lang_code, infinitive, key, person["index"], form
+                )
+                others = accepted[1:]
             cells.append(
                 {
                     "form": form,
                     "question": f"{infinitive} · {person['label']} · {label}",
-                    "alternatives": "|".join(
-                        pool.get_form_variants(infinitive, key, form)
-                    )
-                    if form
-                    else "",
+                    "alternatives": "|".join(others),
                 }
             )
         rows.append({"person": person["label"], "cells": cells})
 
-    particle = conj_infinitive_particle(lang_code)
     return {
         "infinitive": infinitive,
-        "heading": f"{particle} {infinitive}" if particle else infinitive,
+        "heading": conj_citation_form(lang_code, infinitive),
         "tenses": labels,
         "rows": rows,
     }
@@ -4673,7 +4753,23 @@ def _conj_asked_key(
 
 
 def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
-    """Every spelling accepted for the current conjugation question.
+    """Every spelling accepted for the current conjugation question."""
+    return _conj_accepted_forms(
+        lang_code,
+        current["infinitive"],
+        current["tense_key"],
+        current["person_index"],
+        current["correct_answer"],
+    )
+
+
+def _conj_accepted_forms(
+    lang_code: str, infinitive: str, tense_key: str, person_index: int, form: str
+) -> list[str]:
+    """Every spelling accepted for one cell of a verb's table, `form` first.
+
+    Shared by the drill and the cheat sheet's self-test, so the two can't
+    disagree about what counts as right.
 
     The German Sie-imperative is stored with its obligatory inverted pronoun
     ("gehen Sie", "stehen Sie auf") since that's the grammatically complete
@@ -4681,21 +4777,12 @@ def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
     pronoun-less variant too. A pool may store one form per cell where usage has
     two (British "learnt", "learned"); it lists the others beside it.
     """
-    correct = current["correct_answer"]
-    answers = [correct]
-    if (
-        lang_code == "de"
-        and current["tense_key"] == "imperativ"
-        and current["person_index"] == 5
-    ):
-        bare = " ".join(w for w in correct.split() if w != "Sie")
+    answers = [form]
+    if lang_code == "de" and tense_key == "imperativ" and person_index == 5:
+        bare = " ".join(w for w in form.split() if w != "Sie")
         if bare:
             answers.append(bare)
-    answers.extend(
-        _conj_pool(lang_code).get_form_variants(
-            current["infinitive"], current["tense_key"], correct
-        )
-    )
+    answers.extend(_conj_pool(lang_code).get_form_variants(infinitive, tense_key, form))
     return answers
 
 
@@ -5049,6 +5136,9 @@ def _sitemap_pages():
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
             pages.append((f"/{lang_code}", "mode_selection", lang_code))
+            # The practice config screen, like the listening one below. A drill
+            # it starts (a parameterised URL, noindex) is not a page.
+            pages.append((f"/{lang_code}/numbers", "number_modes", lang_code))
             # The worksheet setup form (no params) is a real landing page.
             pages.append((f"/{lang_code}/worksheet", "worksheet", lang_code))
             for slug in get_reference_slugs(lang_code):

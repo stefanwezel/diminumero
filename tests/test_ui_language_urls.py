@@ -331,6 +331,31 @@ class TestSwitcher:
         links = switcher_links(cold_html("/es/numbers?mode=easy"))
         assert all(link.startswith("/set_language/") for link in links)
 
+    @pytest.mark.parametrize(
+        ("path", "query"),
+        [
+            # Route arguments and url_for()'s own options, which the switcher
+            # once passed straight to it as keywords.
+            ("/es", "lang_code=fr"),
+            ("/", "endpoint=x"),
+            ("/es/numbers/1-100", "range_slug=x"),
+            ("/es/learn", "lang_code=x"),
+            ("/es/worksheet", "lang_code=x"),
+            ("/es", "_method=POST"),
+            ("/es", "_external=1"),
+            ("/es", "_scheme=https"),
+            ("/es", "_anchor=x"),
+        ],
+    )
+    def test_a_hostile_query_is_only_carried_along(self, path, query):
+        response = cold_get(f"{path}?{query}")
+        assert response.status_code == 200
+        links = switcher_links(response.get_data(as_text=True))
+        for code in URL_UI_LANGUAGES:
+            assert f"{path}?{query}&amp;hl={code}" in links
+        for link in links:
+            assert link.startswith("/") and "#" not in link, link
+
     def test_marks_the_active_language(self):
         html = cold_html("/es?hl=de")
         assert re.search(
@@ -355,6 +380,48 @@ class TestSetLanguageFallback:
 
     def test_no_referer_goes_home(self, client):
         assert client.get("/set_language/fr").headers["Location"] == "/"
+
+    def test_a_malformed_referer_goes_home(self, client):
+        """The header is whatever the client sent; this one can't be parsed."""
+        response = client.get(
+            "/set_language/de", headers={"Referer": "http://[bad/x?hl=fr"}
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/"
+
+    @pytest.mark.parametrize(
+        ("preset", "quiz"),
+        [
+            ("/es/numbers?mode=advanced&range=1-100", "/es/quiz/advanced"),
+            ("/es/numbers?mode=easy", "/es/quiz/easy"),
+            ("/es/listening?range=1-100", "/es/listen"),
+        ],
+    )
+    def test_returns_to_a_preset_drill_without_restarting_it(
+        self, client, preset, quiz
+    ):
+        """The preset URL starts the drill again, so go to the drill's own route."""
+        client.get(preset)
+        with client.session_transaction() as sess:
+            sess["score"] = sess["total_questions"] = 3
+            question = sess["current_number"]
+
+        response = client.get(
+            "/set_language/de", headers={"Referer": f"http://localhost{preset}"}
+        )
+        assert response.headers["Location"] == quiz
+        client.get(quiz)
+        with client.session_transaction() as sess:
+            assert sess["language"] == "de"
+            assert (sess["score"], sess["total_questions"]) == (3, 3)
+            assert sess["current_number"] == question
+
+    def test_a_preset_link_with_no_drill_running_still_starts_one(self, client):
+        """Nothing to lose, so the link is followed as it was shared."""
+        client.get("/fr/numbers?mode=easy")  # a drill, but in another language
+        referer = "http://localhost/es/numbers?mode=easy&hl=uk"
+        response = client.get("/set_language/de", headers={"Referer": referer})
+        assert response.headers["Location"] == "http://localhost/es/numbers?mode=easy"
 
     def test_the_language_changes(self, client):
         client.get("/es/learn?hl=de")

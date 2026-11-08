@@ -8,7 +8,22 @@ import random
 
 
 def number_to_italian(n):
-    """Convert a number to Italian."""
+    """Convert a number to Italian.
+
+    A compound ending in 3 is accented on that last syllable, wherever the 3
+    comes from: ventitré, centotré, milletré. Only at the end of the written
+    word, so 23,000 is ventitremila, and never on a bare tre ("tre milioni").
+    That is one rule about the finished word, so it is applied once, here,
+    rather than in each branch that can end on a 3.
+    """
+    return " ".join(
+        word[: -len("tre")] + "tré" if word.endswith("tre") and word != "tre" else word
+        for word in spell_italian(n).split(" ")
+    )
+
+
+def spell_italian(n):
+    """The number in Italian, unaccented."""
     if n == 0:
         return "zero"
 
@@ -58,9 +73,6 @@ def number_to_italian(n):
         elif o == 1 or o == 8:
             # Drop the final vowel of the tens: venti -> vent + uno/otto
             return tens[t][:-1] + ones[o]
-        elif o == 3:
-            # tre gets an accent at the end of compound numbers
-            return tens[t] + "tré"
         else:
             return tens[t] + ones[o]
 
@@ -72,7 +84,7 @@ def number_to_italian(n):
             result = ones[h] + "cento"
 
         if rest > 0:
-            result += number_to_italian(rest)
+            result += spell_italian(rest)
         return result
 
     elif n < 1000000:
@@ -80,10 +92,10 @@ def number_to_italian(n):
         if th == 1:
             result = "mille"
         else:
-            result = number_to_italian(th) + "mila"
+            result = spell_italian(th) + "mila"
 
         if rest > 0:
-            result += number_to_italian(rest)
+            result += spell_italian(rest)
         return result
 
     elif n < 1000000000:
@@ -91,10 +103,10 @@ def number_to_italian(n):
         if mill == 1:
             result = "un milione"
         else:
-            result = number_to_italian(mill) + " milioni"
+            result = spell_italian(mill) + " milioni"
 
         if rest > 0:
-            result += " " + number_to_italian(rest)
+            result += " " + spell_italian(rest)
         return result
 
     else:
@@ -102,10 +114,10 @@ def number_to_italian(n):
         if bill == 1:
             result = "un miliardo"
         else:
-            result = number_to_italian(bill) + " miliardi"
+            result = spell_italian(bill) + " miliardi"
 
         if rest > 0:
-            result += " " + number_to_italian(rest)
+            result += " " + spell_italian(rest)
         return result
 
 

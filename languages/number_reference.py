@@ -1,8 +1,8 @@
 """The data behind the number reference pages (/<lang>/numbers/1-100 and 1-1000).
 
-Two things live here. The word lists: the drill deck plus, above 100, the forms
-tools/generate_number_reference.py committed for the numbers the deck leaves
-out. And the "how it works" paragraph for each page.
+Two things live here. The word lists: the drill deck for 1-100, which every deck
+holds in full, and above it the forms tools/generate_number_reference.py
+committed for all of 101-1000. And the "how it works" paragraph for each page.
 
 Availability is derived from the data, like the numeral-system gate: a page
 exists only when every number in its range has a word. Nepali has no generator,
@@ -100,7 +100,7 @@ NUMBER_PATTERNS = {
 
 @lru_cache(maxsize=None)
 def _committed_forms(lang_code):
-    """The generated forms for numbers the deck leaves out. Empty if none."""
+    """The generated forms for 101-1000. Empty if the language has none."""
     path = _REFERENCE_DIR / lang_code / "numbers_reference.json"
     if not path.is_file():
         return {}
@@ -108,12 +108,8 @@ def _committed_forms(lang_code):
         return {int(number): word for number, word in json.load(handle).items()}
 
 
-def get_reference_numbers(lang_code, slug):
-    """{number: word} for every number in the page's range, or None.
-
-    None means the page doesn't exist for this language: the slug is unknown or
-    a number in its range has no word. The deck wins over the committed forms.
-    """
+@lru_cache(maxsize=None)
+def _reference_words(lang_code, slug):
     if slug not in REFERENCE_RANGES:
         return None
     low, high = REFERENCE_RANGES[slug]
@@ -123,6 +119,23 @@ def get_reference_numbers(lang_code, slug):
         number: deck.get(number) or forms.get(number) for number in range(low, high + 1)
     }
     return words if all(words.values()) else None
+
+
+def get_reference_numbers(lang_code, slug):
+    """{number: word} for every number in the page's range, or None.
+
+    None means the page doesn't exist for this language: the slug is unknown or
+    a number in its range has no word. The committed file covers all of
+    101-1000, not just what the deck lacks, so a deck that redraws its sample
+    can't open a hole here. Where both have a number they agree: the generator
+    script refuses to write a file otherwise, and a test pins the committed one.
+
+    Cached, because every request for a page used to rebuild a thousand-entry
+    dict from data that is committed. A copy is returned so a caller can't
+    change the cached one.
+    """
+    words = _reference_words(lang_code, slug)
+    return None if words is None else dict(words)
 
 
 @lru_cache(maxsize=None)

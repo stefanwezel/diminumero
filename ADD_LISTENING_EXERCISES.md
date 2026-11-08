@@ -17,7 +17,8 @@ Listening mode (`mode == "audio"`) is gated by two things:
 
 The route never trusts the deck blindly — it intersects the number deck with
 `_available_audio_numbers()` (the MP3s actually present on disk), so a
-half-generated deck still works. Both the index language cards and
+half-generated deck still works. It lists the directory once per process, so
+restart the dev server after generating clips. Both the index language cards and
 `mode_selection()` consult `get_languages_with_audio_mode()` to decide whether to
 surface the "New · Listening" sticker.
 

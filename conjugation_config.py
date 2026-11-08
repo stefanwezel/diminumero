@@ -16,6 +16,8 @@ Optional per-language fields:
 
 - ``infinitive_particle``: the word a verb is cited with ("to go"), accepted on
   input and ignored.
+- ``no_infinitive``: verbs cited without that particle because they have no
+  infinitive (the English modals: "can", never "to can").
 - ``card_scan_opt_in``: the automatic index-card scan skips this language unless
   the session is learning it (see ``_card_scan_order`` in ``app.py``).
 - ``verb_overrides``: ``{verb: {tense key: {"label": ..., "hint": ...}}}``, for a
@@ -381,6 +383,9 @@ CONJ_LANGS = {
         # One regular verb, one that doubles its consonant, one irregular verb.
         "hint_model_verbs": ["work", "stop", "go"],
         "infinitive_particle": "to",
+        # The modals, which is also why they have no "will" future.
+        # tests/test_conjugate_en.py ties this to the pool.
+        "no_infinitive": frozenset({"can", "may", "must"}),
         # English is the side most cards carry as the translation, and its verbs
         # are spelled like its nouns ("book / Buch").
         "card_scan_opt_in": True,
@@ -431,6 +436,14 @@ def conj_hint_model_verbs(lang: str) -> list[str]:
 def conj_infinitive_particle(lang: str) -> str | None:
     """The word a verb is cited with in this language ("to go"), if any."""
     return CONJ_LANGS[lang].get("infinitive_particle")
+
+
+def conj_citation_form(lang: str, infinitive: str) -> str:
+    """How a verb is named in a heading: "to go", but "can", which has no infinitive."""
+    particle = conj_infinitive_particle(lang)
+    if not particle or infinitive in CONJ_LANGS[lang].get("no_infinitive", ()):
+        return infinitive
+    return f"{particle} {infinitive}"
 
 
 def conj_card_scan_opt_in(lang: str) -> bool:

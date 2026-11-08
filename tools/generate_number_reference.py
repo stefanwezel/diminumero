@@ -3,21 +3,28 @@
 # dependencies = []
 # ///
 """
-Fill in the numbers up to 1000 that a language's drill deck doesn't carry.
+Write out every number from 101 to 1000 for the reference pages.
 
     uv run tools/generate_number_reference.py
 
 The drill decks hold 1-100 and a random 200 of 101-1000, which is right for a
 quiz and useless for a page called "how to count to 1,000": it would have no
-500. So this writes languages/<code>/numbers_reference.json with the other 700,
-for the reference pages only. The decks, and therefore every drill, worksheet
-and listening round, are untouched.
+500. So this writes languages/<code>/numbers_reference.json with all 900 of
+101-1000, for the reference pages only. The decks, and therefore every drill,
+worksheet and listening round, are untouched.
+
+All 900, not just the 700 the deck lacks: a file of gaps would be tied to one
+random draw, and a generate_numbers.py that redrew its sample would open holes
+in it, taking the 1-1000 page down until this script was run again. 1-100 needs
+no file, since every deck holds all of it.
 
 The forms come from the same number_to_<language>() that built the deck, and
 that is the whole case for trusting them, so it is checked rather than assumed:
 a generator that doesn't reproduce every word of its committed deck aborts the
-run. A language with no generator (Nepali, whose deck is hand-curated) gets no
-file, and languages/number_reference.py then offers no 1-1000 page for it.
+run. That check is also what keeps the file and the deck in agreement wherever
+both have a number. A language with no generator (Nepali, whose deck is
+hand-curated) gets no file, and languages/number_reference.py then offers no
+1-1000 page for it.
 """
 
 import ast
@@ -29,6 +36,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LANGUAGES = ROOT / "languages"
 FILENAME = "numbers_reference.json"
+# The part of 1-1000 a deck only samples. Every deck holds all of 1-100.
+REFERENCE_FIRST = 101
 REFERENCE_MAX = 1000
 
 
@@ -71,7 +80,7 @@ def load_deck(code):
 
 
 def build(code):
-    """{number: word} for every 1-1000 number the deck lacks, or None.
+    """{number: word} for every number from 101 to 1000, or None.
 
     Raises SystemExit if the generator has drifted from the committed deck.
     """
@@ -93,10 +102,9 @@ def build(code):
 
     forms = {
         number: generator(number)
-        for number in range(1, REFERENCE_MAX + 1)
-        if number not in deck
+        for number in range(REFERENCE_FIRST, REFERENCE_MAX + 1)
     }
-    words = [deck.get(n) or forms[n] for n in range(1, REFERENCE_MAX + 1)]
+    words = [deck.get(n) or forms.get(n) for n in range(1, REFERENCE_MAX + 1)]
     if len(set(words)) != len(words) or not all(words):
         raise SystemExit(f"{code}: blank or duplicate words in 1-{REFERENCE_MAX}")
     return forms

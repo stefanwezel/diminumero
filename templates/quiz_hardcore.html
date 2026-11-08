@@ -89,8 +89,10 @@
         </form>
     </div>
 </div>
+<script src="{{ url_for('static', filename='js/normalize_text.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cards_practice_reveal.js') }}"></script>
 {% else %}
+<script src="{{ url_for('static', filename='js/normalize_text.js') }}"></script>
 <script src="{{ url_for('static', filename='js/quiz_hardcore.js') }}"></script>
 {% endif %}
 {% if notes %}<script src="{{ url_for('static', filename='js/number_notes.js') }}"></script>{% endif %}

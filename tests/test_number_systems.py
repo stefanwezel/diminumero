@@ -472,6 +472,26 @@ class TestWorksheets:
             )
         assert decimal_key != traditional_key
 
+    def test_pdf_cache_key_changes_with_a_corrected_word(self):
+        """Same URL, fixed spelling: the cache must not keep printing the old one."""
+        from app import _worksheet_pdf_cache_key
+
+        with flask_app.test_request_context("/it/worksheet"):
+            sheet = {
+                "direction": "digits_to_words",
+                "count": 1,
+                "range_low": 1,
+                "range_high": 10000,
+                "seed": "abc123",
+            }
+            old = _worksheet_pdf_cache_key(
+                "it", {**sheet, "exercises": [{"word": "cinquemilatre"}]}
+            )
+            fixed = _worksheet_pdf_cache_key(
+                "it", {**sheet, "exercises": [{"word": "cinquemilatré"}]}
+            )
+        assert old != fixed
+
 
 class TestUsageWeighting:
     """Having a form is not a reason to drill it.

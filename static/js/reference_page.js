@@ -29,16 +29,6 @@
         if (button) play(button.getAttribute('data-n'));
     });
 
-    // Mirrors normalize_text() in quiz_logic.py, so the test here accepts what a
-    // real drill accepts (ASCII for umlauts and accents).
-    function normalize(text) {
-        return text.toLowerCase().trim()
-            .replace(/ü/g, 'ue').replace(/ö/g, 'oe').replace(/ä/g, 'ae')
-            .replace(/ß/g, 'ss').replace(/ı/g, 'i')
-            .split(/\s+/).join(' ')
-            .normalize('NFD').replace(/\p{Mn}/gu, '');
-    }
-
     function initQuiz(quiz) {
         const items = Array.from(root.querySelectorAll('.ref-word[data-q]'));
         if (!items.length) return;
@@ -91,11 +81,30 @@
             if (mode === 'listen') {
                 return value.replace(/\D/g, '') === current.getAttribute('data-q');
             }
+            // normalizeText() (normalize_text.js) is the server's normalize_text(),
+            // so this accepts what a real drill accepts.
             const alternatives = (current.getAttribute('data-alt') || '').split('|');
             return [current.textContent].concat(alternatives)
                 .filter(Boolean)
-                .map(normalize)
-                .includes(normalize(value));
+                .map(normalizeText)
+                .includes(normalizeText(value));
+        }
+
+        // In listen mode the learner typed digits for a number they never saw,
+        // so the answer is the number, with the word they heard beside it, as in
+        // the listening drill's own "It was 42 (quarante-deux)".
+        function showAnswer() {
+            const word = document.createElement('span');
+            word.setAttribute('lang', wordLang);
+            word.textContent = current.textContent.trim();
+            feedback.textContent = quiz.getAttribute('data-i18n-wrong') + ' ';
+            if (mode === 'listen') {
+                feedback.appendChild(document.createTextNode(current.getAttribute('data-q') + ' ('));
+                feedback.appendChild(word);
+                feedback.appendChild(document.createTextNode(')'));
+            } else {
+                feedback.appendChild(word);
+            }
         }
 
         form.addEventListener('submit', function (event) {
@@ -111,9 +120,8 @@
             asked += 1;
             if (right) correct += 1;
 
-            feedback.textContent = right
-                ? quiz.getAttribute('data-i18n-correct')
-                : quiz.getAttribute('data-i18n-wrong') + ' ' + current.textContent.trim();
+            if (right) feedback.textContent = quiz.getAttribute('data-i18n-correct');
+            else showAnswer();
             feedback.className = 'ref-quiz-feedback ' + (right ? 'is-correct' : 'is-wrong');
             submit.textContent = quiz.getAttribute('data-i18n-next');
 
@@ -194,4 +202,21 @@
         printButton.hidden = false;
         printButton.addEventListener('click', function () { window.print(); });
     }
+
+    // A closed <details> prints as its summary alone, so the 1-1000 page would
+    // print as a column of captions. Open them for the printout, whichever way
+    // it was started (the button or the browser's own Print), then put back
+    // only the ones that were closed.
+    window.addEventListener('beforeprint', function () {
+        root.querySelectorAll('details:not([open])').forEach(function (details) {
+            details.setAttribute('data-ref-print-opened', '');
+            details.open = true;
+        });
+    });
+    window.addEventListener('afterprint', function () {
+        root.querySelectorAll('[data-ref-print-opened]').forEach(function (details) {
+            details.removeAttribute('data-ref-print-opened');
+            details.open = false;
+        });
+    });
 }());
