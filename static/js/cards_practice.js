@@ -32,17 +32,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function normalizeText(text) {
-    text = text.toLowerCase().trim();
-    text = text.replace(/ü/g, 'ue');
-    text = text.replace(/ö/g, 'oe');
-    text = text.replace(/ä/g, 'ae');
-    text = text.replace(/ß/g, 'ss');
-    text = text.replace(/\s+/g, ' ');
-    text = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return text;
-}
-
 function setupAdvanced(answerInput, validationFeedback, answerForm) {
     let isSubmitting = false;
     let validationTimer = null;

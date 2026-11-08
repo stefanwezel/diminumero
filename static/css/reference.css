@@ -1,0 +1,358 @@
+/* Reference pages: /<lang>/numbers/<range> and /<lang>/conjugation-cheat-sheet.
+   Loaded by those pages only, on top of whichever theme is active. The page
+   frame comes from the themes' .learn-* rules; everything here inherits its
+   colours, so both themes work without a second copy of this file. */
+
+.learn.ref-page {
+    max-width: 1000px;
+}
+
+.ref-page button {
+    font-family: inherit;
+}
+
+.ref-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.ref-untranslated {
+    font-size: 0.85rem;
+    opacity: 0.75;
+}
+
+/* Number tables */
+.ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.ref-table-wrap {
+    overflow-x: auto;
+}
+
+.ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: inherit;
+}
+
+.ref-table caption {
+    font-weight: 700;
+    text-align: start;
+    padding-bottom: 6px;
+}
+
+.ref-table th,
+.ref-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+    text-align: start;
+    vertical-align: middle;
+}
+
+.ref-table thead th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+.ref-table tbody th {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    opacity: 0.8;
+}
+
+.ref-word {
+    overflow-wrap: anywhere;
+}
+
+.ref-audio {
+    width: 44px;
+    text-align: end;
+}
+
+/* Hidden until the script runs: a play button that can't play is worse than none. */
+.ref-play {
+    display: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: inherit;
+    background: transparent;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.ref-js .ref-play {
+    display: inline-flex;
+}
+
+.ref-details {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.ref-details summary {
+    padding: 10px 0;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Self-test and lookup */
+.ref-quiz-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.ref-quiz-mode {
+    padding: 8px 14px;
+    color: inherit;
+    background: transparent;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.ref-quiz-mode.active {
+    border-color: currentColor;
+    font-weight: 700;
+}
+
+.learn-section .ref-quiz-prompt {
+    min-height: 1.4em;
+    margin-bottom: 12px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.ref-quiz-replay {
+    margin-bottom: 12px;
+}
+
+.ref-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ref-form input {
+    flex: 1 1 200px;
+    min-width: 0;
+    padding: 12px 14px;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 2px solid rgba(128, 128, 128, 0.5);
+    border-radius: 8px;
+}
+
+.ref-form input:focus {
+    outline: none;
+    border-color: currentColor;
+}
+
+.ref-quiz-feedback,
+.ref-lookup-result {
+    min-height: 1.5em;
+    margin-top: 12px;
+}
+
+.ref-lookup-result strong {
+    font-size: 1.2rem;
+    overflow-wrap: anywhere;
+}
+
+.ref-quiz-feedback.is-correct,
+.ref-quiz-feedback.is-wrong {
+    font-weight: 600;
+}
+
+.ref-quiz-feedback.is-correct::before {
+    content: "✓ ";
+}
+
+.ref-quiz-feedback.is-wrong::before {
+    content: "✗ ";
+}
+
+.ref-quiz-score {
+    font-size: 0.9rem;
+    opacity: 0.75;
+}
+
+/* Conjugation tables */
+.ref-verb {
+    margin-top: 24px;
+}
+
+.ref-verb h3 {
+    margin-bottom: 6px;
+}
+
+.ref-table-verb td,
+.ref-table-verb thead th {
+    white-space: nowrap;
+}
+
+/* The panel is sized as a popover over a quiz; here it is a section of the page. */
+.ref-page .number-notes-panel {
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+}
+
+/* Language links */
+.ref-other-languages ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ref-other-languages a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .ref-cta .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .ref-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* A cheat sheet gets printed. Black on white whatever the theme, none of the
+   page's controls, and tight enough to deserve the name: about eight verbs to a
+   page, none split across two. */
+@page {
+    margin: 14mm;
+}
+
+@media print {
+    html,
+    body,
+    .container,
+    .learn,
+    .learn-content,
+    .learn-section {
+        display: block !important;
+        width: auto !important;
+        max-width: none !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        border: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .learn-section {
+        margin-bottom: 12pt !important;
+    }
+
+    /* After the block above: these are .learn-sections too, and it would win. */
+    .top-controls,
+    .btn-back,
+    .ref-cta,
+    .ref-quiz,
+    .ref-lookup,
+    .ref-links,
+    .ref-other-languages,
+    .ref-audio,
+    .learn-hero p,
+    .learn-footer,
+    .site-note,
+    .toast {
+        display: none !important;
+    }
+
+    * {
+        color: #000 !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000 !important;
+    }
+
+    .learn-hero {
+        margin: 0 0 8pt !important;
+    }
+
+    .learn-hero h1 {
+        font-size: 18pt;
+    }
+
+    .learn-section h2 {
+        margin-bottom: 4pt;
+        font-size: 13pt;
+        break-after: avoid;
+    }
+
+    .learn-section p,
+    .learn-section li {
+        margin-bottom: 2pt;
+        font-size: 9pt;
+        line-height: 1.3;
+    }
+
+    .ref-table th,
+    .ref-table td {
+        padding: 1pt 3pt;
+        border-color: #bbb !important;
+        font-size: 8pt;
+        opacity: 1;
+    }
+
+    .ref-table thead th {
+        font-size: 7pt;
+    }
+
+    .ref-table-wrap {
+        overflow: visible;
+    }
+
+    .ref-verb {
+        margin-top: 6pt;
+        break-inside: avoid;
+    }
+
+    .ref-verb h3 {
+        margin-bottom: 1pt;
+        font-size: 10pt;
+    }
+
+    .number-notes-panel {
+        background: #fff !important;
+        border-color: #bbb !important;
+    }
+
+    /* reference_page.js opens every <details> before printing; a closed one
+       would print as its summary alone. */
+    .ref-details {
+        border: 0;
+    }
+
+    .ref-details summary {
+        list-style: none;
+    }
+}

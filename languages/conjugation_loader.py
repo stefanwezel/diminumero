@@ -117,6 +117,11 @@ class ConjugationPool:
             return None
         return self._data.get(infinitive.strip().lower())
 
+    def top_verbs(self, limit: int, exclude: set[str] | None = None) -> list[str]:
+        """The ``limit`` most frequent infinitives (the JSON is frequency-ordered)."""
+        exclude = exclude or set()
+        return [verb for verb in self._data if verb not in exclude][:limit]
+
     def search_verbs(
         self, prefix: str, limit: int = 8, exclude: set[str] | None = None
     ) -> list[str]:

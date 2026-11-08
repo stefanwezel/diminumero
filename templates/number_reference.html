@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ page_description }}">{% endblock %}
+{% block og_title %}{{ page_title }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ page_description }}">{% endblock %}
+{% block twitter_title %}{{ page_title }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ page_description }}">{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">{{ jsonld|tojson }}</script>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reference.css') }}">
+{% endblock %}
+
+{% block content %}
+{% set number_label = get_text('ref_col_number') %}
+{% set play_label = get_text('ref_play') %}
+<main class="container learn ref-page" data-ref-page
+      {% if audio_base %}data-audio-base="{{ audio_base }}"{% endif %}
+      data-i18n-lookup-invalid="{{ get_text('ref_lookup_invalid') }}">
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>{{ page_heading }}</h1>
+      <p>{{ page_description }}</p>
+    </header>
+
+    {# rel=nofollow: these are presets, which are noindex and start a session.
+       They are for people, so a crawler has no reason to walk through them. #}
+    <div class="ref-cta">
+      <a class="btn btn-primary" href="{{ drill_url }}" rel="nofollow">{{ get_text('ref_cta_drill') }}</a>
+      {% if listening_url %}
+      <a class="btn btn-secondary" href="{{ listening_url }}" rel="nofollow">{{ get_text('ref_cta_listening') }}</a>
+      {% endif %}
+    </div>
+
+    {% if pattern %}
+    <section class="learn-section" id="how-it-works">
+      <h2>{{ get_text('ref_pattern_heading') }}</h2>
+      <p{% if not pattern_translated %} lang="en" dir="ltr"{% endif %}>
+        {%- for segment in pattern -%}
+          {%- if segment.word -%}
+            <strong lang="{{ lang_code }}">{{ segment.word }}</strong> ({{ segment.number }})
+          {%- else -%}
+            {{ segment.text }}
+          {%- endif -%}
+        {%- endfor -%}
+      </p>
+      {% if not pattern_translated %}
+      <p class="ref-untranslated">{{ get_text('notes_untranslated') }}</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if is_long_list %}
+    <section class="learn-section ref-lookup" id="look-up" data-ref-lookup hidden>
+      <h2>{{ get_text('ref_lookup_label') }}</h2>
+      <form class="ref-form" data-ref-lookup-form autocomplete="off">
+        <input type="text" inputmode="numeric" data-ref-lookup-input
+               aria-label="{{ get_text('ref_lookup_label') }}" placeholder="347">
+        <button type="submit" class="btn btn-primary">{{ get_text('ref_lookup_button') }}</button>
+      </form>
+      <p class="ref-lookup-result" data-ref-lookup-result role="status" aria-live="polite"></p>
+    </section>
+    {% endif %}
+
+    {% with has_listen = has_audio_column %}{% include "_reference_quiz.html" %}{% endwith %}
+
+    {% if building_blocks %}
+    <section class="learn-section" id="building-blocks">
+      <h2>{{ get_text('ref_blocks_heading') }}</h2>
+      <div class="ref-grid">
+        {% for block in building_blocks %}
+        {% include "_reference_table.html" %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="learn-section" id="full-list">
+      <h2>{{ full_list_heading }}</h2>
+      {% if is_long_list %}
+        {% for group in full_list %}
+        <details class="ref-details">
+          <summary>{{ group.caption }}</summary>
+          {% with block = {'rows': group.rows} %}{% include "_reference_table.html" %}{% endwith %}
+        </details>
+        {% endfor %}
+      {% else %}
+      <div class="ref-grid">
+        {% for block in full_list %}
+        {% include "_reference_table.html" %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    {% if notes %}
+    <section class="learn-section" id="good-to-know">
+      {% with notes_static = True %}{% include "_number_notes.html" %}{% endwith %}
+    </section>
+    {% endif %}
+
+    {% with links = page_links %}{% include "_reference_links.html" %}{% endwith %}
+
+    <section class="learn-section ref-other-languages" id="other-languages">
+      <h2>{{ other_languages_heading }}</h2>
+      <ul>
+        {% for language in other_languages %}
+        <li><a href="{{ language.url }}">{{ language.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <div class="learn-footer">
+      <a class="btn btn-primary" href="{{ drill_url }}" rel="nofollow">{{ get_text('ref_cta_drill') }}</a>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/normalize_text.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reference_page.js') }}"></script>
+{% endblock %}

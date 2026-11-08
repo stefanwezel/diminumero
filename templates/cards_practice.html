@@ -103,9 +103,11 @@
     </div>
 </div>
 {% if reveal_mode == 'type' %}
+<script src="{{ url_for('static', filename='js/normalize_text.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cards_practice_reveal.js') }}"></script>
 {% endif %}
 {% else %}
+<script src="{{ url_for('static', filename='js/normalize_text.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cards_practice.js') }}"></script>
 {% endif %}
 {% if verb_infinitive and not revealed %}

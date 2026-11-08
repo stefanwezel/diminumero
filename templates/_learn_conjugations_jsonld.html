@@ -2,12 +2,13 @@
 {
     "@context": "https://schema.org",
     "@type": "LearningResource",
-    "name": "{{ get_text('seo_title_learn_conj_' + lang_code) }}",
-    "description": "{{ get_text('meta_desc_learn_conj_' + lang_code) }}",
+    "name": {{ get_text('seo_title_learn_conj_' + lang_code)|tojson }},
+    "description": {{ get_text('meta_desc_learn_conj_' + lang_code)|tojson }},
     "url": "{{ canonical_url }}",
     "educationalLevel": "Beginner",
     "learningResourceType": "lesson",
-    "inLanguage": "{{ lang_code }}",
+    "inLanguage": "{{ ui_language }}",
+    "teaches": "{{ lang_code }}",
     "provider": {
         "@type": "Organization",
         "name": "diminumero",

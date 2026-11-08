@@ -2,12 +2,13 @@
 {
     "@context": "https://schema.org",
     "@type": "LearningResource",
-    "name": "{{ get_text('seo_title_learn') }}",
-    "description": "{{ get_text('meta_desc_learn') }}",
+    "name": {{ get_text('seo_title_learn')|tojson }},
+    "description": {{ get_text('meta_desc_learn')|tojson }},
     "url": "{{ canonical_url }}",
     "educationalLevel": "Beginner",
     "learningResourceType": "lesson",
-    "inLanguage": "{{ lang_code }}",
+    "inLanguage": "{{ ui_language }}",
+    "teaches": "{{ lang_code }}",
     "provider": {
         "@type": "Organization",
         "name": "diminumero",

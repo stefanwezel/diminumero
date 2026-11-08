@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_text('menu_numbers_title') }}{% endblock %}
+{% block title %}{{ get_text('seo_title_numbers') }}{% endblock %}
 {% block meta_description %}<meta name="description" content="{{ get_text('menu_numbers_body') }}">{% endblock %}
+{% block og_title %}{{ get_text('seo_title_numbers') }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('menu_numbers_body') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('seo_title_numbers') }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('menu_numbers_body') }}">{% endblock %}
 
 {% block content %}
 <div class="landing-page">
@@ -136,7 +140,7 @@
         <!-- Shareable preset link: builds a URL from the selections above so a
              teacher can drop students straight into this drill. -->
         <div class="preset-share" id="preset-share"
-             data-base-url="{{ url_for('number_modes', lang_code=lang_code, _external=True) }}"
+             data-base-url="{{ url_for('number_modes', lang_code=lang_code, hl=None, _external=True) }}"
              data-deck-min="{{ deck_min }}"
              data-deck-max="{{ deck_max }}"
              {% if number_systems and number_systems.has_choice %}data-system="{{ number_systems.active }}"{% endif %}>

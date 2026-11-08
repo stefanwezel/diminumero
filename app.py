@@ -3,12 +3,20 @@
 import json
 from collections import deque
 from datetime import datetime, timedelta, timezone
-from functools import wraps
-from urllib.parse import quote_plus, urlencode
+from functools import lru_cache, wraps
+from urllib.parse import (
+    parse_qsl,
+    quote,
+    quote_plus,
+    urlencode,
+    urlsplit,
+    urlunsplit,
+)
 
 from flask import (
     Flask,
     Response,
+    abort,
     g,
     has_request_context,
     render_template,
@@ -69,10 +77,17 @@ from languages import (
     resolve_number_system,
 )
 from languages.notes_loader import get_notes
+from languages.number_reference import (
+    REFERENCE_RANGES,
+    get_reference_numbers,
+    get_reference_slugs,
+    render_pattern,
+)
 from translations import TRANSLATIONS
 from conjugation_config import (
     CONJ_QUESTIONS_DEFAULT,
     conj_card_scan_opt_in,
+    conj_citation_form,
     conj_hint_model_verbs,
     conj_infinitive_particle,
     conj_optional_person_index,
@@ -220,11 +235,137 @@ def login_required(view):
     return wrapped
 
 
+# ===== UI language in the URL =====
+# The UI language lives in the session, and a crawler has no session, so a search
+# engine could only ever see a page's English rendering. `?hl=de` gives each
+# translation an address of its own. The English version keeps the plain URL,
+# which every link already out there points at. Being in the URL, the language
+# can't be cookie-dependent for a crawler, and being copied to the session, it
+# stays with a person who lands from a search result and clicks on.
+
+UI_LANGUAGE_PARAM = "hl"
+
+# UI languages with their own URLs, default first. A partial locale is mostly
+# English under another name, so it can be chosen but search engines aren't told
+# about it. Dropping a code from PARTIAL_UI_LANGUAGES publishes it here too.
+URL_UI_LANGUAGES = (
+    DEFAULT_UI_LANGUAGE,
+    *sorted(SUPPORTED_UI_LANGUAGES - PARTIAL_UI_LANGUAGES - {DEFAULT_UI_LANGUAGE}),
+)
+
+# The pages a search engine is pointed at. Quizzes, results and cards are bound
+# to a session or a login and have no language versions to offer.
+LOCALIZED_ENDPOINTS = frozenset(
+    {
+        "about",
+        "conjugation_cheat_sheet",
+        "imprint",
+        "index",
+        "learn",
+        "learn_conjugations",
+        "listen_modes",
+        "mode_selection",
+        "number_modes",
+        "number_reference",
+        "privacy",
+        "worksheet",
+    }
+)
+
+# A link passing any other value is a preset, a numeral-system choice or a printed
+# sheet's address, none of which is simply "this page in that language".
+_PAGE_URL_VALUES = frozenset({"lang_code", "range_slug"})
+
+
+@lru_cache(maxsize=1)
+def _template_names():
+    return frozenset(app.jinja_env.list_templates())
+
+
+def _page_versions(endpoint, lang_code=None):
+    """The UI languages a page is really translated into, default first.
+
+    Derived from what exists, so adding a template publishes its URL, and a page
+    is never advertised in a language where only the buttons would change. Empty
+    for a page search engines aren't pointed at.
+    """
+    if endpoint not in LOCALIZED_ENDPOINTS:
+        return ()
+    if endpoint in ("learn", "learn_conjugations"):
+        # learn_es_de.html, learn_conjugations_es_de.html
+        names = _template_names()
+        return tuple(
+            ui_lang
+            for ui_lang in URL_UI_LANGUAGES
+            if f"{endpoint}_{lang_code}_{ui_lang}.html" in names
+        )
+    if endpoint == "conjugation_cheat_sheet":
+        # Tense names and explanations exist in English and in the language
+        # itself. In any other UI language its tables would be headed in English.
+        return tuple(
+            ui_lang
+            for ui_lang in URL_UI_LANGUAGES
+            if ui_lang in (DEFAULT_UI_LANGUAGE, lang_code)
+        )
+    return URL_UI_LANGUAGES
+
+
+def _localized_url(path, ui_lang):
+    """The absolute address of a page's version in one UI language."""
+    url = SITE_URL.rstrip("/") + path
+    if ui_lang and ui_lang != DEFAULT_UI_LANGUAGE:
+        url += f"?{UI_LANGUAGE_PARAM}={ui_lang}"
+    return url
+
+
+def _canonical_url():
+    """This page's own address: its version in the URL's language, if it has one.
+
+    Each language version has to name itself as canonical. One pointing at the
+    English version tells a search engine to drop the translation.
+    """
+    url_language = g.get("url_ui_language")
+    versions = _page_versions(
+        request.endpoint, (request.view_args or {}).get("lang_code")
+    )
+    return _localized_url(
+        request.path, url_language if url_language in versions else None
+    )
+
+
 @app.before_request
 def initialize_ui_language():
-    """Set default UI language on first visit if not already in session."""
-    if "language" not in session:
+    """Take the UI language from `?hl=` if the URL names one, else the session."""
+    requested = request.args.get(UI_LANGUAGE_PARAM)
+    g.url_ui_language = (
+        requested
+        if requested in URL_UI_LANGUAGES and requested != DEFAULT_UI_LANGUAGE
+        else None
+    )
+    if requested in SUPPORTED_UI_LANGUAGES:
+        # Only when it differs: an unchanged session sets no cookie, which is what
+        # lets a returning visitor's response stay in a shared cache.
+        if session.get("language") != requested:
+            session["language"] = requested
+    elif "language" not in session:
         session["language"] = DEFAULT_UI_LANGUAGE
+
+
+@app.url_defaults
+def keep_ui_language_in_links(endpoint, values):
+    """Point a page at ?hl=de to the German versions of the pages it links to.
+
+    A crawler keeps no session. Without this, every link on a German page would
+    lead it to English, and the German pages would be reachable only through the
+    sitemap. People don't depend on it: their language is in the session.
+    """
+    url_language = g.get("url_ui_language")
+    if not url_language or UI_LANGUAGE_PARAM in values:
+        return
+    if not _PAGE_URL_VALUES.issuperset(values):
+        return
+    if url_language in _page_versions(endpoint, values.get("lang_code")):
+        values[UI_LANGUAGE_PARAM] = url_language
 
 
 @app.before_request
@@ -292,6 +433,12 @@ def set_cache_headers(response):
             "no-store, no-cache, must-revalidate, max-age=0"
         )
         return response
+    if response.status_code >= 400:
+        # The rules below describe a page, not its absence. A reference page is
+        # a real 404 until its data is complete, and a proxy holding that 404
+        # for an hour would hide the page for an hour after it ships.
+        response.headers["Cache-Control"] = "no-store"
+        return response
     if response.mimetype == "application/pdf":
         # A worksheet PDF is seed-addressed and deterministic, so this URL is
         # always this exact document — worth a CDN or browser holding on to.
@@ -321,7 +468,11 @@ def set_cache_headers(response):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=600"
-    elif "/learn" in path:
+    elif (
+        "/learn" in path
+        or "/numbers/" in path
+        or path.endswith("/conjugation-cheat-sheet")
+    ):
         response.headers["Cache-Control"] = "public, max-age=3600"
     else:
         response.headers["Cache-Control"] = "public, max-age=600"
@@ -353,32 +504,97 @@ OG_LOCALE_MAP = {
 }
 
 
+# What a page is called in a breadcrumb, in the UI language.
+BREADCRUMB_TEXT_KEYS = {
+    "about": "footer_about",
+    "imprint": "footer_imprint",
+    "privacy": "footer_privacy",
+    "learn": "learn_nav_button",
+    "learn_conjugations": "learn_nav_conjugations_button",
+    "listen_modes": "home_audio_mode_title",
+    "number_modes": "menu_numbers_title",
+    "worksheet": "worksheet_title",
+}
+
+
 @app.context_processor
 def inject_seo_context():
     """Inject SEO-related variables into all templates."""
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
-    base = SITE_URL.rstrip("/")
-    canonical_url = base + request.path
+    canonical_url = _canonical_url()
+    url_language = g.get("url_ui_language")
+    has_quiz_params = _has_preset_params()
+    page_lang_code = (request.view_args or {}).get("lang_code")
+    versions = _page_versions(request.endpoint, page_lang_code)
+
+    # A drill started from a preset link is noindex, so it has no versions to
+    # offer. Its switcher falls back to /set_language/, because a link to this
+    # URL in another language would start the drill again; /set_language/
+    # returns to the drill's own route instead (_language_switch_target).
+    offered = () if has_quiz_params else versions
+    hreflang_links = []
+    if len(offered) > 1:
+        hreflang_links = [
+            {"code": code, "url": _localized_url(request.path, code)}
+            for code in offered
+        ]
+        hreflang_links.append(
+            {"code": "x-default", "url": _localized_url(request.path, None)}
+        )
+    # Plain links rather than /set_language/, which robots.txt blocks and which
+    # relies on the Referer header to find its way back. Built from the path as
+    # requested, not with url_for(): the query is whatever a visitor typed, and
+    # passed to url_for() as keywords, "?lang_code=" or "?_method=" would be read
+    # as a route argument or a build option and fail, and "?_external=1" would
+    # make every link absolute.
+    page_query = [
+        (key, value)
+        for key, value in request.args.items(multi=True)
+        if key != UI_LANGUAGE_PARAM
+    ]
+    page_path = quote(request.script_root + request.path)
+    ui_language_urls = {
+        code: f"{page_path}?{urlencode([*page_query, (UI_LANGUAGE_PARAM, code)])}"
+        for code in offered
+    }
 
     # og:locale
     og_locale = OG_LOCALE_MAP.get(ui_language, "en_US")
-    og_locale_alternates = [v for k, v in OG_LOCALE_MAP.items() if k != ui_language]
+    og_locale_alternates = [
+        OG_LOCALE_MAP[code]
+        for code in offered
+        if code != ui_language and code in OG_LOCALE_MAP
+    ]
 
     # Breadcrumbs
-    breadcrumbs = [{"name": "Home", "url": f"{base}/"}]
+    breadcrumbs = [{"name": "diminumero", "url": _localized_url("/", url_language)}]
     path = request.path.strip("/")
     if path:
         parts = path.split("/")
         if parts[0] in AVAILABLE_LANGUAGES:
-            lang_name = AVAILABLE_LANGUAGES[parts[0]].get("name", parts[0])
-            breadcrumbs.append({"name": lang_name, "url": f"{base}/{parts[0]}"})
+            lang_name = get_language_ui_name(parts[0], ui_language)
+            breadcrumbs.append(
+                {"name": lang_name, "url": _localized_url(f"/{parts[0]}", url_language)}
+            )
             if len(parts) >= 2:
                 sub = "/".join(parts[1:])
+                # A page may name itself; the URL only makes a passable fallback.
+                leaf = g.get("breadcrumb_leaf")
+                if not leaf and request.endpoint in BREADCRUMB_TEXT_KEYS:
+                    leaf = get_text(BREADCRUMB_TEXT_KEYS[request.endpoint])
                 breadcrumbs.append(
-                    {"name": sub.replace("/", " - ").title(), "url": f"{base}/{path}"}
+                    {
+                        "name": leaf or sub.replace("/", " - ").title(),
+                        "url": canonical_url,
+                    }
                 )
-        elif parts[0] in ("about", "privacy", "imprint"):
-            breadcrumbs.append({"name": parts[0].title(), "url": f"{base}/{parts[0]}"})
+        elif request.endpoint in BREADCRUMB_TEXT_KEYS:
+            breadcrumbs.append(
+                {
+                    "name": get_text(BREADCRUMB_TEXT_KEYS[request.endpoint]),
+                    "url": canonical_url,
+                }
+            )
 
     return {
         "ui_language": ui_language,
@@ -388,6 +604,8 @@ def inject_seo_context():
         "ui_language_partial": ui_language in PARTIAL_UI_LANGUAGES,
         "site_url": SITE_URL,
         "canonical_url": canonical_url,
+        "hreflang_links": hreflang_links,
+        "ui_language_urls": ui_language_urls,
         "og_locale": og_locale,
         "og_locale_alternates": og_locale_alternates,
         "breadcrumbs": breadcrumbs,
@@ -398,7 +616,7 @@ def inject_seo_context():
         # Any URL carrying quiz params is a duplicate of the clean route as
         # far as a crawler is concerned: canonical_url above already drops the
         # query string, and base.html adds noindex when this is set.
-        "has_quiz_params": _has_preset_params(),
+        "has_quiz_params": has_quiz_params,
     }
 
 
@@ -721,6 +939,7 @@ def mode_selection(lang_code):
         has_conjugation=has_conjugation,
         has_conjugation_materials=has_conjugation_materials,
         number_systems=_number_system_context(lang_code, number_system),
+        reference_links=_reference_links(lang_code),
     )
 
 
@@ -969,6 +1188,7 @@ def number_modes(lang_code):
         # A deck that lives entirely under 100 weights every magnitude level
         # identically, so the dial would be a control that does nothing.
         show_magnitude=quiz_logic.spans_multiple_magnitudes(numbers),
+        reference_links=_reference_links(lang_code),
     )
 
 
@@ -1097,6 +1317,9 @@ def _worksheet_pdf_cache_key(lang_code, sheet):
     request for the same sheet are different documents. So does the numeral
     system: the same numbers in traditional Welsh are entirely different words,
     and serving one from the other's cache entry would print the wrong sheet.
+    And so do the words themselves: the URL names the same sheet after a deck
+    word is corrected, and the cache lives across deploys, so without them a
+    fixed spelling would go on printing the old way.
     """
     parts = (
         lang_code,
@@ -1106,6 +1329,7 @@ def _worksheet_pdf_cache_key(lang_code, sheet):
         str(sheet["count"]),
         f"{sheet['range_low']}-{sheet['range_high']}",
         sheet["seed"],
+        *(item["word"] for item in sheet.get("exercises", ())),
     )
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
@@ -1483,8 +1707,61 @@ def set_language(lang):
     """Set the UI language preference (not learning language)."""
     if lang in SUPPORTED_UI_LANGUAGES:
         session["language"] = lang
-    # Redirect back to the referring page or index
-    return redirect(request.referrer or url_for("index"))
+    return redirect(_language_switch_target(request.referrer) or url_for("index"))
+
+
+# The route each session mode's drill runs on.
+QUIZ_ENDPOINTS = {
+    "easy": "quiz_easy",
+    "advanced": "quiz_advanced",
+    "hardcore": "quiz_hardcore",
+    "audio": "listen_quiz",
+}
+
+# The pages a preset link starts a drill on, and the params that make it one.
+_PRESET_PAGES = {
+    "number_modes": PRESET_PARAM_KEYS,
+    "listen_modes": LISTEN_PRESET_PARAM_KEYS,
+}
+
+
+def _language_switch_target(referrer):
+    """Where /set_language/ sends a person back to, or None for the home page.
+
+    The page they came from, but not with its ?hl= still on, which would switch
+    straight back to the language just left. And not to the preset link that
+    started the drill they are in: that URL starts it again, so they go to the
+    drill's own route instead, where their question is still waiting.
+    """
+    if not referrer:
+        return None
+    try:
+        parts = urlsplit(referrer)
+    except ValueError:
+        # The Referer is whatever the client sent ("http://[bad/").
+        return None
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    drill = _running_drill_url(parts.path, {key for key, _ in query})
+    if drill:
+        return drill
+    query = [(key, value) for key, value in query if key != UI_LANGUAGE_PARAM]
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
+def _running_drill_url(path, query_keys):
+    """The route of the session's drill if `path` is the preset link for it."""
+    try:
+        endpoint, view_args = app.create_url_adapter(request).match(path, method="GET")
+    except HTTPException:
+        return None
+    preset_keys = _PRESET_PAGES.get(endpoint)
+    if not preset_keys or query_keys.isdisjoint(preset_keys):
+        return None
+    lang_code = view_args.get("lang_code")
+    mode = session.get("mode")
+    if session.get("learn_language") != lang_code or mode not in QUIZ_ENDPOINTS:
+        return None
+    return url_for(QUIZ_ENDPOINTS[mode], lang_code=lang_code)
 
 
 def _results_redirect(lang_code):
@@ -1971,18 +2248,25 @@ def quiz_hardcore(lang_code):
     )
 
 
+# Bounded, though every caller has already checked the language is real.
+@lru_cache(maxsize=32)
 def _available_audio_numbers(lang_code):
-    """Return the set of numbers (ints) we have a pre-generated MP3 for."""
+    """The numbers (ints) we have a pre-generated MP3 for.
+
+    Cached: the clips are committed and ship with the image, and listing a
+    thousand files on every question and every reference page is disk work for
+    nothing. A clip generated while the server runs is picked up on restart.
+    """
     audio_dir = Path(app.static_folder) / "audio" / lang_code
     if not audio_dir.is_dir():
-        return set()
+        return frozenset()
     numbers = set()
     for path in audio_dir.glob("*.mp3"):
         try:
             numbers.add(int(path.stem))
         except ValueError:
             continue
-    return numbers
+    return frozenset(numbers)
 
 
 def _listening_deck(lang_code):
@@ -2043,6 +2327,7 @@ def listen_modes(lang_code):
         deck_max=max(playable),
         magnitude_level=session.get("magnitude_level", 1),
         show_magnitude=quiz_logic.spans_multiple_magnitudes(playable),
+        reference_links=_reference_links(lang_code),
     )
 
 
@@ -2356,13 +2641,19 @@ def learn(lang_code):
 
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     template = f"learn_{lang_code}_{ui_lang}.html"
+    # The language comes from the URL, not the session: a crawler has no session,
+    # and get_text would otherwise title every one of these pages "Spanish".
+    context = {
+        "lang_code": lang_code,
+        "get_text": _text_for_language(lang_code),
+        "reference_links": _reference_links(lang_code),
+    }
 
     # Fallback to English if template doesn't exist
     try:
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(template, **context)
     except jinja2.TemplateNotFound:
-        template = f"learn_{lang_code}_en.html"
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(f"learn_{lang_code}_en.html", **context)
 
 
 @app.route("/<lang_code>/learn/conjugations")
@@ -2377,13 +2668,343 @@ def learn_conjugations(lang_code):
 
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     template = f"learn_conjugations_{lang_code}_{ui_lang}.html"
+    context = {
+        "lang_code": lang_code,
+        "get_text": _text_for_language(lang_code),
+        "reference_links": _reference_links(lang_code),
+    }
 
     # Fallback to English if the UI-language variant doesn't exist.
     try:
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(template, **context)
     except jinja2.TemplateNotFound:
-        template = f"learn_conjugations_{lang_code}_en.html"
-        return render_template(template, lang_code=lang_code, get_text=get_text)
+        return render_template(f"learn_conjugations_{lang_code}_en.html", **context)
+
+
+# ===== Reference pages =====
+# Landing pages for what learners search for: "French numbers 1-100", "how to
+# count to 1,000 in Spanish", "German verb conjugation cheat sheet". Anonymous
+# GETs whose language comes from the URL. They read no session state and write
+# none, so visiting one can't disturb a drill that's in progress. The self-test on
+# each page runs in the browser from the page's own tables, and its links into
+# the real drills are shareable presets, so no route to practice needs an account.
+
+REFERENCE_LINK_KEYS = {"1-100": "ref_link_100", "1-1000": "ref_link_1000"}
+
+# Filling a number table with a compound nobody would pick is no way to show how
+# compounds work, so "putting them together" is a fixed, varied handful.
+REFERENCE_EXAMPLE_NUMBERS = (101, 110, 125, 347, 562, 999)
+
+# Tenses come from each language's usefulness ranking and verbs from its pool's
+# frequency order, so "cheat sheet" means the same thing in every language.
+CONJ_SHEET_TENSES = 5
+CONJ_SHEET_VERBS = 20
+
+
+def _reference_links(lang_code, exclude=None):
+    """Links from a page into this language's reference pages."""
+    text = _text_for_language(lang_code)
+    links = [
+        {
+            "url": url_for("number_reference", lang_code=lang_code, range_slug=slug),
+            "label": text(REFERENCE_LINK_KEYS[slug]),
+        }
+        for slug in get_reference_slugs(lang_code)
+    ]
+    if lang_code in get_languages_with_conjugation():
+        links.append(
+            {
+                "url": url_for("conjugation_cheat_sheet", lang_code=lang_code),
+                "label": text("ref_link_cheat_sheet"),
+            }
+        )
+    return [link for link in links if link["url"].split("?")[0] != exclude]
+
+
+def _reference_page_links(lang_code):
+    """Everything a reference page points on to, itself excluded."""
+    text = _text_for_language(lang_code)
+    links = []
+    if lang_code in get_languages_with_learn_materials():
+        links.append(
+            {
+                "url": url_for("learn", lang_code=lang_code),
+                "label": text("ref_link_learn"),
+            }
+        )
+    links.extend(_reference_links(lang_code, exclude=request.path))
+    links.append(
+        {
+            "url": url_for("worksheet", lang_code=lang_code),
+            "label": text("worksheet_title"),
+        }
+    )
+    return links
+
+
+def _reference_jsonld(name, description, teaches):
+    """schema.org data for a reference page, serialized by the template's tojson."""
+    return {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": name,
+        "description": description,
+        "url": _canonical_url(),
+        "learningResourceType": "reference",
+        "educationalLevel": "Beginner",
+        "isAccessibleForFree": True,
+        "inLanguage": session.get("language", DEFAULT_UI_LANGUAGE),
+        "teaches": teaches,
+        "provider": {
+            "@type": "Organization",
+            "name": "diminumero",
+            "url": SITE_URL,
+        },
+    }
+
+
+def _reference_second_system(lang_code, low, high):
+    """A second ready numeral system that covers the range, for its own column."""
+    default = get_default_number_system(lang_code)
+    for system in get_ready_number_systems(lang_code):
+        if system["key"] == default:
+            continue
+        deck = get_language_numbers(lang_code, system["key"])
+        if all(number in deck for number in range(low, high + 1)):
+            return system["key"], deck
+    return None, {}
+
+
+@app.route("/<lang_code>/numbers/<range_slug>")
+def number_reference(lang_code, range_slug):
+    """A complete number list for a language: /es/numbers/1-100 and 1-1000."""
+    if not is_language_ready(lang_code):
+        abort(404)
+    words = get_reference_numbers(lang_code, range_slug)
+    if words is None:
+        abort(404)
+
+    text = _text_for_language(lang_code)
+    low, high = REFERENCE_RANGES[range_slug]
+    is_long_list = high > 100
+
+    audio_numbers = (
+        _available_audio_numbers(lang_code)
+        if lang_code in get_languages_with_audio_mode()
+        else set()
+    )
+    playable_in_range = any(number in audio_numbers for number in words)
+
+    second_system, second_words = _reference_second_system(lang_code, low, high)
+    columns = [text("ref_col_word")]
+    if second_system:
+        default_system = get_default_number_system(lang_code)
+        columns = [
+            _number_system_label(lang_code, default_system),
+            _number_system_label(lang_code, second_system),
+        ]
+
+    def rows(numbers):
+        return [
+            {
+                "number": number,
+                "word": words[number],
+                "second_word": second_words.get(number),
+                "audio": number in audio_numbers,
+            }
+            for number in numbers
+        ]
+
+    def hundred_blocks(step):
+        return [
+            {
+                "caption": f"{start}–{start + step - 1}",
+                "rows": rows(range(start, start + step)),
+            }
+            for start in range(low, high + 1, step)
+        ]
+
+    if is_long_list:
+        title = text("ref_1000_title")
+        description = text("ref_1000_desc")
+        heading = text("ref_1000_h1")
+        building_blocks = [
+            {"caption": "1–20", "rows": rows(range(1, 21))},
+            {"caption": text("ref_tens_caption"), "rows": rows(range(20, 100, 10))},
+            {
+                "caption": text("ref_hundreds_caption"),
+                "rows": rows(range(100, 1001, 100)),
+            },
+            {
+                "caption": text("ref_examples_caption"),
+                "rows": rows(REFERENCE_EXAMPLE_NUMBERS),
+            },
+        ]
+        full_list = hundred_blocks(100)
+    else:
+        suffix = "_audio" if playable_in_range else ""
+        title = text(f"ref_100_title{suffix}")
+        description = text(f"ref_100_desc{suffix}")
+        heading = text("ref_100_h1")
+        building_blocks = []
+        full_list = hundred_blocks(10)
+
+    g.breadcrumb_leaf = heading
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+
+    other_languages = [
+        {
+            "url": url_for("number_reference", lang_code=code, range_slug=range_slug),
+            "label": text(f"lang_{code}_name"),
+        }
+        for code, info in AVAILABLE_LANGUAGES.items()
+        if code != lang_code
+        and info.get("ready")
+        and range_slug in get_reference_slugs(code)
+    ]
+
+    return render_template(
+        "number_reference.html",
+        lang_code=lang_code,
+        get_text=text,
+        page_title=title,
+        page_description=description,
+        page_heading=heading,
+        jsonld=_reference_jsonld(
+            heading,
+            description,
+            f"{AVAILABLE_LANGUAGES[lang_code]['name']} numbers {range_slug}",
+        ),
+        pattern=render_pattern(lang_code, range_slug, words),
+        pattern_translated=ui_lang == "en",
+        columns=columns,
+        building_blocks=building_blocks,
+        full_list=full_list,
+        full_list_heading=text(
+            "ref_all_heading" if is_long_list else "ref_list_heading"
+        ),
+        is_long_list=is_long_list,
+        audio_base=(
+            f"{app.static_url_path}/audio/{lang_code}/" if playable_in_range else None
+        ),
+        has_audio_column=playable_in_range,
+        # Only the systems the page has a column for: Welsh 1-1000 is decimal
+        # alone, so a note about traditional Welsh would describe nothing on it.
+        notes=get_notes(
+            lang_code,
+            system=None if second_system else get_default_number_system(lang_code),
+            numbers=range(low, high + 1),
+            when="reference",
+            ui_lang=ui_lang,
+        ),
+        drill_url=url_for(
+            "number_modes", lang_code=lang_code, mode="advanced", range=range_slug
+        ),
+        listening_url=(
+            url_for("listen_modes", lang_code=lang_code, range=range_slug)
+            if playable_in_range
+            else None
+        ),
+        page_links=_reference_page_links(lang_code),
+        other_languages=other_languages,
+        other_languages_heading=text(
+            "ref_other_languages_1000" if is_long_list else "ref_other_languages_100"
+        ),
+    )
+
+
+def _conj_sheet_verb(lang_code, infinitive, ui_lang):
+    """One verb's table: a row per person, a column per tense it actually has."""
+    pool = _conj_pool(lang_code)
+    forms = pool.get_verb_forms(infinitive)
+    # A modal has no continuous or future; a column of dashes teaches nothing.
+    tenses = [
+        tense["key"]
+        for tense in conj_tenses(lang_code)[:CONJ_SHEET_TENSES]
+        if any(forms.get(tense["key"]) or [])
+    ]
+    labels = [tense_label(lang_code, key, ui_lang, infinitive) for key in tenses]
+
+    rows = []
+    for person in conj_persons(lang_code):
+        cells = []
+        for key, label in zip(tenses, labels):
+            form = forms[key][person["index"]]
+            # The same answers a drill accepts, the stored form itself aside.
+            others = []
+            if form:
+                accepted = _conj_accepted_forms(
+                    lang_code, infinitive, key, person["index"], form
+                )
+                others = accepted[1:]
+            cells.append(
+                {
+                    "form": form,
+                    "question": f"{infinitive} · {person['label']} · {label}",
+                    "alternatives": "|".join(others),
+                }
+            )
+        rows.append({"person": person["label"], "cells": cells})
+
+    return {
+        "infinitive": infinitive,
+        "heading": conj_citation_form(lang_code, infinitive),
+        "tenses": labels,
+        "rows": rows,
+    }
+
+
+@app.route("/<lang_code>/conjugation-cheat-sheet")
+def conjugation_cheat_sheet(lang_code):
+    """The most useful tenses of the most common verbs, on one printable page."""
+    if lang_code not in get_languages_with_conjugation():
+        abort(404)
+
+    text = _text_for_language(lang_code)
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    pool = _conj_pool(lang_code)
+    model_verbs = [v for v in conj_hint_model_verbs(lang_code) if pool.verb_exists(v)]
+    common_verbs = pool.top_verbs(CONJ_SHEET_VERBS, exclude=set(model_verbs))
+
+    title = text("conj_sheet_title")
+    description = text("conj_sheet_desc")
+    heading = text("conj_sheet_h1")
+    g.breadcrumb_leaf = heading
+
+    other_languages = [
+        {
+            "url": url_for("conjugation_cheat_sheet", lang_code=code),
+            "label": text(f"lang_{code}_name"),
+        }
+        for code in get_languages_with_conjugation()
+        if code != lang_code
+    ]
+
+    return render_template(
+        "conjugation_cheat_sheet.html",
+        lang_code=lang_code,
+        get_text=text,
+        page_title=title,
+        page_description=description,
+        page_heading=heading,
+        jsonld=_reference_jsonld(
+            heading,
+            description,
+            f"{AVAILABLE_LANGUAGES[lang_code]['name']} verb conjugation",
+        ),
+        tense_summary=[
+            {
+                "label": tense_label(lang_code, tense["key"], ui_lang),
+                "hint": tense_hint(lang_code, tense["key"], ui_lang),
+            }
+            for tense in conj_tenses(lang_code)[:CONJ_SHEET_TENSES]
+        ],
+        model_verbs=[_conj_sheet_verb(lang_code, v, ui_lang) for v in model_verbs],
+        common_verbs=[_conj_sheet_verb(lang_code, v, ui_lang) for v in common_verbs],
+        practice_url=url_for("conjugate", lang_code=lang_code),
+        page_links=_reference_page_links(lang_code),
+        other_languages=other_languages,
+    )
 
 
 @app.route("/login")
@@ -4132,7 +4753,23 @@ def _conj_asked_key(
 
 
 def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
-    """Every spelling accepted for the current conjugation question.
+    """Every spelling accepted for the current conjugation question."""
+    return _conj_accepted_forms(
+        lang_code,
+        current["infinitive"],
+        current["tense_key"],
+        current["person_index"],
+        current["correct_answer"],
+    )
+
+
+def _conj_accepted_forms(
+    lang_code: str, infinitive: str, tense_key: str, person_index: int, form: str
+) -> list[str]:
+    """Every spelling accepted for one cell of a verb's table, `form` first.
+
+    Shared by the drill and the cheat sheet's self-test, so the two can't
+    disagree about what counts as right.
 
     The German Sie-imperative is stored with its obligatory inverted pronoun
     ("gehen Sie", "stehen Sie auf") since that's the grammatically complete
@@ -4140,21 +4777,12 @@ def _conj_acceptable_answers(lang_code: str, current: dict) -> list[str]:
     pronoun-less variant too. A pool may store one form per cell where usage has
     two (British "learnt", "learned"); it lists the others beside it.
     """
-    correct = current["correct_answer"]
-    answers = [correct]
-    if (
-        lang_code == "de"
-        and current["tense_key"] == "imperativ"
-        and current["person_index"] == 5
-    ):
-        bare = " ".join(w for w in correct.split() if w != "Sie")
+    answers = [form]
+    if lang_code == "de" and tense_key == "imperativ" and person_index == 5:
+        bare = " ".join(w for w in form.split() if w != "Sie")
         if bare:
             answers.append(bare)
-    answers.extend(
-        _conj_pool(lang_code).get_form_variants(
-            current["infinitive"], current["tense_key"], correct
-        )
-    )
+    answers.extend(_conj_pool(lang_code).get_form_variants(infinitive, tense_key, form))
     return answers
 
 
@@ -4502,36 +5130,70 @@ def robots_txt():
     return Response("\n".join(lines), mimetype="text/plain")
 
 
-@app.route("/sitemap.xml")
-def sitemap_xml():
-    """Serve sitemap.xml for search engine crawlers."""
-    base = SITE_URL.rstrip("/")
-    lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    urls = [f"{base}/"]
+def _sitemap_pages():
+    """(path, endpoint, lang_code) for every page search engines are pointed at."""
+    pages = [("/", "index", None)]
     for lang_code, lang_info in AVAILABLE_LANGUAGES.items():
         if lang_info.get("ready"):
-            urls.append(f"{base}/{lang_code}")
+            pages.append((f"/{lang_code}", "mode_selection", lang_code))
+            # The practice config screen, like the listening one below. A drill
+            # it starts (a parameterised URL, noindex) is not a page.
+            pages.append((f"/{lang_code}/numbers", "number_modes", lang_code))
             # The worksheet setup form (no params) is a real landing page.
-            urls.append(f"{base}/{lang_code}/worksheet")
+            pages.append((f"/{lang_code}/worksheet", "worksheet", lang_code))
+            for slug in get_reference_slugs(lang_code):
+                pages.append(
+                    (f"/{lang_code}/numbers/{slug}", "number_reference", lang_code)
+                )
+    for lc in get_languages_with_conjugation():
+        pages.append((f"/{lc}/conjugation-cheat-sheet", "conjugation_cheat_sheet", lc))
     for lc in get_languages_with_audio_mode():
         # The listening overview is a real landing page; the drill it starts
         # (a parameterised URL, noindex) is not.
-        urls.append(f"{base}/{lc}/listening")
+        pages.append((f"/{lc}/listening", "listen_modes", lc))
     for lc in get_languages_with_learn_materials():
-        urls.append(f"{base}/{lc}/learn")
+        pages.append((f"/{lc}/learn", "learn", lc))
     for lc in get_languages_with_conjugation_materials():
-        urls.append(f"{base}/{lc}/learn/conjugations")
-    urls.append(f"{base}/about")
-    urls.append(f"{base}/privacy")
-    urls.append(f"{base}/imprint")
+        pages.append((f"/{lc}/learn/conjugations", "learn_conjugations", lc))
+    pages.append(("/about", "about", None))
+    pages.append(("/privacy", "privacy", None))
+    pages.append(("/imprint", "imprint", None))
+    return pages
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    """Serve sitemap.xml: every language version, each listing all the others.
+
+    The same language annotations as each page's <head>. They are what lets a
+    search engine find the ?hl= addresses and treat them as one page's versions.
+    """
+    lastmod = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_lines.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for loc in urls:
-        xml_lines.append("  <url>")
-        xml_lines.append(f"    <loc>{loc}</loc>")
-        xml_lines.append(f"    <lastmod>{lastmod}</lastmod>")
-        xml_lines.append("  </url>")
+    xml_lines.append(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+    )
+    for path, endpoint, lang_code in _sitemap_pages():
+        versions = _page_versions(endpoint, lang_code)
+        alternates = []
+        if len(versions) > 1:
+            alternates = [
+                f'    <xhtml:link rel="alternate" hreflang="{code}" '
+                f'href="{_localized_url(path, code)}"/>'
+                for code in versions
+            ]
+            alternates.append(
+                '    <xhtml:link rel="alternate" hreflang="x-default" '
+                f'href="{_localized_url(path, None)}"/>'
+            )
+        for ui_lang in versions:
+            xml_lines.append("  <url>")
+            xml_lines.append(f"    <loc>{_localized_url(path, ui_lang)}</loc>")
+            xml_lines.append(f"    <lastmod>{lastmod}</lastmod>")
+            xml_lines.extend(alternates)
+            xml_lines.append("  </url>")
     xml_lines.append("</urlset>")
     return Response("\n".join(xml_lines), mimetype="application/xml")
 

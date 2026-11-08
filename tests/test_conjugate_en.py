@@ -19,6 +19,7 @@ from app import app as flask_app
 from config import SUPPORTED_UI_LANGUAGES
 from conjugation_config import (
     CONJ_LANGS,
+    conj_citation_form,
     conj_hint_model_verbs,
     conj_persons,
     conj_tense_keys,
@@ -549,6 +550,23 @@ class TestModals:
         assert "Conditional (would)" in client.get("/en/conjugate").get_data(
             as_text=True
         )
+
+    def test_modals_are_cited_without_to(self):
+        """There is no "to can": a modal has no infinitive.
+
+        Which is also why it has no "will" future, so the config's list is pinned
+        to the pool rather than kept by hand.
+        """
+        pool = en_conjugations.pool
+        without_will = {
+            verb
+            for verb in pool._data
+            if not any(pool.get_verb_forms(verb)["future-will"])
+        }
+        assert CONJ_LANGS["en"]["no_infinitive"] == without_will
+        assert conj_citation_form("en", "can") == "can"
+        assert conj_citation_form("en", "go") == "to go"
+        assert conj_citation_form("es", "ir") == "ir"
 
     def test_every_override_is_for_a_cell_with_a_form(self):
         for verb, tenses in CONJ_LANGS["en"]["verb_overrides"].items():

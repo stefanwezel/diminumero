@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ page_description }}">{% endblock %}
+{% block og_title %}{{ page_title }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ page_description }}">{% endblock %}
+{% block twitter_title %}{{ page_title }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ page_description }}">{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">{{ jsonld|tojson }}</script>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reference.css') }}">
+{% endblock %}
+
+{% macro verb_table(verb) %}
+<div class="ref-verb">
+  <h3 lang="{{ lang_code }}">{{ verb.heading }}</h3>
+  <div class="ref-table-wrap">
+    <table class="ref-table ref-table-verb">
+      <thead>
+        <tr>
+          <td></td>
+          {% for tense in verb.tenses %}<th scope="col">{{ tense }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in verb.rows %}
+        <tr>
+          <th scope="row" lang="{{ lang_code }}">{{ row.person }}</th>
+          {% for cell in row.cells %}
+          {% if cell.form %}
+          <td class="ref-word" lang="{{ lang_code }}" data-q="{{ cell.question }}"
+              {% if cell.alternatives %}data-alt="{{ cell.alternatives }}"{% endif %}>{{ cell.form }}</td>
+          {% else %}
+          <td>–</td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<main class="container learn ref-page" data-ref-page>
+  <div class="learn-content">
+    <a href="{{ url_for('mode_selection', lang_code=lang_code) }}" class="btn-back">{{ get_text('learn_btn_back') }}</a>
+
+    <header class="learn-hero">
+      <h1>{{ page_heading }}</h1>
+      <p>{{ page_description }}</p>
+    </header>
+
+    <div class="ref-cta">
+      <button type="button" class="btn btn-primary" data-ref-print hidden>{{ get_text('conj_sheet_print') }}</button>
+      {# rel=nofollow: this page sits behind login and is disallowed in robots.txt. #}
+      <a class="btn btn-secondary" href="{{ practice_url }}" rel="nofollow">{{ get_text('conj_sheet_practice') }}</a>
+    </div>
+
+    <section class="learn-section" id="tenses">
+      <h2>{{ get_text('conj_sheet_tenses_heading') }}</h2>
+      <ul>
+        {% for tense in tense_summary %}
+        <li><strong>{{ tense.label }}</strong>: {{ tense.hint }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {% with has_listen = False %}{% include "_reference_quiz.html" %}{% endwith %}
+
+    <section class="learn-section" id="model-verbs">
+      <h2>{{ get_text('conj_sheet_models_heading') }}</h2>
+      <p>{{ get_text('conj_sheet_models_intro') }}</p>
+      {% for verb in model_verbs %}{{ verb_table(verb) }}{% endfor %}
+    </section>
+
+    <section class="learn-section" id="common-verbs">
+      <h2>{{ get_text('conj_sheet_common_heading') }}</h2>
+      {% for verb in common_verbs %}{{ verb_table(verb) }}{% endfor %}
+    </section>
+
+    {% with links = page_links %}{% include "_reference_links.html" %}{% endwith %}
+
+    <section class="learn-section ref-other-languages" id="other-languages">
+      <h2>{{ get_text('ref_other_languages_conj') }}</h2>
+      <ul>
+        {% for language in other_languages %}
+        <li><a href="{{ language.url }}">{{ language.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/normalize_text.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reference_page.js') }}"></script>
+{% endblock %}

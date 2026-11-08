@@ -14,7 +14,7 @@
     "@type": "WebApplication",
     "name": "diminumero",
     "applicationCategory": "EducationalApplication",
-    "description": "{{ get_text('meta_desc_index') }}",
+    "description": {{ get_text('meta_desc_index')|tojson }},
     "url": "{{ site_url }}",
     "offers": {
         "@type": "Offer",

@@ -155,6 +155,12 @@ These are the only keys in `translations.py` that need updating for a new learni
 "inLanguage": ["es", "fr", "ja", "de", "ko", "it", "zh", "pt", "tr", "ne", "sv", "da", "no", "cy", "ga", "en", "xx"]
 ```
 
+**Reference pages** — A ready language gets `/<code>/numbers/1-100` automatically, and it joins the sitemap and the language menu by itself, because availability is derived from the data. It also needs:
+- A "how it works" paragraph in `NUMBER_PATTERNS` (`languages/number_reference.py`), key `"1-100"`. Write `{42}` rather than typing a number word: it renders the word from the deck, so prose can't drift from the data. Don't put a token in brackets, since it already renders as `word (42)`.
+- For `/<code>/numbers/1-1000`, a `generate_numbers.py` with one `number_to_<language>()` that reproduces your deck, then run `uv run tools/generate_number_reference.py` and add a `"1-1000"` paragraph. The script writes all of 101-1000, so regenerating the deck with a different sample later can't break the page, and it aborts if the generator and the deck disagree. With no generator, the language simply has no 1-1000 page. After changing a generator, rerun both: `generate_numbers.py` for the deck, then this script.
+
+`tests/test_number_reference.py` fails until the paragraphs exist.
+
 ### 8. Enable the Language
 
 Once everything is ready:
@@ -442,6 +448,7 @@ Before marking a language as `ready: True`:
 - [ ] (Optional) Listening audio added — see [ADD_LISTENING_EXERCISES.md](ADD_LISTENING_EXERCISES.md)
 - [ ] `meta_desc_index` and `seo_title_index` updated in `translations.py` for all 8 UI languages
 - [ ] Language code added to JSON-LD `inLanguage` in `templates/language_selection.html`
+- [ ] "How it works" paragraph added to `NUMBER_PATTERNS`; `uv run tools/generate_number_reference.py` run if there is a generator
 - [ ] Edge cases tested (very small/large numbers)
 - [ ] Native speaker review completed
 

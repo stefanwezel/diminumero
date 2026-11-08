@@ -1,0 +1,9 @@
+{# A language's reference and study pages. Callers pass `links`. #}
+<nav class="learn-toc ref-links" aria-label="{{ get_text('ref_links_heading') }}">
+  <strong>{{ get_text('ref_links_heading') }}</strong>
+  <ul>
+    {% for link in links %}
+    <li><a href="{{ link.url }}">{{ link.label }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>

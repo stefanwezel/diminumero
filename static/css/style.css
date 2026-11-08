@@ -4973,3 +4973,8 @@ html {
     font-size: 0.82rem;
     color: #C9BCD8;
 }
+
+/* Links into a language's reference pages, below its practice and Learn pages. */
+.ref-links {
+    margin-top: 24px;
+}

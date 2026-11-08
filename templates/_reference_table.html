@@ -1,0 +1,24 @@
+{# One block of a number list. Callers pass `block` ({caption, rows}), `columns`,
+   `has_audio_column`, `number_label` and `play_label`. The word cell's data-q is
+   what the self-test and the number lookup read. The rows are kept tight: the
+   1-1000 page has a thousand of them. #}
+<div class="ref-table-wrap">
+  <table class="ref-table">
+    {% if block.caption %}<caption>{{ block.caption }}</caption>{% endif %}
+    <thead>
+      <tr>
+        <th scope="col">{{ number_label }}</th>
+        {% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}
+        {% if has_audio_column %}<td></td>{% endif %}
+      </tr>
+    </thead>
+    <tbody lang="{{ lang_code }}">
+      {%- for row in block.rows %}
+      <tr><th scope="row">{{ row.number }}</th><td class="ref-word" data-q="{{ row.number }}">{{ row.word }}</td>
+      {%- if columns|length > 1 %}<td>{{ row.second_word }}</td>{% endif %}
+      {%- if has_audio_column %}<td class="ref-audio">{% if row.audio %}<button type="button" class="ref-play" data-n="{{ row.number }}" aria-label="{{ play_label }}: {{ row.number }}">▶</button>{% endif %}</td>{% endif -%}
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,5 +1,13 @@
 """Tests for quiz_logic module."""
 
+import json
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+
 import quiz_logic
 from languages import get_language_numbers
 
@@ -207,6 +215,77 @@ class TestNormalizeText:
         """Test that empty strings are handled."""
         assert quiz_logic.normalize_text("") == ""
         assert quiz_logic.normalize_text("   ") == ""
+
+
+class TestBrowserNormalizeText:
+    """The browser checks answers too, and must agree with the server.
+
+    Five copies of normalize_text() once lived in static/js and had drifted
+    apart. There is now one, static/js/normalize_text.js.
+    """
+
+    STATIC_JS = Path(__file__).resolve().parent.parent / "static" / "js"
+    TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
+    SAMPLES = [
+        "José",
+        "  Dieciséis   y  VEINTIDÓS ",
+        "fünfundzwanzig",
+        "Größe",
+        "ÜBER",
+        "kırk iki",
+        "İki",
+        "quatre-vingt-dix",
+        "trentatré",
+        "dau ar bymtheg",
+        # Devanagari vowel signs are nonspacing marks outside U+0300-U+036F,
+        # which is where the old copies stopped looking.
+        "शून्य",
+        "एक सय",
+        "",
+    ]
+
+    def test_there_is_one_copy(self):
+        defining = sorted(
+            path.name
+            for path in self.STATIC_JS.glob("*.js")
+            if re.search(r"function normali[sz]e\w*\s*\(", path.read_text("utf-8"))
+        )
+        assert defining == ["normalize_text.js"]
+
+    def test_it_loads_before_every_script_that_calls_it(self):
+        users = {
+            path.name
+            for path in self.STATIC_JS.glob("*.js")
+            if path.name != "normalize_text.js"
+            and "normalizeText(" in path.read_text("utf-8")
+        }
+        assert users
+        script = re.compile(r"filename='js/([\w.]+)'")
+        for template in self.TEMPLATES.glob("*.html"):
+            names = script.findall(template.read_text("utf-8"))
+            for index, name in enumerate(names):
+                if name in users:
+                    assert index and names[index - 1] == "normalize_text.js", (
+                        f"{template.name}: {name} without normalize_text.js first"
+                    )
+
+    @pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
+    def test_agrees_with_the_server(self):
+        source = (self.STATIC_JS / "normalize_text.js").read_text("utf-8")
+        program = (
+            source
+            + "\nconst samples = JSON.parse(process.argv[1]);"
+            + "\nprocess.stdout.write(JSON.stringify(samples.map(normalizeText)));"
+        )
+        result = subprocess.run(
+            ["node", "-e", program, json.dumps(self.SAMPLES)],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert json.loads(result.stdout) == [
+            quiz_logic.normalize_text(sample) for sample in self.SAMPLES
+        ]
 
 
 class TestValidatePartialAnswer:

@@ -24,7 +24,9 @@
        the query-free path. Otherwise pages set their own robots meta. #}
     {% if has_quiz_params %}<meta name="robots" content="noindex, nofollow">{% else %}{% block meta_robots %}{% endblock %}{% endif %}
     {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
-    <link rel="alternate" hreflang="x-default" href="{{ canonical_url }}">
+    {% for link in hreflang_links %}
+    <link rel="alternate" hreflang="{{ link.code }}" href="{{ link.url }}">
+    {% endfor %}
 
     <!-- Open Graph -->
     <meta property="og:site_name" content="diminumero">
@@ -84,8 +86,8 @@
             {
                 "@type": "ListItem",
                 "position": {{ loop.index }},
-                "name": "{{ crumb.name }}",
-                "item": "{{ crumb.url }}"
+                "name": {{ crumb.name|tojson }},
+                "item": {{ crumb.url|tojson }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ]
@@ -93,6 +95,7 @@
     </script>
     {% endif %}
     {% block json_ld %}{% endblock %}
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Top-right controls: auth + language switcher -->
@@ -153,7 +156,8 @@
                 ('cy', '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'Cymraeg'),
             ] %}
             {% for code, flag, label in ui_langs %}
-            <a href="{{ url_for('set_language', lang=code) }}"
+            <a href="{{ ui_language_urls.get(code) or url_for('set_language', lang=code) }}"
+               {% if ui_language_urls.get(code) %}hreflang="{{ code }}"{% endif %}
                class="lang-option {% if session.get('language', 'en') == code %}active{% endif %}"
                role="option"
                aria-selected="{{ 'true' if session.get('language', 'en') == code else 'false' }}"
@@ -176,6 +180,13 @@
         {% endif %}
         {% include "_preset_notice.html" %}
         {% block content %}{% endblock %}
+
+        {# Crawlable paths from a language's practice and Learn pages into its
+           reference pages. Here rather than in each page so the 100+ translated
+           Learn templates don't all have to carry it. #}
+        {% if reference_links %}
+        {% with links = reference_links %}{% include "_reference_links.html" %}{% endwith %}
+        {% endif %}
 
         {# Replaces the old consent banner. The site sets only the Flask session
            cookie (plus Auth0's, for users who choose to log in) — both strictly

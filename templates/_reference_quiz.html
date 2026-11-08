@@ -1,0 +1,33 @@
+{# The self-test on a reference page. It runs entirely in the browser, drawing
+   questions from the page's own tables (static/js/reference_page.js), so it
+   needs no account, no session and no round trip. `hidden` until that script
+   runs: without JS there is nothing it could do, and the links into the real
+   drills are still on the page. Callers pass `has_listen`. #}
+<section class="learn-section ref-quiz" id="test-yourself" data-ref-quiz hidden
+         data-i18n-check="{{ get_text('ref_quiz_check') }}"
+         data-i18n-next="{{ get_text('ref_quiz_next') }}"
+         data-i18n-correct="{{ get_text('ref_quiz_correct') }}"
+         data-i18n-wrong="{{ get_text('ref_quiz_wrong') }}"
+         data-i18n-score="{{ get_text('ref_quiz_score') }}">
+  <h2>{{ get_text('ref_quiz_heading') }}</h2>
+  {% if has_listen %}
+  <div class="ref-quiz-modes" role="group" aria-label="{{ get_text('ref_quiz_heading') }}">
+    <button type="button" class="ref-quiz-mode active" data-ref-quiz-mode="type" aria-pressed="true">{{ get_text('ref_quiz_mode_type') }}</button>
+    <button type="button" class="ref-quiz-mode" data-ref-quiz-mode="listen" aria-pressed="false">{{ get_text('ref_quiz_mode_listen') }}</button>
+  </div>
+  {% endif %}
+  <p class="ref-quiz-prompt" data-ref-quiz-prompt></p>
+  {% if has_listen %}
+  <button type="button" class="btn btn-secondary ref-quiz-replay" data-ref-quiz-replay hidden>▶ {{ get_text('ref_play') }}</button>
+  {% endif %}
+  <form class="ref-form" data-ref-quiz-form autocomplete="off">
+    <input type="text" data-ref-quiz-input
+           aria-label="{{ get_text('ref_quiz_answer') }}"
+           placeholder="{{ get_text('ref_quiz_answer') }}"
+           lang="{{ lang_code }}" dir="auto"
+           autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button type="submit" class="btn btn-primary" data-ref-quiz-submit>{{ get_text('ref_quiz_check') }}</button>
+  </form>
+  <p class="ref-quiz-feedback" data-ref-quiz-feedback role="status" aria-live="polite"></p>
+  <p class="ref-quiz-score" data-ref-quiz-score></p>
+</section>

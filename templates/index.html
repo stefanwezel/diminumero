@@ -12,8 +12,8 @@
 {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "{{ get_text('seo_title_mode_selection') }}",
-    "description": "{{ get_text('meta_desc_mode_selection') }}",
+    "name": {{ get_text('seo_title_mode_selection')|tojson }},
+    "description": {{ get_text('meta_desc_mode_selection')|tojson }},
     "url": "{{ canonical_url }}",
     "isPartOf": {
         "@type": "WebApplication",

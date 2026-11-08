@@ -211,6 +211,12 @@ means:
    `seo_title_learn_conj_<code>` / `meta_desc_learn_conj_<code>` for the Learn page).
 6. Tests mirroring `tests/test_conjugate_it.py` (pool spot-checks, lang scoping).
 
+The language then also gets `/<code>/conjugation-cheat-sheet` with no further work:
+it reads the first five `tenses`, `hint_model_verbs` and the pool's frequency order, and
+joins the sitemap and the cross-links by itself. Keep the JSON in frequency order, because
+the "20 most common verbs" on that page are simply the first 20. It is published in English and in the
+language itself (`?hl=<code>`), since those are the two languages with `label_native`/`hint_native` tense text.
+
 No model or route changes are needed — `VerbCard`/`ConjugationStat` already carry
 `lang` and the routes are namespaced.
 
@@ -231,7 +237,8 @@ learning English (`session["learn_language"]`): the scan then tries the English 
 first, on both sides, so "go / gehen" offers "go" and never "gehen". Passing a language
 to `_card_verb_match()` searches that one pool, which is what `/en/conjugate` and its
 import button do. "to go" on a card, in the add-verb box or in autocomplete all mean
-"go" (`infinitive_particle` in `CONJ_LANGS`), and "realize" means the stored "realise"
+"go" (`infinitive_particle` in `CONJ_LANGS`; the modals in `no_infinitive` are
+cited without it, so the cheat sheet heads them "can"), and "realize" means the stored "realise"
 (`ConjugationPool.canonical_infinitive()`, derived from the variants file).
 
 **A batch import always shows a checklist first** (`static/js/verb_import_picker.js`,
