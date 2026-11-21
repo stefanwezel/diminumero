@@ -37,6 +37,7 @@ import hashlib
 import jinja2
 import logging
 import quiz_logic
+import quiz_stats
 import os
 import random
 import re
@@ -184,6 +185,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 db.init_app(app)
 migrate = Migrate(app, db)
+app.cli.add_command(quiz_stats.quiz_stats_command)
 
 
 # Send app.logger output to stdout so `docker logs` captures it. Without this,
@@ -1095,12 +1097,20 @@ def _parse_preset(lang_code, numbers):
     return mode, magnitude_level, num_range, system, notices
 
 
-def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None, system=None):
+def _seed_quiz_session(
+    lang_code,
+    mode,
+    magnitude_level,
+    num_range=None,
+    system=None,
+    source=quiz_stats.SOURCE_FORM,
+):
     """Start a fresh quiz session, keeping only the UI language and any login.
 
     Shared by the two form-post seeders and the preset link path. The numeral
     system survives the clear the same way the login does: it describes what
-    the learner is practising, not where they are in a round.
+    the learner is practising, not where they are in a round. `source` says
+    which of those started it, for the usage counts (quiz_stats.py).
     """
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     saved_user = session.get("user")
@@ -1121,6 +1131,26 @@ def _seed_quiz_session(lang_code, mode, magnitude_level, num_range=None, system=
     if num_range:
         session["number_range"] = list(num_range)
     session["quiz_start_time"] = time.time()
+    session["quiz_run"] = quiz_stats.new_run_token()
+    session["quiz_source"] = source
+
+
+def _count_answer():
+    """Count one answered question, and on the first, the drill as started.
+
+    Counting the drill here rather than in `_seed_quiz_session()` is what
+    keeps crawlers out of the usage counts: a shared drill link seeds a
+    session on a plain GET, but only a person submits an answer.
+    """
+    session["total_questions"] = session.get("total_questions", 0) + 1
+    if session["total_questions"] == 1:
+        quiz_stats.record_started(
+            session.get("quiz_run"),
+            session.get("learn_language"),
+            session.get("mode"),
+            session.get("number_system"),
+            session.get("quiz_source", quiz_stats.SOURCE_FORM),
+        )
 
 
 def _session_numbers(lang_code):
@@ -1787,6 +1817,7 @@ def _results_redirect(lang_code):
     if elapsed is not None and elapsed < speed_limit and score_percentage > 80:
         session["show_speed_splash"] = True
 
+    quiz_stats.record_finished(session.get("quiz_run"))
     return redirect(url_for("results", lang_code=lang_code))
 
 
@@ -1870,7 +1901,7 @@ def quiz_easy(lang_code):
             else:
                 flash(get_text("flash_incorrect").format(correct_answer), "error")
 
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
 
         # Clear current question so next GET generates a new one
         session.pop("current_number", None)
@@ -1967,7 +1998,7 @@ def quiz_advanced(lang_code):
         # Two-step reveal: mark the question as revealed and re-render the same
         # question so the modal can show the answer. Counts as a wrong attempt.
         if "reveal" in request.form:
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
             session["current_revealed"] = True
             return redirect(url_for("quiz_advanced", lang_code=lang_code))
 
@@ -2019,7 +2050,7 @@ def quiz_advanced(lang_code):
                 if nudge:
                     flash(nudge, "info")
 
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
 
         # Clear current question so next GET generates a new one
         session.pop("current_number", None)
@@ -2132,7 +2163,7 @@ def quiz_hardcore(lang_code):
         # Two-step reveal: mark the question as revealed and re-render the same
         # question so the modal can show the answer. Counts as a wrong attempt.
         if "reveal" in request.form:
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
             session["current_revealed"] = True
             return redirect(url_for("quiz_hardcore", lang_code=lang_code))
 
@@ -2180,7 +2211,7 @@ def quiz_hardcore(lang_code):
                 if nudge:
                     flash(nudge, "info")
 
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
 
         # Clear current question so next GET generates a new one
         session.pop("current_number", None)
@@ -2354,6 +2385,7 @@ def _start_listen_preset_drill(lang_code, playable):
         magnitude_level,
         num_range,
         system=_audio_number_system(lang_code),
+        source=quiz_stats.SOURCE_LINK,
     )
 
     g.preset_notices = [get_text(key, learn_language=lang_code) for key in notice_keys]
@@ -2416,7 +2448,7 @@ def listen_quiz(lang_code):
 
     if request.method == "POST":
         if "reveal" in request.form:
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
             session["current_revealed"] = True
             return redirect(url_for("listen_quiz", lang_code=lang_code))
 
@@ -2449,7 +2481,7 @@ def listen_quiz(lang_code):
                     ),
                     "error",
                 )
-            session["total_questions"] = session.get("total_questions", 0) + 1
+            _count_answer()
 
         session.pop("current_number", None)
         session.pop("correct_answer", None)
@@ -2515,7 +2547,14 @@ def _start_preset_drill(lang_code, numbers):
     mode, magnitude_level, num_range, system, notices = _parse_preset(
         lang_code, numbers
     )
-    _seed_quiz_session(lang_code, mode, magnitude_level, num_range, system)
+    _seed_quiz_session(
+        lang_code,
+        mode,
+        magnitude_level,
+        num_range,
+        system,
+        source=quiz_stats.SOURCE_LINK,
+    )
 
     g.preset_notices = notices
     g.no_store = True
