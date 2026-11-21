@@ -196,6 +196,30 @@ class DeckShare(db.Model):
         return [c for c in data if isinstance(c, dict) and "front" in c and "back" in c]
 
 
+class QuizRun(db.Model):
+    """One number drill that someone answered, for counting real use.
+
+    Written on the drill's first answered question and stamped `finished_at`
+    when its last answer is in; see quiz_stats.py for why "answered" rather
+    than "opened". Nothing here identifies a person: `token` is random, minted
+    per drill and kept in that drill's session only so that a resubmitted
+    answer can't count the same drill twice.
+    """
+
+    __tablename__ = "quiz_runs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(32), nullable=False, unique=True)
+    lang = db.Column(db.String(8), nullable=False)
+    # The session's mode, so the Listening drill is stored as "audio".
+    mode = db.Column(db.String(16), nullable=False)
+    number_system = db.Column(db.String(32), nullable=True)
+    # "form" (a Start button) or "link" (a shared drill preset URL).
+    source = db.Column(db.String(8), nullable=False)
+    started_at = db.Column(db.DateTime, nullable=False, default=_utcnow, index=True)
+    finished_at = db.Column(db.DateTime, nullable=True)
+
+
 class PollResponse(db.Model):
     """A single submission of the in-app feedback poll.
 
