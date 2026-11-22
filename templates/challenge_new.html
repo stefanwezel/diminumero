@@ -22,10 +22,39 @@
         <h1 class="title challenge-title">{{ get_text('challenge_new_title') }}</h1>
         <p class="description">{{ get_text('challenge_new_intro') }}</p>
 
+        {# Start plays the challenge at once; Share mints it and opens its page
+           with the link on top. Both submit the settings form below (form=), so
+           they use whatever is selected there: the defaults this browser
+           remembers, or whatever was just changed. The summary says which;
+           challenge.js keeps it current. The same pair closes the form, for
+           whoever scrolled down to change something. #}
+        {% macro action_pair(primary=false) %}
+        <div class="challenge-pair{% if primary %} challenge-pair-primary{% endif %}">
+            <button type="submit" form="challenge-form" name="go" value="1"
+                    title="{{ get_text('challenge_go_hint') }}"
+                    class="btn btn-primary challenge-pair-btn challenge-pair-start"{% if primary %} id="challenge-go"{% endif %}>
+                <span aria-hidden="true">▶</span> {{ get_text('challenge_go_btn') }}
+            </button>
+            <button type="submit" form="challenge-form" name="share" value="1"
+                    class="btn challenge-pair-btn challenge-pair-share"{% if primary %} id="challenge-share-first"{% endif %}>
+                <span aria-hidden="true">↗</span> {{ get_text('challenge_share_btn') }}
+            </button>
+        </div>
+        {% endmacro %}
+
+        <div class="challenge-quickstart">
+            <p class="challenge-go-summary" id="challenge-go-summary">{{ languages[selected_lang].flag }} {{ languages[selected_lang].name }} · {{ get_text('challenge_type_numbers') }} · {{ get_text('mode_' ~ default_number_mode) }}</p>
+            {{ action_pair(primary=true) }}
+        </div>
+
         {# A plain form: it works with no JS. challenge.js only hides what can't
            apply (difficulty for Listening, Listening for a language with no
-           recordings); the server checks both again on POST. #}
-        <form method="POST" action="{{ url_for('challenge_new') }}" class="preset-share challenge-form" id="challenge-form">
+           recordings); the server checks both again on POST. data-listen-back
+           is read only when Start begins a listening round, which runs through
+           quiz_listen.js's pjax so its first clip may autoplay. #}
+        <form method="POST" action="{{ url_for('challenge_new') }}" class="preset-share challenge-form" id="challenge-form"
+              data-listen-back="{{ url_for('challenge_new') }}"
+              {% if lang_explicit %}data-lang-explicit="1"{% endif %}>
             <fieldset class="preset-share-field challenge-field">
                 <legend class="preset-share-label">{{ get_text('challenge_field_language') }}</legend>
                 <div class="challenge-langs">
@@ -81,7 +110,7 @@
                 <p class="preset-share-hint">{{ get_text('challenge_name_hint') }}</p>
             </div>
 
-            <button type="submit" class="btn btn-primary challenge-submit">{{ get_text('challenge_create_btn') }}</button>
+            {{ action_pair() }}
         </form>
 
         <p class="challenge-rules">{{ get_text('challenge_rules').format(questions) }}</p>
@@ -91,4 +120,5 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/challenge.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
 {% endblock %}

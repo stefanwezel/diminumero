@@ -537,3 +537,157 @@ def test_draw_is_reproducible_with_a_fresh_interpreter_seed():
     first = challenge.draw_numbers(deck, "k7x2pq3m", "audio")
     random.seed(2)
     assert first == challenge.draw_numbers(deck, "k7x2pq3m", "audio")
+
+
+class TestStartNow:
+    """The create page's Start: mint the challenge and play it at once."""
+
+    def _go(self, client, **fields):
+        data = {"lang": "es", "kind": "numbers", "difficulty": "advanced", "go": "1"}
+        data.update(fields)
+        return client.post("/challenge", data=data)
+
+    def test_start_and_share_come_before_the_settings(self, client):
+        html = client.get("/challenge").get_data(as_text=True)
+        start = re.search(r"<button[^>]*id=\"challenge-go\"[^>]*>", html).group(0)
+        share = re.search(
+            r"<button[^>]*id=\"challenge-share-first\"[^>]*>", html
+        ).group(0)
+        assert 'form="challenge-form"' in start and 'name="go"' in start
+        assert 'form="challenge-form"' in share and 'name="share"' in share
+        settings = html.index('class="challenge-langs"')
+        assert html.index('id="challenge-go"') < settings
+        assert html.index('id="challenge-share-first"') < settings
+
+    def test_the_pair_closes_the_form_too(self, client):
+        html = client.get("/challenge").get_data(as_text=True)
+        assert html.count('name="go"') == 2 and html.count('name="share"') == 2
+        form = html[html.index('id="challenge-form"') : html.index("</form>")]
+        assert 'name="go"' in form and 'name="share"' in form
+
+    def test_start_explains_itself_only_as_a_tooltip(self, client):
+        html = client.get("/challenge").get_data(as_text=True)
+        tip = 'title="You get the link to send when you finish."'
+        starts = re.findall(r'<button[^>]*name="go"[^>]*>', html)
+        assert len(starts) == 2 and all(tip in b for b in starts)
+        assert html.count("You get the link to send when you finish.") == 2
+
+    def test_summary_names_the_preselected_settings(self, client):
+        client.get("/de")
+        html = client.get("/challenge").get_data(as_text=True)
+        summary = re.search(r'id="challenge-go-summary">(.*?)</p>', html, re.S).group(1)
+        assert "German" in summary and "Numbers" in summary and "Advanced" in summary
+
+    def test_numbers_start_straight_into_the_round(self, client):
+        response = self._go(client, difficulty="hardcore")
+        assert response.status_code == 302
+        assert response.location.endswith("/es/quiz/hardcore")
+        with client.session_transaction() as sess:
+            seed = sess["challenge"]["seed"]
+            assert seed in sess["challenge_me"]["created"]
+        html = client.get(response.location).get_data(as_text=True)
+        assert "Your challenge has started" in html
+
+    def test_listening_starts_the_listening_round(self, client):
+        response = self._go(client, kind="listening")
+        assert response.location.endswith("/es/listen")
+        assert client.get(response.location).status_code == 200
+
+    def test_finishing_gives_the_creator_the_link(self, client):
+        self._go(client, name="Alex")
+        result_url, _ = _play(client)
+        html = client.get(result_url).get_data(as_text=True)
+        assert _h1(html) == "You scored 10/10"
+        assert 'id="challenge-share-url"' in html
+        [result] = _decode(result_url).results
+        assert result.name == "Alex"
+
+    def test_share_opens_the_page_with_the_link_first(self, client):
+        response = client.post(
+            "/challenge", data={"lang": "es", "kind": "numbers", "share": "1"}
+        )
+        assert response.status_code == 303 and "/challenge/" in response.location
+        html = client.get(response.location).get_data(as_text=True)
+        assert _h1(html) == "Your challenge is ready"
+        assert "data-share-focus" in html
+        assert html.index('id="challenge-share-url"') < html.index(
+            'class="challenge-start"'
+        )
+        # Once: a reload is the ordinary ready page again.
+        html = client.get(response.location).get_data(as_text=True)
+        assert "data-share-focus" not in html
+        assert html.index('class="challenge-start"') < html.index(
+            'id="challenge-share-url"'
+        )
+
+    def test_share_does_not_touch_the_link(self, client):
+        response = client.post(
+            "/challenge", data={"lang": "es", "kind": "numbers", "share": "1"}
+        )
+        assert "?" not in response.location
+        html = client.get(response.location).get_data(as_text=True)
+        url = re.search(r'id="challenge-share-url"[^>]*value="([^"]+)"', html, re.S)
+        assert url and "share" not in url.group(1)
+
+    def test_without_go_it_still_shows_the_ready_page(self, client):
+        response = client.post("/challenge", data={"lang": "es", "kind": "numbers"})
+        assert response.status_code == 303 and "/challenge/" in response.location
+
+    def test_a_friend_accepting_is_told_so(self, client, friend):
+        url = _create(client)
+        friend.post(f"/challenge/{_token(url)}/start")
+        html = friend.get("/es/quiz/advanced").get_data(as_text=True)
+        assert "Challenge accepted" in html
+
+    def test_create_page_can_start_a_listening_round_by_pjax(self, client):
+        html = client.get("/challenge").get_data(as_text=True)
+        assert 'data-listen-back="/challenge"' in html
+        assert "js/quiz_listen.js" in html
+
+    def test_a_language_in_the_url_outranks_remembered_defaults(self, client):
+        explicit = client.get("/challenge?lang=fr").get_data(as_text=True)
+        assert 'data-lang-explicit="1"' in explicit
+        plain = client.get("/challenge").get_data(as_text=True)
+        assert "data-lang-explicit" not in plain
+
+
+class TestBrowserStorageDisclosure:
+    """Remembered defaults live in localStorage, which the privacy policy names."""
+
+    # Every file that writes to the browser's local storage. A new one is a new
+    # thing kept on the visitor's device: say so in privacy_local_settings_desc
+    # (all locales), then add it here.
+    DISCLOSED = {
+        "templates/base.html",  # colour scheme
+        "static/js/cards_practice_prefs.js",
+        "static/js/conjugate_practice_prefs.js",
+        "static/js/cards_sort.js",
+        "static/js/poll.js",  # the poll is switched off
+        "static/js/challenge.js",  # friend-challenge defaults
+    }
+
+    def test_every_storage_writer_is_disclosed(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+        writers = {
+            str(path.relative_to(root))
+            for pattern in ("static/js/*.js", "templates/*.html")
+            for path in root.glob(pattern)
+            if "localStorage.setItem" in path.read_text(encoding="utf-8")
+        }
+        assert writers == self.DISCLOSED
+
+    def test_privacy_page_lists_browser_storage(self, client):
+        html = client.get("/privacy").get_data(as_text=True)
+        assert "Settings saved in your browser" in html
+        assert "friend challenge" in html
+
+    def test_challenge_defaults_never_reach_the_server_as_a_cookie(self, client):
+        client.get("/challenge")
+        response = client.post(
+            "/challenge", data={"lang": "es", "kind": "numbers", "go": "1"}
+        )
+        cookies = response.headers.getlist("Set-Cookie")
+        assert all(c.startswith("session=") for c in cookies)
+        assert not any("Expires" in c or "Max-Age" in c for c in cookies)

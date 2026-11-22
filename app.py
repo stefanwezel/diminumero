@@ -2822,10 +2822,24 @@ def challenge_new():
         me = challenge.remember_seed(session.get("challenge_me"), "created", ch.seed)
         me["name"] = name
         session["challenge_me"] = me
-        return redirect(
-            url_for("challenge_page", token=ch.encode(app.secret_key)), code=303
-        )
+        token = ch.encode(app.secret_key)
 
+        # Start: straight into the round. The link to send comes with the
+        # result, like it does after "Play it first".
+        if request.form.get("go"):
+            system, deck = _challenge_deck(ch)
+            if deck is not None:
+                return _begin_challenge(ch, token, system, deck, name)
+        # Share: its page, with the link above "Play it first" this once. In
+        # the session rather than the URL, which is the link being shared.
+        if request.form.get("share"):
+            session["challenge_share_first"] = ch.seed
+        return redirect(url_for("challenge_page", token=token), code=303)
+
+    # A language named in the URL ("New challenge" on a French challenge's
+    # page) beats the defaults the browser remembers; one taken from the
+    # session doesn't. challenge.js reads the difference from the form.
+    lang_explicit = request.args.get("lang") in languages
     selected = request.args.get("lang") or session.get("learn_language")
     if selected not in languages:
         selected = "es" if "es" in languages else next(iter(languages))
@@ -2833,6 +2847,7 @@ def challenge_new():
         "challenge_new.html",
         languages=languages,
         selected_lang=selected,
+        lang_explicit=lang_explicit,
         number_modes=challenge.NUMBER_MODES,
         default_number_mode=challenge.DEFAULT_NUMBER_MODE,
         name=(session.get("challenge_me") or {}).get("name", ""),
@@ -2873,6 +2888,11 @@ def challenge_page(token):
     else:
         view = "invite"
 
+    share_first = False
+    if "challenge_share_first" in session:
+        share_first = session.pop("challenge_share_first") == ch.seed
+        share_first = share_first and view == "ready"
+
     rows = ch.ranked()
     best = ch.best()
     lang_name = get_text(f"lang_{ch.lang}_name")
@@ -2905,6 +2925,7 @@ def challenge_page(token):
         "challenge.html",
         invalid=False,
         view=view,
+        share_first=share_first,
         ch=ch,
         token=token,
         rows=rows,
@@ -2931,12 +2952,22 @@ def challenge_start(token):
     if deck is None:
         flash(get_text("challenge_invalid_title"), "error")
         return redirect(url_for("challenge_new"))
+    return _begin_challenge(ch, token, system, deck, request.form.get("name"))
 
+
+def _begin_challenge(ch, token, system, deck, raw_name):
+    """Seed a challenge's round in the session and redirect into its quiz.
+
+    Shared by "Accept"/"Play it first" on a challenge's page and the create
+    form's "Start now", which mints a challenge and plays it in one click.
+    """
+    own = ch.seed in (session.get("challenge_me") or {}).get("created", [])
+    own = own and not ch.results
     prev_system = session.get("number_system")
     # The player's own dial setting, kept rather than overwritten: the round's
     # numbers are fixed by the seed, so it only matters after the challenge.
     magnitude_level = session.get("magnitude_level", 1)
-    name = challenge.clean_name(request.form.get("name"))
+    name = challenge.clean_name(raw_name)
 
     _seed_quiz_session(
         ch.lang,
@@ -2955,7 +2986,12 @@ def challenge_start(token):
         "numbers": challenge.draw_numbers(deck, ch.seed, ch.mode),
         "prev_system": prev_system,
     }
-    flash(get_text("challenge_flash_started"), "info")
+    # The creator playing first has accepted nothing; tell them where the link
+    # will be instead.
+    flash(
+        get_text("challenge_flash_started_own" if own else "challenge_flash_started"),
+        "info",
+    )
     return redirect(url_for(QUIZ_ENDPOINTS[ch.mode], lang_code=ch.lang))
 
 

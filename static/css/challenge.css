@@ -33,6 +33,97 @@
 }
 
 /* ---- Create form ---- */
+/* Start / Share: the one press most people need, above the settings, and
+   again at the foot of the form. Big enough to hit with a thumb; the summary
+   line says what they will play. Start keeps each theme's primary colour;
+   Share takes the challenge pink, which reads on both. */
+.challenge-quickstart {
+    max-width: 460px;
+    margin: 4px auto 22px;
+}
+
+.challenge-go-summary {
+    margin: 0 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.challenge-pair {
+    display: flex;
+    gap: 10px;
+}
+
+.challenge-page .challenge-pair-btn {
+    display: inline-flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 50px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.15;
+    white-space: normal;
+}
+
+.challenge-pair-primary .challenge-pair-btn {
+    min-height: 60px;
+    font-size: 1.15rem;
+}
+
+.challenge-page .challenge-pair-share {
+    border: none;
+    background: linear-gradient(135deg, #E54F6D 0%, #C2366F 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 15px rgba(229, 79, 109, 0.35);
+}
+
+@media (hover: hover) {
+    .challenge-page .challenge-pair-share:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(229, 79, 109, 0.5);
+    }
+}
+
+/* Two buttons side by side on a phone leave ~130px each: "COMPARTILHAR" and
+   "ПОДІЛИТИСЯ" only fit without the arrow and the wide tracking. A word that
+   still doesn't fit breaks rather than spilling out of its button. */
+@media (max-width: 420px) {
+    .challenge-page .challenge-pair-btn {
+        padding: 8px 6px;
+        letter-spacing: 0.2px;
+        overflow-wrap: anywhere;
+    }
+    .challenge-pair-primary .challenge-pair-btn {
+        font-size: 1rem;
+    }
+    .challenge-pair-btn > [aria-hidden="true"] {
+        display: none;
+    }
+}
+
+/* The smallest phones: stacked, full width, rather than break a word. */
+@media (max-width: 340px) {
+    .challenge-pair {
+        flex-direction: column;
+    }
+    .challenge-pair-primary .challenge-pair-btn {
+        min-height: 52px;
+    }
+}
+
+.challenge-form .challenge-pair {
+    max-width: 460px;
+    margin: 8px auto 0;
+}
+
 .challenge-form {
     margin-top: 6px;
 }

@@ -94,6 +94,32 @@
         </table>
         {% endif %}
 
+        {# The share box, captured so it can come first: a creator who pressed
+           Share on the create form came for the link, not for "Play it first".
+           data-share-focus puts the keyboard on its button, one tap from the
+           phone's share sheet (which no page may open without that tap). #}
+        {% set share_box %}
+        {% if view in ('ready', 'finished', 'played') %}
+        <div class="preset-share challenge-share" data-share-text="{{ share_text }}"{% if share_first %} data-share-focus{% endif %}>
+            <h2 class="preset-share-title">{{ get_text('challenge_share_title_result') if view == 'finished' else get_text('challenge_share_title_invite') }}</h2>
+            <div class="preset-share-row">
+                <input type="text" id="challenge-share-url" class="preset-share-url" readonly
+                       value="{{ share_url }}"
+                       aria-label="{{ get_text('challenge_share_title_result') if view == 'finished' else get_text('challenge_share_title_invite') }}">
+                <button type="button" id="challenge-share-native" class="btn btn-primary preset-share-copy" hidden>
+                    {{ get_text('challenge_share_btn') }}
+                </button>
+                <button type="button" id="challenge-share-copy" class="btn btn-primary preset-share-copy"
+                        data-i18n-copy="{{ get_text('preset_share_copy') }}"
+                        data-i18n-copied="{{ get_text('preset_share_copied') }}">
+                    {{ get_text('preset_share_copy') }}
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        {% endset %}
+        {% if share_first %}{{ share_box }}{% endif %}
+
         {% if view in ('ready', 'invite') %}
         {# Listening starts through quiz_listen.js's pjax: the submitting click
            keeps the page "user activated", which is what lets the first clip
@@ -112,24 +138,7 @@
         </form>
         {% endif %}
 
-        {% if view in ('ready', 'finished', 'played') %}
-        <div class="preset-share challenge-share" data-share-text="{{ share_text }}">
-            <h2 class="preset-share-title">{{ get_text('challenge_share_title_result') if view == 'finished' else get_text('challenge_share_title_invite') }}</h2>
-            <div class="preset-share-row">
-                <input type="text" id="challenge-share-url" class="preset-share-url" readonly
-                       value="{{ share_url }}"
-                       aria-label="{{ get_text('challenge_share_title_result') if view == 'finished' else get_text('challenge_share_title_invite') }}">
-                <button type="button" id="challenge-share-native" class="btn btn-primary preset-share-copy" hidden>
-                    {{ get_text('challenge_share_btn') }}
-                </button>
-                <button type="button" id="challenge-share-copy" class="btn btn-primary preset-share-copy"
-                        data-i18n-copy="{{ get_text('preset_share_copy') }}"
-                        data-i18n-copied="{{ get_text('preset_share_copied') }}">
-                    {{ get_text('preset_share_copy') }}
-                </button>
-            </div>
-        </div>
-        {% endif %}
+        {% if not share_first %}{{ share_box }}{% endif %}
 
         <div class="challenge-actions">
             {% if view in ('finished', 'played') %}

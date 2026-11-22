@@ -112,8 +112,11 @@
         // Anything that isn't a listening-quiz page (e.g. the results page) is a
         // terminal navigation. Use replace() so the finished listening entry is
         // discarded — otherwise "back" from results would return to a stale
-        // (already completed) listening page.
-        if (!doc.querySelector('.quiz-page')) {
+        // (already completed) listening page. A listening page is one with a
+        // clip: the other quizzes are .quiz-page too, and one of them (a friend
+        // challenge's "Surprise me" that came out as numbers) must load for
+        // real, scripts and all, rather than be swapped into this document.
+        if (!doc.querySelector('.quiz-page') || !doc.getElementById('audio-el')) {
             window.location.replace(url);
             return;
         }
