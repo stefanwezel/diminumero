@@ -37,6 +37,17 @@ def spans_multiple_magnitudes(numbers_dict):
     return len({_get_magnitude_band(num) for num in numbers_dict}) > 1
 
 
+def magnitude_weight(num, magnitude_level):
+    """How likely the magnitude dial makes `num`, relative to a number under 100.
+
+    The same formula `get_random_question()` applies, for a caller that draws
+    with its own random generator (a friend challenge, whose draw has to be
+    reproducible from a seed).
+    """
+    decay = MAGNITUDE_DECAY_FACTORS.get(magnitude_level, 10)
+    return (1 / decay) ** _get_magnitude_band(num) if decay > 0 else 1.0
+
+
 def get_random_question(
     numbers_dict, exclude_numbers=None, magnitude_level=1, usage_weights=None
 ):
@@ -94,7 +105,7 @@ def get_random_question(
     return number, numbers_dict[number]
 
 
-def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
+def generate_multiple_choice(numbers_dict, correct_number, correct_answer, rng=None):
     """
     Generate 4 multiple choice options with one correct answer.
     Uses secrets module for cryptographically secure randomization.
@@ -103,6 +114,10 @@ def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
         numbers_dict: Dictionary mapping numbers to their translations
         correct_number: The number being tested
         correct_answer: The correct translation
+        rng: Optional seeded `random.Random`. Given one, the distractors and
+            their order come from it, so the same seed always produces the
+            same options (both players of a friend challenge see one question).
+            Omitted, the options are drawn with `secrets` as always.
 
     Returns:
         List of 4 options (strings) in truly random order
@@ -129,6 +144,13 @@ def generate_multiple_choice(numbers_dict, correct_number, correct_answer):
             for num, answer in numbers_dict.items()
             if num != correct_number and len(str(num)) != digit_length
         ]
+
+    if rng is not None:
+        options = [correct_answer] + rng.sample(
+            wrong_answers, min(3, len(wrong_answers))
+        )
+        rng.shuffle(options)
+        return options
 
     # Use secrets for cryptographically secure random selection
     selected_wrong = []

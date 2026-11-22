@@ -33,6 +33,7 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
+import challenge
 import hashlib
 import jinja2
 import logging
@@ -458,6 +459,8 @@ def set_cache_headers(response):
         or path in ("/login", "/callback", "/logout")
         or path.startswith("/cards")
         or "/conjugate" in path
+        # Who is looking decides what a challenge page says ("you scored…").
+        or path.startswith("/challenge")
     ):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
@@ -1115,10 +1118,15 @@ def _seed_quiz_session(
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     saved_user = session.get("user")
     saved_system = session.get("number_system")
+    # The challenges this person created or played, and the name they gave:
+    # like the login, it describes who they are, not where they are in a round.
+    saved_challenge_me = session.get("challenge_me")
     session.clear()
     session["language"] = ui_language
     if saved_user is not None:
         session["user"] = saved_user
+    if saved_challenge_me is not None:
+        session["challenge_me"] = saved_challenge_me
     session["learn_language"] = lang_code
     session["number_system"] = resolve_number_system(
         lang_code, system if system is not None else saved_system
@@ -1169,6 +1177,36 @@ def _session_numbers(lang_code):
         return numbers
     # Never hand back an empty deck: a stale range must not blank the quiz.
     return _numbers_in_range(numbers, (num_range[0], num_range[1])) or numbers
+
+
+def _next_question(lang_code, deck):
+    """(number, word) for the running drill's next question.
+
+    A friend challenge fixes its numbers in advance, so both players get the
+    same round; every other drill draws at random exactly as it always has.
+    A planned number missing from the deck (it was regenerated mid-challenge)
+    falls back to the random draw rather than breaking the round.
+    """
+    asked_numbers = session.get("asked_numbers", [])
+    running = session.get("challenge")
+    if running:
+        planned = running.get("numbers") or []
+        index = len(asked_numbers)
+        if index < len(planned) and planned[index] in deck:
+            return planned[index], deck[planned[index]]
+    return quiz_logic.get_random_question(
+        deck,
+        asked_numbers,
+        magnitude_level=session.get("magnitude_level", 1),
+        usage_weights=_session_usage_weights(lang_code),
+    )
+
+
+def _question_options(deck, number, correct_answer):
+    """Easy mode's four options: seeded in a challenge, so both players see one."""
+    running = session.get("challenge")
+    rng = challenge.options_rng(running["seed"], number) if running else None
+    return quiz_logic.generate_multiple_choice(deck, number, correct_answer, rng=rng)
 
 
 @app.route("/<lang_code>/numbers")
@@ -1937,16 +1975,10 @@ def quiz_easy(lang_code):
         options = session["current_options"]
     else:
         # Generate new question
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, numbers)
 
         # Generate multiple choice options
-        options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
+        options = _question_options(numbers, number, correct_answer)
 
         # Store in session
         session["current_number"] = number
@@ -2081,13 +2113,7 @@ def quiz_advanced(lang_code):
         correct_answer = session["correct_answer"]
     else:
         # Generate new question
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, numbers)
 
         # Store in session
         session["current_number"] = number
@@ -2242,13 +2268,7 @@ def quiz_hardcore(lang_code):
         correct_answer = session["correct_answer"]
     else:
         # Generate new question
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, numbers)
 
         # Store in session
         session["current_number"] = number
@@ -2505,13 +2525,7 @@ def listen_quiz(lang_code):
         number = session["current_number"]
         correct_answer = session["correct_answer"]
     else:
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            playable_numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, playable_numbers)
         session["current_number"] = number
         session["correct_answer"] = correct_answer
         if "asked_numbers" not in session:
@@ -2574,6 +2588,11 @@ def results(lang_code):
     # Validate language
     if not is_language_ready(lang_code) or session.get("learn_language") != lang_code:
         return redirect(url_for("index"))
+
+    # A friend challenge ends on its own page, with a link to send back. Both
+    # the last answer (through _results_redirect) and the Exit button land here.
+    if session.get("challenge"):
+        return _finish_challenge()
 
     score = session.get("score", 0)
     attempted = session.get("total_questions", 0)
@@ -2645,6 +2664,299 @@ def restart():
     if saved_user is not None:
         session["user"] = saved_user
     return redirect(url_for("index"))
+
+
+# ===== Friend challenges =====
+# Someone picks a language and a kind of round and sends the link. Whoever
+# opens it plays the same ten numbers and finishes with a link carrying both
+# scores, to send back. Everything lives in the signed token (challenge.py);
+# nothing is stored here. The round itself runs on the ordinary quiz routes,
+# which take their numbers from session["challenge"] via _next_question().
+
+# What GoatCounter is told a challenge page is called. Its own path carries the
+# players' names, which have no business in an analytics dashboard.
+CHALLENGE_ANALYTICS_PATH = "/challenge/link"
+
+
+def _challenge_listening_deck(lang_code):
+    """(system, playable numbers) for a listening challenge in this language.
+
+    The default system's recorded numbers. Not _listening_deck(): that follows,
+    and writes, the session's numeral system, and a challenge must neither
+    depend on one player's settings nor change them.
+    """
+    system = get_default_number_system(lang_code)
+    if lang_code not in get_languages_with_audio_mode() or not _system_has_audio(
+        lang_code, system
+    ):
+        return system, {}
+    return system, _playable_audio_numbers(
+        lang_code, get_language_numbers(lang_code, system)
+    )
+
+
+def _challenge_has_listening(lang_code):
+    """Whether this language has enough recorded numbers for a listening round."""
+    try:
+        _, playable = _challenge_listening_deck(lang_code)
+    except ValueError:
+        return False
+    return len(playable) >= QUESTIONS_PER_QUIZ
+
+
+def _challenge_languages():
+    """{code: {name, flag, listening}} for every language a challenge can use."""
+    languages = {}
+    for code, info in AVAILABLE_LANGUAGES.items():
+        if not info.get("ready"):
+            continue
+        languages[code] = {
+            "name": get_text(f"lang_{code}_name"),
+            "flag": info.get("flag", ""),
+            "listening": _challenge_has_listening(code),
+        }
+    return languages
+
+
+def _challenge_deck(ch):
+    """(system, deck) a challenge draws from, or (None, None) if it can't run now.
+
+    Always the default numeral system, or the listening deck: a challenge is
+    the same round for everyone, so it can't depend on one player's settings.
+    """
+    if ch is None or not is_language_ready(ch.lang):
+        return None, None
+    try:
+        if ch.mode == "audio":
+            system, deck = _challenge_listening_deck(ch.lang)
+        else:
+            system = resolve_number_system(ch.lang, None)
+            deck = get_language_numbers(ch.lang, system)
+    except ValueError:
+        return None, None
+    if len(deck) < QUESTIONS_PER_QUIZ:
+        return None, None
+    return system, deck
+
+
+def _challenge_type_label(ch):
+    if ch.mode == "audio":
+        return get_text("challenge_type_listening")
+    return f"{get_text('challenge_type_numbers')} · {get_text('mode_' + ch.mode)}"
+
+
+def _finish_challenge():
+    """Put the player's score on the challenge and show them the link to send.
+
+    Called from results() when the round is over, or cut short with Exit. The
+    quiz state goes, so Back can't resume a round whose score is already out.
+    """
+    running = session.pop("challenge", None) or {}
+    ch = challenge.Challenge.decode(running.get("token"), app.secret_key)
+    prev_system = running.get("prev_system")
+    if prev_system is None:
+        session.pop("number_system", None)
+    else:
+        # The round ran on the default system; put back the one this person
+        # practises, the way a Welsh learner's traditional choice should stay.
+        session["number_system"] = prev_system
+    for key in (
+        "mode",
+        "current_number",
+        "correct_answer",
+        "current_options",
+        "current_revealed",
+        "show_perfect_splash",
+        "show_speed_splash",
+    ):
+        session.pop(key, None)
+    if ch is None:
+        # The secret key changed mid-round, so the token can't be extended.
+        flash(get_text("challenge_invalid_title"), "error")
+        return redirect(url_for("challenge_new"))
+
+    started = session.get("quiz_start_time")
+    seconds = int(time.time() - started) if started else challenge.MAX_SECONDS
+    me = session.get("challenge_me") or {}
+    finished = ch.with_result(me.get("name", ""), session.get("score", 0), seconds)
+    token = finished.encode(app.secret_key)
+    session["challenge_me"] = challenge.remember_seed(me, "played", ch.seed)
+    session["challenge_last"] = token
+    return redirect(url_for("challenge_page", token=token))
+
+
+@app.route("/challenge", methods=["GET", "POST"])
+def challenge_new():
+    """Pick a language and a kind of round; POST mints the challenge."""
+    languages = _challenge_languages()
+
+    if request.method == "POST":
+        lang_code = request.form.get("lang", "")
+        if lang_code not in languages:
+            flash(get_text("challenge_flash_pick_language"), "error")
+            return redirect(url_for("challenge_new"))
+
+        kind = request.form.get("kind", challenge.KIND_NUMBERS)
+        if kind not in challenge.KINDS:
+            kind = challenge.KIND_NUMBERS
+        has_listening = languages[lang_code]["listening"]
+        if kind == challenge.KIND_SURPRISE:
+            kind = (
+                secrets.choice((challenge.KIND_NUMBERS, challenge.KIND_LISTENING))
+                if has_listening
+                else challenge.KIND_NUMBERS
+            )
+        elif kind == challenge.KIND_LISTENING and not has_listening:
+            flash(get_text("challenge_flash_no_listening"), "info")
+            kind = challenge.KIND_NUMBERS
+
+        if kind == challenge.KIND_LISTENING:
+            mode = "audio"
+        else:
+            mode = request.form.get("difficulty")
+            if mode not in challenge.NUMBER_MODES:
+                mode = challenge.DEFAULT_NUMBER_MODE
+
+        name = challenge.clean_name(request.form.get("name"))
+        ch = challenge.Challenge(lang_code, mode, challenge.new_seed(), host=name)
+        me = challenge.remember_seed(session.get("challenge_me"), "created", ch.seed)
+        me["name"] = name
+        session["challenge_me"] = me
+        return redirect(
+            url_for("challenge_page", token=ch.encode(app.secret_key)), code=303
+        )
+
+    selected = request.args.get("lang") or session.get("learn_language")
+    if selected not in languages:
+        selected = "es" if "es" in languages else next(iter(languages))
+    return render_template(
+        "challenge_new.html",
+        languages=languages,
+        selected_lang=selected,
+        number_modes=challenge.NUMBER_MODES,
+        default_number_mode=challenge.DEFAULT_NUMBER_MODE,
+        name=(session.get("challenge_me") or {}).get("name", ""),
+        name_max=challenge.NAME_MAX,
+        questions=QUESTIONS_PER_QUIZ,
+        get_text=get_text,
+    )
+
+
+@app.route("/challenge/<token>")
+def challenge_page(token):
+    """A challenge link: an invitation, a scoreboard, or your own result.
+
+    The same URL reads differently to whoever opens it. The person who just
+    finished sees their score and the link to send; the person who created it
+    sees "play it first"; everyone else is invited to play.
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    _, deck = _challenge_deck(ch)
+    if deck is None:
+        return (
+            render_template(
+                "challenge.html",
+                invalid=True,
+                get_text=get_text,
+                analytics_path=CHALLENGE_ANALYTICS_PATH,
+            ),
+            404,
+        )
+
+    me = session.get("challenge_me") or {}
+    if session.get("challenge_last") == token:
+        view = "finished"
+    elif ch.seed in me.get("played", []):
+        view = "played"
+    elif ch.seed in me.get("created", []) and not ch.results:
+        view = "ready"
+    else:
+        view = "invite"
+
+    rows = ch.ranked()
+    best = ch.best()
+    lang_name = get_text(f"lang_{ch.lang}_name")
+    type_label = _challenge_type_label(ch)
+
+    # What the page says to someone arriving from the link, and so also what a
+    # chat app's link preview shows: the preview bot is always a visitor.
+    if best:
+        invite_headline = get_text("challenge_beat_title").format(
+            best["name"] or get_text("challenge_anonymous"),
+            best["score"],
+            QUESTIONS_PER_QUIZ,
+        )
+    elif ch.host:
+        invite_headline = get_text("challenge_invite_title").format(ch.host)
+    else:
+        invite_headline = get_text("challenge_invite_title_anon")
+
+    mine = next((row for row in rows if row["newest"]), None)
+    if view == "finished" and mine:
+        share_text = get_text("challenge_share_text_result").format(
+            mine["score"], QUESTIONS_PER_QUIZ, lang_name, type_label
+        )
+    else:
+        share_text = get_text("challenge_share_text_invite").format(
+            lang_name, type_label
+        )
+
+    return render_template(
+        "challenge.html",
+        invalid=False,
+        view=view,
+        ch=ch,
+        token=token,
+        rows=rows,
+        mine=mine if view == "finished" else None,
+        lang_name=lang_name,
+        lang_flag=AVAILABLE_LANGUAGES[ch.lang].get("flag", ""),
+        type_label=type_label,
+        questions=QUESTIONS_PER_QUIZ,
+        invite_headline=invite_headline,
+        share_url=url_for("challenge_page", token=token, _external=True),
+        share_text=share_text,
+        name=me.get("name") or (ch.host if view == "ready" else ""),
+        name_max=challenge.NAME_MAX,
+        get_text=get_text,
+        analytics_path=CHALLENGE_ANALYTICS_PATH,
+    )
+
+
+@app.route("/challenge/<token>/start", methods=["POST"])
+def challenge_start(token):
+    """Seed the challenge's round and drop into its quiz."""
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    system, deck = _challenge_deck(ch)
+    if deck is None:
+        flash(get_text("challenge_invalid_title"), "error")
+        return redirect(url_for("challenge_new"))
+
+    prev_system = session.get("number_system")
+    # The player's own dial setting, kept rather than overwritten: the round's
+    # numbers are fixed by the seed, so it only matters after the challenge.
+    magnitude_level = session.get("magnitude_level", 1)
+    name = challenge.clean_name(request.form.get("name"))
+
+    _seed_quiz_session(
+        ch.lang,
+        ch.mode,
+        magnitude_level,
+        None,
+        system,
+        source=quiz_stats.SOURCE_CHALLENGE,
+    )
+    me = dict(session.get("challenge_me") or {})
+    me["name"] = name
+    session["challenge_me"] = me
+    session["challenge"] = {
+        "token": token,
+        "seed": ch.seed,
+        "numbers": challenge.draw_numbers(deck, ch.seed, ch.mode),
+        "prev_system": prev_system,
+    }
+    flash(get_text("challenge_flash_started"), "info")
+    return redirect(url_for(QUIZ_ENDPOINTS[ch.mode], lang_code=ch.lang))
 
 
 @app.route("/privacy")

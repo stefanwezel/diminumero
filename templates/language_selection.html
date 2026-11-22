@@ -31,10 +31,92 @@
         "Spanish, English, Italian and German verb conjugation practice with progress insights",
         "Personal vocabulary index cards",
         "Shareable card decks with dedup on import",
-        "Card performance dashboard with weak-card practice"
+        "Card performance dashboard with weak-card practice",
+        "Friend challenges: the same ten questions for everyone, shared by link"
     ]
 }
 </script>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* "Challenge a friend" in the fixed top-right bar. It lives outside the page
+   flow, so the landing page itself is laid out exactly as before. One set of
+   colours for both themes: the site's accent pink reads on either. */
+.btn-challenge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+    padding: 0 16px 0 12px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #E54F6D 0%, #C2366F 100%);
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(229, 79, 109, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-challenge-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+.btn-challenge-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #C2F970;
+    box-shadow: 0 0 0 2px rgba(34, 22, 43, 0.85);
+    animation: themeBadgePulse 1.8s ease-in-out infinite;
+}
+[dir="rtl"] .btn-challenge-dot { right: auto; left: -3px; }
+@media (hover: hover) {
+    .btn-challenge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(229, 79, 109, 0.55);
+    }
+}
+.btn-challenge:focus-visible {
+    outline: 2px solid #FFFFFF;
+    outline-offset: 2px;
+}
+/* On a phone the bar is already three controls wide: the label goes and the
+   button becomes a circle like its neighbours. The link keeps its name. */
+@media (max-width: 600px) {
+    .btn-challenge {
+        width: 40px;
+        padding: 0;
+        justify-content: center;
+    }
+    .btn-challenge-label { display: none; }
+    .btn-challenge-icon { width: 20px; height: 20px; }
+}
+@media (max-width: 400px) {
+    .btn-challenge { width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn-challenge-dot { animation: none; }
+}
+</style>
+{% endblock %}
+
+{% block top_controls_extra %}
+<a href="{{ url_for('challenge_new') }}" class="btn-challenge"
+   aria-label="{{ get_text('challenge_nav_button') }}"
+   title="{{ get_text('challenge_nav_tooltip') }}">
+    <img src="{{ url_for('static', filename='icons/icon-challenge.svg') }}" alt="" class="btn-challenge-icon" aria-hidden="true" width="18" height="18">
+    <span class="btn-challenge-label">{{ get_text('challenge_nav_button') }}</span>
+    <span class="btn-challenge-dot" aria-hidden="true"></span>
+</a>
 {% endblock %}
 
 {% block content %}

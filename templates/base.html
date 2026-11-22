@@ -74,6 +74,19 @@
     </style>
 
     <!-- GoatCounter Analytics -->
+    {# Settings count.js reads when it loads. A friend challenge's URL carries
+       the players' names, so a challenge page reports a fixed path instead of
+       its own, and the page after one doesn't report it as the referrer.
+       count.js hands the callback document.referrer and sends back whatever it
+       returns, so every other referrer must be returned unchanged. #}
+    <script>
+    window.goatcounter = {
+        {% if analytics_path %}path: {{ analytics_path|tojson }},{% endif %}
+        referrer: function (referrer) {
+            return /\/challenge\/[^\/?#]/.test(referrer || '') ? '' : referrer;
+        }
+    };
+    </script>
     <script data-goatcounter="https://stefanwezel.goatcounter.com/count"
             async src="//gc.zgo.at/count.js"></script>
     {% if breadcrumbs|length > 1 %}
@@ -100,6 +113,9 @@
 <body>
     <!-- Top-right controls: auth + language switcher -->
     <div class="top-controls">
+        {# A page may put its own control first in the bar (the landing page's
+           "Challenge a friend"). Fixed-position, so it never shifts the page. #}
+        {% block top_controls_extra %}{% endblock %}
         {% if user %}
             <div class="auth-menu" id="authMenu">
                 <button class="btn-auth btn-auth-user" id="authMenuBtn"

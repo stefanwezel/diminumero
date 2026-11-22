@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{# One URL, read differently by whoever opens it (see challenge_page()):
+   finished — the player who just got here from their last answer
+   played   — someone who has played this round before
+   ready    — its creator, before anyone has played
+   invite   — everyone else, including a chat app's link-preview bot #}
+{% if invalid %}
+    {% set page_title = get_text('challenge_invalid_title') %}
+    {% set page_desc = get_text('challenge_invalid_body') %}
+{% else %}
+    {% set page_title = invite_headline %}
+    {% set page_desc = lang_name ~ ' · ' ~ type_label ~ ' · ' ~ get_text('challenge_summary_questions').format(questions) ~ '. ' ~ get_text('challenge_meta_desc') %}
+{% endif %}
+
+{% block title %}{{ page_title }} · diminumero{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ page_desc }}">{% endblock %}
+{% block og_title %}{{ page_title }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ page_desc }}">{% endblock %}
+{% block twitter_title %}{{ page_title }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ page_desc }}">{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/challenge.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="landing-page challenge-page">
+    <div class="hero">
+        <div class="back-nav">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-back-nav">{{ get_text('learn_btn_back') }}</a>
+        </div>
+
+        {% if invalid %}
+        <h1 class="title challenge-title">{{ get_text('challenge_invalid_title') }}</h1>
+        <p class="description">{{ get_text('challenge_invalid_body') }}</p>
+        <div class="challenge-actions">
+            <a href="{{ url_for('challenge_new') }}" class="btn btn-primary">{{ get_text('challenge_create_own') }}</a>
+        </div>
+        {% else %}
+
+        <p class="challenge-summary">
+            <span aria-hidden="true">{{ lang_flag }}</span>
+            <span>{{ lang_name }}</span>
+            <span aria-hidden="true">·</span>
+            <span>{{ type_label }}</span>
+            <span aria-hidden="true">·</span>
+            <span>{{ get_text('challenge_summary_questions').format(questions) }}</span>
+        </p>
+
+        {% if view == 'finished' %}
+        <h1 class="title challenge-title">{{ get_text('challenge_you_scored').format(mine.score, questions) }}</h1>
+        <p class="subtitle challenge-verdict">
+            {% if rows|length == 1 %}{{ get_text('challenge_rank_alone') }}
+            {% elif mine.rank == 1 %}{{ get_text('challenge_rank_first') }}
+            {% else %}{{ get_text('challenge_rank_other').format(mine.rank, rows|length) }}{% endif %}
+        </p>
+        {% elif view == 'played' %}
+        <h1 class="title challenge-title">{{ get_text('challenge_played_title') }}</h1>
+        <p class="description">{{ get_text('challenge_played_body') }}</p>
+        {% elif view == 'ready' %}
+        <h1 class="title challenge-title">{{ get_text('challenge_ready_title') }}</h1>
+        <p class="description">{{ get_text('challenge_ready_body') }}</p>
+        {% else %}
+        <h1 class="title challenge-title">{{ invite_headline }}</h1>
+        {% endif %}
+
+        {% if rows %}
+        <table class="challenge-scoreboard">
+            <caption>{{ get_text('challenge_scoreboard') }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">{{ get_text('challenge_col_player') }}</th>
+                    <th scope="col">{{ get_text('challenge_col_score') }}</th>
+                    <th scope="col">{{ get_text('challenge_col_time') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                {% set is_you = view == 'finished' and row.newest %}
+                <tr{% if is_you %} class="is-you"{% endif %}>
+                    <td>{{ row.rank }}</td>
+                    {# <bdi>: a name in one script must not reorder the row
+                       around it in another (an Arabic name on an English
+                       page, or the reverse). #}
+                    <td><bdi>{{ row.name or get_text('challenge_anonymous') }}</bdi>{% if is_you %} <span class="challenge-you">{{ get_text('challenge_you') }}</span>{% endif %}</td>
+                    <td>{{ row.score }}/{{ questions }}</td>
+                    <td><bdi>{{ row.time }}</bdi></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if view in ('ready', 'invite') %}
+        {# Listening starts through quiz_listen.js's pjax: the submitting click
+           keeps the page "user activated", which is what lets the first clip
+           play on its own. data-listen-back anchors browser Back here rather
+           than on the language's listening overview. #}
+        <form method="POST" action="{{ url_for('challenge_start', token=token) }}" class="challenge-start"
+              {% if ch.mode == 'audio' %}data-listen-pjax data-listen-back="{{ request.path }}"{% endif %}>
+            <label class="preset-share-label" for="challenge-name">{{ get_text('challenge_field_name') }}</label>
+            <input type="text" id="challenge-name" name="name" value="{{ name }}"
+                   maxlength="{{ name_max }}" autocomplete="nickname"
+                   placeholder="{{ get_text('challenge_name_placeholder') }}"
+                   class="preset-share-range-input challenge-name-input">
+            <button type="submit" class="btn btn-primary challenge-submit">
+                {{ get_text('challenge_play_first_btn') if view == 'ready' else get_text('challenge_accept_btn') }}
+            </button>
+        </form>
+        {% endif %}
+
+        {% if view in ('ready', 'finished', 'played') %}
+        <div class="preset-share challenge-share" data-share-text="{{ share_text }}">
+            <h2 class="preset-share-title">{{ get_text('challenge_share_title_result') if view == 'finished' else get_text('challenge_share_title_invite') }}</h2>
+            <div class="preset-share-row">
+                <input type="text" id="challenge-share-url" class="preset-share-url" readonly
+                       value="{{ share_url }}"
+                       aria-label="{{ get_text('challenge_share_title_result') if view == 'finished' else get_text('challenge_share_title_invite') }}">
+                <button type="button" id="challenge-share-native" class="btn btn-primary preset-share-copy" hidden>
+                    {{ get_text('challenge_share_btn') }}
+                </button>
+                <button type="button" id="challenge-share-copy" class="btn btn-primary preset-share-copy"
+                        data-i18n-copy="{{ get_text('preset_share_copy') }}"
+                        data-i18n-copied="{{ get_text('preset_share_copied') }}">
+                    {{ get_text('preset_share_copy') }}
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="challenge-actions">
+            {% if view in ('finished', 'played') %}
+            {# Same language and kind of round, new numbers: a new challenge
+               with this player as its host, landing on its "ready" page. #}
+            <form method="POST" action="{{ url_for('challenge_new') }}">
+                <input type="hidden" name="lang" value="{{ ch.lang }}">
+                <input type="hidden" name="kind" value="{{ ch.kind }}">
+                {% if ch.mode != 'audio' %}<input type="hidden" name="difficulty" value="{{ ch.mode }}">{% endif %}
+                <input type="hidden" name="name" value="{{ name }}">
+                <button type="submit" class="btn btn-primary">{{ get_text('challenge_rematch_btn') }}</button>
+            </form>
+            <a href="{{ url_for('challenge_new', lang=ch.lang) }}" class="btn btn-secondary">{{ get_text('challenge_new_btn') }}</a>
+            {% elif view == 'invite' %}
+            <a href="{{ url_for('challenge_new', lang=ch.lang) }}" class="btn btn-secondary">{{ get_text('challenge_create_own') }}</a>
+            {% endif %}
+        </div>
+
+        <p class="challenge-rules">{{ get_text('challenge_rules').format(questions) }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/challenge.js') }}"></script>
+{% if not invalid and ch.mode == 'audio' and view in ('ready', 'invite') %}
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% endif %}
+{% endblock %}

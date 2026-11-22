@@ -103,6 +103,10 @@
     }
 
     // ---- pjax ----
+    // Where browser Back should lead once the quiz is entered, when the form
+    // that entered it says (data-listen-back); otherwise the overview.
+    var backUrl = null;
+
     function swapFrom(html, url) {
         var doc = new DOMParser().parseFromString(html, 'text/html');
         // Anything that isn't a listening-quiz page (e.g. the results page) is a
@@ -136,8 +140,9 @@
                     // listening overview or the results page). Anchor the back
                     // button to the overview, which is where the round was
                     // configured, so "back" is consistent no matter where
-                    // listening was launched from.
-                    var overviewUrl = newPath.replace(/\/listen(\/.*)?$/, '/listening');
+                    // listening was launched from. A form may name its own
+                    // anchor instead (a friend challenge returns to its page).
+                    var overviewUrl = backUrl || newPath.replace(/\/listen(\/.*)?$/, '/listening');
                     if (overviewUrl !== curPath) {
                         history.replaceState(null, '', overviewUrl);
                     }
@@ -189,6 +194,7 @@
     container.addEventListener('submit', function (e) {
         var form = e.target;
         if (!form.matches || !form.matches('[data-listen-pjax]')) return;
+        if (form.hasAttribute('data-listen-back')) backUrl = form.getAttribute('data-listen-back');
         if (form.id === 'answerForm') {
             var el = input();
             if (!el || !el.value) { e.preventDefault(); return; }

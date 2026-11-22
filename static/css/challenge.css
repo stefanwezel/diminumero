@@ -1,0 +1,251 @@
+/* Friend challenges: the create form (/challenge) and a challenge's own page.
+   Loaded by those two pages only. Like reference.css, colours are inherited
+   or translucent, plus the site's accent pink, which reads on both themes, so
+   one file serves both stylesheets. Panels, pills, inputs and the share row
+   reuse the .preset-share styles each theme already has. */
+
+/* Buttons set their own display, which would beat the UA's [hidden] rule. */
+.challenge-page [hidden] {
+    display: none !important;
+}
+
+.challenge-page .challenge-title {
+    font-size: clamp(1.7rem, 5vw, 2.6rem);
+    overflow-wrap: anywhere;
+}
+
+.challenge-summary {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 auto 16px;
+    padding: 6px 14px;
+    border: 1px solid rgba(229, 79, 109, 0.5);
+    border-radius: 999px;
+    background: rgba(229, 79, 109, 0.14);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.challenge-verdict {
+    margin-bottom: 10px;
+}
+
+/* ---- Create form ---- */
+.challenge-form {
+    margin-top: 6px;
+}
+
+.challenge-field {
+    margin-bottom: 20px;
+}
+
+.challenge-langs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.challenge-lang {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 10px;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.challenge-lang:has(input:checked) {
+    border-color: #E54F6D;
+    background: rgba(229, 79, 109, 0.14);
+    font-weight: 700;
+}
+
+/* Where the chip itself can show the choice, the radio dot is redundant and
+   costs a phone's two-column grid most of a name. It stays focusable (and
+   :focus-within outlines the chip); a browser without :has() keeps the dot. */
+@supports selector(:has(*)) {
+    .challenge-lang input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+.challenge-lang:focus-within {
+    outline: 2px solid #E54F6D;
+    outline-offset: 1px;
+}
+
+.challenge-lang input,
+.challenge-form .preset-share-mode input {
+    margin: 0;
+    accent-color: #E54F6D;
+}
+
+.challenge-lang-flag {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.challenge-lang-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Two columns on a phone rather than a 16-row list. */
+@media (max-width: 600px) {
+    .challenge-page .challenge-form {
+        padding: 14px 12px;
+    }
+    .challenge-langs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .challenge-lang {
+        gap: 6px;
+        padding: 7px 8px;
+        font-size: 0.86rem;
+    }
+    .challenge-lang-flag {
+        font-size: 1.1rem;
+    }
+}
+
+.challenge-name-input {
+    width: 100%;
+    max-width: 320px;
+}
+
+.challenge-submit {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    margin: 6px auto 0;
+}
+
+.challenge-rules {
+    max-width: 560px;
+    margin: 20px auto 0;
+    font-size: 0.85rem;
+    opacity: 0.75;
+}
+
+/* ---- Challenge page ---- */
+.challenge-scoreboard {
+    width: 100%;
+    max-width: 520px;
+    margin: 18px auto 6px;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.challenge-scoreboard caption {
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.challenge-scoreboard th,
+.challenge-scoreboard td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+    text-align: start;
+}
+
+.challenge-scoreboard th {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.challenge-scoreboard td:nth-child(2) {
+    overflow-wrap: anywhere;
+}
+
+.challenge-scoreboard th:nth-child(n + 3),
+.challenge-scoreboard td:nth-child(n + 3) {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.challenge-scoreboard tr.is-you td {
+    background: rgba(229, 79, 109, 0.14);
+    font-weight: 700;
+}
+
+.challenge-you {
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #E54F6D;
+    color: #FFFFFF;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.challenge-start {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 360px;
+    margin: 20px auto 0;
+    text-align: start;
+}
+
+.challenge-start .preset-share-label {
+    margin-bottom: 0;
+}
+
+.challenge-start .challenge-name-input {
+    max-width: none;
+}
+
+.challenge-share {
+    margin-top: 24px;
+}
+
+.challenge-share .preset-share-title {
+    margin-bottom: 10px;
+}
+
+.challenge-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.challenge-actions:empty {
+    display: none;
+}
+
+.challenge-actions form {
+    margin: 0;
+}
+
+/* .btn-secondary carries a margin meant for a button beside another one. */
+.challenge-page .challenge-actions .btn,
+.challenge-page .challenge-share .btn {
+    margin: 0;
+}

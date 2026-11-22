@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_text('challenge_new_title') }} · diminumero{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ get_text('challenge_meta_desc') }}">{% endblock %}
+{% block og_title %}{{ get_text('challenge_new_title') }} · diminumero{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ get_text('challenge_meta_desc') }}">{% endblock %}
+{% block twitter_title %}{{ get_text('challenge_new_title') }} · diminumero{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ get_text('challenge_meta_desc') }}">{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/challenge.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="landing-page challenge-page">
+    <div class="hero">
+        <div class="back-nav">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-back-nav">{{ get_text('learn_btn_back') }}</a>
+        </div>
+
+        <h1 class="title challenge-title">{{ get_text('challenge_new_title') }}</h1>
+        <p class="description">{{ get_text('challenge_new_intro') }}</p>
+
+        {# A plain form: it works with no JS. challenge.js only hides what can't
+           apply (difficulty for Listening, Listening for a language with no
+           recordings); the server checks both again on POST. #}
+        <form method="POST" action="{{ url_for('challenge_new') }}" class="preset-share challenge-form" id="challenge-form">
+            <fieldset class="preset-share-field challenge-field">
+                <legend class="preset-share-label">{{ get_text('challenge_field_language') }}</legend>
+                <div class="challenge-langs">
+                    {% for code, info in languages.items() %}
+                    <label class="challenge-lang">
+                        <input type="radio" name="lang" value="{{ code }}" required
+                               data-listening="{{ '1' if info.listening else '0' }}"
+                               {% if code == selected_lang %}checked{% endif %}>
+                        <span class="challenge-lang-flag" aria-hidden="true">{{ info.flag }}</span>
+                        <span class="challenge-lang-name">{{ info.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <fieldset class="preset-share-field challenge-field">
+                <legend class="preset-share-label">{{ get_text('challenge_field_type') }}</legend>
+                <div class="preset-share-modes">
+                    <label class="preset-share-mode">
+                        <input type="radio" name="kind" value="numbers" checked>
+                        <span>{{ get_text('challenge_type_numbers') }}</span>
+                    </label>
+                    <label class="preset-share-mode">
+                        <input type="radio" name="kind" value="listening">
+                        <span>{{ get_text('challenge_type_listening') }}</span>
+                    </label>
+                    <label class="preset-share-mode">
+                        <input type="radio" name="kind" value="surprise">
+                        <span>{{ get_text('challenge_type_surprise') }}</span>
+                    </label>
+                </div>
+                <p class="preset-share-hint" id="challenge-no-listening" hidden>{{ get_text('challenge_listening_unavailable') }}</p>
+            </fieldset>
+
+            <fieldset class="preset-share-field challenge-field" id="challenge-difficulty">
+                <legend class="preset-share-label">{{ get_text('challenge_field_difficulty') }}</legend>
+                <div class="preset-share-modes">
+                    {% for mode in number_modes %}
+                    <label class="preset-share-mode">
+                        <input type="radio" name="difficulty" value="{{ mode }}" {% if mode == default_number_mode %}checked{% endif %}>
+                        <span>{{ get_text('mode_' ~ mode) }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <div class="preset-share-field challenge-field">
+                <label class="preset-share-label" for="challenge-name">{{ get_text('challenge_field_name') }}</label>
+                <input type="text" id="challenge-name" name="name" value="{{ name }}"
+                       maxlength="{{ name_max }}" autocomplete="nickname"
+                       placeholder="{{ get_text('challenge_name_placeholder') }}"
+                       class="preset-share-range-input challenge-name-input">
+                <p class="preset-share-hint">{{ get_text('challenge_name_hint') }}</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary challenge-submit">{{ get_text('challenge_create_btn') }}</button>
+        </form>
+
+        <p class="challenge-rules">{{ get_text('challenge_rules').format(questions) }}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/challenge.js') }}"></script>
+{% endblock %}
