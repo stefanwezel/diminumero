@@ -290,7 +290,11 @@ class TestCreate:
     def test_creator_sees_the_ready_view(self, client):
         html = client.get(_create(client)).get_data(as_text=True)
         assert _h1(html) == "Your challenge is ready"
-        assert "Play it first" in html
+        start = html[html.index('class="challenge-start"') :]
+        assert re.search(
+            r"<button[^>]*>\s*<span[^>]*>▶</span> Start\s*</button>", start
+        )
+        assert "Play it first" not in html
         assert 'id="challenge-share-url"' in html
 
 

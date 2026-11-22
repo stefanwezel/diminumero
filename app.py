@@ -2825,12 +2825,12 @@ def challenge_new():
         token = ch.encode(app.secret_key)
 
         # Start: straight into the round. The link to send comes with the
-        # result, like it does after "Play it first".
+        # result, like it does after Start on the challenge's page.
         if request.form.get("go"):
             system, deck = _challenge_deck(ch)
             if deck is not None:
                 return _begin_challenge(ch, token, system, deck, name)
-        # Share: its page, with the link above "Play it first" this once. In
+        # Share: its page, with the link above its Start button this once. In
         # the session rather than the URL, which is the link being shared.
         if request.form.get("share"):
             session["challenge_share_first"] = ch.seed
@@ -2863,7 +2863,7 @@ def challenge_page(token):
 
     The same URL reads differently to whoever opens it. The person who just
     finished sees their score and the link to send; the person who created it
-    sees "play it first"; everyone else is invited to play.
+    sees Start (play it first) or the link; everyone else is invited to play.
     """
     ch = challenge.Challenge.decode(token, app.secret_key)
     _, deck = _challenge_deck(ch)
@@ -2958,7 +2958,7 @@ def challenge_start(token):
 def _begin_challenge(ch, token, system, deck, raw_name):
     """Seed a challenge's round in the session and redirect into its quiz.
 
-    Shared by "Accept"/"Play it first" on a challenge's page and the create
+    Shared by Accept/Start on a challenge's page and the create
     form's "Start now", which mints a challenge and plays it in one click.
     """
     own = ch.seed in (session.get("challenge_me") or {}).get("created", [])

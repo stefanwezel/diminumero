@@ -95,7 +95,7 @@
         {% endif %}
 
         {# The share box, captured so it can come first: a creator who pressed
-           Share on the create form came for the link, not for "Play it first".
+           Share on the create form came for the link, not to start playing.
            data-share-focus puts the keyboard on its button, one tap from the
            phone's share sheet (which no page may open without that tap). #}
         {% set share_box %}
@@ -133,7 +133,7 @@
                    placeholder="{{ get_text('challenge_name_placeholder') }}"
                    class="preset-share-range-input challenge-name-input">
             <button type="submit" class="btn btn-primary challenge-submit">
-                {{ get_text('challenge_play_first_btn') if view == 'ready' else get_text('challenge_accept_btn') }}
+                {% if view == 'ready' %}<span aria-hidden="true">▶</span> {{ get_text('challenge_go_btn') }}{% else %}{{ get_text('challenge_accept_btn') }}{% endif %}
             </button>
         </form>
         {% endif %}
