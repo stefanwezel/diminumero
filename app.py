@@ -238,6 +238,37 @@ def login_required(view):
     return wrapped
 
 
+def _verb_challenge_running(lang_code: str | None = None) -> bool:
+    """Whether the session's conjugation drill is a friend's verb challenge.
+
+    With `lang_code`, only one started for that language counts, the same
+    scoping _get_conjugate_state() applies.
+    """
+    state = session.get("conjugate_practice")
+    if not state or not state.get("challenge"):
+        return False
+    return lang_code is None or state.get("lang", DEFAULT_CONJUGATION_LANG) == lang_code
+
+
+def login_or_verb_challenge_required(view):
+    """login_required, except while a friend's verb challenge is being played.
+
+    A verb challenge runs on the conjugation drill's routes, and like every
+    challenge it needs no account to play: the verbs come from its token, not
+    from the player's list. Every other conjugation drill still needs a login.
+    """
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user" not in session and not _verb_challenge_running(
+            kwargs.get("lang_code")
+        ):
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
 # ===== UI language in the URL =====
 # The UI language lives in the session, and a crawler has no session, so a search
 # engine could only ever see a page's English rendering. `?hl=de` gives each
@@ -2748,15 +2779,34 @@ def _challenge_has_listening(lang_code):
 
 
 def _challenge_languages():
-    """{code: {name, flag, listening}} for every language a challenge can use."""
+    """{code: {name, flag, listening, conj, verbs}} for every language a challenge can use.
+
+    `conj` says whether the language has verb practice at all, and `verbs` how
+    many verbs the person viewing has in it (None when nobody is logged in): a
+    verb challenge is made from the creator's own list.
+    """
+    conj_langs = set(get_languages_with_conjugation())
+    verb_counts = None
+    if "user" in session:
+        verb_counts = dict(
+            db.session.query(VerbCard.lang, db.func.count(VerbCard.id))
+            .filter_by(user_sub=_current_user_sub())
+            .group_by(VerbCard.lang)
+            .all()
+        )
     languages = {}
     for code, info in AVAILABLE_LANGUAGES.items():
         if not info.get("ready"):
             continue
+        conj = code in conj_langs
         languages[code] = {
             "name": get_text(f"lang_{code}_name"),
             "flag": info.get("flag", ""),
             "listening": _challenge_has_listening(code),
+            "conj": conj,
+            "verbs": verb_counts.get(code, 0)
+            if conj and verb_counts is not None
+            else None,
         }
     return languages
 
@@ -2767,7 +2817,7 @@ def _challenge_deck(ch):
     Always the default numeral system, or the listening deck: a challenge is
     the same round for everyone, so it can't depend on one player's settings.
     """
-    if ch is None or not is_language_ready(ch.lang):
+    if ch is None or ch.is_verbs or not is_language_ready(ch.lang):
         return None, None
     try:
         if ch.mode == "audio":
@@ -2782,10 +2832,175 @@ def _challenge_deck(ch):
     return system, deck
 
 
+def _challenge_playable(ch):
+    """Whether a decoded challenge (or None) can be played right now."""
+    if ch is not None and ch.is_verbs:
+        return _verb_challenge_plan(ch) is not None
+    return _challenge_deck(ch)[1] is not None
+
+
 def _challenge_type_label(ch):
     if ch.mode == "audio":
         return get_text("challenge_type_listening")
-    return f"{get_text('challenge_type_numbers')} · {get_text('mode_' + ch.mode)}"
+    kind = "challenge_type_verbs" if ch.is_verbs else "challenge_type_numbers"
+    return f"{get_text(kind)} · {get_text('mode_' + ch.mode)}"
+
+
+# ----- Verb challenges -----
+# The creator's verbs travel in the token; the round runs on the conjugation
+# drill's routes (session["conjugate_practice"] with a "challenge" entry), which
+# take each question from _verb_challenge_plan() instead of the player's list.
+
+
+def _verb_challenge_persons(lang_code, include_optional):
+    """The person slots a verb challenge asks: all but the optional one, unless included."""
+    optional = conj_optional_person_index(lang_code)
+    return [
+        p["index"]
+        for p in conj_persons(lang_code)
+        if p["index"] != optional or include_optional
+    ]
+
+
+def _verb_challenge_plan(ch):
+    """A verb challenge's questions as (infinitive, tense, person), or None.
+
+    None when it can't be played now: a language without verb practice, a
+    tense or verb the pool no longer has, or fewer cells than a full round.
+    Worked out again from the token on every question, like the numbers of a
+    numbers challenge, so the session never holds the list.
+    """
+    if ch is None or not ch.is_verbs:
+        return None
+    if ch.lang not in get_languages_with_conjugation():
+        return None
+    pool = _conj_pool(ch.lang)
+    known = conj_tense_keys(ch.lang)
+    if any(t not in known for t in ch.tenses):
+        return None
+    if not all(pool.verb_exists(v) for v in ch.verbs):
+        return None
+    plan = challenge.draw_verb_questions(
+        ch.verbs,
+        ch.tenses,
+        _verb_challenge_persons(ch.lang, ch.optional_person),
+        lambda verb, tense, person: (
+            _form_available(ch.lang, verb, tense, person) is not None
+        ),
+        ch.seed,
+    )
+    return plan if len(plan) >= QUESTIONS_PER_QUIZ else None
+
+
+def _challenge_verb_choice(lang_code, tenses, persons):
+    """Up to MAX_VERBS of the current user's verbs to build a challenge from.
+
+    Only verbs that have something to ask in the chosen tenses. A list longer
+    than a round is sampled the way Prioritized practice samples it, so the
+    verbs a friend gets are the ones the creator is still working on: that is
+    the learning progress a verb challenge shares. Returned in alphabetical
+    order, which is how the challenge page lists them.
+    """
+    pool = _conj_pool(lang_code)
+    candidates, seen = [], set()
+    for verb in _user_verbs(lang_code):
+        infinitive = _normalize_infinitive(verb.infinitive, lang_code)
+        if infinitive in seen or not pool.verb_exists(infinitive):
+            continue
+        if not any(
+            _form_available(lang_code, infinitive, tense, person) is not None
+            for tense in tenses
+            for person in persons
+        ):
+            continue
+        seen.add(infinitive)
+        candidates.append((verb, infinitive))
+    picked = []
+    while candidates and len(picked) < challenge.MAX_VERBS:
+        chosen = _pick_weighted_card([verb for verb, _ in candidates])
+        index = next(i for i, (verb, _) in enumerate(candidates) if verb is chosen)
+        picked.append(candidates.pop(index)[1])
+    return sorted(picked)
+
+
+def _new_verb_challenge(lang_code, name):
+    """The verb challenge the create form asked for, or a redirect saying why not.
+
+    Errors go back to the create form with verbs selected rather than falling
+    back to a numbers round: what's missing (a login, verbs, a tense) is
+    something only the creator can supply.
+    """
+    back = redirect(url_for("challenge_new", lang=lang_code, kind=challenge.KIND_VERBS))
+    if lang_code not in get_languages_with_conjugation():
+        flash(get_text("challenge_flash_verbs_unavailable"), "error")
+        return back
+    if "user" not in session:
+        flash(get_text("challenge_flash_verbs_login"), "info")
+        return back
+    # The create form names each language's checklist apart (Spanish and
+    # Italian share "indicativo/presente"); the conjugate page and a rematch
+    # send plain `tenses`. Kept in the language's own order.
+    asked = set(
+        request.form.getlist(f"tenses_{lang_code}") or request.form.getlist("tenses")
+    )
+    tenses = [t["key"] for t in conj_tenses(lang_code) if t["key"] in asked]
+    if not tenses:
+        flash(get_text("conjugate_flash_need_tenses"), "info")
+        return back
+    optional = conj_optional_person_index(lang_code) is not None and (
+        request.form.get(f"include_vosotros_{lang_code}")
+        or request.form.get("include_vosotros")
+    ) in ("1", "true", "on")
+    mode = request.form.get("difficulty")
+    if mode not in challenge.VERB_MODES:
+        mode = challenge.DEFAULT_VERB_MODE
+    persons = _verb_challenge_persons(lang_code, optional)
+    verbs = _challenge_verb_choice(lang_code, tenses, persons)
+    if not verbs:
+        flash(get_text("challenge_flash_verbs_none"), "info")
+        return back
+    ch = challenge.Challenge(
+        lang_code,
+        mode,
+        challenge.new_seed(),
+        host=name,
+        verbs=tuple(verbs),
+        tenses=tuple(tenses),
+        optional_person=optional,
+    )
+    if _verb_challenge_plan(ch) is None:
+        flash(
+            get_text("challenge_flash_verbs_too_few").format(QUESTIONS_PER_QUIZ), "info"
+        )
+        return back
+    return ch
+
+
+def _verb_challenge_view(ch):
+    """What the challenge page shows of a verb challenge: its verbs and tenses.
+
+    Each verb says whether the viewer already has it, so the ones they lack
+    can be added to their own list from here.
+    """
+    owned = set()
+    logged_in = "user" in session
+    if logged_in:
+        owned = {_normalize_infinitive(v.infinitive) for v in _user_verbs(ch.lang)}
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    verbs = [
+        {
+            "infinitive": verb,
+            "label": conj_citation_form(ch.lang, verb),
+            "owned": _normalize_infinitive(verb) in owned,
+        }
+        for verb in ch.verbs
+    ]
+    return {
+        "verbs": verbs,
+        "tenses": [tense_label(ch.lang, t, ui_lang) for t in ch.tenses],
+        "logged_in": logged_in,
+        "missing": sum(1 for v in verbs if not v["owned"]),
+    }
 
 
 def _finish_challenge():
@@ -2806,17 +3021,37 @@ def _finish_challenge():
         "show_speed_splash",
     ):
         session.pop(key, None)
+    return _challenge_result_redirect(
+        ch, session.get("score", 0), session.get("quiz_start_time")
+    )
+
+
+def _finish_verb_challenge(state):
+    """The verb-challenge twin of _finish_challenge(), from the drill's results route.
+
+    The drill's state goes, so Back can't resume a round whose score is out.
+    """
+    session.pop("conjugate_practice", None)
+    running = state.get("challenge") or {}
+    ch = challenge.Challenge.decode(running.get("token"), app.secret_key)
+    # Hints are off in a challenge, so the score is whole; int() is a guard.
+    return _challenge_result_redirect(
+        ch, int(state.get("score", 0)), state.get("started_at")
+    )
+
+
+def _challenge_result_redirect(ch, score, started):
+    """Put a finished player's score on the challenge and send them to its page."""
     if ch is None:
         # The secret key changed mid-round, so the token can't be extended.
         flash(get_text("challenge_invalid_title"), "error")
         return redirect(url_for("challenge_new"))
 
-    started = session.get("quiz_start_time")
     seconds = int(time.time() - started) if started else challenge.MAX_SECONDS
     me = session.get("challenge_me") or {}
     finished = ch.with_result(
         me.get("name", ""),
-        session.get("score", 0),
+        score,
         seconds,
         creator=ch.seed in me.get("created", []),
     )
@@ -2837,9 +3072,23 @@ def challenge_new():
             flash(get_text("challenge_flash_pick_language"), "error")
             return redirect(url_for("challenge_new"))
 
+        # A form without a name field (the conjugate page's "Challenge a
+        # friend") keeps the name this person gave last time.
+        me = session.get("challenge_me") or {}
+        if "name" in request.form:
+            name = challenge.clean_name(request.form.get("name"))
+        else:
+            name = me.get("name", "")
+
         kind = request.form.get("kind", challenge.KIND_NUMBERS)
         if kind not in challenge.KINDS:
             kind = challenge.KIND_NUMBERS
+        if kind == challenge.KIND_VERBS:
+            ch = _new_verb_challenge(lang_code, name)
+            if not isinstance(ch, challenge.Challenge):
+                return ch
+            return _mint_challenge(ch, name)
+
         has_listening = languages[lang_code]["listening"]
         if kind == challenge.KIND_SURPRISE:
             # challenge.js makes the pick itself when Start is pressed, so that
@@ -2862,44 +3111,80 @@ def challenge_new():
             if mode not in challenge.NUMBER_MODES:
                 mode = challenge.DEFAULT_NUMBER_MODE
 
-        name = challenge.clean_name(request.form.get("name"))
         ch = challenge.Challenge(lang_code, mode, challenge.new_seed(), host=name)
-        me = challenge.remember_seed(session.get("challenge_me"), "created", ch.seed)
-        me["name"] = name
-        session["challenge_me"] = me
-        token = ch.encode(app.secret_key)
-
-        # Start: straight into the round. The link to send comes with the
-        # result, like it does after Start on the challenge's page.
-        if request.form.get("go"):
-            _, deck = _challenge_deck(ch)
-            if deck is not None:
-                return _begin_challenge(ch, token, name)
-        # Share: its page, with the link above its Start button this once. In
-        # the session rather than the URL, which is the link being shared.
-        if request.form.get("share"):
-            session["challenge_share_first"] = ch.seed
-        return redirect(url_for("challenge_page", token=token), code=303)
+        return _mint_challenge(ch, name)
 
     # A language named in the URL ("New challenge" on a French challenge's
     # page) beats the defaults the browser remembers; one taken from the
-    # session doesn't. challenge.js reads the difference from the form.
+    # session doesn't. challenge.js reads the difference from the form. The
+    # same goes for a kind ("Challenge a friend" links ask for verbs).
     lang_explicit = request.args.get("lang") in languages
     selected = request.args.get("lang") or session.get("learn_language")
     if selected not in languages:
         selected = "es" if "es" in languages else next(iter(languages))
+    kind_explicit = request.args.get("kind") in challenge.KINDS
+    selected_kind = request.args.get("kind") if kind_explicit else None
+    if selected_kind == challenge.KIND_VERBS and not languages[selected]["verbs"]:
+        selected_kind = None
+    if (
+        selected_kind == challenge.KIND_LISTENING
+        and not languages[selected]["listening"]
+    ):
+        selected_kind = None
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    verb_settings = {
+        code: {
+            "tenses": [
+                {
+                    "key": t["key"],
+                    "label": tense_label(code, t["key"], ui_lang),
+                    "default_on": t.get("default_on", False),
+                }
+                for t in conj_tenses(code)
+            ],
+            "has_optional": conj_optional_person_index(code) is not None,
+            "conjugate_url": url_for("conjugate", lang_code=code),
+        }
+        for code in languages
+        if languages[code]["conj"]
+    }
     return render_template(
         "challenge_new.html",
         languages=languages,
         selected_lang=selected,
         lang_explicit=lang_explicit,
+        selected_kind=selected_kind or challenge.KIND_NUMBERS,
+        kind_explicit=kind_explicit and selected_kind is not None,
         number_modes=challenge.NUMBER_MODES,
         default_number_mode=challenge.DEFAULT_NUMBER_MODE,
+        verb_settings=verb_settings,
+        logged_in="user" in session,
+        login_url=url_for(
+            "challenge_login", next=url_for("challenge_new", kind="verbs")
+        ),
         name=(session.get("challenge_me") or {}).get("name", ""),
         name_max=challenge.NAME_MAX,
         questions=QUESTIONS_PER_QUIZ,
         get_text=get_text,
     )
+
+
+def _mint_challenge(ch, name):
+    """Remember a new challenge as this person's, then start it or show its page."""
+    me = challenge.remember_seed(session.get("challenge_me"), "created", ch.seed)
+    me["name"] = name
+    session["challenge_me"] = me
+    token = ch.encode(app.secret_key)
+
+    # Start: straight into the round. The link to send comes with the
+    # result, like it does after Start on the challenge's page.
+    if request.form.get("go") and _challenge_playable(ch):
+        return _begin_challenge(ch, token, name)
+    # Share: its page, with the link above its Start button this once. In
+    # the session rather than the URL, which is the link being shared.
+    if request.form.get("share"):
+        session["challenge_share_first"] = ch.seed
+    return redirect(url_for("challenge_page", token=token), code=303)
 
 
 @app.route("/challenge/<token>")
@@ -2911,8 +3196,7 @@ def challenge_page(token):
     sees Start (play it first) or the link; everyone else is invited to play.
     """
     ch = challenge.Challenge.decode(token, app.secret_key)
-    _, deck = _challenge_deck(ch)
-    if deck is None:
+    if not _challenge_playable(ch):
         return (
             render_template(
                 "challenge.html",
@@ -2985,6 +3269,8 @@ def challenge_page(token):
         share_text=share_text,
         name=me.get("name") or (ch.host if view == "ready" else ""),
         name_max=challenge.NAME_MAX,
+        verb_view=_verb_challenge_view(ch) if ch.is_verbs else None,
+        logged_in="user" in session,
         get_text=get_text,
         analytics_path=CHALLENGE_ANALYTICS_PATH,
         analytics_title=CHALLENGE_ANALYTICS_TITLE,
@@ -2995,11 +3281,76 @@ def challenge_page(token):
 def challenge_start(token):
     """Seed the challenge's round and drop into its quiz."""
     ch = challenge.Challenge.decode(token, app.secret_key)
-    _, deck = _challenge_deck(ch)
-    if deck is None:
+    if not _challenge_playable(ch):
         flash(get_text("challenge_invalid_title"), "error")
         return redirect(url_for("challenge_new"))
     return _begin_challenge(ch, token, request.form.get("name"))
+
+
+@app.route("/challenge/<token>/verbs", methods=["POST"])
+def challenge_add_verbs(token):
+    """Add a verb challenge's verbs (one, or all of them) to the player's own list.
+
+    The verbs are the creator's; this is how a friend takes on what they are
+    learning. Additive only, like the index-card sync: a verb already on the
+    list is left alone, and nothing is ever removed.
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if ch is None or not ch.is_verbs or ch.lang not in get_languages_with_conjugation():
+        flash(get_text("challenge_invalid_title"), "error")
+        return redirect(url_for("challenge_new"))
+    page = url_for("challenge_page", token=token)
+    if "user" not in session:
+        session["pending_challenge_next"] = page
+        return redirect(url_for("login"))
+
+    wanted = request.form.get("verb")
+    verbs = [v for v in ch.verbs if v == wanted] if wanted else list(ch.verbs)
+    pool = _conj_pool(ch.lang)
+    user_sub = _current_user_sub()
+    added = []
+    for verb in verbs:
+        infinitive = _normalize_infinitive(verb, ch.lang)
+        if not pool.verb_exists(infinitive):
+            continue
+        if _find_user_verb(user_sub, ch.lang, infinitive) is not None:
+            continue
+        db.session.add(VerbCard(user_sub=user_sub, lang=ch.lang, infinitive=infinitive))
+        added.append(conj_citation_form(ch.lang, infinitive))
+    if added:
+        db.session.commit()
+        flash(
+            get_text("challenge_flash_verbs_added").format(", ".join(added)), "success"
+        )
+    else:
+        flash(get_text("challenge_flash_verbs_already"), "info")
+    return redirect(page, code=303)
+
+
+# Where /challenge/login may send someone back to: the create form or a
+# challenge's page. Strict, so it can't be made an open redirect.
+_CHALLENGE_NEXT_RE = re.compile(
+    r"/challenge(?:/[A-Za-z0-9_.-]+)?(?:\?[A-Za-z0-9_=&-]*)?"
+)
+
+
+def _is_challenge_path(value):
+    return isinstance(value, str) and _CHALLENGE_NEXT_RE.fullmatch(value) is not None
+
+
+@app.route("/challenge/login")
+def challenge_login():
+    """Log in, then come back to the challenge page or form that linked here.
+
+    A verb challenge is made from the creator's own verbs, and a player adds
+    its verbs to their own list, so both need an account; neither should lose
+    the challenge they were looking at on the way.
+    """
+    target = request.args.get("next")
+    if not _is_challenge_path(target):
+        target = url_for("challenge_new")
+    session["pending_challenge_next"] = target
+    return redirect(url_for("login"))
 
 
 def _begin_challenge(ch, token, raw_name):
@@ -3008,6 +3359,8 @@ def _begin_challenge(ch, token, raw_name):
     Shared by Accept/Start on a challenge's page and the create
     form's "Start now", which mints a challenge and plays it in one click.
     """
+    if ch.is_verbs:
+        return _begin_verb_challenge(ch, token, raw_name)
     own = ch.seed in (session.get("challenge_me") or {}).get("created", [])
     own = own and not ch.results
     # The player's own dial setting, kept rather than overwritten: the round's
@@ -3035,6 +3388,46 @@ def _begin_challenge(ch, token, raw_name):
         "info",
     )
     return redirect(url_for(QUIZ_ENDPOINTS[ch.mode], lang_code=ch.lang))
+
+
+def _begin_verb_challenge(ch, token, raw_name):
+    """Seed a verb challenge as a conjugation drill and redirect into it.
+
+    The drill's own state, with a "challenge" entry: the routes then take
+    every question from the token (_load_next_conjugation()), let a player
+    without an account in, and offer no hint, whose half point would make the
+    scores incomparable. Any other conjugation drill started later replaces
+    it, the way any number drill ends a numbers challenge.
+    """
+    me = dict(session.get("challenge_me") or {})
+    own = ch.seed in me.get("created", []) and not ch.results
+    me["name"] = challenge.clean_name(raw_name)
+    session["challenge_me"] = me
+    session["conjugate_practice"] = {
+        "lang": ch.lang,
+        "tenses": list(ch.tenses),
+        "persons": _verb_challenge_persons(ch.lang, ch.optional_person),
+        "verb_ids": [],
+        "difficulty": ch.mode,
+        "sampling_mode": "random",
+        "reveal_mode": "type",
+        "count": QUESTIONS_PER_QUIZ,
+        "asked": [],
+        "score": 0,
+        "total": 0,
+        "current": None,
+        "current_revealed": False,
+        # No list of questions: _verb_challenge_plan() works them out again.
+        "challenge": {"token": token, "seed": ch.seed},
+        "started_at": time.time(),
+    }
+    flash(
+        get_text(
+            "challenge_flash_started_own" if own else "challenge_flash_started_verbs"
+        ),
+        "info",
+    )
+    return redirect(url_for("conjugate_practice", lang_code=ch.lang))
 
 
 @app.route("/privacy")
@@ -3460,8 +3853,11 @@ def callback():
     session["user"] = token["userinfo"]
     # If the user was sent to /login from a share URL, route them back to it.
     pending_token = session.pop("pending_import_token", None)
+    pending_challenge = session.pop("pending_challenge_next", None)
     if pending_token:
         return redirect(url_for("cards_import", token=pending_token))
+    if _is_challenge_path(pending_challenge):
+        return redirect(pending_challenge)
     return redirect(url_for("cards"))
 
 
@@ -5221,7 +5617,10 @@ def _load_next_conjugation(state: dict) -> dict | None:
     Samples a verb (weighted toward weak/unpracticed verbs in prioritized mode),
     then a random available tense+person for that verb that hasn't been asked.
     Verbs whose questions are all exhausted are dropped and another is tried.
+    A friend's verb challenge asks its planned questions instead.
     """
+    if state.get("challenge"):
+        return _load_next_challenge_conjugation(state)
     lang_code = state.get("lang", DEFAULT_CONJUGATION_LANG)
     asked = set(state.get("asked", []))
     verbs = _user_verbs(lang_code)
@@ -5271,6 +5670,36 @@ def _load_next_conjugation(state: dict) -> dict | None:
     return current
 
 
+def _load_next_challenge_conjugation(state: dict) -> dict | None:
+    """A verb challenge's next question: the planned one for this many answers.
+
+    Indexed by `total` (questions answered or revealed), which every way of
+    clearing a question advances, so none is skipped or asked twice. The
+    player's own copy of the verb, if they have one, is what the attempt is
+    recorded on; the verb itself always comes from the token.
+    """
+    running = state.get("challenge") or {}
+    ch = challenge.Challenge.decode(running.get("token"), app.secret_key)
+    plan = _verb_challenge_plan(ch)
+    index = state.get("total", 0)
+    if plan is None or index >= len(plan):
+        return None
+    infinitive, tense_key, person_index = plan[index]
+    owned = None
+    if "user" in session:
+        owned = _find_user_verb(_current_user_sub(), ch.lang, infinitive)
+    current = {
+        "verb_id": owned.id if owned else None,
+        "infinitive": infinitive,
+        "tense_key": tense_key,
+        "person_index": person_index,
+        "correct_answer": _form_available(ch.lang, infinitive, tense_key, person_index),
+    }
+    state["current"] = current
+    state["current_revealed"] = False
+    return current
+
+
 def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     """Render the practice page for the current question."""
     difficulty = state.get("difficulty", "advanced")
@@ -5278,6 +5707,7 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     correct = current["correct_answer"]
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     # The pattern hint is an advanced-mode aid only; hardcore stays no-help.
+    # A challenge offers none: its half point would make scores incomparable.
     hint = (
         _build_conjugation_hint(
             lang_code,
@@ -5286,12 +5716,12 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
             ui_lang,
             infinitive=current["infinitive"],
         )
-        if (difficulty != "hardcore" and not revealed)
+        if (difficulty != "hardcore" and not revealed and not state.get("challenge"))
         else None
     )
     return render_template(
         "conjugate_practice.html",
-        user=session["user"],
+        user=session.get("user"),
         lang_code=lang_code,
         infinitive=current["infinitive"],
         pronoun=person_label(lang_code, current["person_index"]),
@@ -5316,7 +5746,7 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
 
 
 @app.route("/<lang_code>/conjugate/practice", methods=["GET", "POST"])
-@login_required
+@login_or_verb_challenge_required
 def conjugate_practice(lang_code):
     """Show the current conjugation question or process an answer/reveal."""
     _require_conjugation_lang(lang_code)
@@ -5328,8 +5758,15 @@ def conjugate_practice(lang_code):
         current = state.get("current")
         if not current:
             return redirect(url_for("conjugate_practice", lang_code=lang_code))
-        verb = db.session.get(VerbCard, current["verb_id"])
-        owns_verb = verb is not None and verb.user_sub == _current_user_sub()
+        # A challenge question on a verb the player doesn't have (or a player
+        # without an account) has no verb_id, and records nothing.
+        verb_id = current.get("verb_id")
+        verb = db.session.get(VerbCard, verb_id) if verb_id else None
+        owns_verb = (
+            verb is not None
+            and "user" in session
+            and verb.user_sub == _current_user_sub()
+        )
         correct_answer = current["correct_answer"]
 
         if "reveal" in request.form:
@@ -5386,6 +5823,7 @@ def conjugate_practice(lang_code):
         # point and still counts as a miss for mastery tracking.
         hint_used = (
             state.get("difficulty") == "advanced"
+            and not state.get("challenge")
             and request.form.get("hint_used") == "1"
         )
         user_answer = (request.form.get("answer") or "").strip()
@@ -5469,13 +5907,18 @@ def conjugate_practice(lang_code):
 
 
 @app.route("/<lang_code>/conjugate/practice/results")
-@login_required
+@login_or_verb_challenge_required
 def conjugate_practice_results(lang_code):
     """Show the final conjugation score and clear session state."""
     _require_conjugation_lang(lang_code)
-    if _get_conjugate_state(lang_code) is None:
+    state = _get_conjugate_state(lang_code)
+    if state is None:
         # No session, or one started for another language — leave that one alone.
         return redirect(url_for("conjugate", lang_code=lang_code))
+    if state.get("challenge"):
+        # A friend's verb challenge ends on its own page, with a link to send,
+        # whether it was finished or cut short with Exit.
+        return _finish_verb_challenge(state)
     state = session.pop("conjugate_practice")
     score = state.get("score", 0)
     total = state.get("total", 0)
@@ -5505,7 +5948,7 @@ def conjugate_practice_results(lang_code):
 
 
 @app.route("/api/conjugate/validate", methods=["POST"])
-@login_required
+@login_or_verb_challenge_required
 def conjugate_validate_api():
     """Live word-by-word validation for the current conjugation question."""
     state = _get_conjugate_state()

@@ -156,6 +156,16 @@
             <button type="button" class="btn btn-secondary conjugate-practice-reset">
                 {{ get_text('cards_reset_defaults_btn') }}
             </button>
+            {# A friend challenge from these settings: ten questions from these
+               verbs, in the tenses and difficulty ticked above. It lands on the
+               challenge's page, with Start and the link to send. The hidden
+               language is for /challenge; practice/start takes it from its URL. #}
+            <input type="hidden" name="lang" value="{{ lang_code }}">
+            <button type="submit" class="btn btn-secondary conjugate-challenge-btn"
+                    formaction="{{ url_for('challenge_new') }}" name="kind" value="verbs"
+                    title="{{ get_text('conjugate_challenge_hint') }}">
+                {{ get_text('challenge_nav_button') }}
+            </button>
         </form>
 
         {% if dashboard.total_attempts > 0 %}

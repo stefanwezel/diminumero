@@ -17,8 +17,19 @@
         var difficulty = document.getElementById('challenge-difficulty');
         var listening = form.querySelector('input[name="kind"][value="listening"]');
         var numbers = form.querySelector('input[name="kind"][value="numbers"]');
+        var verbs = form.querySelector('input[name="kind"][value="verbs"]');
         var nameInput = form.querySelector('input[name="name"]');
         var summary = document.getElementById('challenge-go-summary');
+        // A verb challenge is made from the creator's own verbs: the language
+        // radio says whether it has verb practice (data-conj) and, for someone
+        // logged in, how many verbs they have in it (data-verbs).
+        var verbsLogin = document.getElementById('challenge-verbs-login');
+        var verbsEmpty = document.getElementById('challenge-verbs-empty');
+        var verbsEmptyLink = document.getElementById('challenge-verbs-empty-link');
+        var verbsFrom = document.getElementById('challenge-verbs-from');
+        var tenses = document.getElementById('challenge-tenses');
+        var easyOnly = form.querySelectorAll('[data-numbers-only]');
+        var rules = document.getElementById('challenge-rules');
 
         var checked = function (name) {
             return form.querySelector('input[name="' + name + '"]:checked');
@@ -39,29 +50,73 @@
             return label ? label.textContent.replace(/\s+/g, ' ').trim() : '';
         };
 
+        // The tense checklist of one verb language, by its data-tenses-lang.
+        var tenseLists = function () {
+            return form.querySelectorAll('[data-tenses-lang]');
+        };
+
         var load = function () {
             var saved = null;
             try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return; }
             if (!saved || typeof saved !== 'object') return;
-            // A language in the URL was asked for just now; it wins.
+            // A language or kind in the URL was asked for just now; it wins.
             if (!form.hasAttribute('data-lang-explicit')) choose('lang', saved.lang);
-            choose('kind', saved.kind);
+            // Which kinds can be picked depends on the language just restored.
+            sync();
+            if (!form.hasAttribute('data-kind-explicit')) choose('kind', saved.kind);
             choose('difficulty', saved.difficulty);
             if (nameInput && !nameInput.value && typeof saved.name === 'string') {
                 nameInput.value = saved.name.slice(0, nameInput.maxLength > 0 ? nameInput.maxLength : 24);
             }
+            // Tenses per language: {es: ["indicativo/presente", …]}. A list
+            // that no longer names any tense here is ignored, not applied as
+            // "none ticked".
+            var savedTenses = saved.tenses && typeof saved.tenses === 'object' ? saved.tenses : {};
+            var savedOptional = saved.optional && typeof saved.optional === 'object' ? saved.optional : {};
+            Array.prototype.forEach.call(tenseLists(), function (list) {
+                var code = list.getAttribute('data-tenses-lang');
+                var keys = savedTenses[code];
+                var boxes = list.querySelectorAll('input[name^="tenses_"]');
+                if (Array.isArray(keys)) {
+                    var known = Array.prototype.some.call(boxes, function (box) {
+                        return keys.indexOf(box.value) !== -1;
+                    });
+                    if (known) {
+                        Array.prototype.forEach.call(boxes, function (box) {
+                            box.checked = keys.indexOf(box.value) !== -1;
+                        });
+                    }
+                }
+                var optional = list.querySelector('input[name^="include_vosotros_"]');
+                if (optional && typeof savedOptional[code] === 'boolean') {
+                    optional.checked = savedOptional[code];
+                }
+            });
         };
 
         var save = function () {
             var lang = checked('lang');
             var kind = checked('kind');
             var level = checked('difficulty');
+            var savedTenses = {};
+            var savedOptional = {};
+            Array.prototype.forEach.call(tenseLists(), function (list) {
+                var code = list.getAttribute('data-tenses-lang');
+                savedTenses[code] = Array.prototype.map.call(
+                    list.querySelectorAll('input[name^="tenses_"]:checked'),
+                    function (box) { return box.value; }
+                );
+                var optional = list.querySelector('input[name^="include_vosotros_"]');
+                if (optional) savedOptional[code] = optional.checked;
+            });
             try {
                 localStorage.setItem(KEY, JSON.stringify({
                     lang: lang ? lang.value : null,
                     kind: kind ? kind.value : null,
                     difficulty: level ? level.value : null,
-                    name: nameInput ? nameInput.value.trim() : ''
+                    name: nameInput ? nameInput.value.trim() : '',
+                    tenses: savedTenses,
+                    optional: savedOptional
                 }));
             } catch (e) { /* storage blocked or full: nothing to remember */ }
         };
@@ -75,17 +130,55 @@
                 if (!hasListening && listening.checked && numbers) numbers.checked = true;
             }
             if (note) note.hidden = hasListening;
+
+            var hasConj = !!lang && lang.getAttribute('data-conj') === '1';
+            var verbCount = lang ? lang.getAttribute('data-verbs') : null;
+            var loggedIn = verbCount !== null;
+            var canVerbs = hasConj && loggedIn && parseInt(verbCount, 10) > 0;
+            if (verbs) {
+                verbs.disabled = !canVerbs;
+                if (!canVerbs && verbs.checked && numbers) numbers.checked = true;
+            }
+            if (verbsLogin) verbsLogin.hidden = !(hasConj && !loggedIn);
+            if (verbsEmpty) verbsEmpty.hidden = !(hasConj && loggedIn && !canVerbs);
+            if (verbsEmptyLink && hasConj) {
+                verbsEmptyLink.href = lang.getAttribute('data-conjugate-url') || verbsEmptyLink.href;
+            }
+
             var kind = checked('kind');
-            var isNumbers = !kind || kind.value === 'numbers';
-            if (difficulty) difficulty.hidden = !!(kind && kind.value === 'listening');
+            var round = kind ? kind.value : 'numbers';
+            var isVerbs = round === 'verbs';
+            if (difficulty) difficulty.hidden = round === 'listening';
+            // There's no multiple choice for verbs: Easy is a numbers mode.
+            Array.prototype.forEach.call(easyOnly, function (label) {
+                label.hidden = isVerbs;
+                var input = label.querySelector('input');
+                if (isVerbs && input && input.checked) choose('difficulty', 'advanced');
+            });
+            if (verbsFrom) verbsFrom.hidden = !isVerbs;
+            if (rules) {
+                rules.textContent = rules.getAttribute(isVerbs ? 'data-rules-verbs' : 'data-rules-numbers') || rules.textContent;
+            }
+            if (tenses) tenses.hidden = !isVerbs;
+            Array.prototype.forEach.call(tenseLists(), function (list) {
+                list.hidden = !lang || list.getAttribute('data-tenses-lang') !== lang.value;
+            });
             if (summary) {
                 var parts = [labelText(lang), labelText(kind)];
-                if (isNumbers) parts.push(labelText(checked('difficulty')));
+                if (round === 'numbers' || isVerbs) parts.push(labelText(checked('difficulty')));
                 summary.textContent = parts.filter(Boolean).join(' · ');
             }
         };
 
-        form.addEventListener('change', sync);
+        form.addEventListener('change', function (e) {
+            // A verb challenge needs a tense: the last one can't be unticked.
+            var box = e.target;
+            if (box && box.name && box.name.indexOf('tenses_') === 0 && !box.checked) {
+                var list = box.closest('[data-tenses-lang]');
+                if (list && !list.querySelector('input[name^="tenses_"]:checked')) box.checked = true;
+            }
+            sync();
+        });
 
         form.addEventListener('submit', function (e) {
             save();
@@ -118,6 +211,7 @@
             else form.removeAttribute('data-listen-pjax');
         });
 
+        sync();
         load();
         sync();
     }

@@ -22,8 +22,19 @@ CPython's text seeding), so every player gets the same round in the same order.
 Regenerating a deck between two people's runs would change the draw, and
 rotating FLASK_SECRET_KEY would invalidate every link already sent. Both are
 rare, and both are accepted rather than solved with a database.
+
+A verb challenge is the same idea with the creator's own verbs: the token
+carries up to ten of the infinitives on their list and the tenses to ask, and
+the ten (verb, tense, person) questions are drawn from those with the seed.
+The verbs are in the token on purpose, since sharing what you are learning is
+the point (the page lists them, and lets a player add the ones they lack);
+which person and tense each is asked in is not, for the same reason the
+numbers aren't. The tenses are stored by key, not by position in the
+language's list, so a renamed tense breaks a link loudly rather than quietly
+asking the second player something else.
 """
 
+import dataclasses
 import hashlib
 import random
 import re
@@ -48,12 +59,26 @@ CODE_MODES = {code: mode for mode, code in MODE_CODES.items()}
 NUMBER_MODES = ("easy", "advanced", "hardcore")
 DEFAULT_NUMBER_MODE = "advanced"
 
-# The kinds of round the form offers. "surprise" is resolved to one of the
-# other two when the challenge is created, so a token never holds it.
+# The kinds of round the form offers. "surprise" is resolved to numbers or
+# listening when the challenge is created, so a token never holds it. It never
+# picks verbs, which need an account and verbs of the creator's own.
 KIND_NUMBERS = "numbers"
 KIND_LISTENING = "listening"
+KIND_VERBS = "verbs"
 KIND_SURPRISE = "surprise"
-KINDS = (KIND_NUMBERS, KIND_LISTENING, KIND_SURPRISE)
+KINDS = (KIND_NUMBERS, KIND_LISTENING, KIND_VERBS, KIND_SURPRISE)
+
+# A verb challenge is typed, like conjugation practice: there is no multiple
+# choice to play it as.
+VERB_MODES = ("advanced", "hardcore")
+DEFAULT_VERB_MODE = "advanced"
+# One verb per question at most, so every verb in the token is asked.
+MAX_VERBS = QUESTIONS_PER_QUIZ
+VERB_MAX_LENGTH = 40
+# Tense keys are each language's own ("indicativo/presente"); the longest list
+# today has ten. Generous, but a bound, so a token can't be stuffed.
+MAX_TENSES = 16
+TENSE_MAX_LENGTH = 64
 
 # The magnitude dial a challenge is drawn at. Fixed per mode rather than taken
 # from the player's session, because both players must get the same numbers.
@@ -98,10 +123,22 @@ class Challenge:
     seed: str
     host: str = ""
     results: tuple = ()
+    # A verb challenge: the creator's verbs and the tenses to ask them in, and
+    # whether the language's optional person (Spanish vosotros) is asked too.
+    # Empty for a numbers or listening round.
+    verbs: tuple = ()
+    tenses: tuple = ()
+    optional_person: bool = False
 
     @property
     def kind(self):
+        if self.verbs:
+            return KIND_VERBS
         return KIND_LISTENING if self.mode == "audio" else KIND_NUMBERS
+
+    @property
+    def is_verbs(self):
+        return bool(self.verbs)
 
     def encode(self, secret):
         payload = {
@@ -112,6 +149,11 @@ class Challenge:
         }
         if self.host:
             payload["h"] = self.host
+        if self.verbs:
+            payload["vb"] = list(self.verbs)
+            payload["t"] = list(self.tenses)
+            if self.optional_person:
+                payload["o"] = 1
         if self.results:
             payload["r"] = [
                 [r.name, r.score, r.seconds, *([1] if r.creator else [])]
@@ -145,6 +187,17 @@ class Challenge:
         if not isinstance(raw_results, list) or len(raw_results) > MAX_RESULTS:
             return None
 
+        verbs, tenses, optional_person = (), (), False
+        if "vb" in data or "t" in data or "o" in data:
+            verbs = _string_list(data.get("vb"), MAX_VERBS, VERB_MAX_LENGTH)
+            tenses = _string_list(data.get("t"), MAX_TENSES, TENSE_MAX_LENGTH)
+            if verbs is None or tenses is None or mode not in VERB_MODES:
+                return None
+            flag = data.get("o", 0)
+            if not _is_int_in(flag, 0, 1):
+                return None
+            optional_person = bool(flag)
+
         results = []
         for entry in raw_results:
             # [name, score, seconds], with a trailing 1 on the creator's.
@@ -162,7 +215,16 @@ class Challenge:
             results.append(Result(name, score, seconds, creator=bool(flag)))
         if sum(r.creator for r in results) > 1:
             return None
-        return cls(lang, mode, seed, host, tuple(results))
+        return cls(
+            lang,
+            mode,
+            seed,
+            host,
+            tuple(results),
+            verbs=verbs,
+            tenses=tenses,
+            optional_person=optional_person,
+        )
 
     def with_result(self, name, score, seconds, creator=False):
         """This challenge with one more score on it: the link a player sends back.
@@ -185,7 +247,7 @@ class Challenge:
             others = [i for i in range(len(results)) if i != keep]
             kept = sorted({keep, *others[-(MAX_RESULTS - 1) :]})
             results = tuple(results[i] for i in kept)
-        return Challenge(self.lang, self.mode, self.seed, self.host, results)
+        return dataclasses.replace(self, results=results)
 
     @property
     def has_creator_result(self):
@@ -242,6 +304,27 @@ def _is_clean_name(value):
     return isinstance(value, str) and clean_name(value) == value
 
 
+def _string_list(value, max_items, max_length):
+    """`value` as a tuple of distinct, non-empty, printable strings, or None.
+
+    Whether each one is a real verb or tense is the app's question (it has the
+    pools); this only keeps a token to the shape encode() writes.
+    """
+    if not isinstance(value, list) or not 1 <= len(value) <= max_items:
+        return None
+    for item in value:
+        if not (
+            isinstance(item, str)
+            and 0 < len(item) <= max_length
+            and item == item.strip()
+            and all(unicodedata.category(ch)[0] != "C" for ch in item)
+        ):
+            return None
+    if len(set(value)) != len(value):
+        return None
+    return tuple(value)
+
+
 def clean_name(raw):
     """A display name fit to put on a page someone else will open.
 
@@ -286,6 +369,42 @@ def draw_numbers(deck, seed, mode, count=QUESTIONS_PER_QUIZ):
         index = rng.choices(range(len(pool)), weights=weights, k=1)[0]
         picked.append(pool.pop(index))
         weights.pop(index)
+    return picked
+
+
+def draw_verb_questions(
+    verbs, tenses, persons, has_form, seed, count=QUESTIONS_PER_QUIZ
+):
+    """A verb challenge's questions, as (verb, tense, person) in the order asked.
+
+    `has_form(verb, tense, person)` says whether the pool has that cell (a
+    stative English verb has no continuous, Spanish has no yo imperative). The
+    verbs are dealt out in turn, so no verb is asked twice before every verb
+    has been asked once, and the round is then shuffled so they don't come in
+    a fixed cycle. Like draw_numbers(), a pure function of its arguments: the
+    same token gives everyone the same round.
+    """
+    rng = _rng("verbs", seed)
+    cells = {
+        verb: [
+            (tense, person)
+            for tense in tenses
+            for person in persons
+            if has_form(verb, tense, person)
+        ]
+        for verb in verbs
+    }
+    order = [verb for verb in verbs if cells[verb]]
+    rng.shuffle(order)
+    picked = []
+    while len(picked) < count and any(cells[verb] for verb in order):
+        for verb in order:
+            if len(picked) == count:
+                break
+            if cells[verb]:
+                tense, person = cells[verb].pop(rng.randrange(len(cells[verb])))
+                picked.append((verb, tense, person))
+    rng.shuffle(picked)
     return picked
 
 

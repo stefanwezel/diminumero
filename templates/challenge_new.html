@@ -43,7 +43,7 @@
         {% endmacro %}
 
         <div class="challenge-quickstart">
-            <p class="challenge-go-summary" id="challenge-go-summary">{{ languages[selected_lang].flag }} {{ languages[selected_lang].name }} · {{ get_text('challenge_type_numbers') }} · {{ get_text('mode_' ~ default_number_mode) }}</p>
+            <p class="challenge-go-summary" id="challenge-go-summary">{{ languages[selected_lang].flag }} {{ languages[selected_lang].name }} · {{ get_text('challenge_type_' ~ selected_kind) }}{% if selected_kind in ('numbers', 'verbs') %} · {{ get_text('mode_' ~ default_number_mode) }}{% endif %}</p>
             {{ action_pair(primary=true) }}
         </div>
 
@@ -54,7 +54,8 @@
            quiz_listen.js's pjax so its first clip may autoplay. #}
         <form method="POST" action="{{ url_for('challenge_new') }}" class="preset-share challenge-form" id="challenge-form"
               data-listen-back="{{ url_for('challenge_new') }}"
-              {% if lang_explicit %}data-lang-explicit="1"{% endif %}>
+              {% if lang_explicit %}data-lang-explicit="1"{% endif %}
+              {% if kind_explicit %}data-kind-explicit="1"{% endif %}>
             <fieldset class="preset-share-field challenge-field">
                 <legend class="preset-share-label">{{ get_text('challenge_field_language') }}</legend>
                 <div class="challenge-langs">
@@ -62,6 +63,9 @@
                     <label class="challenge-lang">
                         <input type="radio" name="lang" value="{{ code }}" required
                                data-listening="{{ '1' if info.listening else '0' }}"
+                               data-conj="{{ '1' if info.conj else '0' }}"
+                               {% if info.verbs is not none %}data-verbs="{{ info.verbs }}"{% endif %}
+                               {% if info.conj %}data-conjugate-url="{{ verb_settings[code].conjugate_url }}"{% endif %}
                                {% if code == selected_lang %}checked{% endif %}>
                         <span class="challenge-lang-flag" aria-hidden="true">{{ info.flag }}</span>
                         <span class="challenge-lang-name">{{ info.name }}</span>
@@ -72,33 +76,76 @@
 
             <fieldset class="preset-share-field challenge-field">
                 <legend class="preset-share-label">{{ get_text('challenge_field_type') }}</legend>
+                {% set sel = languages[selected_lang] %}
                 <div class="preset-share-modes">
                     <label class="preset-share-mode">
-                        <input type="radio" name="kind" value="numbers" checked>
+                        <input type="radio" name="kind" value="numbers" {% if selected_kind == 'numbers' %}checked{% endif %}>
                         <span>{{ get_text('challenge_type_numbers') }}</span>
                     </label>
                     <label class="preset-share-mode">
-                        <input type="radio" name="kind" value="listening">
+                        <input type="radio" name="kind" value="listening" {% if selected_kind == 'listening' %}checked{% endif %}>
                         <span>{{ get_text('challenge_type_listening') }}</span>
                     </label>
+                    {# Made from the creator's own verbs, so it needs an account
+                       and verbs in that language. Disabled where it can't be
+                       made; one of the notes below says why. #}
                     <label class="preset-share-mode">
-                        <input type="radio" name="kind" value="surprise">
+                        <input type="radio" name="kind" value="verbs"
+                               {% if selected_kind == 'verbs' %}checked{% endif %}
+                               {% if not sel.verbs %}disabled{% endif %}>
+                        <span>{{ get_text('challenge_type_verbs') }}</span>
+                    </label>
+                    <label class="preset-share-mode">
+                        <input type="radio" name="kind" value="surprise" {% if selected_kind == 'surprise' %}checked{% endif %}>
                         <span>{{ get_text('challenge_type_surprise') }}</span>
                     </label>
                 </div>
                 <p class="preset-share-hint" id="challenge-no-listening" hidden>{{ get_text('challenge_listening_unavailable') }}</p>
+                <p class="preset-share-hint" id="challenge-verbs-login"{% if logged_in or not sel.conj %} hidden{% endif %}>
+                    {{ get_text('challenge_verbs_login') }}
+                    <a href="{{ login_url }}">{{ get_text('nav_login') }}</a>
+                </p>
+                <p class="preset-share-hint" id="challenge-verbs-empty"{% if not logged_in or not sel.conj or sel.verbs %} hidden{% endif %}>
+                    {{ get_text('challenge_verbs_empty') }}
+                    <a href="{{ verb_settings[selected_lang].conjugate_url if sel.conj else '#' }}" id="challenge-verbs-empty-link">{{ get_text('challenge_verbs_empty_link') }}</a>
+                </p>
+                <p class="preset-share-hint" id="challenge-verbs-from"{% if selected_kind != 'verbs' %} hidden{% endif %}>{{ get_text('challenge_verbs_from_yours').format(questions) }}</p>
             </fieldset>
 
             <fieldset class="preset-share-field challenge-field" id="challenge-difficulty">
                 <legend class="preset-share-label">{{ get_text('challenge_field_difficulty') }}</legend>
                 <div class="preset-share-modes">
                     {% for mode in number_modes %}
-                    <label class="preset-share-mode">
+                    <label class="preset-share-mode"{% if mode == 'easy' %} data-numbers-only{% if selected_kind == 'verbs' %} hidden{% endif %}{% endif %}>
                         <input type="radio" name="difficulty" value="{{ mode }}" {% if mode == default_number_mode %}checked{% endif %}>
                         <span>{{ get_text('mode_' ~ mode) }}</span>
                     </label>
                     {% endfor %}
                 </div>
+            </fieldset>
+
+            {# One checklist per verb language, each named apart (Spanish and
+               Italian share tense keys). challenge.js shows the selected
+               language's for a verb challenge; without JS the defaults ticked
+               here are what a verb challenge gets. #}
+            <fieldset class="preset-share-field challenge-field" id="challenge-tenses"{% if selected_kind != 'verbs' %} hidden{% endif %}>
+                <legend class="preset-share-label">{{ get_text('challenge_field_tenses') }}</legend>
+                {% for code, settings in verb_settings.items() %}
+                <div class="challenge-tense-list" data-tenses-lang="{{ code }}"{% if code != selected_lang %} hidden{% endif %}>
+                    {% for tense in settings.tenses %}
+                    <label class="preset-share-mode challenge-tense">
+                        <input type="checkbox" name="tenses_{{ code }}" value="{{ tense.key }}" {% if tense.default_on %}checked{% endif %}>
+                        <span>{{ tense.label }}</span>
+                    </label>
+                    {% endfor %}
+                    {% if settings.has_optional %}
+                    <label class="preset-share-mode challenge-tense challenge-tense-optional">
+                        <input type="checkbox" name="include_vosotros_{{ code }}" value="1">
+                        <span>{{ get_text('conjugate_vosotros_label') }}</span>
+                    </label>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </fieldset>
 
             <div class="preset-share-field challenge-field">
@@ -113,7 +160,10 @@
             {{ action_pair() }}
         </form>
 
-        <p class="challenge-rules">{{ get_text('challenge_rules').format(questions) }}</p>
+        {# challenge.js swaps in the verbs wording when Verbs is picked. #}
+        <p class="challenge-rules" id="challenge-rules"
+           data-rules-numbers="{{ get_text('challenge_rules').format(questions) }}"
+           data-rules-verbs="{{ get_text('challenge_rules_verbs').format(questions) }}">{{ get_text('challenge_rules_verbs' if selected_kind == 'verbs' else 'challenge_rules').format(questions) }}</p>
     </div>
 </div>
 {% endblock %}

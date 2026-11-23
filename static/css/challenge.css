@@ -340,3 +340,111 @@
 .challenge-page .challenge-share .btn {
     margin: 0;
 }
+
+/* ---- Verb challenges ---- */
+/* The tense checklist on the create form: pills that wrap, like the kinds. */
+.challenge-tense-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+.challenge-form .challenge-tense input {
+    margin: 0;
+    accent-color: #E54F6D;
+}
+
+.challenge-tense-optional {
+    flex-basis: 100%;
+}
+
+/* The verbs in a challenge, on its page: the creator's list, which a player
+   can take on one verb at a time or all at once. */
+.challenge-verbs {
+    max-width: 520px;
+    margin: 22px auto 0;
+    text-align: start;
+}
+
+.challenge-verbs .preset-share-title {
+    margin-bottom: 4px;
+}
+
+.challenge-verbs-tenses {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+    opacity: 0.8;
+}
+
+.challenge-verb-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+}
+
+/* A long verb ("conseguir") keeps its word whole and puts its button on the
+   next line rather than breaking mid-word. */
+.challenge-verb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 8px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 6px 6px 12px;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 10px;
+}
+
+.challenge-verb.is-owned {
+    border-color: rgba(229, 79, 109, 0.5);
+    background: rgba(229, 79, 109, 0.1);
+}
+
+.challenge-verb-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+}
+
+.challenge-verb-add,
+.challenge-verb-owned {
+    margin-inline-start: auto;
+}
+
+.challenge-verb-owned {
+    flex-shrink: 0;
+    padding-inline-end: 6px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
+.challenge-verb-add {
+    flex-shrink: 0;
+    margin-block: 0;
+}
+
+.challenge-page .challenge-verb-add-btn {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.challenge-verbs-all {
+    margin: 0;
+}
+
+.challenge-page .challenge-verbs-all .btn {
+    margin: 0;
+}
+
+.challenge-verbs .preset-share-hint {
+    margin: 0;
+}

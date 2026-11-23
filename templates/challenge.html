@@ -10,7 +10,7 @@
     {% set page_desc = get_text('challenge_invalid_body') %}
 {% else %}
     {% set page_title = invite_headline %}
-    {% set page_desc = lang_name ~ ' · ' ~ type_label ~ ' · ' ~ get_text('challenge_summary_questions').format(questions) ~ '. ' ~ get_text('challenge_meta_desc') %}
+    {% set page_desc = lang_name ~ ' · ' ~ type_label ~ ' · ' ~ get_text('challenge_summary_questions').format(questions) ~ '. ' ~ get_text('challenge_meta_desc_verbs' if ch.is_verbs else 'challenge_meta_desc') %}
 {% endif %}
 
 {% block title %}{{ page_title }} · diminumero{% endblock %}
@@ -58,7 +58,7 @@
         </p>
         {% elif view == 'played' %}
         <h1 class="title challenge-title">{{ get_text('challenge_played_title') }}</h1>
-        <p class="description">{{ get_text('challenge_played_body') }}</p>
+        <p class="description">{{ get_text('challenge_played_body_verbs' if ch.is_verbs else 'challenge_played_body') }}</p>
         {% elif view == 'ready' %}
         <h1 class="title challenge-title">{{ get_text('challenge_ready_title') }}</h1>
         <p class="description">{{ get_text('challenge_ready_body') }}</p>
@@ -140,8 +140,69 @@
 
         {% if not share_first %}{{ share_box }}{% endif %}
 
+        {% if verb_view %}
+        {# The creator's verbs, which are the point of a verb challenge: a
+           friend sees what they are learning and can take any of it on. Adding
+           needs an account; playing doesn't. Below Start and the link, so a
+           ten-verb list never pushes the round's own action off a phone. #}
+        <section class="preset-share challenge-verbs" aria-labelledby="challenge-verbs-title">
+            <h2 class="preset-share-title" id="challenge-verbs-title">{{ get_text('challenge_verbs_title') }}</h2>
+            <p class="challenge-verbs-tenses">{{ get_text('challenge_field_tenses') }}: {{ verb_view.tenses|join(', ') }}</p>
+            <ul class="challenge-verb-list">
+                {% for verb in verb_view.verbs %}
+                <li class="challenge-verb{% if verb.owned %} is-owned{% endif %}">
+                    <span class="challenge-verb-name" lang="{{ ch.lang }}">{{ verb.label }}</span>
+                    {% if verb.owned %}
+                    <span class="challenge-verb-owned">✓ {{ get_text('challenge_verbs_owned') }}</span>
+                    {% elif verb_view.logged_in %}
+                    <form method="POST" action="{{ url_for('challenge_add_verbs', token=token) }}" class="challenge-verb-add">
+                        <input type="hidden" name="verb" value="{{ verb.infinitive }}">
+                        <button type="submit" class="btn btn-secondary challenge-verb-add-btn"
+                                aria-label="{{ get_text('challenge_verbs_add_one').format(verb.label) }}">+ {{ get_text('challenge_verbs_add_btn') }}</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% if verb_view.logged_in %}
+            {% if verb_view.missing > 1 %}
+            <form method="POST" action="{{ url_for('challenge_add_verbs', token=token) }}" class="challenge-verbs-all">
+                <button type="submit" class="btn btn-secondary">{{ get_text('challenge_verbs_add_all').format(verb_view.missing) }}</button>
+            </form>
+            {% elif verb_view.missing == 0 %}
+            <p class="preset-share-hint">
+                {{ get_text('challenge_verbs_all_owned') }}
+                <a href="{{ url_for('conjugate', lang_code=ch.lang) }}">{{ get_text('challenge_verbs_practice_link') }}</a>
+            </p>
+            {% endif %}
+            {% else %}
+            <p class="preset-share-hint">
+                {{ get_text('challenge_verbs_login_to_add') }}
+                <a href="{{ url_for('challenge_login', next=request.path) }}">{{ get_text('nav_login') }}</a>
+            </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+
         <div class="challenge-actions">
-            {% if view in ('finished', 'played') %}
+            {% if view in ('finished', 'played') and ch.is_verbs %}
+            {# A verb challenge is made from its creator's verbs, so a rematch
+               is this player's own: same language, tenses and difficulty, their
+               verbs. Only someone with a list can make one. #}
+            {% if logged_in %}
+            <form method="POST" action="{{ url_for('challenge_new') }}">
+                <input type="hidden" name="lang" value="{{ ch.lang }}">
+                <input type="hidden" name="kind" value="verbs">
+                <input type="hidden" name="difficulty" value="{{ ch.mode }}">
+                {% for tense in ch.tenses %}<input type="hidden" name="tenses" value="{{ tense }}">{% endfor %}
+                {% if ch.optional_person %}<input type="hidden" name="include_vosotros" value="1">{% endif %}
+                <input type="hidden" name="name" value="{{ name }}">
+                <button type="submit" class="btn btn-primary">{{ get_text('challenge_rematch_btn_verbs') }}</button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('challenge_new', lang=ch.lang, kind='verbs') }}" class="btn btn-secondary">{{ get_text('challenge_new_btn') }}</a>
+            {% elif view in ('finished', 'played') %}
             {# Same language and kind of round, new numbers: a new challenge
                with this player as its host, landing on its "ready" page. #}
             <form method="POST" action="{{ url_for('challenge_new') }}">
@@ -153,11 +214,11 @@
             </form>
             <a href="{{ url_for('challenge_new', lang=ch.lang) }}" class="btn btn-secondary">{{ get_text('challenge_new_btn') }}</a>
             {% elif view == 'invite' %}
-            <a href="{{ url_for('challenge_new', lang=ch.lang) }}" class="btn btn-secondary">{{ get_text('challenge_create_own') }}</a>
+            <a href="{{ url_for('challenge_new', lang=ch.lang, kind='verbs' if ch.is_verbs else None) }}" class="btn btn-secondary">{{ get_text('challenge_create_own') }}</a>
             {% endif %}
         </div>
 
-        <p class="challenge-rules">{{ get_text('challenge_rules').format(questions) }}</p>
+        <p class="challenge-rules">{{ get_text('challenge_rules_verbs' if ch.is_verbs else 'challenge_rules').format(questions) }}</p>
         {% endif %}
     </div>
 </div>
