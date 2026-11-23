@@ -77,7 +77,13 @@
             <fieldset class="preset-share-field challenge-field">
                 <legend class="preset-share-label">{{ get_text('challenge_field_type') }}</legend>
                 {% set sel = languages[selected_lang] %}
+                {# Surprise me first: it is the default, and the choice that needs
+                   no thought. #}
                 <div class="preset-share-modes">
+                    <label class="preset-share-mode">
+                        <input type="radio" name="kind" value="surprise" {% if selected_kind == 'surprise' %}checked{% endif %}>
+                        <span>{{ get_text('challenge_type_surprise') }}</span>
+                    </label>
                     <label class="preset-share-mode">
                         <input type="radio" name="kind" value="numbers" {% if selected_kind == 'numbers' %}checked{% endif %}>
                         <span>{{ get_text('challenge_type_numbers') }}</span>
@@ -94,10 +100,6 @@
                                {% if selected_kind == 'verbs' %}checked{% endif %}
                                {% if not sel.verbs %}disabled{% endif %}>
                         <span>{{ get_text('challenge_type_verbs') }}</span>
-                    </label>
-                    <label class="preset-share-mode">
-                        <input type="radio" name="kind" value="surprise" {% if selected_kind == 'surprise' %}checked{% endif %}>
-                        <span>{{ get_text('challenge_type_surprise') }}</span>
                     </label>
                 </div>
                 <p class="preset-share-hint" id="challenge-no-listening" hidden>{{ get_text('challenge_listening_unavailable') }}</p>

@@ -801,6 +801,8 @@ class TestStartNow:
         html = client.get("/challenge").get_data(as_text=True)
         checked = re.findall(r'<input[^>]*name="kind" value="(\w+)"[^>]*checked', html)
         assert checked == ["surprise"]
+        kinds = re.findall(r'<input[^>]*name="kind" value="(\w+)"', html)
+        assert kinds == ["surprise", "numbers", "listening", "verbs"]
         # Difficulty stays on offer: Surprise me can turn out to be numbers.
         level = re.search(r'<fieldset[^>]*id="challenge-difficulty"[^>]*>', html)
         assert "hidden" not in level.group(0)

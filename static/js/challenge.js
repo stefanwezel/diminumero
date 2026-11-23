@@ -16,7 +16,8 @@
         var note = document.getElementById('challenge-no-listening');
         var difficulty = document.getElementById('challenge-difficulty');
         var listening = form.querySelector('input[name="kind"][value="listening"]');
-        var numbers = form.querySelector('input[name="kind"][value="numbers"]');
+        // Where a kind can't be had (no recordings, no verbs), back to the default.
+        var fallback = form.querySelector('input[name="kind"][value="surprise"]');
         var verbs = form.querySelector('input[name="kind"][value="verbs"]');
         var nameInput = form.querySelector('input[name="name"]');
         var summary = document.getElementById('challenge-go-summary');
@@ -127,7 +128,7 @@
             var hasListening = !lang || lang.getAttribute('data-listening') === '1';
             if (listening) {
                 listening.disabled = !hasListening;
-                if (!hasListening && listening.checked && numbers) numbers.checked = true;
+                if (!hasListening && listening.checked && fallback) fallback.checked = true;
             }
             if (note) note.hidden = hasListening;
 
@@ -137,7 +138,7 @@
             var canVerbs = hasConj && loggedIn && parseInt(verbCount, 10) > 0;
             if (verbs) {
                 verbs.disabled = !canVerbs;
-                if (!canVerbs && verbs.checked && numbers) numbers.checked = true;
+                if (!canVerbs && verbs.checked && fallback) fallback.checked = true;
             }
             if (verbsLogin) verbsLogin.hidden = !(hasConj && !loggedIn);
             if (verbsEmpty) verbsEmpty.hidden = !(hasConj && loggedIn && !canVerbs);
