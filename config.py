@@ -15,6 +15,15 @@ QUESTIONS_PER_QUIZ = 10
 # dies with the browser. The privacy policy quotes this number.
 LOGIN_SESSION_DAYS = 30
 
+# How long a friend challenge's scores are kept (ChallengeResult). The privacy
+# policy quotes this number, so changing it changes what every locale says.
+CHALLENGE_SCORE_DAYS = 30
+
+# How many scores one challenge keeps. A link can be played by anyone it
+# reaches, from as many private windows as they like, so the board is bounded:
+# past this, a new score pushes out the lowest of the others.
+CHALLENGE_MAX_SCORES = 50
+
 # Whether number forms marked `reconstructed` may be served to learners.
 #
 # A reconstructed form was derived from a grammatical rule (by an LLM, or by a

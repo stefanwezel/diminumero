@@ -225,13 +225,6 @@
     margin: 6px auto 0;
 }
 
-.challenge-rules {
-    max-width: 560px;
-    margin: 20px auto 0;
-    font-size: 0.85rem;
-    opacity: 0.75;
-}
-
 /* ---- Challenge page ---- */
 .challenge-scoreboard {
     width: 100%;
@@ -325,14 +318,6 @@
     justify-content: center;
     gap: 10px;
     margin-top: 22px;
-}
-
-.challenge-actions:empty {
-    display: none;
-}
-
-.challenge-actions form {
-    margin: 0;
 }
 
 /* .btn-secondary carries a margin meant for a button beside another one. */

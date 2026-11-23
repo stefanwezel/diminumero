@@ -20,6 +20,10 @@
         var fallback = form.querySelector('input[name="kind"][value="surprise"]');
         var verbs = form.querySelector('input[name="kind"][value="verbs"]');
         var nameInput = form.querySelector('input[name="name"]');
+        // The logged-in person's first name, which the server offers in the
+        // field. It is never kept here: logged out (or someone else at this
+        // computer), the field must not show it.
+        var loginName = nameInput ? nameInput.getAttribute('data-login-name') : null;
         var summary = document.getElementById('challenge-go-summary');
         // A verb challenge is made from the creator's own verbs: the language
         // radio says whether it has verb practice (data-conj) and, for someone
@@ -30,7 +34,6 @@
         var verbsFrom = document.getElementById('challenge-verbs-from');
         var tenses = document.getElementById('challenge-tenses');
         var easyOnly = form.querySelectorAll('[data-numbers-only]');
-        var rules = document.getElementById('challenge-rules');
 
         var checked = function (name) {
             return form.querySelector('input[name="' + name + '"]:checked');
@@ -60,14 +63,23 @@
             var saved = null;
             try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return; }
             if (!saved || typeof saved !== 'object') return;
-            // A language or kind in the URL was asked for just now; it wins.
+            // A language, kind, difficulty or tense list in the URL was asked
+            // for just now ("New challenge" after a round); it wins.
             if (!form.hasAttribute('data-lang-explicit')) choose('lang', saved.lang);
             // Which kinds can be picked depends on the language just restored.
             sync();
             if (!form.hasAttribute('data-kind-explicit')) choose('kind', saved.kind);
-            choose('difficulty', saved.difficulty);
-            if (nameInput && !nameInput.value && typeof saved.name === 'string') {
-                nameInput.value = saved.name.slice(0, nameInput.maxLength > 0 ? nameInput.maxLength : 24);
+            if (!form.hasAttribute('data-difficulty-explicit')) choose('difficulty', saved.difficulty);
+            var tensesAskedFor = form.getAttribute('data-tenses-explicit');
+            // A name this browser remembers beats one guessed from the login
+            // (the session that knew their chosen name may have ended); an
+            // empty one doesn't, since it can't tell "none" from "never asked".
+            var guessed = nameInput && nameInput.hasAttribute('data-name-suggested');
+            var savedName = typeof saved.name === 'string' ? saved.name : null;
+            // Kept before the login's name was left out: it's the login's still.
+            if (savedName && loginName && savedName === loginName) savedName = '';
+            if (nameInput && savedName !== null && (!nameInput.value || (guessed && savedName))) {
+                nameInput.value = savedName.slice(0, nameInput.maxLength > 0 ? nameInput.maxLength : 24);
             }
             // Tenses per language: {es: ["indicativo/presente", …]}. A list
             // that no longer names any tense here is ignored, not applied as
@@ -76,6 +88,7 @@
             var savedOptional = saved.optional && typeof saved.optional === 'object' ? saved.optional : {};
             Array.prototype.forEach.call(tenseLists(), function (list) {
                 var code = list.getAttribute('data-tenses-lang');
+                if (code === tensesAskedFor) return;
                 var keys = savedTenses[code];
                 var boxes = list.querySelectorAll('input[name^="tenses_"]');
                 if (Array.isArray(keys)) {
@@ -115,7 +128,7 @@
                     lang: lang ? lang.value : null,
                     kind: kind ? kind.value : null,
                     difficulty: level ? level.value : null,
-                    name: nameInput ? nameInput.value.trim() : '',
+                    name: nameInput && nameInput.value.trim() !== loginName ? nameInput.value.trim() : '',
                     tenses: savedTenses,
                     optional: savedOptional
                 }));
@@ -157,9 +170,6 @@
                 if (isVerbs && input && input.checked) choose('difficulty', 'advanced');
             });
             if (verbsFrom) verbsFrom.hidden = !isVerbs;
-            if (rules) {
-                rules.textContent = rules.getAttribute(isVerbs ? 'data-rules-verbs' : 'data-rules-numbers') || rules.textContent;
-            }
             if (tenses) tenses.hidden = !isVerbs;
             Array.prototype.forEach.call(tenseLists(), function (list) {
                 list.hidden = !lang || list.getAttribute('data-tenses-lang') !== lang.value;
@@ -181,9 +191,22 @@
             sync();
         });
 
+        // Which button submitted the form: e.submitter, where the browser has
+        // it (null for a submit no button made). Safari before 15.4 has no
+        // such property, so there the last submit button clicked stands in
+        // (Enter in a field clicks the form's first one too). On the document,
+        // because Start and Share sit outside the form (form="challenge-form").
+        var clicked = null;
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('button, input[type="submit"]');
+            clicked = btn && btn.type === 'submit' && btn.form === form ? btn : null;
+        }, true);
+
         form.addEventListener('submit', function (e) {
             save();
-            var go = e.submitter && e.submitter.name === 'go';
+            var submitter = 'submitter' in e ? e.submitter : clicked;
+            clicked = null;
+            var go = !!submitter && submitter.name === 'go';
             var kind = checked('kind');
             var round = kind ? kind.value : 'numbers';
             // Start on "Surprise me" is decided here rather than by the

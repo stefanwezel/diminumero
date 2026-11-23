@@ -1,27 +1,28 @@
 """Friend challenges: one random round, shared by link, compared by score.
 
 Someone picks a language and a kind of round, and gets a link. Whoever opens
-it plays exactly the same ten numbers, and finishes with a link of their own
-that carries their score. Sending that back is how two people compare.
+it plays exactly the same ten numbers, and their score goes on the
+challenge's scoreboard, which every copy of the link shows.
 
-Nothing is stored on the server. A challenge lives entirely in its URL, as a
-token signed with the app's secret key: the language, the mode, a seed, an
-optional host name, and the scores of the people who played it so far. The
-signature means a score can't be edited after the fact: change one character
-and the link stops working. It does not stop a player looking up answers
-while they play. Signed is not encrypted, so anyone can base64-decode a token
-(or the session cookie). The token holds the seed rather than the numbers,
-and the session keeps no list of them, but the seed and this file reproduce
-the round, and in Listening the clip's URL names its number. Nothing here
-could change that without hiding the audio behind a server-side lookup, and
-for a game between friends it is accepted.
+A challenge is its URL: a token signed with the app's secret key holding the
+language, the mode, a seed and an optional host name. The scores are not in
+it. They are stored on the server under the seed (models.ChallengeResult, see
+app.py), because a link can't be changed once sent: when scores travelled in
+the link, one copied before its creator played never showed their score.
+The signature means a token can't be edited; it does not stop a player
+looking up answers while they play. Signed is not encrypted, so anyone can
+base64-decode a token (or the session cookie). The token holds the seed
+rather than the numbers, and the session keeps no list of them, but the seed
+and this file reproduce the round, and in Listening the clip's URL names its
+number. Nothing here could change that without hiding the audio behind a
+server-side lookup, and for a game between friends it is accepted.
 
 The ten numbers are a pure function of the seed and the deck, drawn the way
 worksheets are (`random.Random` seeded from a SHA-256 of the seed, never
 CPython's text seeding), so every player gets the same round in the same order.
 Regenerating a deck between two people's runs would change the draw, and
 rotating FLASK_SECRET_KEY would invalidate every link already sent. Both are
-rare, and both are accepted rather than solved with a database.
+rare, and both are accepted.
 
 A verb challenge is the same idea with the creator's own verbs: the token
 carries up to ten of the infinitives on their list and the tenses to ask, and
@@ -34,7 +35,6 @@ language's list, so a renamed tense breaks a link loudly rather than quietly
 asking the second player something else.
 """
 
-import dataclasses
 import hashlib
 import random
 import re
@@ -91,10 +91,9 @@ _SEED_RE = re.compile(rf"^[{SEED_ALPHABET}]{{{SEED_LENGTH}}}$")
 _LANG_RE = re.compile(r"^[a-z]{2,3}$")
 
 NAME_MAX = 24
-# How many scores travel with a link. The creator's is always kept, so the
-# person who started it never drops off their own scoreboard; before they have
-# played, the first score is kept in its place.
-MAX_RESULTS = 5
+# How many rows a scoreboard shows: the best, plus the viewer's own if it is
+# further down. A link posted somewhere public could gather hundreds.
+SCOREBOARD_ROWS = 10
 MAX_SECONDS = 3599
 # Seeds the session remembers having created or played, newest last.
 MAX_REMEMBERED = 20
@@ -108,12 +107,13 @@ _KEPT_FORMAT_CHARS = {"‌", "‍"}
 
 @dataclass(frozen=True)
 class Result:
+    """One score, shaped like a stored models.ChallengeResult row."""
+
     name: str
     score: int
     seconds: int
-    # Played by whoever created the challenge. Not necessarily the first
-    # score: a creator who pressed Share may play after their friends.
-    creator: bool = False
+    # Order of play: the earlier of two equal scores and times ranks first.
+    id: int = 0
 
 
 @dataclass(frozen=True)
@@ -122,7 +122,6 @@ class Challenge:
     mode: str
     seed: str
     host: str = ""
-    results: tuple = ()
     # A verb challenge: the creator's verbs and the tenses to ask them in, and
     # whether the language's optional person (Spanish vosotros) is asked too.
     # Empty for a numbers or listening round.
@@ -154,11 +153,6 @@ class Challenge:
             payload["t"] = list(self.tenses)
             if self.optional_person:
                 payload["o"] = 1
-        if self.results:
-            payload["r"] = [
-                [r.name, r.score, r.seconds, *([1] if r.creator else [])]
-                for r in self.results
-            ]
         return _serializer(secret).dumps(payload)
 
     @classmethod
@@ -177,14 +171,13 @@ class Challenge:
         mode = CODE_MODES.get(data.get("m"))
         seed = data.get("s")
         host = data.get("h", "")
-        raw_results = data.get("r", [])
+        # A token from before scores were stored may still hold some ("r");
+        # they are ignored, and the challenge reads its scores like any other.
         if not (isinstance(lang, str) and _LANG_RE.match(lang)):
             return None
         if mode is None or not (isinstance(seed, str) and _SEED_RE.match(seed)):
             return None
         if not _is_clean_name(host):
-            return None
-        if not isinstance(raw_results, list) or len(raw_results) > MAX_RESULTS:
             return None
 
         verbs, tenses, optional_person = (), (), False
@@ -198,95 +191,49 @@ class Challenge:
                 return None
             optional_person = bool(flag)
 
-        results = []
-        for entry in raw_results:
-            # [name, score, seconds], with a trailing 1 on the creator's.
-            if not (isinstance(entry, list) and len(entry) in (3, 4)):
-                return None
-            name, score, seconds, *flag = entry
-            if flag and not _is_int_in(flag[0], 1, 1):
-                return None
-            if not _is_clean_name(name):
-                return None
-            if not _is_int_in(score, 0, QUESTIONS_PER_QUIZ):
-                return None
-            if not _is_int_in(seconds, 0, MAX_SECONDS):
-                return None
-            results.append(Result(name, score, seconds, creator=bool(flag)))
-        if sum(r.creator for r in results) > 1:
-            return None
         return cls(
             lang,
             mode,
             seed,
             host,
-            tuple(results),
             verbs=verbs,
             tenses=tenses,
             optional_person=optional_person,
         )
 
-    def with_result(self, name, score, seconds, creator=False):
-        """This challenge with one more score on it: the link a player sends back.
 
-        `creator` marks the score of the person who made the challenge. Only
-        the first such score is marked, so a token never holds two.
-        """
-        result = Result(
-            clean_name(name),
-            min(max(int(score), 0), QUESTIONS_PER_QUIZ),
-            min(max(int(seconds), 0), MAX_SECONDS),
-            creator=creator and not self.has_creator_result,
-        )
-        results = (*self.results, result)
-        if len(results) > MAX_RESULTS:
-            # Keep the creator's score (or, before they've played, the first)
-            # and the newest others, in the order they were played: the order
-            # breaks ties, and the last is the player who just finished.
-            keep = next((i for i, r in enumerate(results) if r.creator), 0)
-            others = [i for i in range(len(results)) if i != keep]
-            kept = sorted({keep, *others[-(MAX_RESULTS - 1) :]})
-            results = tuple(results[i] for i in kept)
-        return dataclasses.replace(self, results=results)
+def ranked(results, mine=None, limit=SCOREBOARD_ROWS):
+    """The scoreboard: best score first, the faster time breaking a tie.
 
-    @property
-    def has_creator_result(self):
-        return any(r.creator for r in self.results)
+    `results` are a challenge's scores (Result, or stored rows, which have the
+    same fields). Equal scores and times share a rank, and are listed in the
+    order they were played. Each row is a dict for the template; `mine` is the
+    id of the viewer's own score, marked on its row and shown even when it is
+    below the first `limit`.
+    """
+    order = sorted(results, key=lambda r: (-r.score, r.seconds, r.id))
+    rows = []
+    previous = None
+    for position, result in enumerate(order, start=1):
+        key = (result.score, result.seconds)
+        rank = rows[-1]["rank"] if key == previous else position
+        previous = key
+        rows.append(board_row(result, rank, mine is not None and result.id == mine))
+    shown = rows[:limit]
+    shown += [row for row in rows[limit:] if row["mine"]]
+    return shown
 
-    def ranked(self):
-        """The scoreboard: best score first, the faster time breaking a tie.
 
-        Each row is a dict for the template. `newest` marks the score added
-        last, which is the viewer's own on the page they reach on finishing.
-        Rows with the same score and time share a rank.
-        """
-        order = sorted(
-            range(len(self.results)),
-            key=lambda i: (-self.results[i].score, self.results[i].seconds, i),
-        )
-        rows = []
-        previous = None
-        for position, index in enumerate(order, start=1):
-            result = self.results[index]
-            key = (result.score, result.seconds)
-            rank = rows[-1]["rank"] if key == previous else position
-            previous = key
-            rows.append(
-                {
-                    "rank": rank,
-                    "name": result.name,
-                    "score": result.score,
-                    "seconds": result.seconds,
-                    "time": format_seconds(result.seconds),
-                    "newest": index == len(self.results) - 1,
-                }
-            )
-        return rows
-
-    def best(self):
-        """The top row of the scoreboard, or None before anyone has played."""
-        rows = self.ranked()
-        return rows[0] if rows else None
+def board_row(result, rank, mine=False):
+    """One scoreboard row for the template, as ranked() makes them."""
+    return {
+        "rank": rank,
+        "name": result.name,
+        "score": result.score,
+        "seconds": result.seconds,
+        "time": format_seconds(result.seconds),
+        "mine": mine,
+    }
 
 
 def _serializer(secret):

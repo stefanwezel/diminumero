@@ -220,6 +220,39 @@ class QuizRun(db.Model):
     finished_at = db.Column(db.DateTime, nullable=True)
 
 
+class ChallengeResult(db.Model):
+    """One finished round of a friend challenge, on that challenge's scoreboard.
+
+    Keyed by the challenge's seed, which is random and minted once per
+    challenge, so every link to it (whenever it was copied, whoever played
+    from it) shows the same scores. The name is whatever the player typed,
+    cleaned by challenge.clean_name(), and may be empty.
+
+    `player` is what makes it one row per player rather than one per round: a
+    hash of a random value kept in that browser's session, the challenge's
+    seed and the name, so playing again under the same name replaces the
+    earlier score when it is better, and a double-submitted last answer can't
+    add a second row. It is different for every challenge, so it can't tie one
+    person's rows together, and nothing else about the player is kept: no
+    user, no IP. NULL only on rows from before the column. Rows older than
+    CHALLENGE_SCORE_DAYS are neither shown nor kept, which the privacy policy
+    promises.
+    """
+
+    __tablename__ = "challenge_results"
+    __table_args__ = (
+        db.Index("uq_challenge_results_player", "seed", "player", unique=True),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    seed = db.Column(db.String(16), nullable=False, index=True)
+    player = db.Column(db.String(32), nullable=True)
+    name = db.Column(db.String(32), nullable=False, default="")
+    score = db.Column(db.Integer, nullable=False)
+    seconds = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=_utcnow, index=True)
+
+
 class PollResponse(db.Model):
     """A single submission of the in-app feedback poll.
 

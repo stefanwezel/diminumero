@@ -196,8 +196,24 @@
         }
     });
 
+    // Which button submitted a form: e.submitter, where the browser has it
+    // (null for a submit no button made). Safari before 15.4 has no such
+    // property, and without the button's name Reveal and Next would be posted
+    // as answers, and the challenge form's Start as neither Start nor Share;
+    // so there the last submit button clicked stands in (Enter in a field
+    // clicks the form's first one too). Captured on the document, ahead of
+    // any handler that might stop the click.
+    var clickedSubmit = null;
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('button, input[type="submit"]');
+        clickedSubmit = btn && btn.type === 'submit' ? btn : null;
+    }, true);
+
     container.addEventListener('submit', function (e) {
         var form = e.target;
+        var submitter = 'submitter' in e ? e.submitter
+            : (clickedSubmit && clickedSubmit.form === form ? clickedSubmit : null);
+        clickedSubmit = null;
         if (!form.matches || !form.matches('[data-listen-pjax]')) return;
         if (form.hasAttribute('data-listen-back')) backUrl = form.getAttribute('data-listen-back');
         if (form.id === 'answerForm') {
@@ -205,7 +221,7 @@
             if (!el || !el.value) { e.preventDefault(); return; }
         }
         e.preventDefault();
-        pjaxSubmit(form, e.submitter);
+        pjaxSubmit(form, submitter);
     });
 
     document.addEventListener('keydown', function (e) {

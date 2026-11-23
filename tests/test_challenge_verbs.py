@@ -18,7 +18,7 @@ from app import app as flask_app
 from config import QUESTIONS_PER_QUIZ
 from conjugation_config import conj_tenses
 from languages.es import conjugations as es_conjugations
-from models import ConjugationStat, VerbCard, db
+from models import ChallengeResult, ConjugationStat, DeckShare, VerbCard, db
 
 SECRET = "test-secret-key"
 ES_PRESENT = "indicativo/presente"
@@ -83,10 +83,20 @@ def create(client, lang="es", tenses=(ES_PRESENT, ES_PRETERITE), **fields):
 
 
 def created_url(client, **kwargs):
+    """Make a verb challenge; return its link (its maker lands on link + /share)."""
     response = create(client, **kwargs)
     assert response.status_code == 303, response.headers.get("Location")
     assert "/challenge/" in response.location
-    return response.location
+    assert response.location.endswith("/share")
+    return response.location.removesuffix("/share")
+
+
+def scores(url):
+    """The stored scoreboard of the challenge at `url`: (name, score), as played."""
+    seed = decode(url).seed
+    with flask_app.app_context():
+        rows = ChallengeResult.query.filter_by(seed=seed).order_by(ChallengeResult.id)
+        return [(r.name, r.score) for r in rows]
 
 
 def token_of(url):
@@ -160,14 +170,6 @@ class TestToken:
         back = challenge.Challenge.decode(ch.encode(SECRET), SECRET)
         assert back.kind == challenge.KIND_NUMBERS and not back.is_verbs
 
-    def test_a_result_keeps_the_verbs(self):
-        ch = challenge.Challenge(
-            "es", "advanced", "abcdefgh", verbs=("ser",), tenses=(ES_PRESENT,)
-        )
-        played = ch.with_result("Grace", 7, 30)
-        assert played.verbs == ("ser",) and played.tenses == (ES_PRESENT,)
-        assert played.results[0].score == 7
-
     @pytest.mark.parametrize(
         "extra",
         [
@@ -201,8 +203,9 @@ class TestToken:
 
     @pytest.mark.parametrize("lang", ["es", "it", "de", "en"])
     def test_the_longest_realistic_token_fits(self, lang):
-        # The ten longest verbs in the pool, every tense, a full scoreboard of
-        # 24-character Arabic names: still a link a chat app will carry whole.
+        # The ten longest verbs in the pool, every tense, a 24-character
+        # Arabic host name: still a link a chat app will carry whole. (Scores
+        # are stored, not carried, so they no longer add to it.)
         pool = app_module.CONJ_POOLS[lang]
         longest = sorted(pool.global_verbs, key=len)[-challenge.MAX_VERBS :]
         name = "ب" * challenge.NAME_MAX
@@ -215,8 +218,6 @@ class TestToken:
             tenses=tuple(t["key"] for t in conj_tenses(lang)),
             optional_person=True,
         )
-        for _ in range(challenge.MAX_RESULTS):
-            ch = ch.with_result(name, 10, challenge.MAX_SECONDS)
         token = ch.encode(SECRET)
         assert len(token) <= challenge.TOKEN_MAX_LENGTH
         assert challenge.Challenge.decode(token, SECRET) == ch
@@ -370,7 +371,7 @@ class TestCreate:
         login(client)
         add_verbs(CREATOR["sub"], COMMON_ES)
         url = created_url(client, share="1")
-        html = client.get(url).get_data(as_text=True)
+        html = client.get(f"{url}/share").get_data(as_text=True)
         assert "data-share-focus" in html
 
     def test_surprise_never_picks_verbs(self, client):
@@ -484,6 +485,30 @@ class TestConjugatePage:
         page = client.get(response.location).get_data(as_text=True)
         assert "Your challenge is ready" in page
 
+    @pytest.mark.parametrize(
+        "me, host",
+        [
+            ({"name": "Tamandua"}, "Tamandua"),
+            # Never given one: the login's first name, as the field would show.
+            (None, "Ada"),
+            # Emptied one before: still none.
+            ({"name": "", "anonymous": True}, ""),
+        ],
+    )
+    def test_the_practice_form_names_the_host_as_the_field_would(
+        self, client, me, host
+    ):
+        login(client)
+        add_verbs(CREATOR["sub"], COMMON_ES)
+        if me is not None:
+            with client.session_transaction() as sess:
+                sess["challenge_me"] = me
+        response = client.post(
+            "/challenge",
+            data={"lang": "es", "kind": "verbs", "tenses": [ES_PRESENT]},
+        )
+        assert decode(response.location).host == host
+
     def test_the_practice_form_still_starts_practice(self, client):
         login(client)
         add_verbs(CREATOR["sub"], ["ser"])
@@ -507,16 +532,79 @@ class TestPlay:
         start(client, url, name="Ada")
         result_url, asked = play(client)
         ch = decode(result_url)
-        assert [(r.name, r.score, r.creator) for r in ch.results] == [("Ada", 10, True)]
+        assert scores(result_url) == [("Ada", 10)]
 
         start(friend, result_url, name="Grace")
         back_url, friend_asked = play(friend, answer_right=lambda i: i % 2 == 0)
         assert friend_asked == asked
         assert {v for v, _, _ in asked} == set(ch.verbs)
-        scores = [(r.name, r.score) for r in decode(back_url).results]
-        assert scores == [("Ada", 10), ("Grace", 5)]
+        assert scores(back_url) == [("Ada", 10), ("Grace", 5)]
         html = friend.get(back_url).get_data(as_text=True)
         assert "You scored 5/10" in html
+
+    def test_a_verb_challenge_ends_an_unfinished_numbers_challenge(self, client):
+        """Left running, the numbers round would post its 3/10 to the board
+        the next time anyone opened its results page."""
+        numbers = client.post(
+            "/challenge", data={"lang": "es", "kind": "numbers", "name": "Ada"}
+        ).location.removesuffix("/share")
+        client.post(f"/challenge/{token_of(numbers)}/start", data={"name": "Ada"})
+        for _ in range(3):
+            client.get("/es/quiz/advanced")
+            with client.session_transaction() as sess:
+                word = sess["correct_answer"]
+            client.post("/es/quiz/advanced", data={"answer": word})
+
+        url = self._made(client)
+        start(client, url, name="Ada")
+        with client.session_transaction() as sess:
+            assert "challenge" not in sess and "total_questions" not in sess
+            # The player's own settings are theirs, and stay.
+            assert sess["learn_language"] == "es" and "magnitude_level" in sess
+        response = client.get("/es/results")
+        assert "/challenge/" not in (response.location or "")
+        assert scores(numbers) == []
+        # The verb round runs on as if nothing had happened.
+        result_url, _ = play(client)
+        assert scores(result_url) == [("Ada", 10)]
+
+    def test_a_round_is_scored_under_the_name_it_was_started_with(self, client):
+        url = self._made(client)
+        start(client, url, name="Ada")
+        client.post(
+            "/challenge",
+            data={"lang": "es", "kind": "numbers", "name": "Robert", "share": "1"},
+        )
+        result_url, _ = play(client)
+        assert scores(result_url) == [("Ada", 10)]
+
+    @pytest.mark.parametrize("drill", ["verb challenge", "conjugation drill"])
+    def test_another_drill_closes_the_last_result_page(self, client, drill):
+        """As a number drill does: a result page is the session's until then."""
+        numbers = client.post(
+            "/challenge", data={"lang": "es", "kind": "numbers", "go": "1"}
+        ).location
+        client.get(numbers)
+        for _ in range(QUESTIONS_PER_QUIZ):
+            client.get("/es/quiz/advanced")
+            client.post("/es/quiz/advanced", data={"answer": "zzz"})
+        result_url = client.get("/es/results").location
+        assert result_url.endswith("/result")
+        assert client.get(result_url).status_code == 200
+
+        url = self._made(client)
+        if drill == "verb challenge":
+            start(client, url, name="Ada")
+        else:
+            client.post(
+                "/es/conjugate/practice/start",
+                data={"tenses": [ES_PRESENT], "count": "5"},
+            )
+            with client.session_transaction() as sess:
+                assert "challenge" not in sess["conjugate_practice"]
+        response = client.get(result_url)
+        assert response.status_code == 302
+        assert response.location == result_url.removesuffix("/result")
 
     def test_without_a_challenge_practice_still_needs_a_login(self, client):
         for path in (
@@ -590,9 +678,25 @@ class TestPlay:
             friend.post("/es/conjugate/practice", data={"answer": answer})
         response = friend.get("/es/conjugate/practice/results")
         assert response.status_code == 302
-        assert decode(response.location).results[0].score == 3
+        assert scores(response.location) == [("", 3)]
         with friend.session_transaction() as sess:
             assert "conjugate_practice" not in sess
+
+    def test_exit_before_answering_scores_nothing(self, client, friend):
+        url = self._made(client)
+        start(friend, url)
+        friend.get("/es/conjugate/practice")
+        response = friend.get("/es/conjugate/practice/results")
+        assert response.location.endswith(f"/challenge/{token_of(url)}")
+        with friend.session_transaction() as sess:
+            assert "conjugate_practice" not in sess
+            played = (sess.get("challenge_me") or {}).get("played", [])
+            assert decode(url).seed not in played
+        assert scores(url) == []
+        # Still unplayed, so the friend can start it and their score counts.
+        start(friend, url)
+        result_url, _ = play(friend)
+        assert len(scores(result_url)) == 1
 
     def test_the_session_holds_no_list_of_questions(self, client, friend):
         url = self._made(client)
@@ -600,7 +704,7 @@ class TestPlay:
         friend.get("/es/conjugate/practice")
         with friend.session_transaction() as sess:
             state = sess["conjugate_practice"]
-        assert set(state["challenge"]) == {"token", "seed"}
+        assert set(state["challenge"]) == {"token", "seed", "sender", "name"}
         assert "plan" not in state and state["verb_ids"] == []
 
     def test_attempts_are_recorded_on_the_players_own_verbs(self, client, friend):
@@ -691,7 +795,6 @@ class TestPage:
         for verb in decode(url).verbs:
             assert f'lang="es">{verb}</span>' in html
         assert "Present" in html and "Preterite" in html
-        assert "the same verbs for everyone" in html
         assert "challenge-verb-add" not in html
         login_links = re.findall(r'href="(/challenge/login\?[^"]*)"', html)
         assert [
@@ -730,18 +833,62 @@ class TestPage:
 
     def test_a_verb_not_in_the_challenge_is_not_added(self, client, friend):
         url = self._made(client)
+        assert "comer" not in decode(url).verbs
         login(friend, FRIEND)
-        friend.post(f"/challenge/{token_of(url)}/verbs", data={"verb": "comer"})
+        response = friend.post(
+            f"/challenge/{token_of(url)}/verbs", data={"verb": "comer"}
+        )
         assert user_verbs(FRIEND["sub"]) == []
+        html = friend.get(response.location).get_data(as_text=True)
+        assert "already on your list" not in html
+
+    def test_adding_owned_verbs_says_so(self, client, friend):
+        url = self._made(client)
+        verb = decode(url).verbs[0]
+        login(friend, FRIEND)
+        add_verbs(FRIEND["sub"], [verb])
+        response = friend.post(f"/challenge/{token_of(url)}/verbs", data={"verb": verb})
+        html = friend.get(response.location).get_data(as_text=True)
+        assert "Those verbs are already on your list." in html
 
     def test_adding_after_finishing_keeps_the_result_view(self, client, friend):
         url = self._made(client)
         login(friend, FRIEND)
         start(friend, url)
         result_url, _ = play(friend)
-        response = friend.post(f"/challenge/{token_of(result_url)}/verbs")
+        page = friend.get(result_url).get_data(as_text=True)
+        assert '<input type="hidden" name="back" value="result">' in page
+        response = friend.post(
+            f"/challenge/{token_of(result_url)}/verbs", data={"back": "result"}
+        )
+        assert response.location == result_url
         html = friend.get(response.location).get_data(as_text=True)
         assert "You scored 10/10" in html
+
+    def test_adding_from_the_sender_page_comes_back_to_it(self, client):
+        url = self._made(client)
+        # A verb taken off the list after making the challenge, the one way
+        # its maker can lack one of its verbs.
+        with flask_app.app_context():
+            VerbCard.query.filter_by(
+                user_sub=CREATOR["sub"], infinitive=decode(url).verbs[0]
+            ).delete()
+            db.session.commit()
+        page = client.get(f"{url}/share").get_data(as_text=True)
+        assert '<input type="hidden" name="back" value="share">' in page
+        response = client.post(
+            f"/challenge/{token_of(url)}/verbs", data={"back": "share"}
+        )
+        assert response.location == f"{url}/share"
+
+    def test_adding_from_the_link_comes_back_to_it(self, client, friend):
+        url = self._made(client)
+        login(friend, FRIEND)
+        page = friend.get(url).get_data(as_text=True)
+        assert 'name="back"' not in page
+        # An unknown `back` is the link too.
+        response = friend.post(f"/challenge/{token_of(url)}/verbs", data={"back": "x"})
+        assert response.location == url
 
     def test_adding_without_an_account_logs_in_and_comes_back(
         self, client, friend, monkeypatch
@@ -764,6 +911,48 @@ class TestPage:
         fake_login_callback(monkeypatch, FRIEND)
         assert friend.get("/callback").location.endswith(path)
 
+    def test_the_login_link_comes_back_to_the_sender_page(self, client, monkeypatch):
+        """A sender whose login has lapsed still has the challenge in hand."""
+        url = self._made(client)
+        path = urlparse(url).path + "/share"
+        client.get(f"/challenge/login?next={path}")
+        fake_login_callback(monkeypatch, CREATOR)
+        assert client.get("/callback").location.endswith(path)
+
+    def test_the_create_forms_login_link_keeps_the_round_it_was_set_to(
+        self, friend, monkeypatch
+    ):
+        """New challenge after a verb round opens the form with its language,
+        difficulty and tenses; logging in from there mustn't lose them."""
+        asked = {
+            "lang": ["de"],
+            "kind": ["verbs"],
+            "difficulty": ["hardcore"],
+            "tenses": ["indikativ/praesens", "indikativ/perfekt"],
+        }
+        html = friend.get("/challenge", query_string=asked).get_data(as_text=True)
+        link = re.search(r'href="(/challenge/login\?next=[^"]+)"', html).group(1)
+        friend.get(link.replace("&amp;", "&"))
+        fake_login_callback(monkeypatch, FRIEND)
+        back = urlparse(friend.get("/callback").location)
+        assert back.path == "/challenge"
+        assert parse_qs(back.query) == asked
+
+    @pytest.mark.parametrize(
+        "query", ["lang=es", "lang=es&kind=numbers", "_external=1&lang=es"]
+    )
+    def test_the_create_forms_login_link_is_for_verbs_and_stays_here(
+        self, friend, monkeypatch, query
+    ):
+        html = friend.get(f"/challenge?{query}").get_data(as_text=True)
+        link = re.search(r'href="(/challenge/login\?next=[^"]+)"', html).group(1)
+        friend.get(link.replace("&amp;", "&"))
+        fake_login_callback(monkeypatch, FRIEND)
+        back = urlparse(friend.get("/callback").location)
+        assert back.netloc in ("", "localhost") and back.path == "/challenge"
+        assert parse_qs(back.query)["kind"] == ["verbs"]
+        assert parse_qs(back.query)["lang"] == ["es"]
+
     @pytest.mark.parametrize(
         "target",
         [
@@ -771,6 +960,10 @@ class TestPage:
             "//evil.example/challenge",
             "/cards",
             "/challenge/a/../../x",
+            "/challenge/a/share/x",
+            "/challenge/a/start",
+            "/challenge?next=//evil.example",
+            "/challenge?a=b#x",
         ],
     )
     def test_the_login_link_is_not_an_open_redirect(self, friend, monkeypatch, target):
@@ -780,36 +973,113 @@ class TestPage:
         assert urlparse(location).path == "/challenge"
         assert urlparse(location).netloc in ("", "localhost")
 
+    def _deck_share(self):
+        with flask_app.app_context():
+            db.session.add(
+                DeckShare(
+                    token="deck123", owner_sub="other", owner_name="Bo", cards_json="[]"
+                )
+            )
+            db.session.commit()
+        return "/cards/import/deck123"
+
+    def test_the_latest_login_errand_wins_over_a_deck_import(
+        self, client, friend, monkeypatch
+    ):
+        """A deck import abandoned at Auth0 mustn't swallow the challenge."""
+        url = self._made(client)
+        friend.get(self._deck_share())
+        friend.post(f"/challenge/{token_of(url)}/verbs")
+        fake_login_callback(monkeypatch, FRIEND)
+        assert friend.get("/callback").location.endswith(urlparse(url).path)
+        with friend.session_transaction() as sess:
+            assert "pending_import_token" not in sess
+
+    def test_a_later_deck_import_wins_over_a_challenge(
+        self, client, friend, monkeypatch
+    ):
+        url = self._made(client)
+        friend.get(f"/challenge/login?next={urlparse(url).path}")
+        deck = self._deck_share()
+        friend.get(deck)
+        fake_login_callback(monkeypatch, FRIEND)
+        assert friend.get("/callback").location.endswith(deck)
+        with friend.session_transaction() as sess:
+            assert "pending_challenge_next" not in sess
+
     def test_a_plain_login_still_lands_on_cards(self, friend, monkeypatch):
         fake_login_callback(monkeypatch, FRIEND)
         assert friend.get("/callback").location.endswith("/cards")
 
-    def test_a_rematch_is_made_from_the_rematchers_verbs(self, client, friend):
-        url = self._made(client)
+    def _new_challenge_form(self, client, url, hardcore=False):
+        """Play the challenge at `url`; open its New challenge button's form."""
+        start(client, url, name="Grace")
+        result_url, _ = play(client)
+        html = client.get(result_url).get_data(as_text=True)
+        actions = re.search(r'class="challenge-actions">(.*?)</div>', html, re.S)
+        link = re.search(r'<a href="([^"]+)"', actions.group(1)).group(1)
+        link = link.replace("&amp;", "&")
+        return link, client.get(link).get_data(as_text=True)
+
+    def test_new_challenge_asks_for_the_same_tenses(self, client, friend):
+        login(client)
+        add_verbs(CREATOR["sub"], COMMON_ES)
+        url = created_url(
+            client,
+            tenses=(ES_PRESENT, ES_IMPERATIVE),
+            difficulty="hardcore",
+            include_vosotros="1",
+        )
         ch = decode(url)
         login(friend, FRIEND)
         add_verbs(FRIEND["sub"], ["comer", "vivir", "hablar"])
-        start(friend, url, name="Grace")
-        result_url, _ = play(friend)
-        html = friend.get(result_url).get_data(as_text=True)
-        assert "Rematch with your own verbs" in html
-        form = html[: html.index("Rematch with your own verbs")]
-        form = form[form.rindex("<form") :]
-        fields = dict(re.findall(r'name="(\w+)" value="([^"]*)"', form))
-        tenses = re.findall(r'name="tenses" value="([^"]*)"', form)
-        assert fields["kind"] == "verbs" and tuple(tenses) == ch.tenses
-        response = friend.post("/challenge", data={**fields, "tenses": tenses})
-        rematch = decode(response.location)
-        assert set(rematch.verbs) == {"comer", "vivir", "hablar"}
-        assert rematch.host == "Grace" and rematch.tenses == ch.tenses
+        link, form = self._new_challenge_form(friend, url)
+        query = parse_qs(urlparse(link).query)
+        assert query["kind"] == ["verbs"] and query["difficulty"] == ["hardcore"]
+        assert tuple(query["tenses"]) == ch.tenses and query["vosotros"] == ["1"]
+        # The form shows them, and says the browser's remembered ones mustn't
+        # replace them.
+        ticked = re.findall(r'name="tenses_es" value="([^"]+)"[^>]*checked', form)
+        assert tuple(ticked) == ch.tenses
+        assert re.search(r'name="include_vosotros_es" value="1"[^>]*checked', form)
+        assert 'data-tenses-explicit="es"' in form
+        assert re.search(r'name="difficulty" value="hardcore"[^>]*checked', form)
+        # Submitting it makes the friend's own verb challenge.
+        response = friend.post(
+            "/challenge",
+            data={
+                "lang": "es",
+                "kind": "verbs",
+                "difficulty": "hardcore",
+                "tenses_es": list(ticked),
+                "include_vosotros_es": "1",
+                "name": "Grace",
+            },
+        )
+        made = decode(response.location)
+        assert set(made.verbs) <= {"comer", "vivir", "hablar"}
+        assert made.host == "Grace" and made.tenses == ch.tenses
+        assert made.optional_person and made.mode == "hardcore"
 
-    def test_no_rematch_offered_without_an_account(self, client, friend):
+    def test_new_challenge_without_an_account_says_to_log_in(self, client, friend):
         url = self._made(client)
-        start(friend, url)
-        result_url, _ = play(friend)
-        html = friend.get(result_url).get_data(as_text=True)
-        assert "Rematch with your own verbs" not in html
-        assert "/challenge?lang=es&amp;kind=verbs" in html
+        _, form = self._new_challenge_form(friend, url)
+        radio = re.search(r'<input[^>]*name="kind" value="verbs"[^>]*>', form).group(0)
+        assert "disabled" in radio
+        note = re.search(r'<p[^>]*id="challenge-verbs-login"[^>]*>', form).group(0)
+        assert "hidden" not in note
+
+    def test_tenses_in_the_url_count_only_for_a_verb_challenge(self, client):
+        login(client)
+        add_verbs(CREATOR["sub"], COMMON_ES)
+        html = client.get(
+            f"/challenge?lang=es&kind=numbers&tenses={ES_IMPERATIVE}"
+        ).get_data(as_text=True)
+        assert "data-tenses-explicit" not in html
+        html = client.get("/challenge?lang=es&kind=verbs&tenses=nonsense").get_data(
+            as_text=True
+        )
+        assert "data-tenses-explicit" not in html
 
     def test_the_type_label_names_verbs(self, client, friend):
         url = self._made(client)

@@ -43,7 +43,7 @@
         {% endmacro %}
 
         <div class="challenge-quickstart">
-            <p class="challenge-go-summary" id="challenge-go-summary">{{ languages[selected_lang].flag }} {{ languages[selected_lang].name }} · {{ get_text('challenge_type_' ~ selected_kind) }}{% if selected_kind in ('numbers', 'verbs') %} · {{ get_text('mode_' ~ default_number_mode) }}{% endif %}</p>
+            <p class="challenge-go-summary" id="challenge-go-summary">{{ languages[selected_lang].flag }} {{ languages[selected_lang].name }} · {{ get_text('challenge_type_' ~ selected_kind) }}{% if selected_kind in ('numbers', 'verbs') %} · {{ get_text('mode_' ~ selected_difficulty) }}{% endif %}</p>
             {{ action_pair(primary=true) }}
         </div>
 
@@ -55,7 +55,9 @@
         <form method="POST" action="{{ url_for('challenge_new') }}" class="preset-share challenge-form" id="challenge-form"
               data-listen-back="{{ url_for('challenge_new') }}"
               {% if lang_explicit %}data-lang-explicit="1"{% endif %}
-              {% if kind_explicit %}data-kind-explicit="1"{% endif %}>
+              {% if kind_explicit %}data-kind-explicit="1"{% endif %}
+              {% if difficulty_explicit %}data-difficulty-explicit="1"{% endif %}
+              {% if tenses_explicit %}data-tenses-explicit="{{ selected_lang }}"{% endif %}>
             <fieldset class="preset-share-field challenge-field">
                 <legend class="preset-share-label">{{ get_text('challenge_field_language') }}</legend>
                 <div class="challenge-langs">
@@ -119,7 +121,7 @@
                 <div class="preset-share-modes">
                     {% for mode in number_modes %}
                     <label class="preset-share-mode"{% if mode == 'easy' %} data-numbers-only{% if selected_kind == 'verbs' %} hidden{% endif %}{% endif %}>
-                        <input type="radio" name="difficulty" value="{{ mode }}" {% if mode == default_number_mode %}checked{% endif %}>
+                        <input type="radio" name="difficulty" value="{{ mode }}" {% if mode == selected_difficulty %}checked{% endif %}>
                         <span>{{ get_text('mode_' ~ mode) }}</span>
                     </label>
                     {% endfor %}
@@ -136,13 +138,13 @@
                 <div class="challenge-tense-list" data-tenses-lang="{{ code }}"{% if code != selected_lang %} hidden{% endif %}>
                     {% for tense in settings.tenses %}
                     <label class="preset-share-mode challenge-tense">
-                        <input type="checkbox" name="tenses_{{ code }}" value="{{ tense.key }}" {% if tense.default_on %}checked{% endif %}>
+                        <input type="checkbox" name="tenses_{{ code }}" value="{{ tense.key }}" {% if tense.checked %}checked{% endif %}>
                         <span>{{ tense.label }}</span>
                     </label>
                     {% endfor %}
                     {% if settings.has_optional %}
                     <label class="preset-share-mode challenge-tense challenge-tense-optional">
-                        <input type="checkbox" name="include_vosotros_{{ code }}" value="1">
+                        <input type="checkbox" name="include_vosotros_{{ code }}" value="1"{% if settings.optional_on %} checked{% endif %}>
                         <span>{{ get_text('conjugate_vosotros_label') }}</span>
                     </label>
                     {% endif %}
@@ -152,20 +154,22 @@
 
             <div class="preset-share-field challenge-field">
                 <label class="preset-share-label" for="challenge-name">{{ get_text('challenge_field_name') }}</label>
+                {# Filled with the last name given, or the login's first
+                   name (data-name-suggested, which a name this browser
+                   remembers replaces). name_offered tells the server that an
+                   empty submission emptied a name: see _note_challenge_name().
+                   data-login-name is never saved in the browser, so logged
+                   out the field doesn't show the login's name. #}
                 <input type="text" id="challenge-name" name="name" value="{{ name }}"
-                       maxlength="{{ name_max }}" autocomplete="nickname"
+                       maxlength="{{ name_max }}" autocomplete="off"
                        placeholder="{{ get_text('challenge_name_placeholder') }}"
-                       class="preset-share-range-input challenge-name-input">
+                       class="preset-share-range-input challenge-name-input"{% if name_suggested %} data-name-suggested{% endif %}{% if login_name %} data-login-name="{{ login_name }}"{% endif %}>
+                {% if name %}<input type="hidden" name="name_offered" value="1">{% endif %}
                 <p class="preset-share-hint">{{ get_text('challenge_name_hint') }}</p>
             </div>
 
             {{ action_pair() }}
         </form>
-
-        {# challenge.js swaps in the verbs wording when Verbs is picked. #}
-        <p class="challenge-rules" id="challenge-rules"
-           data-rules-numbers="{{ get_text('challenge_rules').format(questions) }}"
-           data-rules-verbs="{{ get_text('challenge_rules_verbs').format(questions) }}">{{ get_text('challenge_rules_verbs' if selected_kind == 'verbs' else 'challenge_rules').format(questions) }}</p>
     </div>
 </div>
 {% endblock %}

@@ -80,13 +80,21 @@
        sends document.title unless told otherwise), and the page after one
        doesn't report it as the referrer. count.js hands the callback
        document.referrer and sends back whatever it returns, so every other
-       referrer must be returned unchanged. #}
+       referrer must be returned unchanged, including another site's page that
+       happens to have /challenge/ in its path, and one that isn't a URL. #}
     <script>
     window.goatcounter = {
         {% if analytics_path %}path: {{ analytics_path|tojson }},
         title: {{ analytics_title|default('diminumero')|tojson }},{% endif %}
         referrer: function (referrer) {
-            return /\/challenge\/[^\/?#]/.test(referrer || '') ? '' : referrer;
+            try {
+                var url = new URL(referrer);
+                if (url.origin === location.origin &&
+                        /^\/challenge\/[^\/]/.test(url.pathname)) {
+                    return '';
+                }
+            } catch (e) {}
+            return referrer;
         }
     };
     </script>
