@@ -1,0 +1,11 @@
+{# "Challenge a friend" for the fixed top bar (base.html's top_controls_extra).
+   Its stylesheet is css/challenge-button.css, which the including page links
+   in extra_head. On a language's menu, `challenge_lang` preselects that
+   language on the create form; the landing page leaves it to the form. #}
+<a href="{{ url_for('challenge_new', lang=challenge_lang) if challenge_lang else url_for('challenge_new') }}" class="btn-challenge"
+   aria-label="{{ get_text('challenge_nav_button') }}"
+   title="{{ get_text('challenge_nav_tooltip') }}">
+    <img src="{{ url_for('static', filename='icons/icon-challenge.svg') }}" alt="" class="btn-challenge-icon" aria-hidden="true" width="18" height="18">
+    <span class="btn-challenge-label">{{ get_text('challenge_nav_button') }}</span>
+    <span class="btn-challenge-dot" aria-hidden="true"></span>
+</a>

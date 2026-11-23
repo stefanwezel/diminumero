@@ -422,7 +422,7 @@ class TestCreateForm:
 
     def test_kind_in_the_url_is_ignored_where_it_cant_be_made(self, client):
         html = client.get("/challenge?lang=es&kind=verbs").get_data(as_text=True)
-        radio = re.search(r'<input[^>]*name="kind" value="numbers"[^>]*>', html).group(
+        radio = re.search(r'<input[^>]*name="kind" value="surprise"[^>]*>', html).group(
             0
         )
         assert "checked" in radio
@@ -436,9 +436,9 @@ class TestCreateForm:
         assert 'name="include_vosotros_es"' in html
         assert 'name="include_vosotros_it"' not in html
 
-    def test_the_numbers_form_is_as_before(self, client):
+    def test_tenses_are_hidden_by_default(self, client):
         html = client.get("/challenge").get_data(as_text=True)
-        radio = re.search(r'<input[^>]*name="kind" value="numbers"[^>]*>', html).group(
+        radio = re.search(r'<input[^>]*name="kind" value="surprise"[^>]*>', html).group(
             0
         )
         assert "checked" in radio

@@ -719,9 +719,26 @@ class TestLandingButton:
         hero = html.split('class="hero"')[1]
         assert "btn-challenge" not in hero
 
-    @pytest.mark.parametrize("path", ["/es", "/es/numbers", "/about"])
-    def test_only_on_the_landing_page(self, client, path):
-        assert "btn-challenge" not in client.get(path).get_data(as_text=True)
+    @pytest.mark.parametrize("lang", ["es", "de", "cy"])
+    def test_on_each_language_menu_for_that_language(self, client, lang):
+        html = client.get(f"/{lang}").get_data(as_text=True)
+        top_bar = html.split('class="top-controls"')[1].split('class="container"')[0]
+        assert 'class="btn-challenge"' in top_bar
+        assert f'href="/challenge?lang={lang}"' in top_bar
+        assert "css/challenge-button.css" in html
+        hero = html.split('class="container"')[1]
+        assert "btn-challenge" not in hero
+
+    def test_the_landing_page_leaves_the_language_to_the_form(self, client):
+        html = client.get("/").get_data(as_text=True)
+        assert 'href="/challenge"' in html and "/challenge?lang=" not in html
+        assert "css/challenge-button.css" in html
+
+    @pytest.mark.parametrize("path", ["/es/numbers", "/es/learn", "/about"])
+    def test_not_on_other_pages(self, client, path):
+        html = client.get(path).get_data(as_text=True)
+        assert "btn-challenge" not in html
+        assert "challenge-button.css" not in html
 
 
 def test_seed_alphabet_has_no_lookalikes():
@@ -778,7 +795,20 @@ class TestStartNow:
         client.get("/de")
         html = client.get("/challenge").get_data(as_text=True)
         summary = re.search(r'id="challenge-go-summary">(.*?)</p>', html, re.S).group(1)
-        assert "German" in summary and "Numbers" in summary and "Advanced" in summary
+        assert "German" in summary and "Surprise me" in summary
+
+    def test_surprise_me_is_the_default(self, client):
+        html = client.get("/challenge").get_data(as_text=True)
+        checked = re.findall(r'<input[^>]*name="kind" value="(\w+)"[^>]*checked', html)
+        assert checked == ["surprise"]
+        # Difficulty stays on offer: Surprise me can turn out to be numbers.
+        level = re.search(r'<fieldset[^>]*id="challenge-difficulty"[^>]*>', html)
+        assert "hidden" not in level.group(0)
+
+    def test_a_kind_in_the_url_replaces_the_default(self, client):
+        html = client.get("/challenge?kind=numbers").get_data(as_text=True)
+        checked = re.findall(r'<input[^>]*name="kind" value="(\w+)"[^>]*checked', html)
+        assert checked == ["numbers"]
 
     def test_numbers_start_straight_into_the_round(self, client):
         response = self._go(client, difficulty="hardcore")

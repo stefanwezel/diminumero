@@ -3117,7 +3117,8 @@ def challenge_new():
     # A language named in the URL ("New challenge" on a French challenge's
     # page) beats the defaults the browser remembers; one taken from the
     # session doesn't. challenge.js reads the difference from the form. The
-    # same goes for a kind ("Challenge a friend" links ask for verbs).
+    # same goes for a kind ("Challenge a friend" links ask for verbs). With
+    # none asked for, and nothing remembered in the browser, it's Surprise me.
     lang_explicit = request.args.get("lang") in languages
     selected = request.args.get("lang") or session.get("learn_language")
     if selected not in languages:
@@ -3153,7 +3154,7 @@ def challenge_new():
         languages=languages,
         selected_lang=selected,
         lang_explicit=lang_explicit,
-        selected_kind=selected_kind or challenge.KIND_NUMBERS,
+        selected_kind=selected_kind or challenge.KIND_SURPRISE,
         kind_explicit=kind_explicit and selected_kind is not None,
         number_modes=challenge.NUMBER_MODES,
         default_number_mode=challenge.DEFAULT_NUMBER_MODE,

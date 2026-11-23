@@ -116,8 +116,9 @@
 <body>
     <!-- Top-right controls: auth + language switcher -->
     <div class="top-controls">
-        {# A page may put its own control first in the bar (the landing page's
-           "Challenge a friend"). Fixed-position, so it never shifts the page. #}
+        {# A page may put its own control first in the bar ("Challenge a
+           friend" on the landing page and the language menus). Fixed-position,
+           so it never shifts the page. #}
         {% block top_controls_extra %}{% endblock %}
         {% if user %}
             <div class="auth-menu" id="authMenu">
