@@ -113,9 +113,11 @@
         // terminal navigation. Use replace() so the finished listening entry is
         // discarded — otherwise "back" from results would return to a stale
         // (already completed) listening page. A listening page is one with a
-        // clip: the other quizzes are .quiz-page too, and one of them (a friend
-        // challenge's "Surprise me" that came out as numbers) must load for
-        // real, scripts and all, rather than be swapped into this document.
+        // clip: the other quizzes are .quiz-page too, and should one ever come
+        // back here it must load for real, scripts and all, rather than be
+        // swapped into this document. (A friend challenge's "Surprise me" is
+        // resolved by challenge.js before it submits, so a numbers round never
+        // takes this path; this is the net under that.)
         if (!doc.querySelector('.quiz-page') || !doc.getElementById('audio-el')) {
             window.location.replace(url);
             return;

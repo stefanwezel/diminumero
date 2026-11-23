@@ -7,10 +7,14 @@ that carries their score. Sending that back is how two people compare.
 Nothing is stored on the server. A challenge lives entirely in its URL, as a
 token signed with the app's secret key: the language, the mode, a seed, an
 optional host name, and the scores of the people who played it so far. The
-signature is what keeps a score honest; edit one character and the link stops
-working. Signed is not encrypted, though. Anyone can base64-decode a token,
-which is why it holds the seed and never the numbers: for Listening, the
-numbers are the answers.
+signature means a score can't be edited after the fact: change one character
+and the link stops working. It does not stop a player looking up answers
+while they play. Signed is not encrypted, so anyone can base64-decode a token
+(or the session cookie). The token holds the seed rather than the numbers,
+and the session keeps no list of them, but the seed and this file reproduce
+the round, and in Listening the clip's URL names its number. Nothing here
+could change that without hiding the audio behind a server-side lookup, and
+for a game between friends it is accepted.
 
 The ten numbers are a pure function of the seed and the deck, drawn the way
 worksheets are (`random.Random` seeded from a SHA-256 of the seed, never
@@ -63,7 +67,8 @@ _LANG_RE = re.compile(r"^[a-z]{2,3}$")
 
 NAME_MAX = 24
 # How many scores travel with a link. The creator's is always kept, so the
-# person who started it never drops off their own scoreboard.
+# person who started it never drops off their own scoreboard; before they have
+# played, the first score is kept in its place.
 MAX_RESULTS = 5
 MAX_SECONDS = 3599
 # Seeds the session remembers having created or played, newest last.
@@ -81,6 +86,9 @@ class Result:
     name: str
     score: int
     seconds: int
+    # Played by whoever created the challenge. Not necessarily the first
+    # score: a creator who pressed Share may play after their friends.
+    creator: bool = False
 
 
 @dataclass(frozen=True)
@@ -105,7 +113,10 @@ class Challenge:
         if self.host:
             payload["h"] = self.host
         if self.results:
-            payload["r"] = [[r.name, r.score, r.seconds] for r in self.results]
+            payload["r"] = [
+                [r.name, r.score, r.seconds, *([1] if r.creator else [])]
+                for r in self.results
+            ]
         return _serializer(secret).dumps(payload)
 
     @classmethod
@@ -136,29 +147,49 @@ class Challenge:
 
         results = []
         for entry in raw_results:
-            if not (isinstance(entry, list) and len(entry) == 3):
+            # [name, score, seconds], with a trailing 1 on the creator's.
+            if not (isinstance(entry, list) and len(entry) in (3, 4)):
                 return None
-            name, score, seconds = entry
+            name, score, seconds, *flag = entry
+            if flag and not _is_int_in(flag[0], 1, 1):
+                return None
             if not _is_clean_name(name):
                 return None
             if not _is_int_in(score, 0, QUESTIONS_PER_QUIZ):
                 return None
             if not _is_int_in(seconds, 0, MAX_SECONDS):
                 return None
-            results.append(Result(name, score, seconds))
+            results.append(Result(name, score, seconds, creator=bool(flag)))
+        if sum(r.creator for r in results) > 1:
+            return None
         return cls(lang, mode, seed, host, tuple(results))
 
-    def with_result(self, name, score, seconds):
-        """This challenge with one more score on it: the link a player sends back."""
+    def with_result(self, name, score, seconds, creator=False):
+        """This challenge with one more score on it: the link a player sends back.
+
+        `creator` marks the score of the person who made the challenge. Only
+        the first such score is marked, so a token never holds two.
+        """
         result = Result(
             clean_name(name),
             min(max(int(score), 0), QUESTIONS_PER_QUIZ),
             min(max(int(seconds), 0), MAX_SECONDS),
+            creator=creator and not self.has_creator_result,
         )
         results = (*self.results, result)
         if len(results) > MAX_RESULTS:
-            results = results[:1] + results[-(MAX_RESULTS - 1) :]
+            # Keep the creator's score (or, before they've played, the first)
+            # and the newest others, in the order they were played: the order
+            # breaks ties, and the last is the player who just finished.
+            keep = next((i for i, r in enumerate(results) if r.creator), 0)
+            others = [i for i in range(len(results)) if i != keep]
+            kept = sorted({keep, *others[-(MAX_RESULTS - 1) :]})
+            results = tuple(results[i] for i in kept)
         return Challenge(self.lang, self.mode, self.seed, self.host, results)
+
+    @property
+    def has_creator_result(self):
+        return any(r.creator for r in self.results)
 
     def ranked(self):
         """The scoreboard: best score first, the faster time breaking a tie.

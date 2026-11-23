@@ -74,14 +74,17 @@
     </style>
 
     <!-- GoatCounter Analytics -->
-    {# Settings count.js reads when it loads. A friend challenge's URL carries
-       the players' names, so a challenge page reports a fixed path instead of
-       its own, and the page after one doesn't report it as the referrer.
-       count.js hands the callback document.referrer and sends back whatever it
-       returns, so every other referrer must be returned unchanged. #}
+    {# Settings count.js reads when it loads. A friend challenge's URL and its
+       page title carry the players' names ("Alex scored 8/10…"), so a
+       challenge page reports a fixed path and title instead of its own (count.js
+       sends document.title unless told otherwise), and the page after one
+       doesn't report it as the referrer. count.js hands the callback
+       document.referrer and sends back whatever it returns, so every other
+       referrer must be returned unchanged. #}
     <script>
     window.goatcounter = {
-        {% if analytics_path %}path: {{ analytics_path|tojson }},{% endif %}
+        {% if analytics_path %}path: {{ analytics_path|tojson }},
+        title: {{ analytics_title|default('diminumero')|tojson }},{% endif %}
         referrer: function (referrer) {
             return /\/challenge\/[^\/?#]/.test(referrer || '') ? '' : referrer;
         }

@@ -89,15 +89,32 @@
 
         form.addEventListener('submit', function (e) {
             save();
-            // Start on a round that may be Listening goes through
-            // quiz_listen.js's pjax (its listener is on .container, so it sees
-            // this attribute after this listener has run): the click keeps the
-            // page user-activated, which is what lets the first clip autoplay.
-            // Every other submit is an ordinary POST.
             var go = e.submitter && e.submitter.name === 'go';
             var kind = checked('kind');
-            var mayListen = kind && (kind.value === 'listening' || kind.value === 'surprise');
-            if (go && mayListen) form.setAttribute('data-listen-pjax', '');
+            var round = kind ? kind.value : 'numbers';
+            // Start on "Surprise me" is decided here rather than by the
+            // server, so the round is known before the request goes. The pick
+            // is a hidden field, never the radio, which must still read
+            // "Surprise me" if Back returns to this page.
+            var pick = form.querySelector('input[name="surprise_pick"]');
+            if (pick) pick.parentNode.removeChild(pick);
+            if (go && round === 'surprise') {
+                var lang = checked('lang');
+                var canListen = lang && lang.getAttribute('data-listening') === '1';
+                round = canListen && Math.random() < 0.5 ? 'listening' : 'numbers';
+                pick = document.createElement('input');
+                pick.type = 'hidden';
+                pick.name = 'surprise_pick';
+                pick.value = round;
+                form.appendChild(pick);
+            }
+            // Start on a Listening round goes through quiz_listen.js's pjax
+            // (its listener is on .container, so it sees this attribute after
+            // this listener has run): the click keeps the page user-activated,
+            // which is what lets the first clip autoplay. Every other submit,
+            // a numbers round included, is an ordinary POST, so the quiz page
+            // loads with its own scripts, its notice and a Back to this form.
+            if (go && round === 'listening') form.setAttribute('data-listen-pjax', '');
             else form.removeAttribute('data-listen-pjax');
         });
 

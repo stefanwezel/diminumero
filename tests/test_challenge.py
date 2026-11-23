@@ -125,6 +125,16 @@ class TestToken:
             {"v": 1, "l": "es", "m": "e", "s": "abcdefgh", "r": [["A", 5, -1]]},
             {"v": 1, "l": "es", "m": "e", "s": "abcdefgh", "r": [["A", 5]]},
             {"v": 1, "l": "es", "m": "e", "s": "abcdefgh", "r": [["A", 5, 5]] * 6},
+            {"v": 1, "l": "es", "m": "e", "s": "abcdefgh", "r": [["A", 5, 5, 2]]},
+            {"v": 1, "l": "es", "m": "e", "s": "abcdefgh", "r": [["A", 5, 5, True]]},
+            {"v": 1, "l": "es", "m": "e", "s": "abcdefgh", "r": [["A", 5, 5, 1, 1]]},
+            {
+                "v": 1,
+                "l": "es",
+                "m": "e",
+                "s": "abcdefgh",
+                "r": [["A", 5, 5, 1], ["B", 6, 5, 1]],
+            },
             ["not", "a", "dict"],
         ],
     )
@@ -136,7 +146,7 @@ class TestToken:
     def test_overlong_token_is_not_decoded(self):
         assert challenge.Challenge.decode("a" * 5000, SECRET) is None
 
-    def test_results_cap_keeps_the_creator(self):
+    def test_results_cap_keeps_the_first_before_the_creator_plays(self):
         ch = challenge.Challenge("es", "easy", "abcdefgh", "Host")
         for i in range(8):
             ch = ch.with_result(f"P{i}", i, 10)
@@ -144,6 +154,24 @@ class TestToken:
         assert len(names) == challenge.MAX_RESULTS
         assert names[0] == "P0"
         assert names[1:] == ["P4", "P5", "P6", "P7"]
+
+    def test_results_cap_keeps_the_creator_who_played_after_friends(self):
+        """A creator who pressed Share plays after a friend, so their score
+        is not the first; it must still survive the trim, in its place."""
+        ch = challenge.Challenge("es", "easy", "abcdefgh", "Host")
+        ch = ch.with_result("Friend", 3, 10).with_result("Host", 9, 10, creator=True)
+        for i in range(6):
+            ch = ch.with_result(f"P{i}", i, 10)
+        names = [r.name for r in ch.results]
+        assert names == ["Host", "P2", "P3", "P4", "P5"]
+        assert [r.creator for r in ch.results] == [True] + [False] * 4
+        assert challenge.Challenge.decode(ch.encode(SECRET), SECRET) == ch
+
+    def test_only_one_score_is_marked_the_creators(self):
+        ch = challenge.Challenge("es", "easy", "abcdefgh", "Host")
+        ch = ch.with_result("Host", 5, 10, creator=True)
+        ch = ch.with_result("Host", 9, 10, creator=True)
+        assert [r.creator for r in ch.results] == [True, False]
 
 
 class TestNames:
@@ -278,6 +306,35 @@ class TestCreate:
             "advanced"
         }
 
+    @pytest.mark.parametrize(
+        "lang, pick, mode",
+        [
+            ("es", "listening", "audio"),
+            ("es", "numbers", "hardcore"),
+            # The browser's pick can't conjure up recordings that don't exist.
+            ("ne", "listening", "hardcore"),
+        ],
+    )
+    def test_surprise_honours_the_browsers_pick(self, client, lang, pick, mode):
+        """challenge.js decides Surprise on Start, to know whether to pjax."""
+        response = client.post(
+            "/challenge",
+            data={
+                "lang": lang,
+                "kind": "surprise",
+                "surprise_pick": pick,
+                "difficulty": "hardcore",
+            },
+        )
+        assert _decode(response.location).mode == mode
+
+    def test_surprise_ignores_a_garbage_pick(self, client):
+        response = client.post(
+            "/challenge",
+            data={"lang": "es", "kind": "surprise", "surprise_pick": "easy"},
+        )
+        assert _decode(response.location).mode in {"advanced", "audio"}
+
     def test_garbage_difficulty_falls_back(self, client):
         ch = _decode(_create(client, difficulty="impossible"))
         assert ch.mode == challenge.DEFAULT_NUMBER_MODE
@@ -357,6 +414,105 @@ class TestFlow:
         with client.session_transaction() as sess:
             assert "challenge" not in sess and "mode" not in sess
 
+    def test_a_creator_who_shared_first_keeps_their_score(self, client, app):
+        url = _create(client, name="Alex")
+        token = _token(url)
+        others = [app.test_client() for _ in range(challenge.MAX_RESULTS)]
+        # One friend plays before Alex does.
+        others[0].post(f"/challenge/{token}/start", data={"name": "First"})
+        token = _token(_play(others[0])[0])
+        client.post(f"/challenge/{token}/start", data={"name": "Alex"})
+        token = _token(_play(client)[0])
+        for i, other in enumerate(others[1:]):
+            other.post(f"/challenge/{token}/start", data={"name": f"P{i}"})
+            token = _token(_play(other)[0])
+        names = [r.name for r in challenge.Challenge.decode(token, SECRET).results]
+        assert len(names) == challenge.MAX_RESULTS
+        assert "Alex" in names and "First" not in names
+
+    @pytest.mark.parametrize(
+        "kind, difficulty, path, empty",
+        [
+            ("numbers", "easy", "/es/quiz/easy", {}),
+            ("numbers", "advanced", "/es/quiz/advanced", {"answer": ""}),
+            ("numbers", "hardcore", "/es/quiz/hardcore", {"answer": ""}),
+            ("listening", "advanced", "/es/listen", {"answer": ""}),
+            ("listening", "advanced", "/es/listen", {"next": "1"}),
+        ],
+    )
+    def test_a_question_cleared_without_an_answer_comes_back(
+        self, client, kind, difficulty, path, empty
+    ):
+        """Skipping must not walk past the planned numbers to the random draw."""
+        url = _create(client, kind=kind, difficulty=difficulty)
+        client.post(f"/challenge/{_token(url)}/start")
+        planned = challenge.draw_numbers(
+            *self._deck_and_seed(client, url), _decode(url).mode
+        )
+        for _ in range(QUESTIONS_PER_QUIZ + 2):
+            client.get(path)
+            with client.session_transaction() as sess:
+                assert sess["current_number"] == planned[0]
+            client.post(path, data=empty)
+        with client.session_transaction() as sess:
+            assert sess["total_questions"] == 0
+
+    @staticmethod
+    def _deck_and_seed(client, url):
+        from app import _challenge_deck
+
+        ch = _decode(url)
+        with client.application.test_request_context():
+            _, deck = _challenge_deck(ch)
+        return deck, ch.seed
+
+    def test_the_session_holds_no_list_of_numbers(self, client):
+        url = _create(client, kind="listening")
+        client.post(f"/challenge/{_token(url)}/start")
+        with client.session_transaction() as sess:
+            assert set(sess["challenge"]) == {"token", "seed"}
+
+    def test_a_missing_planned_number_gets_a_stand_in_not_a_later_one(
+        self, client, monkeypatch
+    ):
+        import app as app_module
+
+        url = _create(client, difficulty="hardcore")
+        client.post(f"/challenge/{_token(url)}/start")
+        planned = challenge.draw_numbers(*self._deck_and_seed(client, url), "hardcore")
+        real = app_module._session_numbers
+
+        def without_first(lang_code):
+            deck = dict(real(lang_code))
+            del deck[planned[0]]
+            return deck
+
+        levels = []
+        original = quiz_logic.get_random_question
+
+        def spy(*args, **kwargs):
+            levels.append(kwargs.get("magnitude_level"))
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(app_module, "_session_numbers", without_first)
+        monkeypatch.setattr(quiz_logic, "get_random_question", spy)
+        for _ in range(20):
+            client.get("/es/quiz/hardcore")
+            with client.session_transaction() as sess:
+                stand_in = sess.pop("current_number")
+                sess.pop("correct_answer")
+                sess["asked_numbers"] = []
+            assert stand_in not in planned
+        assert set(levels) == {challenge.CHALLENGE_MAGNITUDE["hardcore"]}
+
+    def test_restart_remembers_what_was_played(self, client):
+        url = _create(client)
+        client.post(f"/challenge/{_token(url)}/start")
+        result_url, _ = _play(client)
+        client.post("/restart")
+        html = client.get(result_url).get_data(as_text=True)
+        assert _h1(html) == "You&#39;ve already played this one"
+
     def test_rematch_mints_a_new_challenge(self, client):
         url = _create(client, kind="listening")
         client.post(f"/challenge/{_token(url)}/start")
@@ -412,8 +568,33 @@ class TestIsolation:
             assert sess["number_system"] == "traditional"
         url = _create(client, lang="cy")
         client.post(f"/challenge/{_token(url)}/start")
+        # The round is in the default system; the preference is left alone.
+        decimal = get_language_numbers("cy")
+        client.get("/cy/quiz/advanced")
         with client.session_transaction() as sess:
-            assert sess["number_system"] != "traditional"
+            assert sess["number_system"] == "traditional"
+            assert sess["correct_answer"] == decimal[sess["current_number"]]
+        _play(client)
+        with client.session_transaction() as sess:
+            assert sess["number_system"] == "traditional"
+
+    def test_numeral_system_survives_an_abandoned_challenge(self, client):
+        client.get("/cy/numbers?system=traditional")
+        url = _create(client, lang="cy")
+        client.post(f"/challenge/{_token(url)}/start")
+        client.get("/cy/quiz/advanced")
+        # Left mid-round for an ordinary drill.
+        client.post("/cy/start", data={"mode": "advanced"})
+        with client.session_transaction() as sess:
+            assert "challenge" not in sess
+            assert sess["number_system"] == "traditional"
+
+    def test_numeral_system_survives_overlapping_challenges(self, client):
+        client.get("/cy/numbers?system=traditional")
+        first = _create(client, lang="cy")
+        second = _create(client, lang="cy")
+        client.post(f"/challenge/{_token(first)}/start")
+        client.post(f"/challenge/{_token(second)}/start")
         _play(client)
         with client.session_transaction() as sess:
             assert sess["number_system"] == "traditional"
@@ -455,12 +636,29 @@ class TestHeadersAndPrivacy:
         html = client.get(url).get_data(as_text=True)
         assert 'path: "/challenge/link"' in html
 
+    @pytest.mark.parametrize("played", [False, True])
+    def test_analytics_never_sees_the_title(self, client, friend, played):
+        """count.js sends document.title, and this one names the players."""
+        url = _create(client, name="Alex")
+        if played:
+            client.post(f"/challenge/{_token(url)}/start", data={"name": "Alex"})
+            url, _ = _play(client)
+        html = friend.get(url).get_data(as_text=True)
+        assert "Alex" in html.split("<title>")[1].split("</title>")[0]
+        settings = html.split("window.goatcounter")[1].split("</script>")[0]
+        assert 'title: "Challenge"' in settings
+        assert "Alex" not in settings
+
+    def test_a_broken_link_reports_the_same_title(self, client):
+        html = client.get("/challenge/not-a-token").get_data(as_text=True)
+        settings = html.split("window.goatcounter")[1].split("</script>")[0]
+        assert 'path: "/challenge/link"' in settings
+        assert 'title: "Challenge"' in settings
+
     def test_other_pages_keep_their_own_analytics_path(self, client):
         html = client.get("/").get_data(as_text=True)
-        assert (
-            "path:"
-            not in html.split("data-goatcounter=")[0].split("window.goatcounter")[1]
-        )
+        settings = html.split("data-goatcounter=")[0].split("window.goatcounter")[1]
+        assert "path:" not in settings and "title:" not in settings
 
     @pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
     def test_referrer_guard_strips_only_challenge_links(self, client):
