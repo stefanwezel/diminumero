@@ -31,11 +31,18 @@
         "Spanish, English, Italian and German verb conjugation practice with progress insights",
         "Personal vocabulary index cards",
         "Shareable card decks with dedup on import",
-        "Card performance dashboard with weak-card practice"
+        "Card performance dashboard with weak-card practice",
+        "Friend challenges: the same ten questions for everyone, shared by link"
     ]
 }
 </script>
 {% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/challenge-button.css') }}">
+{% endblock %}
+
+{% block top_controls_extra %}{% include "_challenge_button.html" %}{% endblock %}
 
 {% block content %}
 <div class="landing-page">

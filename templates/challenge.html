@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{# Three addresses, one view each, so a page never reads two ways:
+   invite   — /challenge/<token>, the link: the scores so far, name and Start,
+              and nothing else, the same for everyone who opens it (and so
+              what a link-preview bot sees), except that Start says Rematch to
+              someone who has played it already.
+   ready    — /challenge/<token>/share, the sender's page (only its maker's,
+              before they play): the link to send, and Start.
+   finished — /challenge/<token>/result, a result (only the player's): score,
+              rank and the link, to send out (`sender`) or back.
+   The scores are the challenge's stored ones (_challenge_board()), the same
+   on all three, so no copy of the link is ever behind another. #}
+{% if invalid %}
+    {% set page_title = get_text('challenge_invalid_title') %}
+    {% set page_desc = get_text('challenge_invalid_body') %}
+{% else %}
+    {% if view == 'ready' %}
+        {% set page_title = get_text('challenge_ready_title') %}
+    {% elif view == 'finished' %}
+        {% set page_title = get_text('challenge_you_scored').format(round_score, questions) %}
+    {% else %}
+        {% set page_title = invite_headline %}
+    {% endif %}
+    {% set page_desc = lang_name ~ ' · ' ~ type_label ~ ' · ' ~ get_text('challenge_summary_questions').format(questions) ~ '. ' ~ get_text('challenge_meta_desc_verbs' if ch.is_verbs else 'challenge_meta_desc') %}
+{% endif %}
+
+{% block title %}{{ page_title }} · diminumero{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ page_desc }}">{% endblock %}
+{% block og_title %}{{ page_title }}{% endblock %}
+{% block og_description %}<meta property="og:description" content="{{ page_desc }}">{% endblock %}
+{% block twitter_title %}{{ page_title }}{% endblock %}
+{% block twitter_description %}<meta name="twitter:description" content="{{ page_desc }}">{% endblock %}
+{% block meta_robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/challenge.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="landing-page challenge-page">
+    <div class="hero">
+        <div class="back-nav">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-back-nav">{{ get_text('learn_btn_back') }}</a>
+        </div>
+
+        {% if invalid %}
+        <h1 class="title challenge-title">{{ get_text('challenge_invalid_title') }}</h1>
+        <p class="description">{{ get_text('challenge_invalid_body') }}</p>
+        <div class="challenge-actions">
+            <a href="{{ url_for('challenge_new') }}" class="btn btn-primary">{{ get_text('challenge_create_own') }}</a>
+        </div>
+        {% else %}
+
+        <p class="challenge-summary">
+            <span aria-hidden="true">{{ lang_flag }}</span>
+            <span>{{ lang_name }}</span>
+            <span aria-hidden="true">·</span>
+            <span>{{ type_label }}</span>
+            <span aria-hidden="true">·</span>
+            <span>{{ get_text('challenge_summary_questions').format(questions) }}</span>
+        </p>
+
+        {% if view == 'finished' %}
+        {# The heading is this round's score; the rank is the board's, which
+           keeps the player's best (best_kept says so when that is another
+           round). No row at all means the score couldn't be stored. #}
+        <h1 class="title challenge-title">{{ get_text('challenge_you_scored').format(round_score, questions) }}</h1>
+        <p class="subtitle challenge-verdict">
+            {% if not mine %}{{ get_text('challenge_score_not_saved') }}
+            {% elif total == 1 %}{{ get_text('challenge_rank_alone' if sender else 'challenge_rank_alone_back') }}
+            {% elif mine.rank == 1 %}{{ get_text('challenge_rank_first') }}
+            {% else %}{{ get_text('challenge_rank_other').format(mine.rank, total) }}{% endif %}
+        </p>
+        {% if best_kept %}<p class="description challenge-best-kept">{{ best_kept }}</p>{% endif %}
+        {% elif view == 'ready' %}
+        <h1 class="title challenge-title">{{ get_text('challenge_ready_title') }}</h1>
+        <p class="description">{{ get_text('challenge_ready_body') }}</p>
+        {% else %}
+        <h1 class="title challenge-title">{{ invite_headline }}</h1>
+        {% endif %}
+
+        {% if rows %}
+        <table class="challenge-scoreboard">
+            <caption>{{ get_text('challenge_scoreboard') }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">{{ get_text('challenge_col_player') }}</th>
+                    <th scope="col">{{ get_text('challenge_col_score') }}</th>
+                    <th scope="col">{{ get_text('challenge_col_time') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                {% set is_you = row.mine %}
+                <tr{% if is_you %} class="is-you"{% endif %}>
+                    <td>{{ row.rank }}</td>
+                    {# <bdi>: a name in one script must not reorder the row
+                       around it in another (an Arabic name on an English
+                       page, or the reverse). #}
+                    <td><bdi>{{ row.name or get_text('challenge_anonymous') }}</bdi>{% if is_you %} <span class="challenge-you">{{ get_text('challenge_you') }}</span>{% endif %}</td>
+                    <td>{{ row.score }}/{{ questions }}</td>
+                    <td><bdi>{{ row.time }}</bdi></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {# The share box, on the sender's page and a result only: the link is
+           the invitation, and has nothing to send. Captured so it can come
+           first: a creator who pressed Share on the create form came for the
+           link, not to start playing. data-share-focus puts the keyboard on
+           its button, one tap from the phone's share sheet (which no page may
+           open without that tap). After a round the link is still the
+           challenge, now carrying the scores: whoever opens it plays the same
+           questions. Only someone who was sent it sends it "back". #}
+        {% set share_title = get_text('challenge_share_title_result') if view == 'finished' and not sender else get_text('challenge_share_title_invite') %}
+        {% set share_box %}
+        {% if view in ('ready', 'finished') %}
+        <div class="preset-share challenge-share" data-share-text="{{ share_text }}"{% if share_first %} data-share-focus{% endif %}>
+            <h2 class="preset-share-title">{{ share_title }}</h2>
+            <div class="preset-share-row">
+                <input type="text" id="challenge-share-url" class="preset-share-url" readonly
+                       value="{{ share_url }}"
+                       aria-label="{{ share_title }}">
+                <button type="button" id="challenge-share-native" class="btn btn-primary preset-share-copy" hidden>
+                    {{ get_text('challenge_share_btn') }}
+                </button>
+                <button type="button" id="challenge-share-copy" class="btn btn-primary preset-share-copy"
+                        data-i18n-copy="{{ get_text('preset_share_copy') }}"
+                        data-i18n-copied="{{ get_text('preset_share_copied') }}">
+                    {{ get_text('preset_share_copy') }}
+                </button>
+            </div>
+            {% if view == 'finished' %}
+            <p class="preset-share-hint">{{ get_text('challenge_share_hint_own').format(questions) if sender else get_text('challenge_share_hint_result') }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endset %}
+        {% if share_first %}{{ share_box }}{% endif %}
+
+        {% if view in ('ready', 'invite') %}
+        {# Listening starts through quiz_listen.js's pjax: the submitting click
+           keeps the page "user activated", which is what lets the first clip
+           play on its own. data-listen-back anchors browser Back here rather
+           than on the language's listening overview. #}
+        <form method="POST" action="{{ url_for('challenge_start', token=token) }}" class="challenge-start"
+              {% if ch.mode == 'audio' %}data-listen-pjax data-listen-back="{{ request.path }}"{% endif %}>
+            <label class="preset-share-label" for="challenge-name">{{ get_text('challenge_field_name') }}</label>
+            <input type="text" id="challenge-name" name="name" value="{{ name }}"
+                   maxlength="{{ name_max }}" autocomplete="off"
+                   placeholder="{{ get_text('challenge_name_placeholder') }}"
+                   class="preset-share-range-input challenge-name-input">
+            {% if name %}<input type="hidden" name="name_offered" value="1">{% endif %}
+            {% if view == 'ready' %}<input type="hidden" name="sender" value="1">{% endif %}
+            <button type="submit" class="btn btn-primary challenge-submit">
+                {% if view == 'ready' %}<span aria-hidden="true">▶</span> {{ get_text('challenge_go_btn') }}{% elif rematch %}{{ get_text('challenge_rematch_btn') }}{% else %}{{ get_text('challenge_accept_btn') }}{% endif %}
+            </button>
+        </form>
+        {% endif %}
+
+        {% if not share_first %}{{ share_box }}{% endif %}
+
+        {% if verb_view %}
+        {# The creator's verbs, which are the point of a verb challenge: a
+           friend sees what they are learning and can take any of it on. Adding
+           needs an account; playing doesn't. Below Start and the link, so a
+           ten-verb list never pushes the round's own action off a phone. #}
+        <section class="preset-share challenge-verbs" aria-labelledby="challenge-verbs-title">
+            <h2 class="preset-share-title" id="challenge-verbs-title">{{ get_text('challenge_verbs_title') }}</h2>
+            <p class="challenge-verbs-tenses">{{ get_text('challenge_field_tenses') }}: {{ verb_view.tenses|join(', ') }}</p>
+            <ul class="challenge-verb-list">
+                {% for verb in verb_view.verbs %}
+                <li class="challenge-verb{% if verb.owned %} is-owned{% endif %}">
+                    <span class="challenge-verb-name" lang="{{ ch.lang }}">{{ verb.label }}</span>
+                    {% if verb.owned %}
+                    <span class="challenge-verb-owned">✓ {{ get_text('challenge_verbs_owned') }}</span>
+                    {% elif verb_view.logged_in %}
+                    <form method="POST" action="{{ url_for('challenge_add_verbs', token=token) }}" class="challenge-verb-add">
+                        <input type="hidden" name="verb" value="{{ verb.infinitive }}">
+                        {% if view == 'ready' %}<input type="hidden" name="back" value="share">{% elif view == 'finished' %}<input type="hidden" name="back" value="result">{% endif %}
+                        <button type="submit" class="btn btn-secondary challenge-verb-add-btn"
+                                aria-label="{{ get_text('challenge_verbs_add_one').format(verb.label) }}">+ {{ get_text('challenge_verbs_add_btn') }}</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% if verb_view.logged_in %}
+            {% if verb_view.missing > 1 %}
+            <form method="POST" action="{{ url_for('challenge_add_verbs', token=token) }}" class="challenge-verbs-all">
+                {% if view == 'ready' %}<input type="hidden" name="back" value="share">{% elif view == 'finished' %}<input type="hidden" name="back" value="result">{% endif %}
+                <button type="submit" class="btn btn-secondary">{{ get_text('challenge_verbs_add_all').format(verb_view.missing) }}</button>
+            </form>
+            {% elif verb_view.missing == 0 %}
+            <p class="preset-share-hint">
+                {{ get_text('challenge_verbs_all_owned') }}
+                <a href="{{ url_for('conjugate', lang_code=ch.lang) }}">{{ get_text('challenge_verbs_practice_link') }}</a>
+            </p>
+            {% endif %}
+            {% else %}
+            <p class="preset-share-hint">
+                {{ get_text('challenge_verbs_login_to_add') }}
+                <a href="{{ url_for('challenge_login', next=request.path) }}">{{ get_text('nav_login') }}</a>
+            </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+
+        {% if view == 'finished' %}
+        {# One way on after a round: the create form, set to this same kind
+           of round, with Start and Share at its top (_new_challenge_url()).
+           Not on the link, which is for accepting, nor on the sender's page. #}
+        <div class="challenge-actions">
+            <a href="{{ new_challenge_url }}" class="btn btn-secondary">{{ get_text('challenge_new_btn') }}</a>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/challenge.js') }}"></script>
+{% if not invalid and ch.mode == 'audio' and view in ('ready', 'invite') %}
+<script src="{{ url_for('static', filename='js/quiz_listen.js') }}"></script>
+{% endif %}
+{% endblock %}

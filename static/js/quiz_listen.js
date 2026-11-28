@@ -103,13 +103,22 @@
     }
 
     // ---- pjax ----
+    // Where browser Back should lead once the quiz is entered, when the form
+    // that entered it says (data-listen-back); otherwise the overview.
+    var backUrl = null;
+
     function swapFrom(html, url) {
         var doc = new DOMParser().parseFromString(html, 'text/html');
         // Anything that isn't a listening-quiz page (e.g. the results page) is a
         // terminal navigation. Use replace() so the finished listening entry is
         // discarded — otherwise "back" from results would return to a stale
-        // (already completed) listening page.
-        if (!doc.querySelector('.quiz-page')) {
+        // (already completed) listening page. A listening page is one with a
+        // clip: the other quizzes are .quiz-page too, and should one ever come
+        // back here it must load for real, scripts and all, rather than be
+        // swapped into this document. (A friend challenge's "Surprise me" is
+        // resolved by challenge.js before it submits, so a numbers round never
+        // takes this path; this is the net under that.)
+        if (!doc.querySelector('.quiz-page') || !doc.getElementById('audio-el')) {
             window.location.replace(url);
             return;
         }
@@ -136,8 +145,9 @@
                     // listening overview or the results page). Anchor the back
                     // button to the overview, which is where the round was
                     // configured, so "back" is consistent no matter where
-                    // listening was launched from.
-                    var overviewUrl = newPath.replace(/\/listen(\/.*)?$/, '/listening');
+                    // listening was launched from. A form may name its own
+                    // anchor instead (a friend challenge returns to its page).
+                    var overviewUrl = backUrl || newPath.replace(/\/listen(\/.*)?$/, '/listening');
                     if (overviewUrl !== curPath) {
                         history.replaceState(null, '', overviewUrl);
                     }
@@ -186,15 +196,32 @@
         }
     });
 
+    // Which button submitted a form: e.submitter, where the browser has it
+    // (null for a submit no button made). Safari before 15.4 has no such
+    // property, and without the button's name Reveal and Next would be posted
+    // as answers, and the challenge form's Start as neither Start nor Share;
+    // so there the last submit button clicked stands in (Enter in a field
+    // clicks the form's first one too). Captured on the document, ahead of
+    // any handler that might stop the click.
+    var clickedSubmit = null;
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('button, input[type="submit"]');
+        clickedSubmit = btn && btn.type === 'submit' ? btn : null;
+    }, true);
+
     container.addEventListener('submit', function (e) {
         var form = e.target;
+        var submitter = 'submitter' in e ? e.submitter
+            : (clickedSubmit && clickedSubmit.form === form ? clickedSubmit : null);
+        clickedSubmit = null;
         if (!form.matches || !form.matches('[data-listen-pjax]')) return;
+        if (form.hasAttribute('data-listen-back')) backUrl = form.getAttribute('data-listen-back');
         if (form.id === 'answerForm') {
             var el = input();
             if (!el || !el.value) { e.preventDefault(); return; }
         }
         e.preventDefault();
-        pjaxSubmit(form, e.submitter);
+        pjaxSubmit(form, submitter);
     });
 
     document.addEventListener('keydown', function (e) {

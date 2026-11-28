@@ -33,6 +33,8 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
+import challenge
+import click
 import hashlib
 import jinja2
 import logging
@@ -47,9 +49,22 @@ import threading
 import time
 from pathlib import Path
 
-from models import Card, ConjugationStat, DeckShare, PollResponse, VerbCard, db
+from sqlalchemy import and_, or_
+from sqlalchemy.exc import IntegrityError
+
+from models import (
+    Card,
+    ChallengeResult,
+    ConjugationStat,
+    DeckShare,
+    PollResponse,
+    VerbCard,
+    db,
+)
 from config import (
     QUESTIONS_PER_QUIZ,
+    CHALLENGE_MAX_SCORES,
+    CHALLENGE_SCORE_DAYS,
     DEFAULT_UI_LANGUAGE,
     LOGIN_SESSION_DAYS,
     SITE_URL,
@@ -231,6 +246,37 @@ def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if "user" not in session:
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def _verb_challenge_running(lang_code: str | None = None) -> bool:
+    """Whether the session's conjugation drill is a friend's verb challenge.
+
+    With `lang_code`, only one started for that language counts, the same
+    scoping _get_conjugate_state() applies.
+    """
+    state = session.get("conjugate_practice")
+    if not state or not state.get("challenge"):
+        return False
+    return lang_code is None or state.get("lang", DEFAULT_CONJUGATION_LANG) == lang_code
+
+
+def login_or_verb_challenge_required(view):
+    """login_required, except while a friend's verb challenge is being played.
+
+    A verb challenge runs on the conjugation drill's routes, and like every
+    challenge it needs no account to play: the verbs come from its token, not
+    from the player's list. Every other conjugation drill still needs a login.
+    """
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user" not in session and not _verb_challenge_running(
+            kwargs.get("lang_code")
+        ):
             return redirect(url_for("login"))
         return view(*args, **kwargs)
 
@@ -458,6 +504,8 @@ def set_cache_headers(response):
         or path in ("/login", "/callback", "/logout")
         or path.startswith("/cards")
         or "/conjugate" in path
+        # Who is looking decides what a challenge page says ("you scored…").
+        or path.startswith("/challenge")
     ):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
@@ -710,6 +758,20 @@ def _session_number_system(lang_code, requested=None):
     return resolved
 
 
+def _drill_number_system(lang_code):
+    """The numeral system the running drill asks its questions in.
+
+    The session's, except during a friend challenge, which always runs on the
+    language's default (it is the same round for everyone) and so never writes
+    over the person's own choice: there is nothing to put back however the
+    challenge ends, finished, abandoned for another drill or replaced by a
+    second challenge.
+    """
+    if session.get("challenge"):
+        return resolve_number_system(lang_code, None)
+    return resolve_number_system(lang_code, session.get("number_system"))
+
+
 def _session_usage_weights(lang_code, system_key=None):
     """How often each number of the active deck is worth asking, or None.
 
@@ -717,7 +779,7 @@ def _session_usage_weights(lang_code, system_key=None):
     every other language draws exactly as it did before.
     """
     if system_key is None:
-        system_key = session.get("number_system")
+        system_key = _drill_number_system(lang_code)
     return get_number_usage_weights(
         lang_code, resolve_number_system(lang_code, system_key)
     )
@@ -847,7 +909,7 @@ def _wrong_system_flash(lang_code, number, user_answer):
     """Flash text when the answer is right in the language's *other* system."""
     if not user_answer:
         return None
-    active = session.get("number_system") or get_default_number_system(lang_code)
+    active = _drill_number_system(lang_code)
     for system_key, word in _other_system_answer(lang_code, number, active):
         if quiz_logic.check_answer_advanced(user_answer, word):
             return get_text(
@@ -870,7 +932,7 @@ def _notes_for(lang_code, numbers, when):
     """
     return get_notes(
         lang_code,
-        system=session.get("number_system"),
+        system=_drill_number_system(lang_code),
         numbers=numbers,
         when=when,
         ui_lang=session.get("language", DEFAULT_UI_LANGUAGE),
@@ -1115,10 +1177,15 @@ def _seed_quiz_session(
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     saved_user = session.get("user")
     saved_system = session.get("number_system")
+    # The challenges this person created or played, and the name they gave:
+    # like the login, it describes who they are, not where they are in a round.
+    saved_challenge_me = session.get("challenge_me")
     session.clear()
     session["language"] = ui_language
     if saved_user is not None:
         session["user"] = saved_user
+    if saved_challenge_me is not None:
+        session["challenge_me"] = saved_challenge_me
     session["learn_language"] = lang_code
     session["number_system"] = resolve_number_system(
         lang_code, system if system is not None else saved_system
@@ -1148,7 +1215,7 @@ def _count_answer():
             session.get("quiz_run"),
             session.get("learn_language"),
             session.get("mode"),
-            session.get("number_system"),
+            _drill_number_system(session.get("learn_language")),
             session.get("quiz_source", quiz_stats.SOURCE_FORM),
         )
 
@@ -1161,14 +1228,66 @@ def _session_numbers(lang_code):
     question of the drill goes through here, so question 2 stays in the
     teacher's system and range just like question 1.
     """
-    numbers = get_language_numbers(
-        lang_code, resolve_number_system(lang_code, session.get("number_system"))
-    )
+    numbers = get_language_numbers(lang_code, _drill_number_system(lang_code))
     num_range = session.get("number_range")
     if not num_range or len(num_range) != 2:
         return numbers
     # Never hand back an empty deck: a stale range must not blank the quiz.
     return _numbers_in_range(numbers, (num_range[0], num_range[1])) or numbers
+
+
+def _next_question(lang_code, deck):
+    """(number, word) for the running drill's next question.
+
+    A friend challenge fixes its numbers in advance, so both players get the
+    same round; every other drill draws at random exactly as it always has.
+    A planned number this drill's deck doesn't have (a deck changed under a
+    running round) gets a random stand-in rather than breaking the round.
+    """
+    asked_numbers = session.get("asked_numbers", [])
+    exclude = asked_numbers
+    magnitude_level = session.get("magnitude_level", 1)
+    running = session.get("challenge")
+    if running:
+        planned = _challenge_numbers(running)
+        # Counted by answers, not by questions shown: a question cleared
+        # without one (an empty submission, Listening's Next before a reveal)
+        # comes back, rather than letting a player pass the planned numbers by.
+        index = session.get("total_questions", 0)
+        if index < len(planned) and planned[index] in deck:
+            return planned[index], deck[planned[index]]
+        # The stand-in is drawn at the challenge's level, not this player's
+        # dial, and is never a number still to come.
+        exclude = [*asked_numbers, *planned[index + 1 :]]
+        magnitude_level = challenge.CHALLENGE_MAGNITUDE.get(session.get("mode"), 1)
+    return quiz_logic.get_random_question(
+        deck,
+        exclude,
+        magnitude_level=magnitude_level,
+        usage_weights=_session_usage_weights(lang_code),
+    )
+
+
+def _challenge_numbers(running):
+    """The running challenge's numbers, worked out again from its token.
+
+    Not kept in the session: the cookie is signed, not encrypted, so a list
+    there would be every answer of a Listening round in one place. Drawn from
+    _challenge_deck(), which reads nothing from this player's session, so it is
+    the round everyone else plays.
+    """
+    ch = challenge.Challenge.decode(running.get("token"), app.secret_key)
+    _, deck = _challenge_deck(ch)
+    if deck is None:
+        return []
+    return challenge.draw_numbers(deck, ch.seed, ch.mode)
+
+
+def _question_options(deck, number, correct_answer):
+    """Easy mode's four options: seeded in a challenge, so both players see one."""
+    running = session.get("challenge")
+    rng = challenge.options_rng(running["seed"], number) if running else None
+    return quiz_logic.generate_multiple_choice(deck, number, correct_answer, rng=rng)
 
 
 @app.route("/<lang_code>/numbers")
@@ -1937,16 +2056,10 @@ def quiz_easy(lang_code):
         options = session["current_options"]
     else:
         # Generate new question
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, numbers)
 
         # Generate multiple choice options
-        options = quiz_logic.generate_multiple_choice(numbers, number, correct_answer)
+        options = _question_options(numbers, number, correct_answer)
 
         # Store in session
         session["current_number"] = number
@@ -2081,13 +2194,7 @@ def quiz_advanced(lang_code):
         correct_answer = session["correct_answer"]
     else:
         # Generate new question
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, numbers)
 
         # Store in session
         session["current_number"] = number
@@ -2242,13 +2349,7 @@ def quiz_hardcore(lang_code):
         correct_answer = session["correct_answer"]
     else:
         # Generate new question
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, numbers)
 
         # Store in session
         session["current_number"] = number
@@ -2505,13 +2606,7 @@ def listen_quiz(lang_code):
         number = session["current_number"]
         correct_answer = session["correct_answer"]
     else:
-        asked_numbers = session.get("asked_numbers", [])
-        number, correct_answer = quiz_logic.get_random_question(
-            playable_numbers,
-            asked_numbers,
-            magnitude_level=session.get("magnitude_level", 1),
-            usage_weights=_session_usage_weights(lang_code),
-        )
+        number, correct_answer = _next_question(lang_code, playable_numbers)
         session["current_number"] = number
         session["correct_answer"] = correct_answer
         if "asked_numbers" not in session:
@@ -2574,6 +2669,11 @@ def results(lang_code):
     # Validate language
     if not is_language_ready(lang_code) or session.get("learn_language") != lang_code:
         return redirect(url_for("index"))
+
+    # A friend challenge ends on its own page, with a link to send back. Both
+    # the last answer (through _results_redirect) and the Exit button land here.
+    if session.get("challenge"):
+        return _finish_challenge()
 
     score = session.get("score", 0)
     attempted = session.get("total_questions", 0)
@@ -2640,18 +2740,1242 @@ def restart():
     """Restart the quiz."""
     ui_language = session.get("language", DEFAULT_UI_LANGUAGE)
     saved_user = session.get("user")
+    # Who this person is, like the login: the challenges they made and played,
+    # their name, and the value their scores are kept under, without which
+    # playing a challenge again would put a second score on its board.
+    saved_challenge_me = session.get("challenge_me")
     session.clear()
     session["language"] = ui_language
     if saved_user is not None:
         session["user"] = saved_user
+    if saved_challenge_me is not None:
+        session["challenge_me"] = saved_challenge_me
     return redirect(url_for("index"))
+
+
+# ===== Friend challenges =====
+# Someone picks a language and a kind of round and sends the link. Whoever
+# opens it plays the same ten questions, and their score goes on the
+# challenge's scoreboard, which every copy of the link shows. The round is in
+# the signed token (challenge.py), which never changes and carries no scores;
+# the scores are ChallengeResult rows under its seed, one per player, deleted
+# CHALLENGE_SCORE_DAYS after they were played (the privacy policy says so).
+# A numbers round runs on the ordinary quiz routes, which take their numbers
+# from session["challenge"] via _next_question(); a verb round on the
+# conjugation drill's.
+
+# What GoatCounter is told a challenge page is called. Its own path and its
+# title ("Alex scored 8/10…") carry the players' names, which have no business
+# in an analytics dashboard.
+CHALLENGE_ANALYTICS_PATH = "/challenge/link"
+CHALLENGE_ANALYTICS_TITLE = "Challenge"
+
+
+def _challenge_listening_deck(lang_code):
+    """(system, playable numbers) for a listening challenge in this language.
+
+    The default system's recorded numbers. Not _listening_deck(): that follows,
+    and writes, the session's numeral system, and a challenge must neither
+    depend on one player's settings nor change them.
+    """
+    system = get_default_number_system(lang_code)
+    if lang_code not in get_languages_with_audio_mode() or not _system_has_audio(
+        lang_code, system
+    ):
+        return system, {}
+    return system, _playable_audio_numbers(
+        lang_code, get_language_numbers(lang_code, system)
+    )
+
+
+def _challenge_has_listening(lang_code):
+    """Whether this language has enough recorded numbers for a listening round."""
+    try:
+        _, playable = _challenge_listening_deck(lang_code)
+    except ValueError:
+        return False
+    return len(playable) >= QUESTIONS_PER_QUIZ
+
+
+def _challenge_languages():
+    """{code: {name, flag, listening, conj, verbs}} for every language a challenge can use.
+
+    `conj` says whether the language has verb practice at all, and `verbs` how
+    many verbs the person viewing has in it (None when nobody is logged in): a
+    verb challenge is made from the creator's own list.
+    """
+    conj_langs = set(get_languages_with_conjugation())
+    verb_counts = None
+    if "user" in session:
+        verb_counts = dict(
+            db.session.query(VerbCard.lang, db.func.count(VerbCard.id))
+            .filter_by(user_sub=_current_user_sub())
+            .group_by(VerbCard.lang)
+            .all()
+        )
+    languages = {}
+    for code, info in AVAILABLE_LANGUAGES.items():
+        if not info.get("ready"):
+            continue
+        conj = code in conj_langs
+        languages[code] = {
+            "name": get_text(f"lang_{code}_name"),
+            "flag": info.get("flag", ""),
+            "listening": _challenge_has_listening(code),
+            "conj": conj,
+            "verbs": verb_counts.get(code, 0)
+            if conj and verb_counts is not None
+            else None,
+        }
+    return languages
+
+
+def _challenge_deck(ch):
+    """(system, deck) a challenge draws from, or (None, None) if it can't run now.
+
+    Always the default numeral system, or the listening deck: a challenge is
+    the same round for everyone, so it can't depend on one player's settings.
+    """
+    if ch is None or ch.is_verbs or not is_language_ready(ch.lang):
+        return None, None
+    try:
+        if ch.mode == "audio":
+            system, deck = _challenge_listening_deck(ch.lang)
+        else:
+            system = resolve_number_system(ch.lang, None)
+            deck = get_language_numbers(ch.lang, system)
+    except ValueError:
+        return None, None
+    if len(deck) < QUESTIONS_PER_QUIZ:
+        return None, None
+    return system, deck
+
+
+def _challenge_playable(ch):
+    """Whether a decoded challenge (or None) can be played right now."""
+    if ch is not None and ch.is_verbs:
+        return _verb_challenge_plan(ch) is not None
+    return _challenge_deck(ch)[1] is not None
+
+
+def _challenge_type_label(ch):
+    if ch.mode == "audio":
+        return get_text("challenge_type_listening")
+    kind = "challenge_type_verbs" if ch.is_verbs else "challenge_type_numbers"
+    return f"{get_text(kind)} · {get_text('mode_' + ch.mode)}"
+
+
+# ----- Verb challenges -----
+# The creator's verbs travel in the token; the round runs on the conjugation
+# drill's routes (session["conjugate_practice"] with a "challenge" entry), which
+# take each question from _verb_challenge_plan() instead of the player's list.
+
+
+def _verb_challenge_persons(lang_code, include_optional):
+    """The person slots a verb challenge asks: all but the optional one, unless included."""
+    optional = conj_optional_person_index(lang_code)
+    return [
+        p["index"]
+        for p in conj_persons(lang_code)
+        if p["index"] != optional or include_optional
+    ]
+
+
+def _verb_challenge_plan(ch):
+    """A verb challenge's questions as (infinitive, tense, person), or None.
+
+    None when it can't be played now: a language without verb practice, a
+    tense or verb the pool no longer has, or fewer cells than a full round.
+    Worked out again from the token on every question, like the numbers of a
+    numbers challenge, so the session never holds the list.
+    """
+    if ch is None or not ch.is_verbs:
+        return None
+    if ch.lang not in get_languages_with_conjugation():
+        return None
+    pool = _conj_pool(ch.lang)
+    known = conj_tense_keys(ch.lang)
+    if any(t not in known for t in ch.tenses):
+        return None
+    if not all(pool.verb_exists(v) for v in ch.verbs):
+        return None
+    plan = challenge.draw_verb_questions(
+        ch.verbs,
+        ch.tenses,
+        _verb_challenge_persons(ch.lang, ch.optional_person),
+        lambda verb, tense, person: (
+            _form_available(ch.lang, verb, tense, person) is not None
+        ),
+        ch.seed,
+    )
+    return plan if len(plan) >= QUESTIONS_PER_QUIZ else None
+
+
+def _challenge_verb_choice(lang_code, tenses, persons):
+    """Up to MAX_VERBS of the current user's verbs to build a challenge from.
+
+    Only verbs that have something to ask in the chosen tenses. A list longer
+    than a round is sampled the way Prioritized practice samples it, so the
+    verbs a friend gets are the ones the creator is still working on: that is
+    the learning progress a verb challenge shares. Returned in alphabetical
+    order, which is how the challenge page lists them.
+    """
+    pool = _conj_pool(lang_code)
+    candidates, seen = [], set()
+    for verb in _user_verbs(lang_code):
+        infinitive = _normalize_infinitive(verb.infinitive, lang_code)
+        if infinitive in seen or not pool.verb_exists(infinitive):
+            continue
+        if not any(
+            _form_available(lang_code, infinitive, tense, person) is not None
+            for tense in tenses
+            for person in persons
+        ):
+            continue
+        seen.add(infinitive)
+        candidates.append((verb, infinitive))
+    picked = []
+    while candidates and len(picked) < challenge.MAX_VERBS:
+        chosen = _pick_weighted_card([verb for verb, _ in candidates])
+        index = next(i for i, (verb, _) in enumerate(candidates) if verb is chosen)
+        picked.append(candidates.pop(index)[1])
+    return sorted(picked)
+
+
+def _new_verb_challenge(lang_code, name):
+    """The verb challenge the create form asked for, or a redirect saying why not.
+
+    Errors go back to the create form with verbs selected rather than falling
+    back to a numbers round: what's missing (a login, verbs, a tense) is
+    something only the creator can supply.
+    """
+    back = redirect(url_for("challenge_new", lang=lang_code, kind=challenge.KIND_VERBS))
+    if lang_code not in get_languages_with_conjugation():
+        flash(get_text("challenge_flash_verbs_unavailable"), "error")
+        return back
+    if "user" not in session:
+        flash(get_text("challenge_flash_verbs_login"), "info")
+        return back
+    # The create form names each language's checklist apart (Spanish and
+    # Italian share "indicativo/presente"); the conjugate page and a rematch
+    # send plain `tenses`. Kept in the language's own order.
+    asked = set(
+        request.form.getlist(f"tenses_{lang_code}") or request.form.getlist("tenses")
+    )
+    tenses = [t["key"] for t in conj_tenses(lang_code) if t["key"] in asked]
+    if not tenses:
+        flash(get_text("conjugate_flash_need_tenses"), "info")
+        return back
+    optional = conj_optional_person_index(lang_code) is not None and (
+        request.form.get(f"include_vosotros_{lang_code}")
+        or request.form.get("include_vosotros")
+    ) in ("1", "true", "on")
+    mode = request.form.get("difficulty")
+    if mode not in challenge.VERB_MODES:
+        mode = challenge.DEFAULT_VERB_MODE
+    persons = _verb_challenge_persons(lang_code, optional)
+    verbs = _challenge_verb_choice(lang_code, tenses, persons)
+    if not verbs:
+        flash(get_text("challenge_flash_verbs_none"), "info")
+        return back
+    ch = challenge.Challenge(
+        lang_code,
+        mode,
+        challenge.new_seed(),
+        host=name,
+        verbs=tuple(verbs),
+        tenses=tuple(tenses),
+        optional_person=optional,
+    )
+    if _verb_challenge_plan(ch) is None:
+        flash(
+            get_text("challenge_flash_verbs_too_few").format(QUESTIONS_PER_QUIZ), "info"
+        )
+        return back
+    return ch
+
+
+def _verb_challenge_view(ch):
+    """What the challenge page shows of a verb challenge: its verbs and tenses.
+
+    Each verb says whether the viewer already has it, so the ones they lack
+    can be added to their own list from here.
+    """
+    owned = set()
+    logged_in = "user" in session
+    if logged_in:
+        owned = {_normalize_infinitive(v.infinitive) for v in _user_verbs(ch.lang)}
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    verbs = [
+        {
+            "infinitive": verb,
+            "label": conj_citation_form(ch.lang, verb),
+            "owned": _normalize_infinitive(verb) in owned,
+        }
+        for verb in ch.verbs
+    ]
+    return {
+        "verbs": verbs,
+        "tenses": [tense_label(ch.lang, t, ui_lang) for t in ch.tenses],
+        "logged_in": logged_in,
+        "missing": sum(1 for v in verbs if not v["owned"]),
+    }
+
+
+# A number drill's place in its round, which goes with a challenge's round.
+_CHALLENGE_ROUND_KEYS = (
+    "mode",
+    "current_number",
+    "correct_answer",
+    "current_options",
+    "current_revealed",
+    "show_perfect_splash",
+    "show_speed_splash",
+)
+
+
+def _drop_numbers_challenge():
+    """End a numbers challenge without scoring it, with its quiz state.
+
+    For a verb challenge starting over one left unfinished. The player's own
+    settings (language, numeral system, dial) stay, as a challenge never
+    changes them.
+    """
+    if session.pop("challenge", None) is None:
+        return
+    for key in _CHALLENGE_ROUND_KEYS + (
+        "score",
+        "total_questions",
+        "asked_numbers",
+        "number_range",
+        "quiz_start_time",
+        "quiz_run",
+        "quiz_source",
+    ):
+        session.pop(key, None)
+
+
+def _finish_challenge():
+    """Put the player's score on the challenge and show them the link to send.
+
+    Called from results() when the round is over, or cut short with Exit. The
+    quiz state goes, so Back can't resume a round whose score is already out.
+    """
+    running = session.pop("challenge", None) or {}
+    for key in _CHALLENGE_ROUND_KEYS:
+        session.pop(key, None)
+    if not session.get("total_questions"):
+        return _unplayed_challenge_redirect(running)
+    return _challenge_result_redirect(
+        running,
+        session.get("score", 0),
+        session.get("quiz_start_time"),
+    )
+
+
+def _finish_verb_challenge(state):
+    """The verb-challenge twin of _finish_challenge(), from the drill's results route.
+
+    The drill's state goes, so Back can't resume a round whose score is out.
+    """
+    session.pop("conjugate_practice", None)
+    running = state.get("challenge") or {}
+    if not state.get("total"):
+        return _unplayed_challenge_redirect(running)
+    # Hints are off in a challenge, so the score is whole; int() is a guard.
+    return _challenge_result_redirect(
+        running, int(state.get("score", 0)), state.get("started_at")
+    )
+
+
+def _unplayed_challenge_redirect(running):
+    """Exit before the first answer: back to the challenge, with nothing scored.
+
+    Nothing was played, so a 0/10 would be a score nobody earned, on the
+    scoreboard for everyone, and would mark the challenge played. Back to the
+    page the round was started from, the sender's or the link, as if it had
+    never begun.
+    """
+    token = running.get("token")
+    if not token:
+        return redirect(url_for("challenge_new"))
+    endpoint = "challenge_sender_page" if running.get("sender") else "challenge_page"
+    return redirect(url_for(endpoint, token=token))
+
+
+def _challenge_score_cutoff():
+    """Scores played before this are past CHALLENGE_SCORE_DAYS: gone.
+
+    Naive UTC, as the column is stored and as quiz_stats compares, so the
+    comparison means the same on SQLite and Postgres.
+    """
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    return now - timedelta(days=CHALLENGE_SCORE_DAYS)
+
+
+# A scoreboard's order: best score first, the faster time breaking a tie, and
+# equal ones in the order they were played (challenge.ranked() sorts the same).
+_CHALLENGE_BOARD_ORDER = (
+    ChallengeResult.score.desc(),
+    ChallengeResult.seconds.asc(),
+    ChallengeResult.id.asc(),
+)
+
+
+def _challenge_board(seed, mine=None):
+    """A challenge's scoreboard rows, and how many scores it holds.
+
+    The best SCOREBOARD_ROWS, plus the viewer's own (`mine`, its id) wherever
+    it ranks. Read on every view of every challenge page, so a link shows the
+    scores of everyone who played it, from whichever copy, whenever that copy
+    was made. The database sorts, limits and counts, so a page reads a dozen
+    rows however many the board holds. Rows past the retention period are
+    left out even before they are deleted.
+    """
+    current = ChallengeResult.query.filter(
+        ChallengeResult.seed == seed,
+        ChallengeResult.created_at >= _challenge_score_cutoff(),
+    )
+    top = current.order_by(*_CHALLENGE_BOARD_ORDER).limit(challenge.SCOREBOARD_ROWS)
+    top = top.all()
+    # Every score ranked above one of these is also among them, so their ranks
+    # (ties shared) come out right from this list alone.
+    rows = challenge.ranked(top, mine=mine)
+    if len(top) < challenge.SCOREBOARD_ROWS:
+        total = len(top)
+    else:
+        total = current.count()
+    if mine is not None and not any(row["mine"] for row in rows):
+        own = current.filter(ChallengeResult.id == mine).first()
+        if own is not None:
+            ahead = current.filter(
+                or_(
+                    ChallengeResult.score > own.score,
+                    and_(
+                        ChallengeResult.score == own.score,
+                        ChallengeResult.seconds < own.seconds,
+                    ),
+                )
+            ).count()
+            rows.append(challenge.board_row(own, ahead + 1, mine=True))
+    return rows, total
+
+
+def purge_expired_challenge_scores():
+    """Delete every challenge score older than CHALLENGE_SCORE_DAYS; return how many.
+
+    Challenge data is meant to be ephemeral, and the privacy policy says scores
+    are deleted after that many days. Three things keep that true, so none of
+    them has to be perfect: no page shows an older score (_challenge_board()),
+    every new score deletes the old ones on its way in, and requests to the
+    site run this at most once an hour per process (see below), so deletion
+    doesn't wait for anyone to play a challenge. `flask challenge-purge` runs
+    it by hand, or from a scheduler.
+    """
+    deleted = ChallengeResult.query.filter(
+        ChallengeResult.created_at < _challenge_score_cutoff()
+    ).delete(synchronize_session=False)
+    db.session.commit()
+    return deleted
+
+
+# When this process last purged expired scores (time.monotonic()), and how
+# often it may: a tenth of a second's work, so an hour's delay costs nothing
+# against a thirty-day promise.
+_last_challenge_purge = None
+CHALLENGE_PURGE_INTERVAL = 3600
+
+
+@app.before_request
+def purge_challenge_scores_now_and_then():
+    """Run purge_expired_challenge_scores() at most once an hour per process.
+
+    Any page request will do, so expired scores go even when nobody plays a
+    challenge for a month. Not a static file's: a stylesheet shouldn't wait on
+    the database, and every page brings a request of its own. A failure is
+    logged and the request goes on: a late purge must never cost someone the
+    page they asked for.
+    """
+    global _last_challenge_purge
+    if request.endpoint == "static":
+        return
+    now = time.monotonic()
+    interval = app.config.get("CHALLENGE_PURGE_INTERVAL", CHALLENGE_PURGE_INTERVAL)
+    if _last_challenge_purge is not None and now - _last_challenge_purge < interval:
+        return
+    _last_challenge_purge = now
+    try:
+        purge_expired_challenge_scores()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Purging expired challenge scores failed")
+
+
+@app.cli.command("challenge-purge")
+def challenge_purge_command():
+    """Delete friend-challenge scores older than CHALLENGE_SCORE_DAYS."""
+    deleted = purge_expired_challenge_scores()
+    click.echo(
+        f"Deleted {deleted} challenge score(s) older than {CHALLENGE_SCORE_DAYS} days."
+    )
+
+
+def _challenge_player(me, seed, name):
+    """The key of one player's row on one challenge's board (ChallengeResult.player).
+
+    A hash of the random value this browser's session keeps (`me["player"]`),
+    the seed and the name played under, so the same person under the same
+    name always lands on the same row, and on a different one on every other
+    challenge. Two people taking turns on one phone, each under their own
+    name, keep a row each. A private window starts afresh; this keeps a board
+    from filling up with one player's every round, not from being cheated.
+    """
+    raw = f"{me.get('player', '')}\0{seed}\0{challenge.clean_name(name).casefold()}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+
+def _note_challenge_player(me):
+    """Give the session's challenge memory its random value, once."""
+    if not me.get("player"):
+        me["player"] = secrets.token_urlsafe(12)
+
+
+def _record_challenge_score(seed, player, name, score, seconds):
+    """Put one finished round on the challenge's board; return its row's id.
+
+    One row per player (see _challenge_player()): playing again replaces
+    their earlier score only when the new one is better, a higher score or
+    the same in less time, and a last answer submitted twice (both requests
+    still see the round running) finds the row the first one made. A new
+    player on a full board pushes out the lowest of the others, so a board
+    holds at most CHALLENGE_MAX_SCORES. Expired rows go at the same time.
+    """
+    name = challenge.clean_name(name)
+    score = min(max(int(score), 0), QUESTIONS_PER_QUIZ)
+    seconds = min(max(int(seconds), 0), challenge.MAX_SECONDS)
+    ChallengeResult.query.filter(
+        ChallengeResult.created_at < _challenge_score_cutoff()
+    ).delete(synchronize_session=False)
+    row = ChallengeResult.query.filter_by(seed=seed, player=player).first()
+    if row is None:
+        row = ChallengeResult(
+            seed=seed, player=player, name=name, score=score, seconds=seconds
+        )
+        db.session.add(row)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # The same round, a moment earlier: its row is this player's.
+            db.session.rollback()
+            row = ChallengeResult.query.filter_by(seed=seed, player=player).one()
+        else:
+            _trim_challenge_board(seed, keep=row.id)
+            return row.id
+    if (score, -seconds) > (row.score, -row.seconds):
+        row.name = name
+        row.score = score
+        row.seconds = seconds
+        # Kept for CHALLENGE_SCORE_DAYS from when this score was played.
+        row.created_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return row.id
+
+
+def _trim_challenge_board(seed, keep):
+    """Past CHALLENGE_MAX_SCORES, delete the lowest of a board's scores but `keep`.
+
+    `keep` is the score just played, which stays even when it is the lowest:
+    its player is about to see their rank.
+    """
+    extra = [
+        row_id
+        for (row_id,) in db.session.query(ChallengeResult.id)
+        .filter(ChallengeResult.seed == seed, ChallengeResult.id != keep)
+        .order_by(*_CHALLENGE_BOARD_ORDER)
+        .offset(CHALLENGE_MAX_SCORES - 1)
+    ]
+    if extra:
+        ChallengeResult.query.filter(ChallengeResult.id.in_(extra)).delete(
+            synchronize_session=False
+        )
+        db.session.commit()
+
+
+def _challenge_result_redirect(running, score, started):
+    """Store a finished player's score and send them to their result page.
+
+    `running` is the round's session entry: the challenge's token, and whether
+    this player started it as its sender (sending it out) or from the link
+    (sending it back). The token isn't changed: the score goes on the
+    challenge's scoreboard, which every copy of the link shows.
+    """
+    token = running.get("token")
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if ch is None:
+        # The secret key changed mid-round, so the token no longer checks out.
+        flash(get_text("challenge_invalid_title"), "error")
+        return redirect(url_for("challenge_new"))
+
+    score = min(max(int(score), 0), QUESTIONS_PER_QUIZ)
+    seconds = int(time.time() - started) if started else challenge.MAX_SECONDS
+    seconds = min(max(seconds, 0), challenge.MAX_SECONDS)
+    me = dict(session.get("challenge_me") or {})
+    # Set when the round started; a round begun before that was so gets it now.
+    _note_challenge_player(me)
+    # The name the round was started under, not whatever challenge_me holds
+    # now: making another challenge mid-round replaces that one, and the
+    # player key is hashed from the name. A round begun before the name was
+    # kept with it falls back to challenge_me's.
+    name = running["name"] if "name" in running else me.get("name", "")
+    try:
+        result_id = _record_challenge_score(
+            ch.seed, _challenge_player(me, ch.seed, name), name, score, seconds
+        )
+    except Exception:
+        # The round is over either way: the player sees their score, with a
+        # line saying it isn't on the board, rather than an error page.
+        db.session.rollback()
+        app.logger.exception("Storing a challenge score failed")
+        result_id = None
+    session["challenge_me"] = challenge.remember_seed(me, "played", ch.seed)
+    session["challenge_last"] = {
+        "token": token,
+        "sender": bool(running.get("sender")),
+        "result": result_id,
+        # This round's own score, which the board shows only when it is the
+        # player's best (and only when it could be stored).
+        "score": score,
+        "seconds": seconds,
+    }
+    return redirect(url_for("challenge_result_page", token=token))
+
+
+@app.route("/challenge", methods=["GET", "POST"])
+def challenge_new():
+    """Pick a language and a kind of round; POST mints the challenge."""
+    languages = _challenge_languages()
+
+    if request.method == "POST":
+        lang_code = request.form.get("lang", "")
+        if lang_code not in languages:
+            flash(get_text("challenge_flash_pick_language"), "error")
+            return redirect(url_for("challenge_new"))
+
+        # A form without a name field (the conjugate page's "Challenge a
+        # friend") takes what the field would have shown: the name this person
+        # gave last time, or their login's first name. It lands on the
+        # challenge's page, which shows that name before anything is sent.
+        if "name" in request.form:
+            name = challenge.clean_name(request.form.get("name"))
+        else:
+            name = _challenge_name_default()[0]
+
+        kind = request.form.get("kind", challenge.KIND_NUMBERS)
+        if kind not in challenge.KINDS:
+            kind = challenge.KIND_NUMBERS
+        if kind == challenge.KIND_VERBS:
+            ch = _new_verb_challenge(lang_code, name)
+            if not isinstance(ch, challenge.Challenge):
+                return ch
+            return _mint_challenge(ch, name)
+
+        has_listening = languages[lang_code]["listening"]
+        if kind == challenge.KIND_SURPRISE:
+            # challenge.js makes the pick itself when Start is pressed, so that
+            # it knows whether the round needs the listening page's autoplay
+            # path; without JS, or for Share, it is made here.
+            picked = request.form.get("surprise_pick")
+            if picked not in (challenge.KIND_NUMBERS, challenge.KIND_LISTENING):
+                picked = secrets.choice(
+                    (challenge.KIND_NUMBERS, challenge.KIND_LISTENING)
+                )
+            kind = picked if has_listening else challenge.KIND_NUMBERS
+        elif kind == challenge.KIND_LISTENING and not has_listening:
+            flash(get_text("challenge_flash_no_listening"), "info")
+            kind = challenge.KIND_NUMBERS
+
+        if kind == challenge.KIND_LISTENING:
+            mode = "audio"
+        else:
+            mode = request.form.get("difficulty")
+            if mode not in challenge.NUMBER_MODES:
+                mode = challenge.DEFAULT_NUMBER_MODE
+
+        ch = challenge.Challenge(lang_code, mode, challenge.new_seed(), host=name)
+        return _mint_challenge(ch, name)
+
+    # A language named in the URL ("New challenge" on a French challenge's
+    # page) beats the defaults the browser remembers; one taken from the
+    # session doesn't. challenge.js reads the difference from the form. The
+    # same goes for a kind ("Challenge a friend" links ask for verbs). With
+    # none asked for, and nothing remembered in the browser, it's Surprise me.
+    lang_explicit = request.args.get("lang") in languages
+    selected = request.args.get("lang") or session.get("learn_language")
+    if selected not in languages:
+        selected = "es" if "es" in languages else next(iter(languages))
+    kind_explicit = request.args.get("kind") in challenge.KINDS
+    selected_kind = request.args.get("kind") if kind_explicit else None
+    if selected_kind == challenge.KIND_VERBS and not languages[selected]["verbs"]:
+        selected_kind = None
+    if (
+        selected_kind == challenge.KIND_LISTENING
+        and not languages[selected]["listening"]
+    ):
+        selected_kind = None
+    # A difficulty, and for verbs the tenses, likewise: "New challenge" on a
+    # challenge's page (_new_challenge_url()) asks for the same kind of round
+    # again, which the form then shows ready to Start or Share.
+    selected_difficulty = request.args.get("difficulty")
+    difficulty_explicit = selected_difficulty in challenge.NUMBER_MODES
+    if not difficulty_explicit:
+        selected_difficulty = challenge.DEFAULT_NUMBER_MODE
+    elif selected_kind == challenge.KIND_VERBS and selected_difficulty == "easy":
+        selected_difficulty = challenge.DEFAULT_NUMBER_MODE
+    asked_tenses = set(request.args.getlist("tenses"))
+    tenses_explicit = selected_kind == challenge.KIND_VERBS and any(
+        t["key"] in asked_tenses for t in conj_tenses(selected)
+    )
+    ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
+    name, name_suggested = _challenge_name_default()
+    verb_settings = {
+        code: {
+            "tenses": [
+                {
+                    "key": t["key"],
+                    "label": tense_label(code, t["key"], ui_lang),
+                    "checked": (
+                        t["key"] in asked_tenses
+                        if tenses_explicit and code == selected
+                        else t.get("default_on", False)
+                    ),
+                }
+                for t in conj_tenses(code)
+            ],
+            "has_optional": conj_optional_person_index(code) is not None,
+            "optional_on": (
+                tenses_explicit
+                and code == selected
+                and request.args.get("vosotros") == "1"
+            ),
+            "conjugate_url": url_for("conjugate", lang_code=code),
+        }
+        for code in languages
+        if languages[code]["conj"]
+    }
+    return render_template(
+        "challenge_new.html",
+        languages=languages,
+        selected_lang=selected,
+        lang_explicit=lang_explicit,
+        selected_kind=selected_kind or challenge.KIND_SURPRISE,
+        kind_explicit=kind_explicit and selected_kind is not None,
+        number_modes=challenge.NUMBER_MODES,
+        selected_difficulty=selected_difficulty,
+        difficulty_explicit=difficulty_explicit,
+        tenses_explicit=tenses_explicit,
+        verb_settings=verb_settings,
+        logged_in="user" in session,
+        login_url=url_for("challenge_login", next=_challenge_form_return()),
+        name=name,
+        name_suggested=name_suggested,
+        login_name=_login_first_name(),
+        name_max=challenge.NAME_MAX,
+        questions=QUESTIONS_PER_QUIZ,
+        get_text=get_text,
+    )
+
+
+def _login_first_name():
+    """The first name of whoever is logged in, or "" when there is none to use.
+
+    `given_name` where the identity provider sends one (Google does), else the
+    first word of `name`. A login by email and password has the address as its
+    name, and an address is not a name to put on a link someone else opens.
+    """
+    user = session.get("user") or {}
+    given = user.get("given_name")
+    if isinstance(given, str) and given.strip() and "@" not in given:
+        return challenge.clean_name(given)
+    name = user.get("name")
+    if isinstance(name, str) and name.strip() and "@" not in name:
+        return challenge.clean_name(name.split()[0])
+    return ""
+
+
+def _challenge_name_default():
+    """What a challenge's name field starts with, and whether it is a guess.
+
+    The name this person gave last; failing that, the first name from their
+    login. The field shows it, so nothing goes on a link that wasn't on screen
+    first. Someone who empties a field that showed a name is remembered as
+    wanting none (`anonymous`), so the login's name isn't put back next time.
+
+    A name that is the login's (`name_from_login`) goes with the login:
+    logging out removes only `user`, and whoever uses the browser next, on a
+    shared computer perhaps someone else, must not find it in the field.
+    """
+    me = session.get("challenge_me") or {}
+    name = me.get("name", "")
+    if name and me.get("name_from_login") and "user" not in session:
+        name = ""
+    if name or me.get("anonymous"):
+        return name, False
+    first = _login_first_name()
+    return first, bool(first)
+
+
+def _note_challenge_name(me, name):
+    """Remember the name a form gave, and whether it emptied one it showed.
+
+    `name_offered` is sent only by a name field that was rendered with a name
+    in it, so a form with no field (or a hidden one) never marks anyone
+    anonymous.
+    """
+    me["name"] = name
+    if name and name == _login_first_name():
+        me["name_from_login"] = True
+    else:
+        me.pop("name_from_login", None)
+    if name:
+        me.pop("anonymous", None)
+    elif request.form.get("name_offered"):
+        me["anonymous"] = True
+
+
+def _mint_challenge(ch, name):
+    """Remember a new challenge as this person's, then start it or show its page."""
+    me = challenge.remember_seed(session.get("challenge_me"), "created", ch.seed)
+    _note_challenge_name(me, name)
+    session["challenge_me"] = me
+    token = ch.encode(app.secret_key)
+
+    # Start: straight into the round. The link to send comes with the
+    # result, like it does after Start on the sender's page.
+    if request.form.get("go") and _challenge_playable(ch):
+        return _begin_challenge(ch, token, name, sender=True)
+    # Share: the sender's page, with the link above its Start button this
+    # once. In the session rather than the URL, which is the link being shared.
+    if request.form.get("share"):
+        session["challenge_share_first"] = ch.seed
+    return redirect(url_for("challenge_sender_page", token=token), code=303)
+
+
+def _challenge_invalid_page():
+    return (
+        render_template(
+            "challenge.html",
+            invalid=True,
+            get_text=get_text,
+            analytics_path=CHALLENGE_ANALYTICS_PATH,
+            analytics_title=CHALLENGE_ANALYTICS_TITLE,
+        ),
+        404,
+    )
+
+
+@app.route("/challenge/<token>")
+def challenge_page(token):
+    """A challenge link: always the invitation, whoever opens it.
+
+    The scores so far, a name and Start, for everyone, the person who made it
+    or just played it included. What a page says about the person looking is
+    at an address of its own, never the link: the sender's page
+    (challenge_sender_page()) and their result (challenge_result_page()). So
+    the link a page shows opens the page a friend will see.
+
+    It reads the same to someone who has played it before, but for the button,
+    which says Rematch: they have had the challenge already, and are most
+    likely here because a friend sent their result back. Nothing could stop
+    them playing again (a private window has no memory of it), and to the
+    person who made the link, opening it is how they see what their friends
+    will. Playing again keeps their better score (_record_challenge_score()).
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if not _challenge_playable(ch):
+        return _challenge_invalid_page()
+    return _render_challenge(ch, token, "invite", False)
+
+
+@app.route("/challenge/<token>/result")
+def challenge_result_page(token):
+    """A player's result: their score and rank, and the link to send.
+
+    Where their last answer (or Exit) lands, and only for the session that
+    played it, until another drill starts; anyone else, this address sent by
+    mistake included, goes to the link. It reads as sent or as received
+    depending on where the round was started (`sender`).
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if not _challenge_playable(ch):
+        return _challenge_invalid_page()
+    last = session.get("challenge_last")
+    if not (isinstance(last, dict) and last.get("token") == token):
+        return redirect(url_for("challenge_page", token=token))
+    return _render_challenge(ch, token, "finished", bool(last.get("sender")), last)
+
+
+@app.route("/challenge/<token>/share")
+def challenge_sender_page(token):
+    """The page of the person who made a challenge: its link, and Start.
+
+    Reached from the create form (Share), a rematch, or the conjugate page's
+    button, never from the link itself, which is what keeps the two apart.
+    Anyone else, or its maker once they have played it, goes to the link:
+    someone sent this address by mistake gets the invitation, not a page
+    telling them their challenge is ready.
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if not _challenge_playable(ch):
+        return _challenge_invalid_page()
+    me = session.get("challenge_me") or {}
+    if ch.seed not in me.get("created", []) or ch.seed in me.get("played", []):
+        return redirect(url_for("challenge_page", token=token))
+    return _render_challenge(ch, token, "ready", True)
+
+
+def _new_challenge_url(ch):
+    """The create form, set to the same kind of round as `ch`.
+
+    What "New challenge" opens: the same language, kind and difficulty (and,
+    for verbs, tenses), with Start and Share at the top, so playing the same
+    kind of round again takes no more clicks than it would from a button that
+    made one directly, and changing something takes no more either.
+    """
+    args = {"lang": ch.lang, "kind": ch.kind}
+    if ch.mode != "audio":
+        args["difficulty"] = ch.mode
+    if ch.is_verbs:
+        args["tenses"] = list(ch.tenses)
+        if ch.optional_person:
+            args["vosotros"] = "1"
+    return url_for("challenge_new", **args)
+
+
+def _render_challenge(ch, token, view, sender, last=None):
+    """One of the three views of a challenge (see the top of challenge.html).
+
+    `sender` is whether this person is the one sending the link out (they made
+    the challenge, and played it from their own page) rather than the one who
+    was sent it, which decides what the result page asks them to do; once
+    someone else is on the board, a result is one to send back either way. `last`
+    is the session's challenge_last, on a result page: this round's score and
+    the id of the player's row on the board.
+    """
+    share_first = False
+    if "challenge_share_first" in session:
+        share_first = session.pop("challenge_share_first") == ch.seed
+        share_first = share_first and view == "ready"
+
+    last = last or {}
+    rows, total = _challenge_board(ch.seed, mine=last.get("result"))
+    best = rows[0] if rows else None
+    mine_row = next((row for row in rows if row["mine"]), None)
+    if view == "finished" and sender and total > (1 if mine_row else 0):
+        # Someone else has played it: a sender who shared it before playing
+        # (or whose friends have played since) has a result to send back now,
+        # not a challenge to share.
+        sender = False
+    round_score = best_kept = None
+    if view == "finished":
+        round_score = last.get("score")
+        if last.get("result") is not None and mine_row is None:
+            # Their score is gone (past the retention period): just the link.
+            return redirect(url_for("challenge_page", token=token))
+        if round_score is None:
+            # A result from before the round's own score was kept here.
+            if mine_row is None:
+                return redirect(url_for("challenge_page", token=token))
+            round_score = mine_row["score"]
+        if mine_row is not None:
+            played = (round_score, -last.get("seconds", mine_row["seconds"]))
+            if (mine_row["score"], -mine_row["seconds"]) > played:
+                # They played again and did worse: the board keeps their best.
+                best_kept = get_text("challenge_best_kept").format(
+                    mine_row["score"], QUESTIONS_PER_QUIZ, mine_row["time"]
+                )
+    lang_name = get_text(f"lang_{ch.lang}_name")
+    type_label = _challenge_type_label(ch)
+
+    # What the page says to someone arriving from the link, and so also what a
+    # chat app's link preview shows: the preview bot is always a visitor.
+    if best:
+        invite_headline = get_text("challenge_beat_title").format(
+            best["name"] or get_text("challenge_anonymous"),
+            best["score"],
+            QUESTIONS_PER_QUIZ,
+        )
+    elif ch.host:
+        invite_headline = get_text("challenge_invite_title").format(ch.host)
+    else:
+        invite_headline = get_text("challenge_invite_title_anon")
+
+    if view == "finished":
+        # The score a friend will find on the board, which is the player's
+        # best, or this round's when it couldn't be stored.
+        share_text = get_text("challenge_share_text_result").format(
+            mine_row["score"] if mine_row else round_score,
+            QUESTIONS_PER_QUIZ,
+            lang_name,
+            type_label,
+        )
+    else:
+        share_text = get_text("challenge_share_text_invite").format(
+            lang_name, type_label
+        )
+
+    return render_template(
+        "challenge.html",
+        invalid=False,
+        view=view,
+        sender=sender,
+        share_first=share_first,
+        ch=ch,
+        token=token,
+        rows=rows,
+        # Everyone on the scoreboard, of whom `rows` shows the first
+        # SCOREBOARD_ROWS (and the viewer's own).
+        total=total,
+        mine=mine_row,
+        round_score=round_score,
+        best_kept=best_kept,
+        lang_name=lang_name,
+        lang_flag=AVAILABLE_LANGUAGES[ch.lang].get("flag", ""),
+        type_label=type_label,
+        questions=QUESTIONS_PER_QUIZ,
+        invite_headline=invite_headline,
+        # The link's Start says Rematch to someone who has played it already.
+        rematch=ch.seed in (session.get("challenge_me") or {}).get("played", []),
+        share_url=url_for("challenge_page", token=token, _external=True),
+        share_text=share_text,
+        # The Start form's field: this person's name (or their login's first
+        # name), else, for the sender, the one the challenge was made with.
+        name=(_challenge_name_default()[0] or (ch.host if view == "ready" else "")),
+        new_challenge_url=_new_challenge_url(ch),
+        name_max=challenge.NAME_MAX,
+        verb_view=_verb_challenge_view(ch) if ch.is_verbs else None,
+        logged_in="user" in session,
+        get_text=get_text,
+        analytics_path=CHALLENGE_ANALYTICS_PATH,
+        analytics_title=CHALLENGE_ANALYTICS_TITLE,
+    )
+
+
+@app.route("/challenge/<token>/start", methods=["POST"])
+def challenge_start(token):
+    """Seed the challenge's round and drop into its quiz.
+
+    `sender` comes from the Start form on the sender's page, and counts only
+    for the person who made the challenge: it decides the result page's
+    wording, nothing about the score.
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if not _challenge_playable(ch):
+        flash(get_text("challenge_invalid_title"), "error")
+        return redirect(url_for("challenge_new"))
+    created = (session.get("challenge_me") or {}).get("created", [])
+    sender = request.form.get("sender") == "1" and ch.seed in created
+    return _begin_challenge(ch, token, request.form.get("name"), sender=sender)
+
+
+@app.route("/challenge/<token>/verbs", methods=["POST"])
+def challenge_add_verbs(token):
+    """Add a verb challenge's verbs (one, or all of them) to the player's own list.
+
+    The verbs are the creator's; this is how a friend takes on what they are
+    learning. Additive only, like the index-card sync: a verb already on the
+    list is left alone, and nothing is ever removed.
+    """
+    ch = challenge.Challenge.decode(token, app.secret_key)
+    if ch is None or not ch.is_verbs or ch.lang not in get_languages_with_conjugation():
+        flash(get_text("challenge_invalid_title"), "error")
+        return redirect(url_for("challenge_new"))
+    # Back to the page the button was on; each of them sends anyone it isn't
+    # for to the link.
+    back = {"share": "challenge_sender_page", "result": "challenge_result_page"}
+    page = url_for(back.get(request.form.get("back"), "challenge_page"), token=token)
+    if "user" not in session:
+        _remember_login_return("pending_challenge_next", page)
+        return redirect(url_for("login"))
+
+    wanted = request.form.get("verb")
+    pool = _conj_pool(ch.lang)
+    verbs = [
+        _normalize_infinitive(verb, ch.lang)
+        for verb in ch.verbs
+        if not wanted or verb == wanted
+    ]
+    verbs = [verb for verb in verbs if pool.verb_exists(verb)]
+    if not verbs:
+        # A verb this challenge doesn't have (a hand-edited form) or one the
+        # pool has since lost: nothing to add, and "already on your list"
+        # would be untrue.
+        return redirect(page, code=303)
+    user_sub = _current_user_sub()
+    added = []
+    for infinitive in verbs:
+        if _find_user_verb(user_sub, ch.lang, infinitive) is not None:
+            continue
+        db.session.add(VerbCard(user_sub=user_sub, lang=ch.lang, infinitive=infinitive))
+        added.append(conj_citation_form(ch.lang, infinitive))
+    if added:
+        db.session.commit()
+        flash(
+            get_text("challenge_flash_verbs_added").format(", ".join(added)), "success"
+        )
+    else:
+        flash(get_text("challenge_flash_verbs_already"), "info")
+    return redirect(page, code=303)
+
+
+# Where /challenge/login may send someone back to: the create form, a
+# challenge's link, its sender's page or a result. Strict, so it can't be made
+# an open redirect: the path is one of those, and the query may hold only what
+# urlencode() writes (a tense key's "/" or "é" comes percent-encoded).
+_CHALLENGE_NEXT_RE = re.compile(
+    r"/challenge(?:/[A-Za-z0-9_.-]+(?:/share|/result)?)?"
+    r"(?:\?[A-Za-z0-9_.~%+=&-]*)?"
+)
+
+
+def _challenge_form_return():
+    """The create form as this request asked for it, set to a verb round.
+
+    Where its "log in" link comes back to, which is shown for verbs: a New
+    challenge after a verb round names the language, difficulty and tenses,
+    and logging in mustn't lose them. Built with urlencode(), not url_for(),
+    since the query is whatever the visitor typed (`?_external=1` would make
+    url_for() return an absolute URL).
+    """
+    args = [(k, v) for k, v in request.args.items(multi=True) if k != "kind"]
+    return url_for("challenge_new") + "?" + urlencode(args + [("kind", "verbs")])
+
+
+def _is_challenge_path(value):
+    return isinstance(value, str) and _CHALLENGE_NEXT_RE.fullmatch(value) is not None
+
+
+@app.route("/challenge/login")
+def challenge_login():
+    """Log in, then come back to the challenge page or form that linked here.
+
+    A verb challenge is made from the creator's own verbs, and a player adds
+    its verbs to their own list, so both need an account; neither should lose
+    the challenge they were looking at on the way.
+    """
+    target = request.args.get("next")
+    if not _is_challenge_path(target):
+        target = url_for("challenge_new")
+    _remember_login_return("pending_challenge_next", target)
+    return redirect(url_for("login"))
+
+
+def _begin_challenge(ch, token, raw_name, sender=False):
+    """Seed a challenge's round in the session and redirect into its quiz.
+
+    Shared by Accept on a challenge's link, Start on its sender's page and the
+    create form's Start, which mints a challenge and plays it in one click.
+    `sender` (the last two) is carried to the result page, which asks a sender
+    to send the challenge and anyone else to send their result back.
+    """
+    if ch.is_verbs:
+        return _begin_verb_challenge(ch, token, raw_name, sender)
+    # The player's own dial setting, kept rather than overwritten: the round's
+    # numbers are fixed by the seed, so it only matters after the challenge.
+    magnitude_level = session.get("magnitude_level", 1)
+    name = challenge.clean_name(raw_name)
+
+    # No system: the session keeps the person's own, and the round runs on the
+    # default regardless (_drill_number_system()).
+    _seed_quiz_session(
+        ch.lang,
+        ch.mode,
+        magnitude_level,
+        source=quiz_stats.SOURCE_CHALLENGE,
+    )
+    me = dict(session.get("challenge_me") or {})
+    _note_challenge_name(me, name)
+    _note_challenge_player(me)
+    session["challenge_me"] = me
+    # No list of numbers: _challenge_numbers() works them out from the token.
+    # The name goes with the round, which is scored under it: challenge_me's
+    # can change before it ends (a challenge made in another tab).
+    session["challenge"] = {
+        "token": token,
+        "seed": ch.seed,
+        "sender": sender,
+        "name": name,
+    }
+    # The sender has accepted nothing; tell them where the link will be instead.
+    flash(
+        get_text(
+            "challenge_flash_started_own" if sender else "challenge_flash_started"
+        ),
+        "info",
+    )
+    return redirect(url_for(QUIZ_ENDPOINTS[ch.mode], lang_code=ch.lang))
+
+
+def _begin_verb_challenge(ch, token, raw_name, sender=False):
+    """Seed a verb challenge as a conjugation drill and redirect into it.
+
+    The drill's own state, with a "challenge" entry: the routes then take
+    every question from the token (_load_next_conjugation()), let a player
+    without an account in, and offer no hint, whose half point would make the
+    scores incomparable. Any other conjugation drill started later replaces
+    it, the way any number drill ends a numbers challenge.
+    """
+    name = challenge.clean_name(raw_name)
+    me = dict(session.get("challenge_me") or {})
+    _note_challenge_name(me, name)
+    _note_challenge_player(me)
+    session["challenge_me"] = me
+    # A numbers challenge left unfinished ends here, as a number drill would
+    # end it: kept, its results page would put that half-played round on the
+    # board the next time anyone opened it. The last result page closes, as
+    # it does when any number drill starts.
+    _drop_numbers_challenge()
+    session.pop("challenge_last", None)
+    session["conjugate_practice"] = {
+        "lang": ch.lang,
+        "tenses": list(ch.tenses),
+        "persons": _verb_challenge_persons(ch.lang, ch.optional_person),
+        "verb_ids": [],
+        "difficulty": ch.mode,
+        "sampling_mode": "random",
+        "reveal_mode": "type",
+        "count": QUESTIONS_PER_QUIZ,
+        "asked": [],
+        "score": 0,
+        "total": 0,
+        "current": None,
+        "current_revealed": False,
+        # No list of questions: _verb_challenge_plan() works them out again.
+        # The name is the round's, as for a numbers challenge.
+        "challenge": {
+            "token": token,
+            "seed": ch.seed,
+            "sender": sender,
+            "name": name,
+        },
+        "started_at": time.time(),
+    }
+    flash(
+        get_text(
+            "challenge_flash_started_own" if sender else "challenge_flash_started_verbs"
+        ),
+        "info",
+    )
+    return redirect(url_for("conjugate_practice", lang_code=ch.lang))
 
 
 @app.route("/privacy")
 def privacy():
     """Display privacy policy page."""
     return render_template(
-        "privacy.html", get_text=get_text, login_session_days=LOGIN_SESSION_DAYS
+        "privacy.html",
+        get_text=get_text,
+        login_session_days=LOGIN_SESSION_DAYS,
+        challenge_score_days=CHALLENGE_SCORE_DAYS,
     )
 
 
@@ -3054,6 +4378,19 @@ def login():
     )
 
 
+# Where /callback sends someone back to: a shared deck's import page, or a
+# challenge page or form. One slot in effect, since setting either clears the
+# other: the page that sent them to log in last is the one they want, and an
+# errand they abandoned at Auth0 earlier must not take its place.
+_LOGIN_RETURN_KEYS = ("pending_import_token", "pending_challenge_next")
+
+
+def _remember_login_return(key, value):
+    for other in _LOGIN_RETURN_KEYS:
+        session.pop(other, None)
+    session[key] = value
+
+
 @app.route("/callback")
 def callback():
     """Handle the Auth0 OIDC callback and store the user on the session."""
@@ -3070,8 +4407,11 @@ def callback():
     session["user"] = token["userinfo"]
     # If the user was sent to /login from a share URL, route them back to it.
     pending_token = session.pop("pending_import_token", None)
+    pending_challenge = session.pop("pending_challenge_next", None)
     if pending_token:
         return redirect(url_for("cards_import", token=pending_token))
+    if _is_challenge_path(pending_challenge):
+        return redirect(pending_challenge)
     return redirect(url_for("cards"))
 
 
@@ -3399,7 +4739,7 @@ def cards_import(token: str):
         ), 404
     if "user" not in session:
         # Stash the import target on the session so post-login we can route back.
-        session["pending_import_token"] = token
+        _remember_login_return("pending_import_token", token)
         return redirect(url_for("login"))
     return render_template(
         "cards_import.html",
@@ -4756,6 +6096,9 @@ def conjugate_practice_start(lang_code):
         "current": None,
         "current_revealed": False,
     }
+    # Another drill: the last challenge result page closes, as it does when a
+    # number drill starts (_seed_quiz_session() clears the whole session).
+    session.pop("challenge_last", None)
     return redirect(url_for("conjugate_practice", lang_code=lang_code))
 
 
@@ -4831,7 +6174,10 @@ def _load_next_conjugation(state: dict) -> dict | None:
     Samples a verb (weighted toward weak/unpracticed verbs in prioritized mode),
     then a random available tense+person for that verb that hasn't been asked.
     Verbs whose questions are all exhausted are dropped and another is tried.
+    A friend's verb challenge asks its planned questions instead.
     """
+    if state.get("challenge"):
+        return _load_next_challenge_conjugation(state)
     lang_code = state.get("lang", DEFAULT_CONJUGATION_LANG)
     asked = set(state.get("asked", []))
     verbs = _user_verbs(lang_code)
@@ -4881,6 +6227,36 @@ def _load_next_conjugation(state: dict) -> dict | None:
     return current
 
 
+def _load_next_challenge_conjugation(state: dict) -> dict | None:
+    """A verb challenge's next question: the planned one for this many answers.
+
+    Indexed by `total` (questions answered or revealed), which every way of
+    clearing a question advances, so none is skipped or asked twice. The
+    player's own copy of the verb, if they have one, is what the attempt is
+    recorded on; the verb itself always comes from the token.
+    """
+    running = state.get("challenge") or {}
+    ch = challenge.Challenge.decode(running.get("token"), app.secret_key)
+    plan = _verb_challenge_plan(ch)
+    index = state.get("total", 0)
+    if plan is None or index >= len(plan):
+        return None
+    infinitive, tense_key, person_index = plan[index]
+    owned = None
+    if "user" in session:
+        owned = _find_user_verb(_current_user_sub(), ch.lang, infinitive)
+    current = {
+        "verb_id": owned.id if owned else None,
+        "infinitive": infinitive,
+        "tense_key": tense_key,
+        "person_index": person_index,
+        "correct_answer": _form_available(ch.lang, infinitive, tense_key, person_index),
+    }
+    state["current"] = current
+    state["current_revealed"] = False
+    return current
+
+
 def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     """Render the practice page for the current question."""
     difficulty = state.get("difficulty", "advanced")
@@ -4888,6 +6264,7 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
     correct = current["correct_answer"]
     ui_lang = session.get("language", DEFAULT_UI_LANGUAGE)
     # The pattern hint is an advanced-mode aid only; hardcore stays no-help.
+    # A challenge offers none: its half point would make scores incomparable.
     hint = (
         _build_conjugation_hint(
             lang_code,
@@ -4896,12 +6273,12 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
             ui_lang,
             infinitive=current["infinitive"],
         )
-        if (difficulty != "hardcore" and not revealed)
+        if (difficulty != "hardcore" and not revealed and not state.get("challenge"))
         else None
     )
     return render_template(
         "conjugate_practice.html",
-        user=session["user"],
+        user=session.get("user"),
         lang_code=lang_code,
         infinitive=current["infinitive"],
         pronoun=person_label(lang_code, current["person_index"]),
@@ -4926,7 +6303,7 @@ def _conjugate_question_view(state: dict, current: dict, lang_code: str):
 
 
 @app.route("/<lang_code>/conjugate/practice", methods=["GET", "POST"])
-@login_required
+@login_or_verb_challenge_required
 def conjugate_practice(lang_code):
     """Show the current conjugation question or process an answer/reveal."""
     _require_conjugation_lang(lang_code)
@@ -4938,8 +6315,15 @@ def conjugate_practice(lang_code):
         current = state.get("current")
         if not current:
             return redirect(url_for("conjugate_practice", lang_code=lang_code))
-        verb = db.session.get(VerbCard, current["verb_id"])
-        owns_verb = verb is not None and verb.user_sub == _current_user_sub()
+        # A challenge question on a verb the player doesn't have (or a player
+        # without an account) has no verb_id, and records nothing.
+        verb_id = current.get("verb_id")
+        verb = db.session.get(VerbCard, verb_id) if verb_id else None
+        owns_verb = (
+            verb is not None
+            and "user" in session
+            and verb.user_sub == _current_user_sub()
+        )
         correct_answer = current["correct_answer"]
 
         if "reveal" in request.form:
@@ -4996,6 +6380,7 @@ def conjugate_practice(lang_code):
         # point and still counts as a miss for mastery tracking.
         hint_used = (
             state.get("difficulty") == "advanced"
+            and not state.get("challenge")
             and request.form.get("hint_used") == "1"
         )
         user_answer = (request.form.get("answer") or "").strip()
@@ -5079,13 +6464,18 @@ def conjugate_practice(lang_code):
 
 
 @app.route("/<lang_code>/conjugate/practice/results")
-@login_required
+@login_or_verb_challenge_required
 def conjugate_practice_results(lang_code):
     """Show the final conjugation score and clear session state."""
     _require_conjugation_lang(lang_code)
-    if _get_conjugate_state(lang_code) is None:
+    state = _get_conjugate_state(lang_code)
+    if state is None:
         # No session, or one started for another language — leave that one alone.
         return redirect(url_for("conjugate", lang_code=lang_code))
+    if state.get("challenge"):
+        # A friend's verb challenge ends on its own page, with a link to send,
+        # whether it was finished or cut short with Exit.
+        return _finish_verb_challenge(state)
     state = session.pop("conjugate_practice")
     score = state.get("score", 0)
     total = state.get("total", 0)
@@ -5115,7 +6505,7 @@ def conjugate_practice_results(lang_code):
 
 
 @app.route("/api/conjugate/validate", methods=["POST"])
-@login_required
+@login_or_verb_challenge_required
 def conjugate_validate_api():
     """Live word-by-word validation for the current conjugation question."""
     state = _get_conjugate_state()

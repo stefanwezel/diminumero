@@ -24,6 +24,13 @@
 </script>
 {% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/challenge-button.css') }}">
+{% endblock %}
+
+{# The landing page's "Challenge a friend", here for this language. #}
+{% block top_controls_extra %}{% with challenge_lang = lang_code %}{% include "_challenge_button.html" %}{% endwith %}{% endblock %}
+
 {% block content %}
 <div class="landing-page">
     <div class="hero">

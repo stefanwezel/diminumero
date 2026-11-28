@@ -30,9 +30,13 @@ from models import QuizRun, db
 
 SOURCE_FORM = "form"
 SOURCE_LINK = "link"
+# A friend challenge. Short because the column is String(8).
+SOURCE_CHALLENGE = "chal"
 
 # Internal mode names that aren't what the site calls them.
 MODE_LABELS = {"audio": "listening"}
+# Stored source values that aren't what the report should call them.
+SOURCE_LABELS = {SOURCE_CHALLENGE: "challenge"}
 
 
 def new_run_token() -> str:
@@ -127,7 +131,7 @@ def summarize(days):
         ],
         "by_language": ranked(lambda row: language_label(row.lang, row.number_system)),
         "by_mode": ranked(lambda row: MODE_LABELS.get(row.mode, row.mode)),
-        "by_source": ranked(lambda row: row.source),
+        "by_source": ranked(lambda row: SOURCE_LABELS.get(row.source, row.source)),
         "total": (len(rows), sum(1 for row in rows if row.finished_at is not None)),
     }
 

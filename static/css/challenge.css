@@ -1,0 +1,435 @@
+/* Friend challenges: the create form (/challenge) and a challenge's own page.
+   Loaded by those two pages only. Like reference.css, colours are inherited
+   or translucent, plus the site's accent pink, which reads on both themes, so
+   one file serves both stylesheets. Panels, pills, inputs and the share row
+   reuse the .preset-share styles each theme already has. */
+
+/* Buttons set their own display, which would beat the UA's [hidden] rule. */
+.challenge-page [hidden] {
+    display: none !important;
+}
+
+.challenge-page .challenge-title {
+    font-size: clamp(1.7rem, 5vw, 2.6rem);
+    overflow-wrap: anywhere;
+}
+
+.challenge-summary {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 auto 16px;
+    padding: 6px 14px;
+    border: 1px solid rgba(229, 79, 109, 0.5);
+    border-radius: 999px;
+    background: rgba(229, 79, 109, 0.14);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.challenge-verdict {
+    margin-bottom: 10px;
+}
+
+/* ---- Create form ---- */
+/* Start / Share: the one press most people need, above the settings, and
+   again at the foot of the form. Big enough to hit with a thumb; the summary
+   line says what they will play. Start keeps each theme's primary colour;
+   Share takes the challenge pink, which reads on both. */
+.challenge-quickstart {
+    max-width: 460px;
+    margin: 4px auto 22px;
+}
+
+.challenge-go-summary {
+    margin: 0 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.challenge-pair {
+    display: flex;
+    gap: 10px;
+}
+
+.challenge-page .challenge-pair-btn {
+    display: inline-flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 50px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.15;
+    white-space: normal;
+}
+
+.challenge-pair-primary .challenge-pair-btn {
+    min-height: 60px;
+    font-size: 1.15rem;
+}
+
+.challenge-page .challenge-pair-share {
+    border: none;
+    background: linear-gradient(135deg, #E54F6D 0%, #C2366F 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 15px rgba(229, 79, 109, 0.35);
+}
+
+@media (hover: hover) {
+    .challenge-page .challenge-pair-share:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(229, 79, 109, 0.5);
+    }
+}
+
+/* Two buttons side by side on a phone leave ~130px each: "COMPARTILHAR" and
+   "ПОДІЛИТИСЯ" only fit without the arrow and the wide tracking. A word that
+   still doesn't fit breaks rather than spilling out of its button. */
+@media (max-width: 420px) {
+    .challenge-page .challenge-pair-btn {
+        padding: 8px 6px;
+        letter-spacing: 0.2px;
+        overflow-wrap: anywhere;
+    }
+    .challenge-pair-primary .challenge-pair-btn {
+        font-size: 1rem;
+    }
+    .challenge-pair-btn > [aria-hidden="true"] {
+        display: none;
+    }
+}
+
+/* The smallest phones: stacked, full width, rather than break a word. */
+@media (max-width: 340px) {
+    .challenge-pair {
+        flex-direction: column;
+    }
+    .challenge-pair-primary .challenge-pair-btn {
+        min-height: 52px;
+    }
+}
+
+.challenge-form .challenge-pair {
+    max-width: 460px;
+    margin: 8px auto 0;
+}
+
+.challenge-form {
+    margin-top: 6px;
+}
+
+.challenge-field {
+    margin-bottom: 20px;
+}
+
+.challenge-langs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.challenge-lang {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 10px;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.challenge-lang:has(input:checked) {
+    border-color: #E54F6D;
+    background: rgba(229, 79, 109, 0.14);
+    font-weight: 700;
+}
+
+/* Where the chip itself can show the choice, the radio dot is redundant and
+   costs a phone's two-column grid most of a name. It stays focusable (and
+   :focus-within outlines the chip); a browser without :has() keeps the dot. */
+@supports selector(:has(*)) {
+    .challenge-lang input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+.challenge-lang:focus-within {
+    outline: 2px solid #E54F6D;
+    outline-offset: 1px;
+}
+
+.challenge-lang input,
+.challenge-form .preset-share-mode input {
+    margin: 0;
+    accent-color: #E54F6D;
+}
+
+.challenge-lang-flag {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.challenge-lang-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Two columns on a phone rather than a 16-row list. */
+@media (max-width: 600px) {
+    .challenge-page .challenge-form {
+        padding: 14px 12px;
+    }
+    .challenge-langs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .challenge-lang {
+        gap: 6px;
+        padding: 7px 8px;
+        font-size: 0.86rem;
+    }
+    .challenge-lang-flag {
+        font-size: 1.1rem;
+    }
+}
+
+.challenge-name-input {
+    width: 100%;
+    max-width: 320px;
+}
+
+.challenge-submit {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    margin: 6px auto 0;
+}
+
+/* ---- Challenge page ---- */
+.challenge-scoreboard {
+    width: 100%;
+    max-width: 520px;
+    margin: 18px auto 6px;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.challenge-scoreboard caption {
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.challenge-scoreboard th,
+.challenge-scoreboard td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+    text-align: start;
+}
+
+.challenge-scoreboard th {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.challenge-scoreboard td:nth-child(2) {
+    overflow-wrap: anywhere;
+}
+
+.challenge-scoreboard th:nth-child(n + 3),
+.challenge-scoreboard td:nth-child(n + 3) {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.challenge-scoreboard tr.is-you td {
+    background: rgba(229, 79, 109, 0.14);
+    font-weight: 700;
+}
+
+.challenge-you {
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #E54F6D;
+    color: #FFFFFF;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.challenge-start {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 360px;
+    margin: 20px auto 0;
+    text-align: start;
+}
+
+.challenge-start .preset-share-label {
+    margin-bottom: 0;
+}
+
+.challenge-start .challenge-name-input {
+    max-width: none;
+}
+
+.challenge-share {
+    margin-top: 24px;
+}
+
+.challenge-share .preset-share-title {
+    margin-bottom: 10px;
+}
+
+.challenge-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+/* .btn-secondary carries a margin meant for a button beside another one. */
+.challenge-page .challenge-actions .btn,
+.challenge-page .challenge-share .btn {
+    margin: 0;
+}
+
+/* ---- Verb challenges ---- */
+/* The tense checklist on the create form: pills that wrap, like the kinds. */
+.challenge-tense-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+.challenge-form .challenge-tense input {
+    margin: 0;
+    accent-color: #E54F6D;
+}
+
+.challenge-tense-optional {
+    flex-basis: 100%;
+}
+
+/* The verbs in a challenge, on its page: the creator's list, which a player
+   can take on one verb at a time or all at once. */
+.challenge-verbs {
+    max-width: 520px;
+    margin: 22px auto 0;
+    text-align: start;
+}
+
+.challenge-verbs .preset-share-title {
+    margin-bottom: 4px;
+}
+
+.challenge-verbs-tenses {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+    opacity: 0.8;
+}
+
+.challenge-verb-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+}
+
+/* A long verb ("conseguir") keeps its word whole and puts its button on the
+   next line rather than breaking mid-word. */
+.challenge-verb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 8px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 6px 6px 12px;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 10px;
+}
+
+.challenge-verb.is-owned {
+    border-color: rgba(229, 79, 109, 0.5);
+    background: rgba(229, 79, 109, 0.1);
+}
+
+.challenge-verb-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+}
+
+.challenge-verb-add,
+.challenge-verb-owned {
+    margin-inline-start: auto;
+}
+
+.challenge-verb-owned {
+    flex-shrink: 0;
+    padding-inline-end: 6px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    white-space: nowrap;
+}
+
+.challenge-verb-add {
+    flex-shrink: 0;
+    margin-block: 0;
+}
+
+.challenge-page .challenge-verb-add-btn {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.challenge-verbs-all {
+    margin: 0;
+}
+
+.challenge-page .challenge-verbs-all .btn {
+    margin: 0;
+}
+
+.challenge-verbs .preset-share-hint {
+    margin: 0;
+}

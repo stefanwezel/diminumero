@@ -89,6 +89,13 @@ from the active practice session.
   updates the owning `VerbCard` and the matching `ConjugationStat`.
 - `/<lang_code>/conjugate/practice/results` — final score, clears state.
 - `/api/conjugate/validate` (POST) — word-by-word feedback (disabled in hardcore).
+- **Friend challenges with verbs** run on the three practice routes above: the
+  "Challenge a friend" button on `/<lang_code>/conjugate` posts the practice
+  settings to `/challenge` with `kind=verbs`, and the friend plays ten questions
+  drawn from the creator's verbs, with no account needed and no hint. Their
+  challenge page lists the verbs so they can add the ones they lack. A new
+  conjugation language is offered there with no extra work once it has
+  `has_conjugation`. See "Friend challenges" in CLAUDE.md.
 - `/<lang_code>/learn/conjugations` — the **conjugation Learn page**. See
   [Conjugation Learn Page](#conjugation-learn-page) below.
 

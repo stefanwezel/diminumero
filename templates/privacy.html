@@ -23,6 +23,10 @@
             <ul>
                 <li><strong>{{ get_text('privacy_session_cookies') }}:</strong> {{ get_text('privacy_session_cookies_desc').format(login_session_days) }}</li>
                 <li><strong>{{ get_text('privacy_auth_cookies') }}:</strong> {{ get_text('privacy_auth_cookies_desc') }}</li>
+                {# localStorage, not a cookie: never sent with a request. Lists
+                   every key the site's scripts write (theme, practice settings,
+                   card sorting, friend-challenge defaults) — keep it in step. #}
+                <li><strong>{{ get_text('privacy_local_settings') }}:</strong> {{ get_text('privacy_local_settings_desc') }}</li>
             </ul>
         </div>
 
@@ -34,6 +38,11 @@
         <div class="imprint-section">
             <h2>{{ get_text('privacy_analytics_heading') }}</h2>
             <p>{{ get_text('privacy_analytics_text') }}</p>
+        </div>
+
+        <div class="imprint-section">
+            <h2>{{ get_text('privacy_challenge_heading') }}</h2>
+            <p>{{ get_text('privacy_challenge_text').format(challenge_score_days) }}</p>
         </div>
 
         <div class="imprint-section">
