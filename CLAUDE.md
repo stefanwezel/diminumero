@@ -79,6 +79,13 @@ uv run flask --app app quiz-stats --days 30
 # does it on its own; this is for running by hand or from a scheduler)
 uv run flask --app app challenge-purge
 
+# Break down how the site is used, from GoatCounter: sections, languages,
+# referrers, entry pages, drill funnel, journeys (needs GOATCOUNTER_API_KEY in
+# .env; writes build/goatcounter/report.html and caches the CSV export there).
+# Entry pages, funnel and journeys need GoatCounter's "Individual pageviews"
+# data-collection setting, which is off by default and not retroactive.
+uv run tools/goatcounter_report.py --days 90
+
 # Production deployment (uses .env.prod, not .env)
 docker-compose -f docker-compose.prod.yml up --build
 ```
